@@ -1,0 +1,268 @@
+
+prepare_stan_data = function(deathByAge, loc_name, ref_date){
+  
+  tmp = subset(deathByAge, loc_label == loc_name)
+  tmp = tmp[order(date, age_from)]
+  Code <<- unique(tmp$code)
+  stopifnot(all(tmp$age_from <= tmp$age_to))
+  
+  # create map of original age groups 
+  df_state_age_strata = unique(select(tmp, age_from, age_to, age))
+  df_state_age_strata[, age_index := 1:nrow(df_state_age_strata)]
+  df_state_age_strata[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
+  df_state_age_strata[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  
+  # number of age groups 
+  B = nrow(df_state_age_strata)
+  
+  # select number of weeks: at least one positive deaths
+  tmp1 = tmp[, list(n_deaths = sum(na.omit(COVID.19.Deaths))), by = 'date']
+  dates = subset(tmp1, n_deaths >0)$date
+  tmp = subset(tmp, date %in% dates)
+  tmp <<- tmp
+  
+  # map week index
+  W = length(unique(tmp$date))
+  df_week <<- data.table(week_index = 1:W, date = unique(tmp$date))
+  if(W == 0) return(NULL)
+  
+  # ref date
+  w_ref_index = NA
+  if(min(df_week$date) <= ref_date & max(df_week$date) >= ref_date)
+    w_ref_index = subset(df_week, date == ref_date )$week_index
+  
+  # create map of original age groups without NA 
+  N_idx_non_missing = vector(mode = 'integer', length = W)
+  N_idx_missing = vector(mode = 'integer', length = W)
+  idx_non_missing = matrix(nrow = B, ncol = W, 0)
+  idx_missing = matrix(nrow = B, ncol = W, 0)
+  min_count_censored = matrix(nrow = B, ncol = W, -1)
+  max_count_censored = matrix(nrow = B, ncol = W, -1)
+  deaths = matrix(nrow = B, ncol = W, 0)
+  
+  
+  for(w in 1:W){
+    
+    Week = sort(unique(tmp$date))[w]
+    
+    tmp1 = subset(tmp, date == Week & !is.na( COVID.19.Deaths ))
+    df_non_missing = unique(select(tmp1, age_from, age_to, age))
+    
+    tmp1 = subset(tmp, date == Week & is.na( COVID.19.Deaths ))
+    df_missing = unique(select(tmp1, age_from, age_to, age, min_COVID.19.Deaths, max_COVID.19.Deaths))
+    
+    # number of non missing and missing age category 
+    N_idx_non_missing[w] = nrow(df_non_missing)
+    N_idx_missing[w] = nrow(df_missing)
+    
+    # index missing and non missing
+    .idx_non_missing = which(df_state_age_strata$age %in% df_non_missing$age)
+    .idx_missing = which(df_state_age_strata$age %in% df_missing$age)
+    idx_non_missing[,w] = c(.idx_non_missing, rep(-1, B - length(.idx_non_missing)))
+    idx_missing[,w] = c(.idx_missing, rep(-1, B - length(.idx_missing)))
+    
+    # min and max of missing data
+    min_count_censored[.idx_missing,w] = df_missing$min_COVID.19.Deaths
+    max_count_censored[.idx_missing,w] = df_missing$max_COVID.19.Deaths
+    
+    # deaths
+    tmp1 = copy(tmp)
+    tmp1[is.na(COVID.19.Deaths), COVID.19.Deaths := -1]
+    deaths = reshape2::dcast(tmp1, age ~ date, value.var = 'COVID.19.Deaths')[,-1]
+  }
+  
+  # create stan data list
+  stan_data <- list()
+  
+  # age bands
+  stan_data = c(stan_data, 
+                list(W = W,
+                     w_ref_index = w_ref_index,
+                     A = nrow(df_age_continuous),
+                     age = df_age_continuous$age,
+                     B = B, 
+                     age_from_state_age_strata = df_state_age_strata$age_from_index,
+                     age_to_state_age_strata = df_state_age_strata$age_to_index,
+                     N_idx_non_missing = N_idx_non_missing,
+                     N_idx_missing = N_idx_missing,
+                     idx_non_missing = idx_non_missing,
+                     idx_missing = idx_missing,
+                     min_count_censored = min_count_censored,
+                     max_count_censored = max_count_censored,
+                     deaths = deaths
+                ))
+
+  return(stan_data)
+}
+
+
+merge_stan_data = function(stan_data_1, stan_data_2)
+{
+  
+  stan_data = list(
+    W = stan_data_1$W + stan_data_2$W,
+    W1 = stan_data_1$W, 
+    W2 = stan_data_2$W, 
+    w_ref_index = ifelse(is.na(stan_data_1$w_ref_index), stan_data_2$w_ref_index + stan_data_1$W, stan_data_1$w_ref_index),
+    A = stan_data_1$A, # same in both
+    age = stan_data_1$age, # same in both
+    B1 = stan_data_1$B,
+    B2 = stan_data_2$B,
+    
+    age_from_state_age_strata_1 = stan_data_1$age_from_state_age_strata,
+    age_from_state_age_strata_2 = stan_data_2$age_from_state_age_strata,
+    age_to_state_age_strata_1 = stan_data_1$age_to_state_age_strata,
+    age_to_state_age_strata_2 = stan_data_2$age_to_state_age_strata,
+    
+    N_idx_non_missing = c(stan_data_1$N_idx_non_missing, stan_data_2$N_idx_non_missing),
+    N_idx_missing = c(stan_data_1$N_idx_missing, stan_data_2$N_idx_missing),
+    idx_non_missing_1 = stan_data_1$idx_non_missing,
+    idx_non_missing_2 = stan_data_2$idx_non_missing,
+    idx_missing_1 = stan_data_1$idx_missing,
+    idx_missing_2 = stan_data_2$idx_missing,
+    
+    min_count_censored_1 = stan_data_1$min_count_censored,
+    min_count_censored_2 = stan_data_2$min_count_censored,
+    max_count_censored_1 = stan_data_1$max_count_censored,
+    max_count_censored_2 = stan_data_2$max_count_censored,
+    
+    deaths_1 = stan_data_1$deaths,
+    deaths_2 = stan_data_2$deaths
+  )
+  
+  return(stan_data)
+}
+
+add_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
+{
+  
+  knots = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots)]
+
+  stan_data$num_basis = length(knots) + spline_degree - 1
+
+  stan_data$BASIS = bsplines(stan_data$age, knots, spline_degree)
+  
+  stopifnot(all( apply(stan_data$BASIS, 1, sum) > 0  ))
+  # B <- t(splines::bs(age, knots=age, degree=spline_degree, intercept = T)) 
+  return(stan_data)
+}
+
+
+bspline = function(x, k, degree, intervals){
+  
+  if(degree == 1){
+    return(x >= intervals[k] & x < intervals[k+1])
+  }
+  
+  w1 = 0; w2 = 0
+  
+  if(intervals[k] != intervals[k+degree-1])
+    w1 = (x - intervals[k]) / (intervals[k+degree-1] - intervals[k])
+  if(intervals[k+1] != intervals[k+degree])
+    w2 = 1 - (x - intervals[k+1]) / (intervals[k+degree] - intervals[k+1])
+  
+  spline = w1 * bspline(x, k, degree - 1, intervals) +
+    w2 * bspline(x, k+1, degree - 1, intervals)
+  
+  return(spline)
+}
+
+find_intervals = function(knots, degree, repeating = T){
+  
+  K = length(knots)
+  
+  intervals = vector(mode = 'double', length = 2*degree + K)
+  
+  # support of knots
+  intervals[(degree+1):(degree+K)] = knots
+  
+  # extreme
+  if(repeating)
+  {
+    intervals[1:degree] = min(knots)
+    intervals[(degree+K+1):(2*degree+K)] = max(knots)
+  } else {
+    gamma = 0.1
+    intervals[1:degree] = min(knots) - gamma*degree:1
+    intervals[(degree+K+1):(2*degree+K)] = max(knots) + gamma*1:degree
+  }
+
+  return(intervals)
+}
+
+bsplines = function(data, knots, degree)
+{
+  K = length(knots)
+  num_basis = K + degree - 1
+  
+  intervals = find_intervals(knots, degree)
+  
+  m = matrix(nrow = num_basis, ncol = length(data), 0)
+  
+  for(k in 1:num_basis)
+  {
+    m[k,] = bspline(data, k, degree + 1, intervals) 
+  }
+  
+  m[num_basis,length(data)] = 1
+  
+  return(m)
+}
+
+
+add_adjacency_matrix_stan_data = function(stan_data, n, m){
+  
+  N = n * m
+  A = matrix(nrow = N, ncol = N, 0)
+  
+  for(i in 1:n){
+    
+    for(j in 1:m){
+      
+      #cat('\n Processing ', i, j)
+      idx_row = m*(i-1) + j
+      
+      if(i - 1 > 0){
+        idx_col = m*(i-2) + j
+        A[idx_row,idx_col] = 1 
+      }
+      
+      if(i + 1 <= n){
+        idx_col = m*i + j
+        A[idx_row,idx_col] = 1 
+      }
+      
+      if(j - 1 > 0){
+        idx_col = m*(i-1) + j - 1
+        A[idx_row,idx_col] = 1 
+      }
+      
+      if(j + 1 <= m){
+        idx_col = m*(i-1) + j +1
+        A[idx_row,idx_col] = 1 
+      }
+      
+    }
+  }
+  
+  stan_data$N = N
+  stan_data$Adj = A
+  stan_data$Adj_n = sum(A) / 2
+  
+  return(stan_data)
+}
+
+add_nodes_stan_data = function(stan_data)
+{
+  tmp = reshape2::melt( stan_data$Adj )
+  tmp = subset(tmp, value == 1)
+  
+  stan_data$node1 = tmp$Var2
+  stan_data$node2 = tmp$Var1
+  stan_data$N_edges = nrow(tmp)
+  
+  return(stan_data)
+}
+
+
+
