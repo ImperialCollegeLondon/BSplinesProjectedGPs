@@ -10,7 +10,7 @@ indir = "~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path('~/Downloads', "results")
 location.index = 2
 stan_model = "210319d3"
-JOBID = 782737
+JOBID = 782
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -28,44 +28,26 @@ if(length(args_line) > 0)
   JOBID <- as.numeric(args_line[[10]])
 }
 
+
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
 source(file.path(indir, "functions", "stan_utility_functions.R"))
 
+# some paths to data
+path_to_JHU_data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-04-11.rds"))
+path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
+
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
 outdir.fit = file.path(outdir, run_tag, "fits")
+outdir.data = file.path(outdir, run_tag, "data")
 outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
 outdir.table = file.path(outdir, run_tag, "table", run_tag)
 
-# path to CDC and JHU data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-04-11.rds"))
-
-# max age considered
-age_max = 105
-
-# Load CDC data
-deathByAge = readRDS(path.to.CDC.data)
-
-# Create age maps
-create_map_age(age_max)
-
-# locations and dates
-locations = unique(deathByAge$loc_label) 
-loc_name = locations[location.index]
-cat("Location ", as.character(loc_name), "\n")
-
-# reference date
-ref_date = as.Date('2020-08-29')
-
-# Prepare stan data
-cat("\n Prepare stan data \n")
-stan_data_1 = prepare_stan_data(deathByAge_1, loc_name, ref_date); data1 = tmp; df_week1 = df_week
-stan_data_2 = prepare_stan_data(deathByAge_2, loc_name, ref_date); data2 = tmp; df_week2 = df_week
-stan_data = merge_stan_data(stan_data_1, stan_data_2)
-
+# load image 
+load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
 df_week = rbind(df_week1, df_week2)
 df_week$week_index = 1:nrow(df_week)
 
@@ -89,6 +71,20 @@ plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting_2, data1, data2, outdir.table)
 plot_probability_ratio(probability_ratio_table, outdir.fig)
 
+# plot compare to JHU 
+JHUData = readRDS(path_to_JHU_data)
+# find overall cumulative deaths (across age groups)
+tmp = find_overall_cumulative_deaths(fit_cum, df_week, 'deaths_predict')
+# with CI
+compare_CDCestimation_JHU_error_plot_uncertainty(CDC_data = copy(tmp), JHU_data = JHUData, 
+                                                 var.cum.deaths.CDC = 'M', outdir = outdir.fig)
+
+# plot compare to scraped data 
+scraped_data = subset( as.data.table( read.csv(path_to_scraped_data )), code == Code)
+# find cumulative deaths by reported DoH age groups
+tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(scraped_data$age), 'deaths_predict')
+compare_CDCestimation_scrapeddata_error_plot_uncertainty(CDC_data = copy(tmp), scraped_data = scraped_data, 
+                                                 var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 
 cat("\n End postprocessing_figures.R \n")
 

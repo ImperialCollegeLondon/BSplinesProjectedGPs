@@ -71,16 +71,21 @@ plot_convergence_diagnostics = function(fit, title, suffix, outfile)
 plot_posterior_predictive_checks = function(data_1, data_2, variable, lab, outdir)
 {
   
+  data_1[, PPP := paste0('inside CI: ', round(mean(na.omit(inside.CI))*100, digits = 2), '%'), by = 'date']
+  data_1[, date_ppp := paste0(as.character(date), ' - ', PPP)]
+  data_2[, PPP := paste0('inside CI: ', round(mean(na.omit(inside.CI))*100, digits = 2), '%'), by = 'date']
+  data_2[, date_ppp := paste0(as.character(date), ' - ', PPP)]
+  
   Code = unique(data_1$code)
   
   # posterior predictive check
   p1 = ggplot(data_1, aes(x = age)) + 
     geom_point(aes(y = M), col = "black", size = 1) +
-    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black")+
+    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
     geom_point(aes(y = get(variable)), col = "red", size = 1) + 
     theme_bw() +
     labs(y = lab, x = "") + 
-    facet_wrap(~date, ncol = 3) + 
+    facet_wrap(~date_ppp, ncol = 3) + 
     theme(axis.text.x = element_text(angle = 90))
   
   p2 = ggplot(data_2, aes(x = age)) + 
@@ -89,7 +94,7 @@ plot_posterior_predictive_checks = function(data_1, data_2, variable, lab, outdi
     geom_point(aes(y = get(variable)), col = "red", size = 1) + 
     theme_bw() +
     labs(y = lab, x = "") + 
-    facet_wrap(~date, ncol = 3) + 
+    facet_wrap(~date_ppp, ncol = 3) + 
     theme(axis.text.x = element_text(angle = 90))
   
   p = gridExtra::grid.arrange(p1,p2, ncol = 2, widths = c(0.8, 1))
@@ -97,33 +102,92 @@ plot_posterior_predictive_checks = function(data_1, data_2, variable, lab, outdi
   
 }
 
-compare_CDC_JHU_error_plot_uncertainty = function(CDC_data, JHU_data, outdir)
+compare_CDCestimation_JHU_error_plot_uncertainty = function(CDC_data, JHU_data, var.cum.deaths.CDC, outdir)
 {
   # prepare JHU data
   JHUData = select(as.data.table(JHUData), code, date, cumulative_deaths)
-  JHUData[, CL_cumulative_deaths := NA]
-  JHUData[, CU_cumulative_deaths := NA]
+  JHUData[, CL := NA]
+  JHUData[, CU := NA]
   
-  # prepare  predicted CDC data
-  CDCdata = CDC_data[, list(cumulative_deaths = sum( M_deaths_cum ),
-                            CL_cumulative_deaths = sum( CL_deaths_cum ),
-                            CU_cumulative_deaths = sum( CU_deaths_cum )), by = c('code', 'date')]
+  # prepare CDC estimations
+  CDC_data = select(as.data.table(CDC_data), code, date, var.cum.deaths.CDC, CL, CU)
+  setnames(CDC_data, var.cum.deaths.CDC, 'cumulative_deaths')
   
   # plot
   JHUData[, source := 'JHU']
-  CDCdata[, source := 'CDC']
+  CDC_data[, source := 'CDC']
   
-  tmp2 = rbind(JHUData, CDCdata)
-  tmp2 = subset(tmp2, code %in% unique(CDCdata$code) & date <= max(CDCdata$date))
+  tmp2 = rbind(JHUData, CDC_data)
+  tmp2 = subset(tmp2, code %in% unique(CDC_data$code) & date <= max(CDC_data$date))
+  
+  n_code = length(unique(tmp2$code))
   
   p = ggplot(tmp2, aes(x = date, y = cumulative_deaths)) + 
-    geom_ribbon(aes(ymin = CL_cumulative_deaths, ymax = CU_cumulative_deaths, fill = source), alpha = 0.5) +
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
     geom_line(aes(col = source), size = 1) +
     facet_wrap(~code, nrow = length(unique(tmp2$code)), scale = 'free') + 
     theme_bw() + 
     scale_color_viridis_d(option = "B", direction = -1, end = 0.8) + 
     scale_fill_viridis_d(option = "B", direction = -1, end = 0.8)
-  ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_uncertainty.png'), w = 9, h = 110, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_uncertainty.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+}
+
+compare_CDCestimation_JHU_error_plot = function(CDC_data, JHU_data, var.cum.deaths.CDC, outdir)
+{
+  # prepare JHU data
+  JHUData = select(as.data.table(JHUData), code, date, cumulative_deaths)
+  
+  # prepare CDC estimations
+  CDC_data = select(as.data.table(CDC_data), code, date, var.cum.deaths.CDC)
+  setnames(CDC_data, var.cum.deaths.CDC, 'cumulative_deaths')
+  
+  # plot
+  JHUData[, source := 'JHU']
+  CDC_data[, source := 'CDC']
+  
+  tmp2 = rbind(JHUData, CDC_data)
+  tmp2 = subset(tmp2, code %in% unique(CDC_data$code) & date <= max(CDC_data$date))
+  
+  n_code = length(unique(tmp2$code))
+  
+  p = ggplot(tmp2, aes(x = date, y = cumulative_deaths)) + 
+    geom_line(aes(col = source), size = 1) +
+    facet_wrap(~code, nrow = length(unique(tmp2$code)), scale = 'free') + 
+    theme_bw() + 
+    scale_color_viridis_d(option = "B", direction = -1, end = 0.8) + 
+    scale_fill_viridis_d(option = "B", direction = -1, end = 0.8)
+  ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_uncertainty.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+}
+
+compare_CDCestimation_scrapeddata_error_plot_uncertainty = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir)
+{
+  # prepare JHU data
+  scraped_data = select(as.data.table(scraped_data), code, date, age, cum.deaths)
+  scraped_data[, date := as.Date(date)]
+  scraped_data[, CL := NA]
+  scraped_data[, CU := NA]
+  
+  # prepare CDC estimations
+  CDC_data = select(as.data.table(CDC_data), code, date, age, var.cum.deaths.CDC, CL, CU)
+  setnames(CDC_data, var.cum.deaths.CDC, 'cum.deaths')
+  
+  # plot
+  scraped_data[, source := 'DoH']
+  CDC_data[, source := 'CDC']
+  
+  tmp2 = rbind(scraped_data, CDC_data)
+  tmp2 = subset(tmp2, code %in% unique(CDC_data$code) & date <= max(CDC_data$date))
+  
+  n_code = length(unique(tmp2$code))
+  
+  p = ggplot(tmp2, aes(x = date, y = cum.deaths)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
+    geom_line(aes(col = source), size = 1) +
+    facet_wrap(~age,  scale = 'free') + 
+    theme_bw() + 
+    scale_color_viridis_d(option = "B", direction = -1, end = 0.8) + 
+    scale_fill_viridis_d(option = "B", direction = -1, end = 0.8) 
+  ggsave(p, file = paste0(outdir, '-comparison_scraped_data_CDC_uncertainty.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
 }
 
 plot_covariance_matrix = function(fit_cum, outdir)
@@ -201,35 +265,78 @@ plot_covariance_matrix = function(fit_cum, outdir)
 
 plot_posterior_plane = function(fit_cum, df_week, outdir)
 {
-  fit_samples = extract(fit_cum)
   
-  ps <- c(0.5, 0.025, 0.975)
-  p_labs <- c('M','CL','CU')
-  tmp1 = as.data.table( reshape2::melt( fit_samples$beta ))
-  
-  row_name = 'week_index'
-  column_name = 'basis_function_index'
-  if(max(tmp1$Var3) == stan_data$A) column_name = 'Age'
-  
-  setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps),
-                       q_label=p_labs), 
-              by=c(column_name, row_name)]	
-  tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
-  setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
-  
-  tmp1 = merge(tmp1, df_week, by = row_name)
+euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
+fit_samples = extract(fit_cum)
 
-  ggplot(tmp1, aes(x = date, y = get(column_name))) +
-    geom_raster(aes(fill = M))  + 
-    labs(x = 'Date', y = column_name, fill = 'Estimated posterior value') + 
-    scale_y_reverse(expand = c(0,0), breaks = seq(min(tmp1[,get(column_name)]), max(tmp1[,get(column_name)]), 2))  +
-    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
-    scale_fill_viridis_c(option = "A") + 
-    theme(legend.position='bottom')
-  ggsave(file = paste0(outdir, '-PlanePosterior_', Code, '.png'), w = 5, h = 5.5)
-  
+ps <- c(0.5, 0.025, 0.975)
+p_labs <- c('M','CL','CU')
+tmp1 = as.data.table( reshape2::melt( fit_samples$beta ))
+row_name = 'week_index'
+column_name = 'basis_function_index'
+if(max(tmp1$Var3) == stan_data$A) column_name = 'Age'
+setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
+tmp1 = tmp1[, list( 	q= quantile(value, prob=ps),
+                     q_label=p_labs),
+            by=c(column_name, row_name)]
+tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
+setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
+tmp1 = merge(tmp1, df_week, by = row_name)
+
+## Smooth estimate
+z <- as.matrix( dcast(tmp1, get(column_name)~get(row_name), value.var = "M")[,-1] ) 
+z.range <- range(z)
+z =  t( apply(z, 2, rev) )
+
+pdf(paste0(outdir, '-PlanePosterior_', Code, '.pdf'),width=7,height=7,paper='special')
+plot.new()
+plot.window(
+  xlim = c(1 - 0.5, stan_data$W + 0.5),
+  ylim = c(1 - 0.5, stan_data$num_basis + 0.5))
+image  (1:stan_data$W, 1:stan_data$num_basis,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
+contour(1:stan_data$W, 1:stan_data$num_basis,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
+axis(side = 1, at = seq(1, stan_data$W, 5), labels = format(unique(tmp1$date), '%b %Y')[seq(1, stan_data$W, 5)], lwd = 0.5)
+axis(side = 2, at = seq(1, stan_data$num_basis, 2), labels = rev(seq(2, stan_data$num_basis, 2)), lwd = 0.5)
+box(lwd = 0.5)
+mtext("Date", side = 1, adj = 0.5, line = -1.5, outer = TRUE)
+mtext("Basis function index",     side = 2, adj = 0.5, line = -1.5, outer = TRUE)
+dev.off()
+
 }
+
+
+
+# plot_posterior_plane = function(fit_cum, df_week, outdir)
+# {
+#   fit_samples = extract(fit_cum)
+#   
+#   ps <- c(0.5, 0.025, 0.975)
+#   p_labs <- c('M','CL','CU')
+#   tmp1 = as.data.table( reshape2::melt( fit_samples$beta ))
+#   
+#   row_name = 'week_index'
+#   column_name = 'basis_function_index'
+#   if(max(tmp1$Var3) == stan_data$A) column_name = 'Age'
+#   
+#   setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
+#   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps),
+#                        q_label=p_labs), 
+#               by=c(column_name, row_name)]	
+#   tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
+#   setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
+#   
+#   tmp1 = merge(tmp1, df_week, by = row_name)
+# 
+#   ggplot(tmp1, aes(x = date, y = get(column_name))) +
+#     geom_raster(aes(fill = M))  + 
+#     labs(x = 'Date', y = column_name, fill = 'Estimated posterior value') + 
+#     scale_y_reverse(expand = c(0,0), breaks = seq(min(tmp1[,get(column_name)]), max(tmp1[,get(column_name)]), 2))  +
+#     scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+#     scale_fill_viridis_c(option = "A") + 
+#     theme(legend.position='bottom')
+#   ggsave(file = paste0(outdir, '-PlanePosterior_', Code, '.png'), w = 5, h = 5.5)
+#   
+# }
 
 plot_probability_ratio = function(probability_ratio_table, outdir)
 {

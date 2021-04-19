@@ -25,6 +25,7 @@ mkdir \$PWD/\$STAN_MODEL-\$JOBID
 
 # directories for fits, figures and tables
 mkdir \$PWD/\$STAN_MODEL-\$JOBID/fits
+mkdir \$PWD/\$STAN_MODEL-\$JOBID/data
 mkdir \$PWD/\$STAN_MODEL-\$JOBID/figure
 mkdir \$PWD/\$STAN_MODEL-\$JOBID/table
 

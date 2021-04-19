@@ -1,10 +1,13 @@
-
-prepare_stan_data = function(deathByAge, loc_name, ref_date){
+prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_spec = NULL){
   
   tmp = subset(deathByAge, loc_label == loc_name)
-  tmp = tmp[order(date, age_from)]
+  tmp <<- tmp[order(date, age_from)]
   Code <<- unique(tmp$code)
+  
+  # some checks
   stopifnot(all(tmp$age_from <= tmp$age_to))
+  if(!is.null(last_date_previous_spec))
+    stopifnot(last_date_previous_spec == min(tmp$date)-7)
   
   # create map of original age groups 
   df_state_age_strata = unique(select(tmp, age_from, age_to, age))
@@ -16,14 +19,20 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date){
   B = nrow(df_state_age_strata)
   
   # select number of weeks: at least one positive deaths
-  tmp1 = tmp[, list(n_deaths = sum(na.omit(COVID.19.Deaths))), by = 'date']
-  dates = subset(tmp1, n_deaths >0)$date
-  tmp = subset(tmp, date %in% dates)
-  tmp <<- tmp
+  # tmp1 = tmp[, list(n_deaths = sum(na.omit(COVID.19.Deaths))), by = 'date']
+  # dates = subset(tmp1, n_deaths >0)$date
+  # tmp = subset(tmp, date %in% dates)
+  # tmp <<- tmp
   
   # map week index
-  W = length(unique(tmp$date))
-  df_week <<- data.table(week_index = 1:W, date = unique(tmp$date))
+  last_date_previous_spec <<- max(tmp$date)
+  WEEKS = seq.Date(min(tmp$date), max(tmp$date), by = 'week')
+  W = length(WEEKS)
+  IDX_WEEKS_OBSERVED = which(WEEKS %in% unique(tmp$date))
+  W_OBSERVED = length(IDX_WEEKS_OBSERVED)
+  if(!all(WEEKS %in% unique(tmp$date)))
+    cat('\n Missing weeks: ', as.character(unique(tmp$date)[which(!WEEKS %in% unique(tmp$date))]), '\n')
+  df_week <<- data.table(week_index = 1:W, date = WEEKS)
   if(W == 0) return(NULL)
   
   # ref date
@@ -32,24 +41,24 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date){
     w_ref_index = subset(df_week, date == ref_date )$week_index
   
   # create map of original age groups without NA 
-  N_idx_non_missing = vector(mode = 'integer', length = W)
-  N_idx_missing = vector(mode = 'integer', length = W)
-  idx_non_missing = matrix(nrow = B, ncol = W, 0)
-  idx_missing = matrix(nrow = B, ncol = W, 0)
-  min_count_censored = matrix(nrow = B, ncol = W, -1)
-  max_count_censored = matrix(nrow = B, ncol = W, -1)
-  deaths = matrix(nrow = B, ncol = W, 0)
+  N_idx_non_missing = vector(mode = 'integer', length = W_OBSERVED)
+  N_idx_missing = vector(mode = 'integer', length = W_OBSERVED)
+  idx_non_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
+  idx_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
+  min_count_censored = matrix(nrow = B, ncol = W_OBSERVED, -1)
+  max_count_censored = matrix(nrow = B, ncol = W_OBSERVED, -1)
+  deaths = matrix(nrow = B, ncol = W_OBSERVED, 0)
   
   
-  for(w in 1:W){
+  for(w in 1:W_OBSERVED){
     
     Week = sort(unique(tmp$date))[w]
     
-    tmp1 = subset(tmp, date == Week & !is.na( COVID.19.Deaths ))
+    tmp1 = subset(tmp, date == Week & !is.na( daily.deaths ))
     df_non_missing = unique(select(tmp1, age_from, age_to, age))
     
-    tmp1 = subset(tmp, date == Week & is.na( COVID.19.Deaths ))
-    df_missing = unique(select(tmp1, age_from, age_to, age, min_COVID.19.Deaths, max_COVID.19.Deaths))
+    tmp1 = subset(tmp, date == Week & is.na( daily.deaths ))
+    df_missing = unique(select(tmp1, age_from, age_to, age, min.daily.deaths, max.daily.deaths))
     
     # number of non missing and missing age category 
     N_idx_non_missing[w] = nrow(df_non_missing)
@@ -62,21 +71,40 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date){
     idx_missing[,w] = c(.idx_missing, rep(-1, B - length(.idx_missing)))
     
     # min and max of missing data
-    min_count_censored[.idx_missing,w] = df_missing$min_COVID.19.Deaths
-    max_count_censored[.idx_missing,w] = df_missing$max_COVID.19.Deaths
+    min_count_censored[.idx_missing,w] = df_missing$min.daily.deaths
+    max_count_censored[.idx_missing,w] = df_missing$max.daily.deaths 
     
     # deaths
     tmp1 = copy(tmp)
-    tmp1[is.na(COVID.19.Deaths), COVID.19.Deaths := -1]
-    deaths = reshape2::dcast(tmp1, age ~ date, value.var = 'COVID.19.Deaths')[,-1]
+    tmp1[is.na(daily.deaths), daily.deaths := -1]
+    deaths = reshape2::dcast(tmp1, age ~ date, value.var = 'daily.deaths')[,-1]
   }
   
+  # inverse sum of deaths
+  inv_sum_deaths = vector(mode = 'double', length = W)
+  for(w in 1:W_OBSERVED){
+     
+    deaths_w = sum(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w])
+    
+    if(deaths_w == 0){
+      inv_sum_deaths[IDX_WEEKS_OBSERVED[w]] = 1
+      next
+    }
+      
+    inv_sum_deaths[IDX_WEEKS_OBSERVED[w]] = 1 / deaths_w
+  }
+  for(w in c(1:W)[!1:W %in% IDX_WEEKS_OBSERVED] ){
+      inv_sum_deaths[w] = inv_sum_deaths[w-1]
+  }
+
   # create stan data list
   stan_data <- list()
   
   # age bands
   stan_data = c(stan_data, 
                 list(W = W,
+                     W_OBSERVED = W_OBSERVED,
+                     IDX_WEEKS_OBSERVED = IDX_WEEKS_OBSERVED,
                      w_ref_index = w_ref_index,
                      A = nrow(df_age_continuous),
                      age = df_age_continuous$age,
@@ -89,12 +117,12 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date){
                      idx_missing = idx_missing,
                      min_count_censored = min_count_censored,
                      max_count_censored = max_count_censored,
-                     deaths = deaths
+                     deaths = deaths,
+                     inv_sum_deaths = inv_sum_deaths
                 ))
 
   return(stan_data)
 }
-
 
 merge_stan_data = function(stan_data_1, stan_data_2)
 {
@@ -103,6 +131,11 @@ merge_stan_data = function(stan_data_1, stan_data_2)
     W = stan_data_1$W + stan_data_2$W,
     W1 = stan_data_1$W, 
     W2 = stan_data_2$W, 
+    W_OBSERVED1 = stan_data_1$W_OBSERVED, 
+    W_OBSERVED2 = stan_data_2$W_OBSERVED, 
+    W_OBSERVED = stan_data_1$W_OBSERVED + stan_data_2$W_OBSERVED, 
+    IDX_WEEKS_OBSERVED1 = stan_data_1$IDX_WEEKS_OBSERVED, 
+    IDX_WEEKS_OBSERVED2 = stan_data_2$IDX_WEEKS_OBSERVED, 
     w_ref_index = ifelse(is.na(stan_data_1$w_ref_index), stan_data_2$w_ref_index + stan_data_1$W, stan_data_1$w_ref_index),
     A = stan_data_1$A, # same in both
     age = stan_data_1$age, # same in both
@@ -127,7 +160,9 @@ merge_stan_data = function(stan_data_1, stan_data_2)
     max_count_censored_2 = stan_data_2$max_count_censored,
     
     deaths_1 = stan_data_1$deaths,
-    deaths_2 = stan_data_2$deaths
+    deaths_2 = stan_data_2$deaths,
+    
+    inv_sum_deaths = c(stan_data_1$inv_sum_deaths, stan_data_2$inv_sum_deaths)
   )
   
   return(stan_data)
@@ -147,6 +182,26 @@ add_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
   return(stan_data)
 }
 
+add_diff_matrix = function(stan_data, n, m, order = 2)
+{
+  require(Matrix)
+  
+  In <- Diagonal(n)   
+  Im <- Diagonal(m) 
+  
+  # rows difference 
+  D0 <- diff(In, diff = order)  
+  stan_data$D1 <- as.matrix( kronecker(Im, D0) ) 
+  
+  # cols difference 
+  D0 <- diff(Im, diff = order) 
+  stan_data$D2 <- as.matrix( kronecker(D0, In) )
+  
+  stan_data$D1_N = nrow(stan_data$D1)
+  stan_data$D2_N = nrow(stan_data$D2)
+  
+  return(stan_data)
+}
 
 bspline = function(x, k, degree, intervals){
   
@@ -209,7 +264,6 @@ bsplines = function(data, knots, degree)
   return(m)
 }
 
-
 add_adjacency_matrix_stan_data = function(stan_data, n, m){
   
   N = n * m
@@ -220,28 +274,55 @@ add_adjacency_matrix_stan_data = function(stan_data, n, m){
     for(j in 1:m){
       
       #cat('\n Processing ', i, j)
-      idx_row = m*(i-1) + j
+      idx_row = n*(j-1) + i
       
+      # top
       if(i - 1 > 0){
-        idx_col = m*(i-2) + j
+        idx_col = n*(j-1) + i - 1
         A[idx_row,idx_col] = 1 
       }
       
+      # bottom
       if(i + 1 <= n){
-        idx_col = m*i + j
+        idx_col = n*(j-1) + i + 1
         A[idx_row,idx_col] = 1 
       }
       
+      # left
       if(j - 1 > 0){
-        idx_col = m*(i-1) + j - 1
+        idx_col = n*(j-2) + i 
         A[idx_row,idx_col] = 1 
       }
       
+      # right
       if(j + 1 <= m){
-        idx_col = m*(i-1) + j +1
+        idx_col = n*j + i 
         A[idx_row,idx_col] = 1 
       }
       
+      # # top-left diagonal
+      # if(i - 1 > 0 & j - 1 > 0){
+      #   idx_col = n*(j-2) + i - 1
+      #   A[idx_row,idx_col] = 1 
+      # }
+      # 
+      # # bottom-right diagonal
+      # if(i + 1 <= n & j + 1 <= m){
+      #   idx_col = n*j + i + 1
+      #   A[idx_row,idx_col] = 1 
+      # }
+      # 
+      # # top-right diagonal
+      # if(i - 1 > 0 & j + 1 <= m){
+      #   idx_col = n*(j-2) + i + 1
+      #   A[idx_row,idx_col] = 1 
+      # }
+      # 
+      # # bottom-left diagonal
+      # if(i + 1  <= n & j - 1 > 0){
+      #   idx_col = n*j + i - 1
+      #   A[idx_row,idx_col] = 1 
+      # }
     }
   }
   
@@ -265,4 +346,46 @@ add_nodes_stan_data = function(stan_data)
 }
 
 
-
+# 
+# add_adjacency_matrix_stan_data = function(stan_data, n, m){
+#   
+#   N = n * m
+#   A = matrix(nrow = N, ncol = N, 0)
+#   
+#   for(i in 1:n){
+#     
+#     for(j in 1:m){
+#       
+#       #cat('\n Processing ', i, j)
+#       idx_row = m*(i-1) + j
+#       
+#       if(i - 1 > 0){
+#         idx_col = m*(i-2) + j
+#         A[idx_row,idx_col] = 1 
+#       }
+#       
+#       if(i + 1 <= n){
+#         idx_col = m*i + j
+#         A[idx_row,idx_col] = 1 
+#       }
+#       
+#       if(j - 1 > 0){
+#         idx_col = m*(i-1) + j - 1
+#         A[idx_row,idx_col] = 1 
+#       }
+#       
+#       if(j + 1 <= m){
+#         idx_col = m*(i-1) + j +1
+#         A[idx_row,idx_col] = 1 
+#       }
+#       
+#     }
+#   }
+#   
+#   stan_data$N = N
+#   stan_data$Adj = A
+#   stan_data$Adj_n = sum(A) / 2
+#   
+#   return(stan_data)
+# }
+# 
