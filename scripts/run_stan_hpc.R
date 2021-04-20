@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 4
-stan_model = "210416a"
+stan_model = "210419"
 JOBID = round(runif(1,1,1000))
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
@@ -58,7 +58,7 @@ age_max = 105
 # load CDC data
 deathByAge_1 = readRDS(path.to.CDC.data.1) # cdc data before 2020-09-05 with first age specification 
 deathByAge_2 = readRDS(path.to.CDC.data.2) # cdc data after 2020-09-05 with second age specification 
-plot_data(deathByAge_1, deathByAge_2, outdir = outdir.fig)
+if(0) plot_data(deathByAge_1, deathByAge_2, outdir = outdir.fig)
 
 # compare to JHU data
 JHUData = readRDS(path.to.JHU.data)
@@ -89,7 +89,7 @@ if(grepl('210319d2|210319d3', stan_model)){
   cat("\n Using a GP \n")
   stan_data$age = matrix(stan_data$age, nrow = 106, ncol = 1)
 }
-if(grepl('210326|210329|210330|210406|210409|210412|210415|210416', stan_model)){
+if(grepl('210326|210329|210330|210406|210409|210412|210415|210416|210419', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data)
 }
@@ -119,7 +119,7 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,"
 # fit 
 cat("\n Start sampling \n")
 model = rstan::stan_model(path.to.stan.model)
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=3, seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.95))
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=1, seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15))
 
 # save
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_",run_tag,".rds"))

@@ -89,20 +89,17 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   }
   
   # inverse sum of deaths
-  inv_sum_deaths = vector(mode = 'double', length = W)
+  inv_sum_deaths = vector(mode = 'double', length = W_OBSERVED)
   for(w in 1:W_OBSERVED){
      
     deaths_w = sum(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w])
     
     if(deaths_w == 0){
-      inv_sum_deaths[IDX_WEEKS_OBSERVED[w]] = 1
+      inv_sum_deaths[w] = 1
       next
     }
       
-    inv_sum_deaths[IDX_WEEKS_OBSERVED[w]] = 1 / deaths_w
-  }
-  for(w in c(1:W)[!1:W %in% IDX_WEEKS_OBSERVED] ){
-      inv_sum_deaths[w] = inv_sum_deaths[w-1]
+    inv_sum_deaths[w] = 1 / deaths_w
   }
 
   # create stan data list
@@ -198,7 +195,7 @@ add_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
 
 add_diff_matrix = function(stan_data, n, m, order = 2)
 {
-  require(Matrix)
+  library(Matrix)
   
   In <- Diagonal(n)   
   Im <- Diagonal(m) 
