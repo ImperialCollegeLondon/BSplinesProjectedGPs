@@ -109,12 +109,12 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data1, data2
   return(tmp1)
 }
 
-find_overall_cumulative_deaths = function(fit, df_week, deaths_predict_var){
+find_overall_cumulative_deaths = function(fit_cum, df_week, deaths_predict_var){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
   
-  if(is.null(fit)) return()
+  if(is.null(fit_cum)) return()
   
   # extract samples
   fit_samples = rstan::extract(fit_cum)

@@ -7,6 +7,8 @@ data{
   int<lower=0,upper=W> W_OBSERVED; // number of weeks observed 
   int<lower=1, upper=W1> IDX_WEEKS_OBSERVED1[W_OBSERVED1]; // index of the weeks observed with the first age band specification
   int<lower=1, upper=W2> IDX_WEEKS_OBSERVED2[W_OBSERVED2]; // index of the weeks observed with the first age band specification
+  int<lower=1, upper=W1> IDX_WEEKS_OBSERVED_REPEATED1[W1]; // index of the weeks observed where missing is equal to the previous one the first age band specification
+  int<lower=1, upper=W2> IDX_WEEKS_OBSERVED_REPEATED2[W2]; // index of the weeks observed with the first age band specification
   int<lower=0,upper=W> w_ref_index; // week index to compare the death prob
   int<lower=0> A; // continuous age
   int<lower=0> B1; // first age band specification
@@ -47,12 +49,14 @@ data{
 
 parameters {
   vector[N] beta_raw; 
-  vector<lower=0>[W] nu;
-  real<lower=0> lambda[W];
+  vector<lower=0>[W-1] nu_raw;
+  vector<lower=0>[W-1] lambda_raw;
   real<lower=0> tau;
 }
 
 transformed parameters {
+  vector<lower=0>[W] nu = append_row(nu_raw[IDX_WEEKS_OBSERVED_REPEATED1], nu_raw[IDX_WEEKS_OBSERVED_REPEATED2]);
+  vector<lower=0>[W] lambda = append_row(lambda_raw[IDX_WEEKS_OBSERVED_REPEATED1], lambda_raw[IDX_WEEKS_OBSERVED_REPEATED2]);
   vector<lower=0>[W] theta = nu ./ (1 + nu);
   matrix[A,W] phi;
   matrix[B2,W] phi_reduced;
@@ -92,7 +96,7 @@ transformed parameters {
 
 
 model {
-  nu ~ exponential(1);
+  nu_raw ~ exponential(1);
   tau ~ gamma(1, 0.0001);
   
   target += -0.5 * dot_self(beta_raw[node1] - beta_raw[node2]);
@@ -103,10 +107,9 @@ model {
   D1 * beta_raw ~ normal(0, tau);
   // D2 * beta_raw ~ normal(0, tau);
   
-  for(w in 1:W)
-    lambda[w] ~ exponential( inv_sum_deaths[w]);
-
   for(w in 1:W_OBSERVED1){
+    
+    lambda_raw[w] ~ exponential( inv_sum_deaths[w]);
 
     target += neg_binomial_lpmf(deaths_1[idx_non_missing_1[1:N_idx_non_missing[w],w],w] | 
                                 alpha_reduced_1[idx_non_missing_1[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED1[w]] , theta[IDX_WEEKS_OBSERVED1[w]] );
@@ -120,7 +123,10 @@ model {
   }
 
   for(w in 1:W_OBSERVED2){
+    
     int w_cum = w + W_OBSERVED1;
+    
+    lambda_raw[w_cum] ~ exponential( inv_sum_deaths[w_cum]);
 
     target += neg_binomial_lpmf(deaths_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w],w] | 
                                 alpha_reduced_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w], IDX_WEEKS_OBSERVED2[w]] , theta[IDX_WEEKS_OBSERVED2[w] + W1] );

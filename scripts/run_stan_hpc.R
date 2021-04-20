@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 4
-stan_model = "210415b"
+stan_model = "210416a"
 JOBID = round(runif(1,1,1000))
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
@@ -48,7 +48,7 @@ outdir.fit = file.path(outdir, run_tag, "fits")
 outdir.data = file.path(outdir, run_tag, "data")
 outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
 if(!dir.exists(outdir.fit)) dir.create( outdir.fit, recursive = T)
-if(!dir.exists( dirname(outdir.fig)) )dir.create( dirname(outdir.fig), recursive = T)
+if(!dir.exists( dirname(outdir.fig)) ) dir.create( dirname(outdir.fig), recursive = T)
 
 cat("\n outfile.dir is ", file.path(outdir, run_tag), '\n')
 
@@ -119,7 +119,7 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,"
 # fit 
 cat("\n Start sampling \n")
 model = rstan::stan_model(path.to.stan.model)
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=1, seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15))
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=3, seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.95))
 
 # save
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_",run_tag,".rds"))

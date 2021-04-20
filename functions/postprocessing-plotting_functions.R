@@ -46,23 +46,27 @@ plot_convergence_diagnostics = function(fit, title, suffix, outfile)
   
   posterior <- as.array(fit)
   
-  pars = list("rho", "sigma", "beta", c('aw', 'sd_aw'), c('sd_a_raw', 'a0_raw'), 'a_age', 'a0', c('gamma', 'tau', 'p'))
+  pars = list("rho", "sigma", "beta", c('aw', 'sd_aw'), c('sd_a_raw', 'a0_raw'), 'a_age', 'a0', c('gamma', 'tau', 'p'), 'nu', 'lambda', 'tau')
 
   for(j in 1:length(pars))
   {                     
     
     par = pars[[j]]
     
-    if(any(!par %in% names(fit))) next
+    if(sum(grepl(par, names(fit))) == 0 | sum(grepl(par, names(fit))) > 60) next
     
     p_trace = bayesplot::mcmc_trace(posterior, regex_pars = par) + labs(title = title) 
-    p_pairs = gridExtra::arrangeGrob(bayesplot::mcmc_pairs(posterior, regex_pars = par), top = title)
+    ggsave(p_trace, file = paste0(outfile, "-convergence_diagnostics-", "trace_plots_", suffix, '_', Code, "_", par,".png") , w= 10, h = 10)
+    
     p_intervals = bayesplot::mcmc_intervals(posterior, regex_pars = par, prob = 0.95,
                                             prob_outer = 0.95) + labs(title = title)
-    
-    ggsave(p_trace, file = paste0(outfile, "-convergence_diagnostics-", "trace_plots_", suffix, '_', Code, "_", par,".png") , w= 10, h = 10)
-    ggsave(p_pairs, file =  paste0(outfile, "-convergence_diagnostics-", "pairs_plots_",  suffix, '_',Code, "_", par,".png") , w= 15, h = 15)
     ggsave(p_intervals, file = paste0(outfile, "-convergence_diagnostics-", "intervals_plots_",  suffix, '_',Code, "_", par,".png") , w=10, h = 10)
+    
+    if(length(par) > 1){
+      p_pairs = gridExtra::arrangeGrob(bayesplot::mcmc_pairs(posterior, regex_pars = par), top = title)
+      ggsave(p_pairs, file =  paste0(outfile, "-convergence_diagnostics-", "pairs_plots_",  suffix, '_',Code, "_", par,".png") , w= 15, h = 15)
+      
+    }
     
   }
   
@@ -266,45 +270,98 @@ plot_covariance_matrix = function(fit_cum, outdir)
 plot_posterior_plane = function(fit_cum, df_week, outdir)
 {
   
-euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
-fit_samples = extract(fit_cum)
+  euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
+  fit_samples = extract(fit_cum)
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  tmp1 = as.data.table( reshape2::melt( fit_samples$beta ))
+  row_name = 'week_index'
+  column_name = 'basis_function_index'
+  if(max(tmp1$Var3) == stan_data$A) column_name = 'Age'
+  setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps),
+                       q_label=p_labs),
+              by=c(column_name, row_name)]
+  tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
+  setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
+  tmp1 = merge(tmp1, df_week, by = row_name)
+  
+  ## Smooth estimate
+  z <- as.matrix( dcast(tmp1, get(column_name)~get(row_name), value.var = "M")[,-1] ) 
+  z.range <- range(z)
+  z =  t( apply(z, 2, rev) )
+  
+  png(paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4, units = 'in', res = 300, pointsize = 10)
+  plot.new()
+  plot.window(
+    xlim = c(1 - 0.5, stan_data$W + 0.5),
+    ylim = c(1 - 0.5, stan_data$num_basis + 0.5))
+  image  (1:stan_data$W, 1:stan_data$num_basis,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
+  contour(1:stan_data$W, 1:stan_data$num_basis,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
+  axis(side = 1, at = seq(1, stan_data$W, 5), labels = format(unique(tmp1$date), '%b %Y')[seq(1, stan_data$W, 5)], lwd = 0.5)
+  axis(side = 2, at = seq(1, stan_data$num_basis, 2), labels = rev(seq(2, stan_data$num_basis, 2)), lwd = 0.5)
+  box(lwd = 0.5)
+  mtext("Date", side = 1, adj = 0.5, line = -1.5, outer = TRUE)
+  mtext("Basis function index",     side = 2, adj = 0.5, line = -1.5, outer = TRUE)
+  dev.off()
+  
+}
 
-ps <- c(0.5, 0.025, 0.975)
-p_labs <- c('M','CL','CU')
-tmp1 = as.data.table( reshape2::melt( fit_samples$beta ))
-row_name = 'week_index'
-column_name = 'basis_function_index'
-if(max(tmp1$Var3) == stan_data$A) column_name = 'Age'
-setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
-tmp1 = tmp1[, list( 	q= quantile(value, prob=ps),
-                     q_label=p_labs),
-            by=c(column_name, row_name)]
-tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
-setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
-tmp1 = merge(tmp1, df_week, by = row_name)
+plot_posterior_plane_with_data = function(deathByAge_1, deathByAge_2, outdir)
+{
+  library(magick)
+  
+  deathByAge_1 = subset(deathByAge_1, code == Code)
+  deathByAge_2 = subset(deathByAge_2, code == Code)
+  
+  range_d = range(na.omit(c(deathByAge_1$daily.deaths, deathByAge_2$daily.deaths)))
+  
+  p1 = ggplot(deathByAge_1, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = daily.deaths )) + 
+    theme_bw() +
+    scale_fill_viridis_c(trans = 'sqrt', limits = range_d) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b %Y"), date_breaks = '1 month') + 
+    scale_y_discrete(expand = c(0,0)) + 
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 70, vjust  = 0.5), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank()) +
+    labs(x = '', y = 'Age groups first specification',
+         fill = 'Reported covid-19 deaths')
+  
+  p2 = ggplot(deathByAge_2, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = daily.deaths )) + 
+    theme_bw() +
+    scale_fill_viridis_c(trans = 'sqrt', limits = range_d) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b %Y"), date_breaks = '1 month') + 
+    scale_y_discrete(expand = c(0,0)) + 
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 70, vjust  = 0.5), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank()) +
+    labs(x = '', y = 'Age groups second specification',
+         fill = 'Reported covid-19 deaths')
+  
+  p = ggpubr::ggarrange(p1, p2, nrow = 2,common.legend = T, legend = 'bottom')
+  ggsave(p, file = paste0(outdir, '-panel_right_', Code, '.png'), h = 8, w = 6)
+  
+  panel.left <- magick::image_read(paste0(outdir, '-PlanePosterior_', Code, '.png'))
+  panel.right <- magick::image_read(paste0(outdir, '-panel_right_', Code, '.png'))
+  
+  p = image_append(c( image_scale(panel.left, "2200"), panel.right) )
 
-## Smooth estimate
-z <- as.matrix( dcast(tmp1, get(column_name)~get(row_name), value.var = "M")[,-1] ) 
-z.range <- range(z)
-z =  t( apply(z, 2, rev) )
-
-pdf(paste0(outdir, '-PlanePosterior_', Code, '.pdf'),width=7,height=7,paper='special')
-plot.new()
-plot.window(
-  xlim = c(1 - 0.5, stan_data$W + 0.5),
-  ylim = c(1 - 0.5, stan_data$num_basis + 0.5))
-image  (1:stan_data$W, 1:stan_data$num_basis,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
-contour(1:stan_data$W, 1:stan_data$num_basis,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
-axis(side = 1, at = seq(1, stan_data$W, 5), labels = format(unique(tmp1$date), '%b %Y')[seq(1, stan_data$W, 5)], lwd = 0.5)
-axis(side = 2, at = seq(1, stan_data$num_basis, 2), labels = rev(seq(2, stan_data$num_basis, 2)), lwd = 0.5)
-box(lwd = 0.5)
-mtext("Date", side = 1, adj = 0.5, line = -1.5, outer = TRUE)
-mtext("Basis function index",     side = 2, adj = 0.5, line = -1.5, outer = TRUE)
-dev.off()
+  savepdf(paste0(outdir, '-PlanePosterior_Data_', Code, '.pdf'), w = 14.5*2, h = 10*2)
+  plot(p)
+  dev.off()
 
 }
 
-
+savepdf <- function(fname, width=16, height=10)
+{
+  pdf(fname, width=width/2.54, height=height/2.54)
+  par(mgp=c(2.2,0.45,0), tcl=-0.4, mar=c(0,0,0,0))
+}
 
 # plot_posterior_plane = function(fit_cum, df_week, outdir)
 # {

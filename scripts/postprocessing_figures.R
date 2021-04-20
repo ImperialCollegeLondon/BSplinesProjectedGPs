@@ -66,6 +66,7 @@ plot_covariance_matrix(fit_cum, outdir = outdir.fig)
 
 # Plot estimate plane with CAR of ICAR
 plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
+plot_posterior_plane_with_data(deathByAge_1, deathByAge_2, outdir.fig)
 
 # Plot probability ratio of deaths over time
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting_2, data1, data2, outdir.table)

@@ -30,8 +30,16 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   W = length(WEEKS)
   IDX_WEEKS_OBSERVED = which(WEEKS %in% unique(tmp$date))
   W_OBSERVED = length(IDX_WEEKS_OBSERVED)
+  
+  IDX_WEEKS_NON_OBSERVED = which(!WEEKS %in% unique(tmp$date))
+  IDX_WEEKS_OBSERVED_REPEATED = IDX_WEEKS_OBSERVED
+  if(length(IDX_WEEKS_NON_OBSERVED) > 0)
+    IDX_WEEKS_OBSERVED_REPEATED = insert.at(IDX_WEEKS_OBSERVED, IDX_WEEKS_NON_OBSERVED - 1, IDX_WEEKS_NON_OBSERVED - 1)
+  stopifnot(length(IDX_WEEKS_OBSERVED_REPEATED) == W)
+  
   if(!all(WEEKS %in% unique(tmp$date)))
     cat('\n Missing weeks: ', as.character(unique(tmp$date)[which(!WEEKS %in% unique(tmp$date))]), '\n')
+  
   df_week <<- data.table(week_index = 1:W, date = WEEKS)
   if(W == 0) return(NULL)
   
@@ -105,6 +113,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                 list(W = W,
                      W_OBSERVED = W_OBSERVED,
                      IDX_WEEKS_OBSERVED = IDX_WEEKS_OBSERVED,
+                     IDX_WEEKS_OBSERVED_REPEATED = IDX_WEEKS_OBSERVED_REPEATED,
                      w_ref_index = w_ref_index,
                      A = nrow(df_age_continuous),
                      age = df_age_continuous$age,
@@ -136,6 +145,9 @@ merge_stan_data = function(stan_data_1, stan_data_2)
     W_OBSERVED = stan_data_1$W_OBSERVED + stan_data_2$W_OBSERVED, 
     IDX_WEEKS_OBSERVED1 = stan_data_1$IDX_WEEKS_OBSERVED, 
     IDX_WEEKS_OBSERVED2 = stan_data_2$IDX_WEEKS_OBSERVED, 
+    IDX_WEEKS_OBSERVED_REPEATED1 = stan_data_1$IDX_WEEKS_OBSERVED_REPEATED,
+    IDX_WEEKS_OBSERVED_REPEATED2 = stan_data_2$IDX_WEEKS_OBSERVED_REPEATED,
+    IDX_WEEKS = 1:(stan_data_1$W + stan_data_2$W),
     w_ref_index = ifelse(is.na(stan_data_1$w_ref_index), stan_data_2$w_ref_index + stan_data_1$W, stan_data_1$w_ref_index),
     A = stan_data_1$A, # same in both
     age = stan_data_1$age, # same in both
@@ -175,6 +187,8 @@ add_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
 
   stan_data$num_basis = length(knots) + spline_degree - 1
 
+  stan_data$IDX_BASIS = 1:stan_data$num_basis
+  
   stan_data$BASIS = bsplines(stan_data$age, knots, spline_degree)
   
   stopifnot(all( apply(stan_data$BASIS, 1, sum) > 0  ))
@@ -389,3 +403,11 @@ add_nodes_stan_data = function(stan_data)
 #   return(stan_data)
 # }
 # 
+insert.at <- function(a, pos, ...){
+  dots <- list(...)
+  stopifnot(length(dots)==length(pos))
+  result <- vector("list",2*length(pos)+1)
+  result[c(TRUE,FALSE)] <- split(a, cumsum(seq_along(a) %in% (pos+1)))
+  result[c(FALSE,TRUE)] <- dots
+  unlist(result)
+}
