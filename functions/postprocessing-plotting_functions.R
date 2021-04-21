@@ -280,9 +280,7 @@ plot_posterior_plane = function(fit_cum, df_week, outdir)
   column_name = 'basis_function_index'
   if(max(tmp1$Var3) == stan_data$A) column_name = 'Age'
   setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps),
-                       q_label=p_labs),
-              by=c(column_name, row_name)]
+  tmp1 = tmp1[, list(q = quantile(value, prob=ps), q_label=p_labs), by=c(column_name, row_name)]
   tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
   setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
   tmp1 = merge(tmp1, df_week, by = row_name)

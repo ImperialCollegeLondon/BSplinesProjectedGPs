@@ -41,15 +41,21 @@ path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-2
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
-outdir.fit = file.path(outdir, run_tag, "fits")
+outdir.fit.post = file.path(outdir, run_tag, "fits")
 outdir.data = file.path(outdir, run_tag, "data")
-outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
+outdir.fig.post = file.path(outdir, run_tag, "figure", run_tag)
 outdir.table = file.path(outdir, run_tag, "table", run_tag)
+
+# code
+locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
+Code = locations[location.index,]$code
 
 # load image 
 load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
 df_week = rbind(df_week1, df_week2)
 df_week$week_index = 1:nrow(df_week)
+outdir.fig = outdir.fig.post
+outdir.fit = outdir.fit.post
 
 # load fit cumulative deaths
 cat("Load fits \n")

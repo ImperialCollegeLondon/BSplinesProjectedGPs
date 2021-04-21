@@ -10,6 +10,12 @@ location.index = 4
 stan_model = "210419"
 JOBID = round(runif(1,1,1000))
 
+if(0)
+{
+  outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/results'
+  JOBID = 18389
+}
+
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
 if(length(args_line) > 0)
@@ -71,7 +77,8 @@ compare_CDC_JHU_error_plot(CDC_data_1 = deathByAge_1, CDC_data_2 = deathByAge_2,
 create_map_age(age_max)
 
 # find locations 
-locations = unique(deathByAge_1$loc_label) 
+locations = unique(select(deathByAge_1, loc_label, code)) 
+saveRDS(locations, file = file.path(outdir.fit, paste0("location_", run_tag,".rds")))
 loc_name = locations[location.index]
 cat("Location ", as.character(loc_name), "\n")
 

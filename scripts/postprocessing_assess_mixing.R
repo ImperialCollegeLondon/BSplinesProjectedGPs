@@ -6,10 +6,10 @@ library(data.table)
 library(dplyr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
-outdir = file.path('~/Downloads', "results")
-location.index = 2
-stan_model = "210319d3"
-JOBID = 782737
+outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/results'
+location.index = 3
+stan_model = "210419"
+JOBID = 18389
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -36,20 +36,26 @@ source(file.path(indir, "functions", "stan_utility_functions.R"))
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
-outdir.fit = file.path(outdir, run_tag, "fits")
+outdir.fit.post = file.path(outdir, run_tag, "fits")
 outdir.data = file.path(outdir, run_tag, "data")
-outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
+outdir.fig.post = file.path(outdir, run_tag, "figure", run_tag)
 outdir.table = file.path(outdir, run_tag, "table", run_tag)
 
-if( !dir.exists( dirname(outdir.fig) ) ) dir.create( dirname(outdir.fig), recursive = T)
+if( !dir.exists( dirname(outdir.fig.post) ) ) dir.create( dirname(outdir.fig.post), recursive = T)
 if( !dir.exists( dirname(outdir.table) ) ) dir.create( dirname(outdir.table), recursive = T)
+
+# code
+locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
+Code = locations[location.index,]$code
 
 # load image 
 load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
+outdir.fig = outdir.fig.post
+outdir.fit = outdir.fit.post
 
 # load fit cumulative deaths
 cat("Load fits \n")
-file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
+file = file.path(outdir.fit.post, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
 
 # Convergence diagnostics
