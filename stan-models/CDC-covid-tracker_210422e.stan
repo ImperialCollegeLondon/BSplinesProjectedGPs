@@ -25,12 +25,26 @@ data{
   int deaths_2[B2,W_OBSERVED2]; // cumulative deaths in age band b at time n
   int age_from_state_age_strata_1[B1]; // age from of age band b
   int age_to_state_age_strata_1[B1];// age to of age band b
-  int min_count_censored_1[B1,W_OBSERVED1]; // range of the censored data
-  int max_count_censored_1[B1,W_OBSERVED1]; // range of the censored data
   int age_from_state_age_strata_2[B2]; // age from of age band b
   int age_to_state_age_strata_2[B2];// age to of age band b
-  int min_count_censored_2[B2,W_OBSERVED2]; // range of the censored data
-  int max_count_censored_2[B2,W_OBSERVED2]; // range of the censored data
+  
+  // missing death count
+  int<lower=0> N_missing_1; // number of missing series 
+  int<lower=0, upper=1> start_or_end_period_1[N_missing_1]; // is the serie cut by the end of the period
+  int<lower=1,upper=B1> age_missing_1[N_missing_1]; // ageindex with the missing death count in the serie
+  int<lower=1,upper=W1> N_weeks_missing_1[N_missing_1]; // numbers weeks missing in each serie
+  int<lower=-1,upper=W1> idx_weeks_missing_1[max(N_weeks_missing_1),N_missing_1]; // number of weeks missing in the series
+  int<lower=-1> sum_missing_deaths_1[N_missing_1]; // summ of the missing deaths over the serie if it ends before the period
+  int min_count_censored_1[N_missing_1]; // range of the censored data if it ends after the period
+  int max_count_censored_1[N_missing_1]; // range of the censored data if it ends after the period
+  int<lower=0> N_missing_2; // number of missing series 
+  int<lower=0, upper=1> start_or_end_period_2[N_missing_2]; // is the serie cut by the end of the period
+  int<lower=1,upper=B2> age_missing_2[N_missing_2]; // ageindex with the missing death count in the serie
+  int<lower=1,upper=W2> N_weeks_missing_2[N_missing_2]; // numbers weeks missing in each serie
+  int<lower=-1,upper=W2> idx_weeks_missing_2[max(N_weeks_missing_2),N_missing_2]; // number of weeks missing in the series
+  int<lower=-1> sum_missing_deaths_2[N_missing_2]; // summ of the missing deaths over the serie if it ends before the period
+  int min_count_censored_2[N_missing_2]; // range of the censored data if it ends after the period
+  int max_count_censored_2[N_missing_2]; // range of the censored data if it ends after the period
   
   //splines
   int num_basis;
@@ -41,18 +55,22 @@ data{
   int<lower=0> N_edges;
   int<lower=1, upper=N> node1[N_edges];
   int<lower=1, upper=N> node2[N_edges];
+  int D1_N; // W * num_basis
+  int D2_N; // W * num_basis
+  matrix[D1_N, W * num_basis] D1; // second order diff matrix on the rows
+  matrix[D2_N, W * num_basis] D2; // second order diff matrix on the columns
 }
 
 parameters {
   vector[N] beta_raw; 
-  vector<lower=0>[W-1] nu_raw;
+  real<lower=0> nu;
   vector<lower=0>[W-1] lambda_raw;
+   real<lower=0> tau;
 }
 
 transformed parameters {
-  vector<lower=0>[W] nu = append_row(nu_raw[IDX_WEEKS_OBSERVED_REPEATED1], nu_raw[IDX_WEEKS_OBSERVED_REPEATED2]);
   vector<lower=0>[W] lambda = append_row(lambda_raw[IDX_WEEKS_OBSERVED_REPEATED1], lambda_raw[IDX_WEEKS_OBSERVED_REPEATED2]);
-  vector<lower=0>[W] theta = nu ./ (1 + nu);
+  real<lower=0> theta = nu / (1 + nu);
   matrix[A,W] phi;
   matrix[B2,W] phi_reduced;
   matrix[A,W] alpha;
@@ -65,7 +83,7 @@ transformed parameters {
     
     phi[:,w] = softmax( to_vector(beta[w,:]*BASIS) ); 
     
-    alpha[:,w] = phi[:,w] * lambda[w] / nu[w];
+    alpha[:,w] = phi[:,w] * lambda[w] / nu;
     
   }
   
@@ -89,26 +107,24 @@ transformed parameters {
 
 }
 
-
 model {
-  nu_raw ~ exponential(1);
+  nu ~ exponential(1);
   
   target += -0.5 * dot_self(beta_raw[node1] - beta_raw[node2]);
   // soft sum-to-zero constraint on phi)
   sum(beta_raw) ~ normal(0, 0.001 * N);  // equivalent to mean(phi) ~ normal(0,0.001)
 
+  // second order RW prior
+  D1 * beta_raw ~ normal(0, tau);
+  // D2 * beta_raw ~ normal(0, tau);
+  
   for(w in 1:W_OBSERVED1){
     
     lambda_raw[w] ~ exponential( inv_sum_deaths[w]);
 
     target += neg_binomial_lpmf(deaths_1[idx_non_missing_1[1:N_idx_non_missing[w],w],w] | 
-                                alpha_reduced_1[idx_non_missing_1[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED1[w]] , theta[IDX_WEEKS_OBSERVED1[w]] );
+                                alpha_reduced_1[idx_non_missing_1[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED1[w]] , theta );
   
-    if(N_idx_missing[w] > 0){
-      for(n in 1:N_idx_missing[w])
-        for(i in min_count_censored_1[idx_missing_1[n,w],w]:max_count_censored_1[idx_missing_1[n,w],w])
-          target += neg_binomial_lpmf( i | alpha_reduced_1[idx_missing_1[n,w], IDX_WEEKS_OBSERVED1[w]] , theta[IDX_WEEKS_OBSERVED1[w]] ) ;
-    }
         
   }
 
@@ -118,17 +134,35 @@ model {
     lambda_raw[w_cum] ~ exponential( inv_sum_deaths[w]);
 
     target += neg_binomial_lpmf(deaths_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w],w] | 
-                                alpha_reduced_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w], IDX_WEEKS_OBSERVED2[w]] , theta[IDX_WEEKS_OBSERVED2[w] + W1] );
-  
-    if(N_idx_missing[w_cum] > 0){
-      for(n in 1:N_idx_missing[w_cum])
-        for(i in min_count_censored_2[idx_missing_2[n,w],w]:max_count_censored_2[idx_missing_2[n,w],w])
-          target += neg_binomial_lpmf( i | alpha_reduced_2[idx_missing_2[n,w], IDX_WEEKS_OBSERVED2[w]] , theta[w_cum] ) ;
-    }
+                                alpha_reduced_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w], IDX_WEEKS_OBSERVED2[w]] , theta );
         
   }
   
+  for(n in 1:N_missing_1){
+    if(!start_or_end_period_1[n])
+    {
+       target += neg_binomial_lpmf( sum_missing_deaths_1[n] | sum(alpha_reduced_1[age_missing_1[n],idx_weeks_missing_1[1:N_weeks_missing_1[n], n]]) , theta ) ;
+
+    } else {
+       for(i in min_count_censored_1[n]:max_count_censored_1[n])
+          target += neg_binomial_lpmf( i | sum(alpha_reduced_1[age_missing_1[n],idx_weeks_missing_1[1:N_weeks_missing_1[n], n]]) , theta ) ;
+    }
   }
+      
+  
+  for(n in 1:N_missing_2){
+    
+    if(!start_or_end_period_2[n])
+    {
+       target += neg_binomial_lpmf( sum_missing_deaths_2[n] | sum(alpha_reduced_2[age_missing_2[n],idx_weeks_missing_2[1:N_weeks_missing_2[n], n]]) , theta ) ;
+
+    } else {
+       for(i in min_count_censored_2[n]:max_count_censored_2[n])
+          target += neg_binomial_lpmf( i | sum(alpha_reduced_2[age_missing_2[n],idx_weeks_missing_2[1:N_weeks_missing_2[n], n]]) , theta ) ;
+    }
+  }
+      
+}
 
 generated quantities {
   real log_lik = 0;
@@ -145,29 +179,22 @@ generated quantities {
     probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ phi_reduced[:,w_ref_index];
     
     // predict deaths
-    deaths_predict[:,w] = neg_binomial_rng(alpha[:,w], theta[w]);
+    deaths_predict[:,w] = neg_binomial_rng(alpha[:,w], theta );
     
   }
   
   for(w in 1:W1){
-    deaths_predict_state_age_strata_1[:,w] = neg_binomial_rng(alpha_reduced_1[:,w], theta[w]);
+    deaths_predict_state_age_strata_1[:,w] = neg_binomial_rng(alpha_reduced_1[:,w], theta );
   }
   
   for(w in 1:W2){
-    int w_cum = w + W1;
-    deaths_predict_state_age_strata_2[:,w] = neg_binomial_rng(alpha_reduced_2[:,w], theta[w_cum]);
+    deaths_predict_state_age_strata_2[:,w] = neg_binomial_rng(alpha_reduced_2[:,w], theta );
   }
   
     for(w in 1:W_OBSERVED1){
 
     log_lik += neg_binomial_lpmf(deaths_1[idx_non_missing_1[1:N_idx_non_missing[w],w],w] | 
-                                alpha_reduced_1[idx_non_missing_1[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED1[w]] , theta[IDX_WEEKS_OBSERVED1[w]] );
-  
-    if(N_idx_missing[w] > 0){
-      for(n in 1:N_idx_missing[w])
-        for(i in min_count_censored_1[idx_missing_1[n,w],w]:max_count_censored_1[idx_missing_1[n,w],w])
-          log_lik += neg_binomial_lpmf( i | alpha_reduced_1[idx_missing_1[n,w], IDX_WEEKS_OBSERVED1[w]] , theta[IDX_WEEKS_OBSERVED1[w]] ) ;
-    }
+                                alpha_reduced_1[idx_non_missing_1[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED1[w]] , theta );
         
   }
 
@@ -175,14 +202,32 @@ generated quantities {
     int w_cum = w + W_OBSERVED1;
 
     log_lik += neg_binomial_lpmf(deaths_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w],w] | 
-                                alpha_reduced_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w], IDX_WEEKS_OBSERVED2[w]] , theta[IDX_WEEKS_OBSERVED2[w] + W1] );
-  
-    if(N_idx_missing[w_cum] > 0){
-      for(n in 1:N_idx_missing[w_cum])
-        for(i in min_count_censored_2[idx_missing_2[n,w],w]:max_count_censored_2[idx_missing_2[n,w],w])
-          log_lik += neg_binomial_lpmf( i | alpha_reduced_2[idx_missing_2[n,w], IDX_WEEKS_OBSERVED2[w]] , theta[w_cum] ) ;
-    }
+                                alpha_reduced_2[idx_non_missing_2[1:N_idx_non_missing[w_cum],w], IDX_WEEKS_OBSERVED2[w]] , theta );
         
+  }
+  
+    for(n in 1:N_missing_1){
+    if(!start_or_end_period_1[n])
+    {
+       log_lik += neg_binomial_lpmf( sum_missing_deaths_1[n] | sum(alpha_reduced_1[age_missing_1[n],idx_weeks_missing_1[1:N_weeks_missing_1[n], n]]) , theta ) ;
+
+    } else {
+       for(i in min_count_censored_1[n]:max_count_censored_1[n])
+          log_lik += neg_binomial_lpmf( i | sum(alpha_reduced_1[age_missing_1[n],idx_weeks_missing_1[1:N_weeks_missing_1[n], n]]) , theta ) ;
+    }
+  }
+      
+  
+  for(n in 1:N_missing_2){
+    
+    if(!start_or_end_period_2[n])
+    {
+       log_lik += neg_binomial_lpmf( sum_missing_deaths_2[n] | sum(alpha_reduced_2[age_missing_2[n],idx_weeks_missing_2[1:N_weeks_missing_2[n], n]]) , theta ) ;
+
+    } else {
+       for(i in min_count_censored_2[n]:max_count_censored_2[n])
+          log_lik += neg_binomial_lpmf( i | sum(alpha_reduced_2[age_missing_2[n],idx_weeks_missing_2[1:N_weeks_missing_2[n], n]]) , theta ) ;
+    }
   }
 
 }

@@ -104,6 +104,52 @@ plot_posterior_predictive_checks = function(data_1, data_2, variable, lab, outdi
   p = gridExtra::grid.arrange(p1,p2, ncol = 2, widths = c(0.8, 1))
   ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
   
+  # posterior predictive check
+  p1 = ggplot(data_1, aes(x = date)) + 
+    geom_point(aes(y = M), col = "black", size = 1) +
+    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
+    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
+    theme_bw() +
+    labs(y = lab, x = "") + 
+    facet_wrap(~age, ncol = 3, scale = 'free_y') + 
+    theme(axis.text.x = element_text(angle = 90))
+  
+  p2 = ggplot(data_2, aes(x = date)) + 
+    geom_point(aes(y = M), col = "black", size = 1) +
+    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black")+
+    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
+    theme_bw() +
+    labs(y = lab, x = "") + 
+    facet_wrap(~age, ncol = 3, scale = 'free_y') + 
+    theme(axis.text.x = element_text(angle = 90))
+  
+  p = gridExtra::grid.arrange(p1,p2, ncol = 2)
+  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 10, limitsize = FALSE)
+  
+  p = ggplot(rbind(data_1,data_2), aes(x = date)) + 
+    geom_point(aes(y = M), col = "black", size = 1) +
+    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black")+
+    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
+    theme_bw() +
+    labs(y = lab, x = "") + 
+    facet_wrap(~age, scale = 'free_y') + 
+    theme(axis.text.x = element_text(angle = 90))
+  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_3_", Code,".png") , w= 15, h = 9, limitsize = FALSE)
+  
+}
+
+plot_posterior_predictive_checks_cumulative = function(tmp1, tmp2, outdir)
+{
+  tmp = rbind(tmp1, tmp2)
+  p = ggplot(tmp, aes(x = date)) + 
+    geom_point(aes(y = M)) +
+    geom_errorbar(aes(ymin = CL, ymax = CU)) +
+    geom_ribbon(aes(ymin = min_count_censored, ymax = max_count_censored), alpha = 0.5, fill = 'red') +
+    geom_point(aes(y = sum_missing_deaths), col = 'blue') +
+    facet_wrap(~age, scale = 'free') + 
+    labs(x = '', y = 'cumulative deaths')
+  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+  
 }
 
 compare_CDCestimation_JHU_error_plot_uncertainty = function(CDC_data, JHU_data, var.cum.deaths.CDC, outdir)
@@ -160,7 +206,7 @@ compare_CDCestimation_JHU_error_plot = function(CDC_data, JHU_data, var.cum.deat
     theme_bw() + 
     scale_color_viridis_d(option = "B", direction = -1, end = 0.8) + 
     scale_fill_viridis_d(option = "B", direction = -1, end = 0.8)
-  ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_uncertainty.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_uncertainty_', Code, '.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
 }
 
 compare_CDCestimation_scrapeddata_error_plot_uncertainty = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir)
@@ -191,7 +237,7 @@ compare_CDCestimation_scrapeddata_error_plot_uncertainty = function(CDC_data, sc
     theme_bw() + 
     scale_color_viridis_d(option = "B", direction = -1, end = 0.8) + 
     scale_fill_viridis_d(option = "B", direction = -1, end = 0.8) 
-  ggsave(p, file = paste0(outdir, '-comparison_scraped_data_CDC_uncertainty.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_scraped_data_CDC_uncertainty_', Code, '.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
 }
 
 plot_covariance_matrix = function(fit_cum, outdir)

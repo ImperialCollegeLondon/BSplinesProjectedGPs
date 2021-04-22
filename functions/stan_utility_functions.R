@@ -2,7 +2,6 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   
   tmp = subset(deathByAge, loc_label == loc_name)
   tmp <<- tmp[order(date, age_from)]
-  Code <<- unique(tmp$code)
   
   # some checks
   stopifnot(all(tmp$age_from <= tmp$age_to))
@@ -53,10 +52,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   N_idx_missing = vector(mode = 'integer', length = W_OBSERVED)
   idx_non_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
   idx_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
-  min_count_censored = matrix(nrow = B, ncol = W_OBSERVED, -1)
-  max_count_censored = matrix(nrow = B, ncol = W_OBSERVED, -1)
   deaths = matrix(nrow = B, ncol = W_OBSERVED, 0)
-  
   
   for(w in 1:W_OBSERVED){
     
@@ -78,15 +74,82 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     idx_non_missing[,w] = c(.idx_non_missing, rep(-1, B - length(.idx_non_missing)))
     idx_missing[,w] = c(.idx_missing, rep(-1, B - length(.idx_missing)))
     
-    # min and max of missing data
-    min_count_censored[.idx_missing,w] = df_missing$min.daily.deaths
-    max_count_censored[.idx_missing,w] = df_missing$max.daily.deaths 
-    
     # deaths
     tmp1 = copy(tmp)
     tmp1[is.na(daily.deaths), daily.deaths := -1]
     deaths = reshape2::dcast(tmp1, age ~ date, value.var = 'daily.deaths')[,-1]
   }
+  
+  # create map for series with missing data
+  N_missing = 0
+  min_count_censored = c(); max_count_censored = c(); start_or_end_period = c(); sum_missing_deaths = c(); age_missing = c()
+  idx_weeks_missing = list(); N_weeks_missing = c()
+  
+  for(a in 1:length(unique(tmp$age)))
+  {
+    Age = unique(tmp$age)[a]
+    tmp1 = subset(tmp, age == Age)
+    
+    .idx_missing = which(is.na(tmp1$daily.deaths))
+    
+    if(length(.idx_missing) == 0) next
+    
+    stopifnot(all(min(.idx_missing):max(.idx_missing) %in% .idx_missing))
+
+    N_missing = N_missing + 1
+    N_weeks_missing[N_missing] = length(.idx_missing)
+    idx_weeks_missing[[N_missing]] = .idx_missing
+    
+    age_missing[N_missing] = a
+    with_male_female = any(tmp1$max.daily.deaths[.idx_missing] > 9)
+    
+    if(length(.idx_missing) == nrow(tmp1)){ # only NA the entire period
+      start_or_end_period[N_missing] = 1
+      sum_missing_deaths[N_missing] = -1
+      min_count_censored[N_missing] = sum(tmp1$min.daily.deaths[.idx_missing])
+      max_count_censored[N_missing] = 9*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female  
+    }
+    
+    if(max(.idx_missing) == nrow(tmp1) & min(.idx_missing) != 1){ # 0 and then only NA until the end
+      start_or_end_period[N_missing] = 1
+      sum_missing_deaths[N_missing] = -1
+      min_count_censored[N_missing] = sum(tmp1$min.daily.deaths[.idx_missing])
+      max_count_censored[N_missing] = 9*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
+    }
+    
+    if(max(.idx_missing) != nrow(tmp1) & min(.idx_missing) == 1){ # start with NA and finish before the end of the period
+      
+      if(tmp1[ min(.idx_missing)]$min.daily.deaths > 0 & tmp1[ min(.idx_missing)]$max.daily.deaths %% 9 == 0){
+        start_or_end_period[N_missing] = 0
+        sum_missing_deaths[N_missing] = 10*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
+        min_count_censored[N_missing] = -1
+        max_count_censored[N_missing] = -1
+      } else{
+        start_or_end_period[N_missing] = 1
+        sum_missing_deaths[N_missing] = -1
+        min_count_censored[N_missing] = sum(tmp1$min.daily.deaths[.idx_missing])
+        max_count_censored[N_missing] = 10*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
+      }
+      
+    }
+    
+    if(max(.idx_missing) != nrow(tmp1) & min(.idx_missing) != 1){ # NA inside the period
+
+      start_or_end_period[N_missing] = 0
+      sum_missing_deaths[N_missing] = 10*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
+      min_count_censored[N_missing] = -1
+      max_count_censored[N_missing] = -1
+      
+    }
+    
+    stopifnot(length(min_count_censored[N_missing]) == 1)
+    stopifnot(length(max_count_censored[N_missing]) == 1)
+  }
+  
+  for(n in 1:N_missing){
+    idx_weeks_missing[[n]] = c(idx_weeks_missing[[n]], rep(-1, max(N_weeks_missing) - N_weeks_missing[n]) )
+  }
+  idx_weeks_missing = matrix(unlist(idx_weeks_missing), nrow = max(N_weeks_missing) , ncol = N_missing)
   
   # inverse sum of deaths
   inv_sum_deaths = vector(mode = 'double', length = W_OBSERVED)
@@ -121,6 +184,12 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      N_idx_missing = N_idx_missing,
                      idx_non_missing = idx_non_missing,
                      idx_missing = idx_missing,
+                     N_missing = N_missing,
+                     start_or_end_period = start_or_end_period,
+                     age_missing = age_missing,
+                     N_weeks_missing = N_weeks_missing,
+                     idx_weeks_missing = idx_weeks_missing,
+                     sum_missing_deaths = sum_missing_deaths,
                      min_count_censored = min_count_censored,
                      max_count_censored = max_count_censored,
                      deaths = deaths,
@@ -162,7 +231,19 @@ merge_stan_data = function(stan_data_1, stan_data_2)
     idx_non_missing_2 = stan_data_2$idx_non_missing,
     idx_missing_1 = stan_data_1$idx_missing,
     idx_missing_2 = stan_data_2$idx_missing,
-    
+
+    N_missing_1 = stan_data_1$N_missing,
+    N_missing_2 = stan_data_2$N_missing,
+    start_or_end_period_1 = stan_data_1$start_or_end_period,
+    start_or_end_period_2 = stan_data_2$start_or_end_period,
+    age_missing_1 = stan_data_1$age_missing,
+    age_missing_2 = stan_data_2$age_missing,
+    N_weeks_missing_1 = stan_data_1$N_weeks_missing,
+    N_weeks_missing_2 = stan_data_2$N_weeks_missing,
+    idx_weeks_missing_1 = stan_data_1$idx_weeks_missing,
+    idx_weeks_missing_2 = stan_data_2$idx_weeks_missing,
+    sum_missing_deaths_1 = stan_data_1$sum_missing_deaths,
+    sum_missing_deaths_2 = stan_data_2$sum_missing_deaths,
     min_count_censored_1 = stan_data_1$min_count_censored,
     min_count_censored_2 = stan_data_2$min_count_censored,
     max_count_censored_1 = stan_data_1$max_count_censored,

@@ -70,13 +70,24 @@ predictive_checks_table_1 = make_predictive_checks_table(fit_cum, df_week1, df_a
 predictive_checks_table_2 = make_predictive_checks_table(fit_cum, df_week2, df_age_reporting_2, 
                                                          data2, 'deaths_predict_state_age_strata_2', outdir.table)
 
+
 # plot predictive checks table
 cat("\nMake posterior predive checks plots \n")
 plot_posterior_predictive_checks(predictive_checks_table_1, predictive_checks_table_2, 
                                  variable = "daily.deaths", 
                                  lab = "Daily COVID-19 deaths", 
                                  outdir = outdir.fig)
- 
 
+# plot predictive check cumulative
+cat("\nMake posterior predive checks cumulative plots \n")
+tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting_1$age_cat), 'deaths_predict')
+setnames(tmp, 'age_state_index', 'age_index')
+tmp = add_intervals_missing_data(tmp, stan_data_1)
+tmp2 = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting_2$age_cat), 'deaths_predict')
+setnames(tmp2, 'age_state_index', 'age_index')
+tmp2 = add_intervals_missing_data(tmp2, stan_data_2)
+plot_posterior_predictive_checks_cumulative(tmp, tmp2, outdir.fig)
+
+ 
 cat("\n End postprocessing_assess_mixing.R \n")
 

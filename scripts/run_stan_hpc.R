@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 4
-stan_model = "210419"
+stan_model = "210422d"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -33,7 +33,7 @@ if(length(args_line) > 0)
 }
 
 # stan model
-#options(mc.cores = parallel::detectCores())
+options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
@@ -79,7 +79,8 @@ create_map_age(age_max)
 # find locations 
 locations = unique(select(deathByAge_1, loc_label, code)) 
 saveRDS(locations, file = file.path(outdir.fit, paste0("location_", run_tag,".rds")))
-loc_name = locations[location.index]
+loc_name = locations[location.index,]$loc_label
+Code = locations[location.index,]$code
 cat("Location ", as.character(loc_name), "\n")
 
 # reference date
@@ -96,11 +97,11 @@ if(grepl('210319d2|210319d3', stan_model)){
   cat("\n Using a GP \n")
   stan_data$age = matrix(stan_data$age, nrow = 106, ncol = 1)
 }
-if(grepl('210326|210329|210330|210406|210409|210412|210415|210416|210419', stan_model)){
+if(grepl('210326|210329|210330|210406|210409|210412|210415|210416|210419|210422', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data)
 }
-if(grepl('210406|210409|210412b|210415b|210416', stan_model)){
+if(grepl('210406|210409|210412b|210415b|210416|210422a|210422b|210422d|210422e', stan_model)){
   cat("\n Adding adjacency matrix on splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
@@ -108,11 +109,11 @@ if(grepl('210408', stan_model)){
   cat("\n Adding adjacency matrix on week and age \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$A)
 }
-if(grepl('210408b|210409|210412a|210412b|210415b|210416', stan_model)){
+if(grepl('210408b|210409|210412a|210412b|210415b|210416|210422a|210422e', stan_model)){
   cat("\n Adding nodes index \n")
   stan_data = add_nodes_stan_data(stan_data)
 }
-if(grepl('210416', stan_model)){
+if(grepl('210416|210422d|210422e', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
@@ -126,7 +127,7 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,"
 # fit 
 cat("\n Start sampling \n")
 model = rstan::stan_model(path.to.stan.model)
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=1, seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15))
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=3, seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15))
 
 # save
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_",run_tag,".rds"))
@@ -134,4 +135,3 @@ cat('\n Save file', file, '\n')
 while(!file.exists(file)){
   tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
 }
-
