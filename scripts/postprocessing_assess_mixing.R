@@ -50,6 +50,8 @@ Code = locations[location.index,]$code
 
 # load image 
 load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
+df_week = rbind(df_week1, df_week2)
+df_week$week_index = 1:nrow(df_week)
 outdir.fig = outdir.fig.post
 outdir.fit = outdir.fit.post
 
@@ -80,13 +82,13 @@ plot_posterior_predictive_checks(predictive_checks_table_1, predictive_checks_ta
 
 # plot predictive check cumulative
 cat("\nMake posterior predive checks cumulative plots \n")
-tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting_1$age_cat), 'deaths_predict')
-setnames(tmp, 'age_state_index', 'age_index')
-tmp = add_intervals_missing_data(tmp, stan_data_1)
+tmp1 = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting_1$age_cat), 'deaths_predict')
+setnames(tmp1, 'age_state_index', 'age_index')
+tmp1 = add_intervals_missing_data(tmp1, stan_data_1)
 tmp2 = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting_2$age_cat), 'deaths_predict')
 setnames(tmp2, 'age_state_index', 'age_index')
-tmp2 = add_intervals_missing_data(tmp2, stan_data_2)
-plot_posterior_predictive_checks_cumulative(tmp, tmp2, outdir.fig)
+tmp2 = add_intervals_missing_data(tmp2, stan_data_2, base_week_idx = stan_data_1$W)
+plot_posterior_predictive_checks_cumulative(tmp1, tmp2, outdir.fig)
 
  
 cat("\n End postprocessing_assess_mixing.R \n")

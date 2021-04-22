@@ -30,12 +30,13 @@ make_predictive_checks_table = function(fit, df_week, df_state_age, data, deaths
   return(tmp1)
 }
 
-add_intervals_missing_data = function(data, stan_data){
+add_intervals_missing_data = function(data, stan_data, base_week_idx = 0){
   
   # include missing information
   df_missing = as.data.table( reshape2::melt(stan_data$idx_weeks_missing) )[,-1]
   setnames(df_missing, 1:2, c('idx_serie_missing', 'week_index'))
   df_missing = subset(df_missing, week_index != -1)
+  df_missing[, week_index := week_index + base_week_idx]
   
   tmp = data.table(age_index = stan_data$age_missing,
                    min_count_censored = stan_data$min_count_censored,
@@ -47,6 +48,7 @@ add_intervals_missing_data = function(data, stan_data){
   tmp[sum_missing_deaths == -1, sum_missing_deaths := NA]
   
   df_missing = merge(df_missing, tmp, by = 'idx_serie_missing')
+  
   tmp1 = merge(data, df_missing, by = c('week_index', 'age_index'), all.x = T)
 
   return(tmp1)
