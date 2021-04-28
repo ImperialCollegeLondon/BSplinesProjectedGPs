@@ -72,40 +72,27 @@ plot_convergence_diagnostics = function(fit, title, suffix, outfile)
   
 }
 
-plot_posterior_predictive_checks = function(data_1, data_2, variable, lab, outdir)
+plot_posterior_predictive_checks = function(data, variable, lab, outdir)
 {
   
-  data_1[, PPP := paste0('inside CI: ', round(mean(na.omit(inside.CI))*100, digits = 2), '%'), by = 'date']
-  data_1[, date_ppp := paste0(as.character(date), ' - ', PPP)]
-  data_2[, PPP := paste0('inside CI: ', round(mean(na.omit(inside.CI))*100, digits = 2), '%'), by = 'date']
-  data_2[, date_ppp := paste0(as.character(date), ' - ', PPP)]
+  data[, PPP := paste0('inside CI: ', round(mean(na.omit(inside.CI))*100, digits = 2), '%'), by = 'date']
+  data[, date_ppp := paste0(as.character(date), ' - ', PPP)]
   
-  Code = unique(data_1$code)
+  Code = unique(data$code)
   
-  # posterior predictive check
-  p1 = ggplot(data_1, aes(x = age)) + 
+  # posterior data check
+  p = ggplot(data, aes(x = age)) + 
     geom_point(aes(y = M), col = "black", size = 1) +
     geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
     geom_point(aes(y = get(variable)), col = "red", size = 1) + 
     theme_bw() +
     labs(y = lab, x = "") + 
-    facet_wrap(~date_ppp, ncol = 3) + 
+    facet_wrap(~date_ppp, scale = 'free_y') + 
     theme(axis.text.x = element_text(angle = 90))
-  
-  p2 = ggplot(data_2, aes(x = age)) + 
-    geom_point(aes(y = M), col = "black", size = 1) +
-    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black")+
-    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
-    theme_bw() +
-    labs(y = lab, x = "") + 
-    facet_wrap(~date_ppp, ncol = 3) + 
-    theme(axis.text.x = element_text(angle = 90))
-  
-  p = gridExtra::grid.arrange(p1,p2, ncol = 2, widths = c(0.8, 1))
   ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
   
   # posterior predictive check
-  p1 = ggplot(data_1, aes(x = date)) + 
+  p = ggplot(data, aes(x = date)) + 
     geom_point(aes(y = M), col = "black", size = 1) +
     geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
     geom_point(aes(y = get(variable)), col = "red", size = 1) + 
@@ -113,42 +100,52 @@ plot_posterior_predictive_checks = function(data_1, data_2, variable, lab, outdi
     labs(y = lab, x = "") + 
     facet_wrap(~age, ncol = 3, scale = 'free_y') + 
     theme(axis.text.x = element_text(angle = 90))
-  
-  p2 = ggplot(data_2, aes(x = date)) + 
-    geom_point(aes(y = M), col = "black", size = 1) +
-    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black")+
-    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
-    theme_bw() +
-    labs(y = lab, x = "") + 
-    facet_wrap(~age, ncol = 3, scale = 'free_y') + 
-    theme(axis.text.x = element_text(angle = 90))
-  
-  p = gridExtra::grid.arrange(p1,p2, ncol = 2)
-  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 10, limitsize = FALSE)
-  
-  p = ggplot(rbind(data_1,data_2), aes(x = date)) + 
-    geom_point(aes(y = M), col = "black", size = 1) +
-    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black")+
-    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
-    theme_bw() +
-    labs(y = lab, x = "") + 
-    facet_wrap(~age, scale = 'free_y') + 
-    theme(axis.text.x = element_text(angle = 90))
-  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_3_", Code,".png") , w= 15, h = 9, limitsize = FALSE)
+  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
   
 }
 
-plot_posterior_predictive_checks_cumulative = function(tmp1, tmp2, outdir)
+plot_posterior_predictive_checks_cumulative = function(tmp, outdir)
 {
-  tmp = rbind(tmp1, tmp2)
+
   p = ggplot(tmp, aes(x = date)) + 
     geom_point(aes(y = M)) +
     geom_errorbar(aes(ymin = CL, ymax = CU)) +
     geom_ribbon(aes(ymin = min_count_censored, ymax = max_count_censored), alpha = 0.5, fill = 'red') +
-    geom_point(aes(y = sum_missing_deaths), col = 'blue') +
-    facet_wrap(~age, scale = 'free') + 
+    geom_point(aes(y = sum_count_censored), col = 'blue') +
+    facet_wrap(~age, scale = 'free_y') + 
     labs(x = '', y = 'cumulative deaths')
   ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+  
+}
+
+plot_sum_missing_deaths = function(tmp, outdir)
+{
+  
+  p = ggplot(tmp, aes(x = date)) + 
+    geom_point(aes(y = M)) +
+    geom_errorbar(aes(ymin = CL, ymax = CU)) +
+    geom_ribbon(aes(ymin = min_count_censored, ymax = max_count_censored), alpha = 0.5, fill = 'red') +
+    geom_point(aes(y = sum_count_censored), col = 'blue') +
+    facet_wrap(~age, scale = 'free_y') + 
+    labs(x = '', y = 'cumulative deaths')
+  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_missing_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+  
+}
+
+plot_sum_bounded_missing_deaths = function(tmp, outdir)
+{
+  
+  tmp = copy(tmp1)
+  tmp[, dummy := 1]
+  
+  p = ggplot(tmp, aes(x = dummy) ) + 
+    geom_point(aes(y = M)) +
+    geom_errorbar(aes(ymin = CL, ymax = CU), width = 0.25) +
+    geom_errorbar(aes(ymin = min_count_censored, ymax = max_count_censored),  color = 'red', position = 'dodge', width = 0.25) +
+    geom_point(aes(y = sum_count_censored), col = 'blue') +
+    facet_wrap(~age, scale = 'free_y') + 
+    labs(x = '', y = 'cumulative deaths')
+  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_missing_sum_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
   
 }
 
@@ -209,16 +206,27 @@ compare_CDCestimation_JHU_error_plot = function(CDC_data, JHU_data, var.cum.deat
   ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_uncertainty_', Code, '.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
 }
 
-compare_CDCestimation_scrapeddata_error_plot_uncertainty = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir)
+compare_CDCestimation_scrapeddata_error_plot_uncertainty = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
 {
   # prepare JHU data
-  scraped_data = select(as.data.table(scraped_data), code, date, age, cum.deaths)
+  if(overall){
+    scraped_data = as.data.table(scraped_data)
+    scraped_data = scraped_data[, list(cum.deaths = sum(cum.deaths)), by = c('code', 'date')]
+  } else {
+    scraped_data = select(as.data.table(scraped_data), code, date, age, cum.deaths)
+    
+  }
   scraped_data[, date := as.Date(date)]
   scraped_data[, CL := NA]
   scraped_data[, CU := NA]
   
   # prepare CDC estimations
-  CDC_data = select(as.data.table(CDC_data), code, date, age, var.cum.deaths.CDC, CL, CU)
+  if(overall){
+  CDC_data = select(as.data.table(CDC_data), code, date, var.cum.deaths.CDC, CL, CU)
+  } else {
+    CDC_data = select(as.data.table(CDC_data), code, date, age, var.cum.deaths.CDC, CL, CU)
+    
+  }
   setnames(CDC_data, var.cum.deaths.CDC, 'cum.deaths')
   
   # plot
@@ -233,11 +241,18 @@ compare_CDCestimation_scrapeddata_error_plot_uncertainty = function(CDC_data, sc
   p = ggplot(tmp2, aes(x = date, y = cum.deaths)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
     geom_line(aes(col = source), size = 1) +
-    facet_wrap(~age,  scale = 'free') + 
     theme_bw() + 
     scale_color_viridis_d(option = "B", direction = -1, end = 0.8) + 
     scale_fill_viridis_d(option = "B", direction = -1, end = 0.8) 
+  
+  if(!overall)
+    p = p +facet_wrap(~age,  scale = 'free') 
+  
   ggsave(p, file = paste0(outdir, '-comparison_scraped_data_CDC_uncertainty_', Code, '.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+  
+  if(overall)
+    ggsave(p, file = paste0(outdir, '-comparison_scraped_data_CDC_uncertainty_overall_', Code, '.png'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+  
 }
 
 plot_covariance_matrix = function(fit_cum, outdir)
@@ -450,7 +465,7 @@ plot_probability_ratio = function(probability_ratio_table, outdir)
     geom_hline(aes(yintercept = 1)) +
     facet_wrap(~age, scales = 'free')+ 
     labs(x = '', y = 'ratio probability of one additional death /n to the first week')
-  ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 10, h = 10)
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 15, h = 12)
 }
 
 # 

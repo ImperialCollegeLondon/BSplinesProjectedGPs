@@ -1,13 +1,7 @@
-compare_CDC_JHU_error_plot = function(CDC_data_1, CDC_data_2 = NULL, JHU_data, var.daily.deaths.CDC, outdir)
+compare_CDC_JHU_error_plot = function(CDC_data, JHU_data, var.daily.deaths.CDC, outdir)
 {
   # find errors 
-  CDCdata = CDC_data_1[, list(cumulative_deaths.CDC = sum(na.omit( get(var.daily.deaths.CDC) ))), by = c('code', 'date')]
-  # CDCdata = subset(CDCdata, cumulative_deaths.CDC > 0)
-  if(!is.null(CDC_data_2)){
-    tmp = CDC_data_2[, list(cumulative_deaths.CDC = sum(na.omit( get(var.daily.deaths.CDC) ))), by = c('code', 'date')]
-    # tmp = subset(tmp, cumulative_deaths.CDC > 0)
-    CDCdata = rbind(CDCdata, tmp)
-  }
+  CDCdata = CDC_data[, list(cumulative_deaths.CDC = sum(na.omit( get(var.daily.deaths.CDC) ))), by = c('code', 'date')]
   
   # take cumulative deaths
   CDCdata[, cumulative_deaths.CDC := cumsum(cumulative_deaths.CDC), by = c('code', 'code')]
@@ -43,60 +37,9 @@ compare_CDC_JHU_error_plot = function(CDC_data_1, CDC_data_2 = NULL, JHU_data, v
   ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
 }
 
-plot_data = function(deathByAge_1, deathByAge_2, outdir)
+plot_data = function(deathByAge, outdir)
 {
-  # age group first specification
-  p = ggplot(deathByAge_1, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = daily.deaths )) + 
-    facet_wrap(~loc_label) + 
-    theme_bw() +
-    scale_fill_viridis_c(trans = 'sqrt', breaks = c(100,300,600)) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    scale_y_discrete(expand = c(0,0)) + 
-    theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 90), 
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank()) +
-    labs(x = '', y = 'Age groups first specification',
-         fill = 'Reported covid-19 deaths')
-  ggsave(p, file = paste0(outdir, '-data_part1.png'), w = 12, h = 10)
-  
-  p1 = ggplot(deathByAge_1, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = min.daily.deaths )) + 
-    facet_wrap(~loc_label) + 
-    theme_bw() +
-    scale_fill_viridis_c(breaks = c(0,10,20,30),
-                         limits = c(0,max(na.omit(deathByAge_1$max.daily.deaths)))) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    scale_y_discrete(expand = c(0,0)) + 
-    theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 90), 
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank()) +
-    labs(x = '', y = 'Age groups first specification',
-         fill = "Bound's value covid-19 deaths", title = 'lower bound')
-  
-  p2 = ggplot(deathByAge_1, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = max.daily.deaths )) + 
-    facet_wrap(~loc_label) + 
-    theme_bw() +
-    scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                         limits = c(0,max(na.omit(deathByAge_1$max.daily.deaths)))) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    scale_y_discrete(expand = c(0,0)) + 
-    theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 90), 
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank()) +
-    labs(x = '', y = 'Age groups first specification',
-         fill = "Bound's value covid-19 deaths", title = 'upper bound')
-  
-  p = ggpubr::ggarrange(p1, p2, ncol = 2, common.legend = T, legend = 'bottom')
-  ggsave(p, file = paste0(outdir, '-data_bounds_part1.png'), w = 17, h = 10)
-  
-  
-  ## age group second specification
-  p = ggplot(deathByAge_2, aes(x = date, y = age)) + 
+  p = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = daily.deaths )) + 
     facet_wrap(~loc_label) + 
     theme_bw() +
@@ -104,17 +47,19 @@ plot_data = function(deathByAge_1, deathByAge_2, outdir)
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = 'Age groups second specification',
+          axis.text.x = element_text(angle = 90), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank()) +
+    labs(x = '', y = 'Age groups first specification',
          fill = 'Reported covid-19 deaths')
-  ggsave(p, file = paste0(outdir, '-data_part2.png'), w = 12, h = 10)
+  ggsave(p, file = paste0(outdir, '-deathByAge.png'), w = 12, h = 10)
   
-  p1 = ggplot(deathByAge_2, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = min.daily.deaths )) + 
+  p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = min.sum.daily.deaths )) + 
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30),
-                         limits = c(0,max(na.omit(deathByAge_2$max.daily.deaths)))) +
+                         limits = c(0,max(na.omit(deathByAge$max.sum.daily.deaths)))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -122,14 +67,14 @@ plot_data = function(deathByAge_1, deathByAge_2, outdir)
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank()) +
     labs(x = '', y = 'Age groups first specification',
-         fill = "Bound's value covid-19 deaths", title = 'lower bound')
+         fill = "Value sum of covid-19 daily deaths", title = 'lower bound')
   
-  p2 = ggplot(deathByAge_2, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = max.daily.deaths )) + 
+  p2 = ggplot(deathByAge, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = max.sum.daily.deaths )) + 
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                         limits = c(0,max(na.omit(deathByAge_2$max.daily.deaths)))) +
+                         limits = c(0,max(na.omit(deathByAge$max.sum.daily.deaths)))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -137,10 +82,26 @@ plot_data = function(deathByAge_1, deathByAge_2, outdir)
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank()) +
     labs(x = '', y = 'Age groups first specification',
-         fill = "Bound's value covid-19 deaths", title = 'upper bound')
+         fill = "Value sum of covid-19 daily deaths", title = 'upper bound')
   
-  p = ggpubr::ggarrange(p1, p2, ncol = 2, common.legend = T, legend = 'bottom')
-  ggsave(p, file = paste0(outdir, '-data_bounds_part2.png'), w = 17, h = 10)
+  p3 = ggplot(deathByAge, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = sum.daily.deaths )) + 
+    facet_wrap(~loc_label) + 
+    theme_bw() +
+    scale_fill_viridis_c(breaks = c(0,10,20,30), 
+                         limits = c(0,max(na.omit(deathByAge$max.sum.daily.deaths)))) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    scale_y_discrete(expand = c(0,0)) + 
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 90), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank()) +
+    labs(x = '', y = 'Age groups first specification',
+         fill = "Value sum of covid-19 daily deaths", title = 'exact sum')
+  
+  p = ggpubr::ggarrange(p1, p2, p3,  common.legend = T, legend = 'bottom')
+  ggsave(p, file = paste0(outdir, '-deathByAge_boundaries.png'), w = 20, h = 25)
+  
   
 }
 

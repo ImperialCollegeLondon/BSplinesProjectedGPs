@@ -1,4 +1,5 @@
-prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_spec = NULL){
+prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_spec = NULL)
+  {
   
   tmp = subset(deathByAge, loc_label == loc_name)
   tmp <<- tmp[order(date, age_from)]
@@ -17,12 +18,6 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   # number of age groups 
   B = nrow(df_state_age_strata)
   
-  # select number of weeks: at least one positive deaths
-  # tmp1 = tmp[, list(n_deaths = sum(na.omit(COVID.19.Deaths))), by = 'date']
-  # dates = subset(tmp1, n_deaths >0)$date
-  # tmp = subset(tmp, date %in% dates)
-  # tmp <<- tmp
-  
   # map week index
   last_date_previous_spec <<- max(tmp$date)
   WEEKS = seq.Date(min(tmp$date), max(tmp$date), by = 'week')
@@ -32,8 +27,11 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   
   IDX_WEEKS_NON_OBSERVED = which(!WEEKS %in% unique(tmp$date))
   IDX_WEEKS_OBSERVED_REPEATED = IDX_WEEKS_OBSERVED
-  if(length(IDX_WEEKS_NON_OBSERVED) > 0)
+  if(length(IDX_WEEKS_NON_OBSERVED) > 0){
     IDX_WEEKS_OBSERVED_REPEATED = insert.at(IDX_WEEKS_OBSERVED, IDX_WEEKS_NON_OBSERVED - 1, IDX_WEEKS_NON_OBSERVED - 1)
+    IDX_WEEKS_OBSERVED_REPEATED[(IDX_WEEKS_NON_OBSERVED+1):W] = IDX_WEEKS_OBSERVED_REPEATED[(IDX_WEEKS_NON_OBSERVED+1):W] -1
+  }
+    
   stopifnot(length(IDX_WEEKS_OBSERVED_REPEATED) == W)
   
   if(!all(WEEKS %in% unique(tmp$date)))
@@ -49,9 +47,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   
   # create map of original age groups without NA 
   N_idx_non_missing = vector(mode = 'integer', length = W_OBSERVED)
-  N_idx_missing = vector(mode = 'integer', length = W_OBSERVED)
   idx_non_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
-  idx_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
   deaths = matrix(nrow = B, ncol = W_OBSERVED, 0)
   
   for(w in 1:W_OBSERVED){
@@ -61,19 +57,13 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     tmp1 = subset(tmp, date == Week & !is.na( daily.deaths ))
     df_non_missing = unique(select(tmp1, age_from, age_to, age))
     
-    tmp1 = subset(tmp, date == Week & is.na( daily.deaths ))
-    df_missing = unique(select(tmp1, age_from, age_to, age, min.daily.deaths, max.daily.deaths))
-    
-    # number of non missing and missing age category 
+    # number of non missing age category 
     N_idx_non_missing[w] = nrow(df_non_missing)
-    N_idx_missing[w] = nrow(df_missing)
     
-    # index missing and non missing
+    # index non missing
     .idx_non_missing = which(df_state_age_strata$age %in% df_non_missing$age)
-    .idx_missing = which(df_state_age_strata$age %in% df_missing$age)
     idx_non_missing[,w] = c(.idx_non_missing, rep(-1, B - length(.idx_non_missing)))
-    idx_missing[,w] = c(.idx_missing, rep(-1, B - length(.idx_missing)))
-    
+
     # deaths
     tmp1 = copy(tmp)
     tmp1[is.na(daily.deaths), daily.deaths := -1]
@@ -82,70 +72,63 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   
   # create map for series with missing data
   N_missing = 0
-  min_count_censored = c(); max_count_censored = c(); start_or_end_period = c(); sum_missing_deaths = c(); age_missing = c()
+  min_count_censored = c(); max_count_censored = c(); sum_count_censored = c(); 
+  start_or_end_period = c(); age_missing = c()
   idx_weeks_missing = list(); N_weeks_missing = c()
   
-  for(a in 1:length(unique(tmp$age)))
+  for( a in 1:length(unique(tmp$age)) )
   {
     Age = unique(tmp$age)[a]
     tmp1 = subset(tmp, age == Age)
     
     .idx_missing = which(is.na(tmp1$daily.deaths))
+    .idx_missing_full = which(df_week$date %in% tmp1[is.na(daily.deaths)]$date)
     
     if(length(.idx_missing) == 0) next
     
     stopifnot(all(min(.idx_missing):max(.idx_missing) %in% .idx_missing))
 
     N_missing = N_missing + 1
-    N_weeks_missing[N_missing] = length(.idx_missing)
-    idx_weeks_missing[[N_missing]] = .idx_missing
+    N_weeks_missing[N_missing] = length(.idx_missing_full)
+    idx_weeks_missing[[N_missing]] = .idx_missing_full
     
     age_missing[N_missing] = a
-    with_male_female = any(tmp1$max.daily.deaths[.idx_missing] > 9)
     
-    if(length(.idx_missing) == nrow(tmp1)){ # only NA the entire period
+    if(is.na(unique(tmp1$sum.daily.deaths[.idx_missing])))
+    {
+      stopifnot(length(unique(tmp1$min.sum.daily.deaths[.idx_missing])) == 1)
+      min_count_censored[N_missing] = unique(tmp1$min.sum.daily.deaths[.idx_missing])
+      max_count_censored[N_missing] = unique(tmp1$max.sum.daily.deaths[.idx_missing])
+      sum_count_censored[N_missing] = -1
       start_or_end_period[N_missing] = 1
-      sum_missing_deaths[N_missing] = -1
-      min_count_censored[N_missing] = sum(tmp1$min.daily.deaths[.idx_missing])
-      max_count_censored[N_missing] = 9*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female  
-    }
-    
-    if(max(.idx_missing) == nrow(tmp1) & min(.idx_missing) != 1){ # 0 and then only NA until the end
-      start_or_end_period[N_missing] = 1
-      sum_missing_deaths[N_missing] = -1
-      min_count_censored[N_missing] = sum(tmp1$min.daily.deaths[.idx_missing])
-      max_count_censored[N_missing] = 9*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
-    }
-    
-    if(max(.idx_missing) != nrow(tmp1) & min(.idx_missing) == 1){ # start with NA and finish before the end of the period
-      
-      if(tmp1[ min(.idx_missing)]$min.daily.deaths > 0 & tmp1[ min(.idx_missing)]$max.daily.deaths %% 9 == 0){
-        start_or_end_period[N_missing] = 0
-        sum_missing_deaths[N_missing] = 10*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
-        min_count_censored[N_missing] = -1
-        max_count_censored[N_missing] = -1
-      } else{
-        start_or_end_period[N_missing] = 1
-        sum_missing_deaths[N_missing] = -1
-        min_count_censored[N_missing] = sum(tmp1$min.daily.deaths[.idx_missing])
-        max_count_censored[N_missing] = 10*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
-      }
-      
-    }
-    
-    if(max(.idx_missing) != nrow(tmp1) & min(.idx_missing) != 1){ # NA inside the period
-
+    } else {
+      sum_count_censored[N_missing] = unique(tmp1$sum.daily.deaths[.idx_missing])
+      min_count_censored[N_missing] = max_count_censored[N_missing] = -1
       start_or_end_period[N_missing] = 0
-      sum_missing_deaths[N_missing] = 10*2^with_male_female + sum(tmp1$min.daily.deaths[.idx_missing]) - 2^with_male_female 
-      min_count_censored[N_missing] = -1
-      max_count_censored[N_missing] = -1
-      
     }
-    
-    stopifnot(length(min_count_censored[N_missing]) == 1)
-    stopifnot(length(max_count_censored[N_missing]) == 1)
+
   }
   
+  for(n in 1:N_missing){
+    if( any(c(IDX_WEEKS_NON_OBSERVED - 1, IDX_WEEKS_NON_OBSERVED + 1) %in% idx_weeks_missing[[n]]) ){
+      
+      idx_m1 = which(idx_weeks_missing[[n]] == IDX_WEEKS_NON_OBSERVED - 1)
+      idx_p1 = which(idx_weeks_missing[[n]] == IDX_WEEKS_NON_OBSERVED + 1)
+      
+      if(length(idx_m1) == 1 & length(idx_p1) == 0){
+        idx_weeks_missing[[n]] = c(idx_weeks_missing[[n]], IDX_WEEKS_NON_OBSERVED)
+        N_weeks_missing[[n]] = N_weeks_missing[[n]] + 1
+      } else if(length(idx_m1) == 0 & length(idx_p1) == 1){
+        idx_weeks_missing[[n]] = c(IDX_WEEKS_NON_OBSERVED, idx_weeks_missing[[n]])
+        N_weeks_missing[[n]] = N_weeks_missing[[n]] + 1
+      } else {
+        idx_weeks_missing[[n]] = insert.at(idx_weeks_missing[[n]], idx_p1 - 1, IDX_WEEKS_NON_OBSERVED)
+        N_weeks_missing[[n]] = N_weeks_missing[[n]] + 1
+      }
+
+    }
+  }
+      
   for(n in 1:N_missing){
     idx_weeks_missing[[n]] = c(idx_weeks_missing[[n]], rep(-1, max(N_weeks_missing) - N_weeks_missing[n]) )
   }
@@ -172,6 +155,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   stan_data = c(stan_data, 
                 list(W = W,
                      W_OBSERVED = W_OBSERVED,
+                     IDX_WEEKS = 1:W,
                      IDX_WEEKS_OBSERVED = IDX_WEEKS_OBSERVED,
                      IDX_WEEKS_OBSERVED_REPEATED = IDX_WEEKS_OBSERVED_REPEATED,
                      w_ref_index = w_ref_index,
@@ -181,80 +165,19 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      age_from_state_age_strata = df_state_age_strata$age_from_index,
                      age_to_state_age_strata = df_state_age_strata$age_to_index,
                      N_idx_non_missing = N_idx_non_missing,
-                     N_idx_missing = N_idx_missing,
                      idx_non_missing = idx_non_missing,
-                     idx_missing = idx_missing,
                      N_missing = N_missing,
                      start_or_end_period = start_or_end_period,
                      age_missing = age_missing,
                      N_weeks_missing = N_weeks_missing,
                      idx_weeks_missing = idx_weeks_missing,
-                     sum_missing_deaths = sum_missing_deaths,
+                     sum_count_censored = sum_count_censored,
                      min_count_censored = min_count_censored,
                      max_count_censored = max_count_censored,
                      deaths = deaths,
                      inv_sum_deaths = inv_sum_deaths
                 ))
 
-  return(stan_data)
-}
-
-merge_stan_data = function(stan_data_1, stan_data_2)
-{
-  
-  stan_data = list(
-    W = stan_data_1$W + stan_data_2$W,
-    W1 = stan_data_1$W, 
-    W2 = stan_data_2$W, 
-    W_OBSERVED1 = stan_data_1$W_OBSERVED, 
-    W_OBSERVED2 = stan_data_2$W_OBSERVED, 
-    W_OBSERVED = stan_data_1$W_OBSERVED + stan_data_2$W_OBSERVED, 
-    IDX_WEEKS_OBSERVED1 = stan_data_1$IDX_WEEKS_OBSERVED, 
-    IDX_WEEKS_OBSERVED2 = stan_data_2$IDX_WEEKS_OBSERVED, 
-    IDX_WEEKS_OBSERVED_REPEATED1 = stan_data_1$IDX_WEEKS_OBSERVED_REPEATED,
-    IDX_WEEKS_OBSERVED_REPEATED2 = stan_data_2$IDX_WEEKS_OBSERVED_REPEATED,
-    IDX_WEEKS = 1:(stan_data_1$W + stan_data_2$W),
-    w_ref_index = ifelse(is.na(stan_data_1$w_ref_index), stan_data_2$w_ref_index + stan_data_1$W, stan_data_1$w_ref_index),
-    A = stan_data_1$A, # same in both
-    age = stan_data_1$age, # same in both
-    B1 = stan_data_1$B,
-    B2 = stan_data_2$B,
-    
-    age_from_state_age_strata_1 = stan_data_1$age_from_state_age_strata,
-    age_from_state_age_strata_2 = stan_data_2$age_from_state_age_strata,
-    age_to_state_age_strata_1 = stan_data_1$age_to_state_age_strata,
-    age_to_state_age_strata_2 = stan_data_2$age_to_state_age_strata,
-    
-    N_idx_non_missing = c(stan_data_1$N_idx_non_missing, stan_data_2$N_idx_non_missing),
-    N_idx_missing = c(stan_data_1$N_idx_missing, stan_data_2$N_idx_missing),
-    idx_non_missing_1 = stan_data_1$idx_non_missing,
-    idx_non_missing_2 = stan_data_2$idx_non_missing,
-    idx_missing_1 = stan_data_1$idx_missing,
-    idx_missing_2 = stan_data_2$idx_missing,
-
-    N_missing_1 = stan_data_1$N_missing,
-    N_missing_2 = stan_data_2$N_missing,
-    start_or_end_period_1 = stan_data_1$start_or_end_period,
-    start_or_end_period_2 = stan_data_2$start_or_end_period,
-    age_missing_1 = stan_data_1$age_missing,
-    age_missing_2 = stan_data_2$age_missing,
-    N_weeks_missing_1 = stan_data_1$N_weeks_missing,
-    N_weeks_missing_2 = stan_data_2$N_weeks_missing,
-    idx_weeks_missing_1 = stan_data_1$idx_weeks_missing,
-    idx_weeks_missing_2 = stan_data_2$idx_weeks_missing,
-    sum_missing_deaths_1 = stan_data_1$sum_missing_deaths,
-    sum_missing_deaths_2 = stan_data_2$sum_missing_deaths,
-    min_count_censored_1 = stan_data_1$min_count_censored,
-    min_count_censored_2 = stan_data_2$min_count_censored,
-    max_count_censored_1 = stan_data_1$max_count_censored,
-    max_count_censored_2 = stan_data_2$max_count_censored,
-    
-    deaths_1 = stan_data_1$deaths,
-    deaths_2 = stan_data_2$deaths,
-    
-    inv_sum_deaths = c(stan_data_1$inv_sum_deaths, stan_data_2$inv_sum_deaths)
-  )
-  
   return(stan_data)
 }
 
@@ -295,7 +218,8 @@ add_diff_matrix = function(stan_data, n, m, order = 2)
   return(stan_data)
 }
 
-bspline = function(x, k, degree, intervals){
+bspline = function(x, k, degree, intervals)
+  {
   
   if(degree == 1){
     return(x >= intervals[k] & x < intervals[k+1])
@@ -314,7 +238,8 @@ bspline = function(x, k, degree, intervals){
   return(spline)
 }
 
-find_intervals = function(knots, degree, repeating = T){
+find_intervals = function(knots, degree, repeating = T)
+  {
   
   K = length(knots)
   
@@ -338,7 +263,7 @@ find_intervals = function(knots, degree, repeating = T){
 }
 
 bsplines = function(data, knots, degree)
-{
+ {
   K = length(knots)
   num_basis = K + degree - 1
   
@@ -356,77 +281,78 @@ bsplines = function(data, knots, degree)
   return(m)
 }
 
-add_adjacency_matrix_stan_data = function(stan_data, n, m){
-  
+add_adjacency_matrix_stan_data = function(stan_data, n, m)
+  {
+
   N = n * m
   A = matrix(nrow = N, ncol = N, 0)
-  
+
   for(i in 1:n){
-    
+
     for(j in 1:m){
-      
+
       #cat('\n Processing ', i, j)
       idx_row = n*(j-1) + i
-      
+
       # top
       if(i - 1 > 0){
         idx_col = n*(j-1) + i - 1
-        A[idx_row,idx_col] = 1 
+        A[idx_row,idx_col] = 1
       }
-      
+
       # bottom
       if(i + 1 <= n){
         idx_col = n*(j-1) + i + 1
-        A[idx_row,idx_col] = 1 
+        A[idx_row,idx_col] = 1
       }
-      
+
       # left
       if(j - 1 > 0){
-        idx_col = n*(j-2) + i 
-        A[idx_row,idx_col] = 1 
+        idx_col = n*(j-2) + i
+        A[idx_row,idx_col] = 1
       }
-      
+
       # right
       if(j + 1 <= m){
-        idx_col = n*j + i 
-        A[idx_row,idx_col] = 1 
+        idx_col = n*j + i
+        A[idx_row,idx_col] = 1
       }
-      
+
       # # top-left diagonal
       # if(i - 1 > 0 & j - 1 > 0){
       #   idx_col = n*(j-2) + i - 1
-      #   A[idx_row,idx_col] = 1 
+      #   A[idx_row,idx_col] = 1
       # }
-      # 
+      #
       # # bottom-right diagonal
       # if(i + 1 <= n & j + 1 <= m){
       #   idx_col = n*j + i + 1
-      #   A[idx_row,idx_col] = 1 
+      #   A[idx_row,idx_col] = 1
       # }
-      # 
+      #
       # # top-right diagonal
       # if(i - 1 > 0 & j + 1 <= m){
       #   idx_col = n*(j-2) + i + 1
-      #   A[idx_row,idx_col] = 1 
+      #   A[idx_row,idx_col] = 1
       # }
-      # 
+      #
       # # bottom-left diagonal
       # if(i + 1  <= n & j - 1 > 0){
       #   idx_col = n*j + i - 1
-      #   A[idx_row,idx_col] = 1 
+      #   A[idx_row,idx_col] = 1
       # }
     }
   }
-  
+
   stan_data$N = N
   stan_data$Adj = A
   stan_data$Adj_n = sum(A) / 2
-  
+
   return(stan_data)
 }
 
 add_nodes_stan_data = function(stan_data)
-{
+ {
   tmp = reshape2::melt( stan_data$Adj )
   tmp = subset(tmp, value == 1)
   
@@ -440,44 +366,44 @@ add_nodes_stan_data = function(stan_data)
 
 # 
 # add_adjacency_matrix_stan_data = function(stan_data, n, m){
-#   
+# 
 #   N = n * m
 #   A = matrix(nrow = N, ncol = N, 0)
-#   
+# 
 #   for(i in 1:n){
-#     
+# 
 #     for(j in 1:m){
-#       
+# 
 #       #cat('\n Processing ', i, j)
 #       idx_row = m*(i-1) + j
-#       
+# 
 #       if(i - 1 > 0){
 #         idx_col = m*(i-2) + j
-#         A[idx_row,idx_col] = 1 
+#         A[idx_row,idx_col] = 1
 #       }
-#       
+# 
 #       if(i + 1 <= n){
 #         idx_col = m*i + j
-#         A[idx_row,idx_col] = 1 
+#         A[idx_row,idx_col] = 1
 #       }
-#       
+# 
 #       if(j - 1 > 0){
 #         idx_col = m*(i-1) + j - 1
-#         A[idx_row,idx_col] = 1 
+#         A[idx_row,idx_col] = 1
 #       }
-#       
+# 
 #       if(j + 1 <= m){
 #         idx_col = m*(i-1) + j +1
-#         A[idx_row,idx_col] = 1 
+#         A[idx_row,idx_col] = 1
 #       }
-#       
+# 
 #     }
 #   }
-#   
+# 
 #   stan_data$N = N
 #   stan_data$Adj = A
 #   stan_data$Adj_n = sum(A) / 2
-#   
+# 
 #   return(stan_data)
 # }
 # 
