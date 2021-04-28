@@ -1,16 +1,16 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="210416a"
+STAN_MODEL="210426a"
 CWD="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/results/"
 INDIR="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/"
-LOCATION_INDEX=2
+LOCATION_INDEX=1
   
 cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF
   
 #!/bin/sh
 #PBS -l walltime=40:59:00
-#PBS -l select=1:ncpus=3:ompthreads=1:mem=200gb
+#PBS -l select=1:ncpus=8:ompthreads=1:mem=300gb
 #PBS -j oe
 #PBS -q pqcovid19c
 module load anaconda3/personal

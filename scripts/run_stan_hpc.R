@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210426d"
+stan_model = "210426g"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -93,11 +93,11 @@ if(grepl('210319d2|210319d3', stan_model)){
   cat("\n Using a GP \n")
   stan_data$age = matrix(stan_data$age, nrow = 106, ncol = 1)
 }
-if(grepl('210326|210329|210330|210406|210409|210412|210415|210416|210419|210422|210426|210426c', stan_model)){
+if(grepl('210326|210329|210330|210406|210409|210412|210415|210416|210419|210422|210426', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210406|210409|210412b|210415b|210416|210422a|210422b|210422d|210422e|210426a|210426b', stan_model)){
+if(grepl('210406|210409|210412b|210415b|210416|210422a|210422b|210422d|210422e|210426a|210426b|210426f|210426g', stan_model)){
   cat("\n Adding adjacency matrix on splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
@@ -105,11 +105,11 @@ if(grepl('210408', stan_model)){
   cat("\n Adding adjacency matrix on week and age \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$A)
 }
-if(grepl('210408b|210409|210412a|210412b|210415b|210416|210422a|210422e|210426a', stan_model)){
+if(grepl('210408b|210409|210412a|210412b|210415b|210416|210422a|210422e|210426a|210426g', stan_model)){
   cat("\n Adding nodes index \n")
   stan_data = add_nodes_stan_data(stan_data)
 }
-if(grepl('210416|210422d|210422e', stan_model)){
+if(grepl('210416|210422d|210422e|210426f|210426g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
