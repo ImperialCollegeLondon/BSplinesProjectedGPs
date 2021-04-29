@@ -1,4 +1,4 @@
-plot_continuous_age_contribution = function(fit, df_age_continuous, df_week, lab, outdir){
+plot_probability_deaths_age_contribution = function(fit, var_name, df_age, df_week, lab, outdir, discrete = F){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -8,7 +8,7 @@ plot_continuous_age_contribution = function(fit, df_age_continuous, df_week, lab
   # extract samples
   fit_samples = rstan::extract(fit)
   
-  tmp1 = as.data.table( reshape2::melt(fit_samples$phi) )
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps),
                        q_label=p_labs), 
@@ -16,26 +16,43 @@ plot_continuous_age_contribution = function(fit, df_age_continuous, df_week, lab
   tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
-  tmp1[, age := df_age_continuous$age_index[age_index]]
+  tmp1[, age := df_age$age[age_index]]
+  
+  if(discrete)
+    tmp1[, age := factor(age, levels = df_age$age)]
   
   n_row = length(unique(tmp1$date))
   
-  ggplot(tmp1, aes(x = date, y = age)) +
-    geom_raster(aes(fill = M))  + 
-    labs(x = 'Date', y = 'Age', fill = 'Estimated posterior value') + 
-    scale_y_continuous(expand = c(0,0))  +
-    scale_x_date(expand = c(0,0)) + 
-    scale_fill_viridis_c(option = "E") + 
-    theme(legend.position='bottom')
-  ggsave(file = paste0(outdir, '-continuous_contribution_allweeks_', Code, '.png'), w = 5, h = 5.2)
-  
   p = ggplot(tmp1, aes(x = age)) + 
-    geom_line(aes(y = M)) +
-    geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) + 
     theme_bw() +
     labs(y = paste0("Relative contribution to ", lab), x = "Age", title = paste(Code)) + 
     facet_wrap(~date)
-  ggsave(p, file = paste0(outdir, "-continuous_contribution_",Code, ".png") , w= 10, h = 8, limitsize = FALSE)
+  
+  if(discrete){
+    p = p + 
+      geom_point(aes(y = M)) +
+      geom_errorbar(aes(ymin= CL, ymax = CU)) 
+  } else {
+    p = p + 
+      geom_line(aes(y = M)) +
+      geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
+  }
+    
+  ggsave(p, file = paste0(outdir, "-continuous_contribution_", var_name, '_', Code, ".png") , w= 10, h = 8, limitsize = FALSE)
+  
+  p = ggplot(tmp1, aes(x = date, y = age)) +
+    geom_raster(aes(fill = M))  + 
+    labs(x = 'Date', y = 'Age', fill = 'Estimated posterior value') + 
+    scale_x_date(expand = c(0,0)) + 
+    scale_fill_viridis_c(option = "E") + 
+    theme(legend.position='bottom')
+  
+  if(discrete){
+    p = p + scale_y_discrete(expand = c(0,0))  
+  } else {
+    p = p + scale_y_continuous(expand = c(0,0))  
+  }
+  ggsave(p, file = paste0(outdir, '-continuous_contribution_allweeks_', var_name, '_', Code, '.png'), w = 5, h = 5.2)
   
 }
 
@@ -46,7 +63,8 @@ plot_convergence_diagnostics = function(fit, title, suffix, outfile)
   
   posterior <- as.array(fit)
   
-  pars = list("rho", "sigma", "beta", c('aw', 'sd_aw'), c('sd_a_raw', 'a0_raw'), 'a_age', 'a0', c('gamma', 'tau', 'p'), 'nu', 'lambda', 'tau')
+  pars = list("rho", "sigma", "beta", 'a_age', 'a0', c('gamma', 'tau', 'p'), 'nu', 'lambda', 'tau',
+              'alpha_gp', 'delta')
 
   for(j in 1:length(pars))
   {                     
@@ -64,7 +82,7 @@ plot_convergence_diagnostics = function(fit, title, suffix, outfile)
     
     if(length(par) > 1){
       p_pairs = gridExtra::arrangeGrob(bayesplot::mcmc_pairs(posterior, regex_pars = par), top = title)
-      ggsave(p_pairs, file =  paste0(outfile, "-convergence_diagnostics-", "pairs_plots_",  suffix, '_',Code, "_", par,".png") , w= 15, h = 15)
+      ggsave(p_pairs, file = paste0(outfile, "-convergence_diagnostics-", "pairs_plots_",  suffix, '_',Code, "_", par,".png"), w= 15, h = 15)
       
     }
     
@@ -298,16 +316,15 @@ plot_covariance_matrix = function(fit_cum, outdir)
     scale_fill_viridis_c(begin = 0, end = 1, limits = range_value, breaks = seq(0,0.6,0.2)) 
   ggsave(file = paste0(outdir, '-CovarianceMatrix_', Code, '.png'), w = 4, h = 4)
   
-  map = data.table(idx = 1:(stan_data$W * stan_data$num_basis), 
-                   idx_week = rep(1:stan_data$W, each = stan_data$num_basis),
-                   idx_basis = rep(1:stan_data$num_basis, stan_data$W))
+  map = as.data.table(expand.grid(idx_week = 1:stan_data$W, idx_basis = 1:stan_data$num_basis ))
+  set(map, NULL, 'idx', 1:nrow(map))
   tmp1 = merge(tmp1, map, by.x = 'Var1', by.y = 'idx')
   setnames(tmp1, c('idx_week', 'idx_basis'), c('idx_week_column', 'idx_basis_column'))
   tmp1 = merge(tmp1, map, by.x = 'Var2', by.y = 'idx')
   setnames(tmp1, c('idx_week', 'idx_basis'), c('idx_week_row', 'idx_basis_row'))
   
   tmp2 = subset(tmp1, idx_week_row %in% 1 & idx_week_column %in% 1)
-  ggplot(tmp2, aes(x = Var1, y = Var2)) + 
+  ggplot(tmp2, aes(x = idx_basis_row, y = idx_basis_column)) + 
     geom_raster(aes(fill = value)) +
     labs(x = 'basis function index', y = 'basis function index', fill = 'Estimated posterior value') + 
     scale_y_reverse(expand = c(0,0), breaks = seq(1, 10, 2))  +
@@ -460,12 +477,22 @@ plot_probability_ratio = function(probability_ratio_table, outdir)
   ggplot(probability_ratio_table, aes(x = date)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
     geom_line(aes(y = M)) + 
-    geom_point(aes(y = emp.prob.ratio), col = 'red') + 
+    geom_point(aes(y = emp.prob.ratio), col = 'darkred') + 
     theme_bw() + 
     geom_hline(aes(yintercept = 1)) +
     facet_wrap(~age, scales = 'free')+ 
-    labs(x = '', y = 'ratio probability of one additional death /n to the first week')
+    labs(x = '', y = paste0('ratio probability of one additional death \n to ', ref_date))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 15, h = 12)
+  
+  tmp = subset(probability_ratio_table, age %in% c('45-54', '55-64', '65-74', '75-84', '85+'))
+  ggplot(tmp, aes(x = date)) + 
+    geom_line(aes(y = M, col = age)) + 
+    # geom_point(aes(y = emp.prob.ratio, col = age)) + 
+    # geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
+    theme_bw() + 
+    geom_hline(aes(yintercept = 1)) +
+    labs(x = '', y = paste0('ratio probability of one additional death \n to ', ref_date))
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 8, h = 8)
 }
 
 # 

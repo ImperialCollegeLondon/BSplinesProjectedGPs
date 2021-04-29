@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210426g"
+stan_model = "210426b"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -62,14 +62,9 @@ age_max = 105
   
 # load CDC data
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
-if(0) plot_data(deathByAge, outdir = outdir.fig)
 
-# compare to JHU data
+# load JHU data
 JHUData = readRDS(path.to.JHU.data)
-compare_CDC_JHU_error_plot(CDC_data = deathByAge,
-                           JHU_data = JHUData, 
-                           var.daily.deaths.CDC = 'daily.deaths', 
-                           outdir = outdir.fig)
 
 # Create age maps
 create_map_age(age_max)
@@ -80,6 +75,15 @@ saveRDS(locations, file = file.path(outdir.fit, paste0("location_", run_tag,".rd
 loc_name = locations[location.index,]$loc_label
 Code = locations[location.index,]$code
 cat("Location ", as.character(loc_name), "\n")
+
+# plot data 
+if(1){
+  plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
+  compare_CDC_JHU_error_plot(CDC_data = deathByAge,
+                             JHU_data = JHUData, 
+                             var.daily.deaths.CDC = 'daily.deaths', 
+                             outdir = outdir.fig)
+}
 
 # reference date
 ref_date = as.Date('2020-08-29')
@@ -123,7 +127,10 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,"
 # fit 
 cat("\n Start sampling \n")
 model = rstan::stan_model(path.to.stan.model)
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=8, 
+# fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=1,
+#                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 
 # save

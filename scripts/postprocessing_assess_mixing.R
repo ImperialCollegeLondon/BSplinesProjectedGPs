@@ -7,9 +7,9 @@ library(dplyr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/results'
-location.index = 3
-stan_model = "210419"
-JOBID = 18389
+location.index = 1
+stan_model = "210426d"
+JOBID = 28373
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -77,11 +77,11 @@ plot_posterior_predictive_checks(predictive_checks_table,
 
 # plot predictive check cumulative
 cat("\nMake posterior predictive checks cumulative plots \n")
-tmp1 = find_sum_missing_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting$age_cat), stan_data, 'deaths_predict')
+tmp1 = find_sum_missing_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
 setnames(tmp1, 'age_state_index', 'age_index')
 plot_sum_missing_deaths(tmp1, outdir.fig)
 
-tmp1 = find_sum_bounded_missing_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age_cat), stan_data, 'deaths_predict')
+tmp1 = find_sum_bounded_missing_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
 setnames(tmp1, 'age_state_index', 'age_index')
 plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 cat("\n End postprocessing_assess_mixing.R \n")

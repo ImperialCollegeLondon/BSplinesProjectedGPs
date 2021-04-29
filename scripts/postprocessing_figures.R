@@ -62,8 +62,8 @@ fit_cum <- readRDS(file=file)
 
 # Plots continuous age distribution alpha
 cat("\nMake continuous age distribution plots \n")
-plot_continuous_age_contribution(fit_cum, df_age_continuous, df_week, "cumulative COVID-19 deaths", 
-                                 outdir = outdir.fig)
+plot_probability_deaths_age_contribution(fit_cum, 'phi', df_age_continuous, df_week, "daily COVID-19 deaths", outdir = outdir.fig)
+plot_probability_deaths_age_contribution(fit_cum, 'phi_reduced', df_age_reporting, df_week, "daily COVID-19 deaths", outdir = outdir.fig, discrete = T)
 
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)

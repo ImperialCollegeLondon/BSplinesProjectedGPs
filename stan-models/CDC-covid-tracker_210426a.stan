@@ -110,8 +110,8 @@ generated quantities {
   for(w in 1:W){
 
     // phi ratio
-    probability_ratio[:,w] = phi[:,w] ./ phi[:,w_ref_index];
-    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ phi_reduced[:,w_ref_index];
+    probability_ratio[:,w] = phi[:,w] ./ (phi[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
+    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
     
     // predict deaths
     deaths_predict[:,w] = neg_binomial_rng(alpha[:,w], theta );

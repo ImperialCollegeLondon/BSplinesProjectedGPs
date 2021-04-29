@@ -16,7 +16,7 @@ make_predictive_checks_table = function(fit, df_week, df_state_age, data, deaths
   tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
-  tmp1[, age := df_state_age$age_cat[age_index]]
+  tmp1[, age := df_state_age$age[age_index]]
   
   tmp1 = merge(tmp1, data, by = c('date', 'age'))
   tmp1[, age := factor(age, levels = levels(data$age))]
@@ -102,8 +102,8 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
-  tmp1[, age := df_state_age$age_cat[age_index]]
-  tmp1[, age := factor(age, levels = df_state_age$age_cat)]
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
   
   tmp1[, code := Code]
   
@@ -119,9 +119,10 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   tmp2 = tmp[, list(total.deaths = sum(na.omit(daily.deaths))), by = 'date']
   tmp = merge(tmp, tmp2, by = 'date')
   tmp[, emp.prob := daily.deaths / total.deaths]
-  tmp2 = subset(tmp, date == ref_date)
+  tmp2 = subset(tmp, date <= ref_date)
+  tmp2 = tmp2[, list(emp.prob = mean(emp.prob)), by = c('age')]
   setnames(tmp2, 'emp.prob', 'emp.prob.ref')
-  tmp = merge(tmp, select(tmp2, -daily.deaths, -date, -total.deaths), by = c('age'))
+  tmp = merge(tmp, tmp2, by = c('age'))
   tmp[, emp.prob.ratio := emp.prob / emp.prob.ref]
   subset(tmp, age %in% unique(data$age))
   

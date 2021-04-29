@@ -37,7 +37,7 @@ compare_CDC_JHU_error_plot = function(CDC_data, JHU_data, var.daily.deaths.CDC, 
   ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
 }
 
-plot_data = function(deathByAge, outdir)
+plot_data = function(deathByAge, outdir, Code = NULL)
 {
   p = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = daily.deaths )) + 
@@ -102,7 +102,43 @@ plot_data = function(deathByAge, outdir)
   p = ggpubr::ggarrange(p1, p2, p3,  common.legend = T, legend = 'bottom')
   ggsave(p, file = paste0(outdir, '-deathByAge_boundaries.png'), w = 20, h = 25)
   
-  
+  if(!is.null(Code)){
+    tmp = subset(deathByAge, code == Code)
+    tmp1 = tmp[, list(total_deaths = sum(na.omit(daily.deaths))), by = 'date']
+    tmp = merge(tmp, tmp1, by = 'date')
+    tmp[, prop_deaths := daily.deaths / total_deaths]
+      
+    p = ggplot(tmp, aes(x = date, y = age)) + 
+      geom_raster(aes(fill = daily.deaths )) + 
+      facet_wrap(~loc_label) + 
+      theme_bw() +
+      scale_fill_viridis_c(trans = 'sqrt') +
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      scale_y_discrete(expand = c(0,0)) + 
+      theme(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 90), 
+            panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank()) +
+      labs(x = '', y = 'Age groups first specification',
+           fill = 'Reported covid-19 deaths')
+    ggsave(p, file = paste0(outdir, '-deathByAge_', Code, '.png'), w = 8, h = 8)
+    
+    p = ggplot(tmp, aes(x = date, y = age)) + 
+      geom_raster(aes(fill = prop_deaths )) + 
+      facet_wrap(~loc_label) + 
+      theme_bw() +
+      scale_fill_viridis_c(option = "E") +
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      scale_y_discrete(expand = c(0,0)) + 
+      theme(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 90), 
+            panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank()) +
+      labs(x = '', y = 'Age groups first specification',
+           fill = 'Reported covid-19 deaths')
+    ggsave(p, file = paste0(outdir, '-deathByAge_prop_', Code, '.png'), w = 8, h = 8)
+  }
+
 }
 
 
