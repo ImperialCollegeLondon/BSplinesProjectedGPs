@@ -163,7 +163,7 @@ model {
     if(!start_or_end_period[n])
     {
        
-      target += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ] , theta ) ;
+      target += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
       // print("n", n);
       // print("sum_count_censored[n]", sum_count_censored[n]);
       // print("age_missing[n]", age_missing[n]);

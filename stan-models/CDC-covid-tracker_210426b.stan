@@ -45,6 +45,7 @@ data{
   int<lower=0,upper=B> N_idx_non_missing[W_OBSERVED];
   int<lower=-1,upper=B> idx_non_missing[B,W_OBSERVED]; // indices non-missing deaths for W
   vector[A] age; // age continuous
+  real sum_deaths[W_OBSERVED]; // inverse sum of deaths
   real inv_sum_deaths[W_OBSERVED]; // inverse sum of deaths
   int deaths[B,W_OBSERVED]; // daily deaths in age band b at time t
   int age_from_state_age_strata[B]; // age from of age band b
@@ -147,8 +148,7 @@ model {
     
     lambda_raw[w] ~ exponential( inv_sum_deaths[w] );
 
-    target += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] |
-       alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
+    target += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] | alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
 
         
   }
@@ -157,7 +157,7 @@ model {
     if(!start_or_end_period[n])
     {
        
-      target += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ] , theta ) ;
+      target += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
       
     } 
     else {
