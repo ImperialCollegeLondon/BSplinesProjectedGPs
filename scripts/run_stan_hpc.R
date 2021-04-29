@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210426b"
+stan_model = "210429b2"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -97,11 +97,11 @@ if(grepl('210319d2|210319d3', stan_model)){
   cat("\n Using a GP \n")
   stan_data$age = matrix(stan_data$age, nrow = 106, ncol = 1)
 }
-if(grepl('210326|210329|210330|210406|210409|210412|210415|210416|210419|210422|210426', stan_model)){
+if(grepl('210426|210429', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210406|210409|210412b|210415b|210416|210422a|210422b|210422d|210422e|210426a|210426b|210426f|210426g', stan_model)){
+if(grepl('210426a|210426b|210426f|210426g|210429b|210429a', stan_model)){
   cat("\n Adding adjacency matrix on splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
@@ -109,13 +109,21 @@ if(grepl('210408', stan_model)){
   cat("\n Adding adjacency matrix on week and age \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$A)
 }
-if(grepl('210408b|210409|210412a|210412b|210415b|210416|210422a|210422e|210426a|210426g', stan_model)){
+if(grepl('210416|210422a|210422e|210426a|210426g', stan_model)){
   cat("\n Adding nodes index \n")
   stan_data = add_nodes_stan_data(stan_data)
 }
 if(grepl('210416|210422d|210422e|210426f|210426g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$W, m = stan_data$num_basis)
+}
+if(grepl('210429a1|210429b1|210429d1', stan_model)){
+  cat("\n With prior for lambda \n")
+  stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
+}
+if(grepl('210429a2|210429b2|210429d2', stan_model)){
+  cat("\n With prior for lambda \n")
+  stan_data = add_prior_parameters_lambda(stan_data, distribution = 'log_normal')
 }
 
 ## save image before running Stan
@@ -127,8 +135,13 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,"
 # fit 
 cat("\n Start sampling \n")
 model = rstan::stan_model(path.to.stan.model)
-# fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=1,
-#                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+
+if(0){
+  
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=1,
+                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+}
+
 
 fit_cum <- rstan::sampling(model,data=stan_data,iter=2000,warmup=200,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
@@ -139,7 +152,6 @@ cat('\n Save file', file, '\n')
 while(!file.exists(file)){
   tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
 }
-
 
 
 
