@@ -135,10 +135,13 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   idx_weeks_missing = matrix(unlist(idx_weeks_missing), nrow = max(N_weeks_missing) , ncol = N_missing)
   
   # inverse sum of deaths
+  sum_deaths = vector(mode = 'double', length = W_OBSERVED)
   inv_sum_deaths = vector(mode = 'double', length = W_OBSERVED)
   for(w in 1:W_OBSERVED){
      
     deaths_w = sum(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w])
+    
+    sum_deaths[w] = deaths_w
     
     if(deaths_w == 0){
       inv_sum_deaths[w] = 1
@@ -175,7 +178,8 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      min_count_censored = min_count_censored,
                      max_count_censored = max_count_censored,
                      deaths = deaths,
-                     inv_sum_deaths = inv_sum_deaths
+                     inv_sum_deaths = inv_sum_deaths,
+                     sum_deaths = sum_deaths
                 ))
 
   return(stan_data)
@@ -364,6 +368,40 @@ add_nodes_stan_data = function(stan_data)
 }
 
 
+add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
+{
+
+  tmp1 = data.table(weekly_deaths = stan_data$sum_deaths)
+  set(tmp1, NULL, 'weekly_deaths', stan_data$sum_deaths)
+  set(tmp1, NULL, 'diff_sum_deaths', c(NA, tmp1[, diff(weekly_deaths)]))
+  tmp1[, rel_diff := diff_sum_deaths / weekly_deaths]
+  tmp1[, diff_sum_deaths_abs := abs(diff_sum_deaths)]
+  tmp1[, source := 'CDC']
+  
+  if(0)
+  {
+    ggplot(tmp1, aes(x = diff_sum_deaths_abs, y = weekly_deaths, col = source)) + 
+      geom_point() 
+  }
+  
+  lin_fit = lm(weekly_deaths~diff_sum_deaths_abs-1, data = tmp1)
+  
+  mean = stan_data$sum_deaths
+  sd = stan_data$sum_deaths / (lin_fit$coefficients*2)
+  
+  if(distribution == 'gamma'){
+    alpha = mean^2 / (sd^2)
+    beta = mean / (sd^2) 
+    stan_data$lambda_prior_parameters = rbind(alpha, beta)
+  }
+  if(distribution == 'log_normal'){
+    mu = 2 * log(mean) - 1/2 * log(sd^2 + mean^2)
+    sigma = sqrt(-2*log(mean) + log(sd^2 + mean^2))
+    stan_data$lambda_prior_parameters = rbind(mu, sigma)
+  }
+  
+  return(stan_data)
+}
 # 
 # add_adjacency_matrix_stan_data = function(stan_data, n, m){
 # 
