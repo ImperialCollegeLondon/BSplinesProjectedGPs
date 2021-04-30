@@ -104,19 +104,20 @@ transformed data {
 parameters {
   vector[N] beta_raw; 
   real<lower = 0> nu;
+  real<lower = 0> tau;
   vector<lower=0>[W-1] lambda_raw;
   real<lower = 0, upper = 1> p;
-  real<lower = 0> inv_tau;
+  
 }
 
 transformed parameters {
-  real<lower = 0> tau = 1.0 / inv_tau;
   vector<lower=0>[W] lambda = lambda_raw[IDX_WEEKS_OBSERVED_REPEATED];
   real<lower=0> theta = nu / (1 + nu);
   matrix[A,W] phi;
   matrix[A,W] alpha;
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
+  vector[N_missing] alpha_reduced_missing;
   matrix[W,num_basis] beta = to_matrix(beta_raw, W, num_basis); 
   
   for(w in 1:W)
@@ -135,36 +136,37 @@ transformed parameters {
     }
   }
 
+  for(n in 1:N_missing){
+    alpha_reduced_missing[n] = sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]);
+  }
 }
 
 model {
   
-  nu ~ exponential(1);
+  target += exponential_lpdf(nu | 1);
   
-  inv_tau ~ exponential(1);
+  target += exponential_lpdf(tau | 1);
   
+  target += gamma_lpdf( lambda_raw | lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
+    
   beta_raw ~ sparse_car(tau, p, Adj_sparse, D_sparse, egv, N, Adj_n);
 
-  lambda_raw ~ gamma( lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
-    
   for(w in 1:W_OBSERVED){
   
-
     target += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] | alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
 
-        
   }
   
   for(n in 1:N_missing){
     if(!start_or_end_period[n])
     {
        
-      target += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+      target += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n] , theta ) ;
       
     } 
     else {
       for(i in min_count_censored[n]:max_count_censored[n])
-        target += neg_binomial_lpmf( i | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n]] ) , theta ) ;
+        target += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
     }
   }
       
@@ -200,11 +202,11 @@ generated quantities {
   for(n in 1:N_missing){
     if(!start_or_end_period[n])
     {
-       log_lik += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+       log_lik += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n] , theta ) ;
 
     } else {
        for(i in min_count_censored[n]:max_count_censored[n])
-          log_lik += neg_binomial_lpmf( i | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+          log_lik += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
     }
   }
 

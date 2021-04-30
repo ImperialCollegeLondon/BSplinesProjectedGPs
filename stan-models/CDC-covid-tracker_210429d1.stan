@@ -190,6 +190,7 @@ transformed parameters {
   matrix[A,W] alpha;
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
+  vector[N_missing] alpha_reduced_missing;
   matrix[W,num_basis] beta = gp(W, num_basis, IDX_WEEKS, age,
                               delta0, delta1, delta2, 
                               alpha_gp1_t, alpha_gp2_t, alpha_gp1_d, alpha_gp2_d,
@@ -210,6 +211,10 @@ transformed parameters {
       alpha_reduced[b,w] = sum(alpha[age_from_state_age_strata[b]:age_to_state_age_strata[b], w]);
       phi_reduced[b,w] = sum(phi[age_from_state_age_strata[b]:age_to_state_age_strata[b], w]);
     }
+  }
+  
+  for(n in 1:N_missing){
+    alpha_reduced_missing[n] = sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]);
   }
 
 }
@@ -252,14 +257,14 @@ model {
     if(!start_or_end_period[n])
     {
        
-      target += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+      target += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n], theta ) ;
     } 
     else {
        for(i in min_count_censored[n]:max_count_censored[n])
-          target += neg_binomial_lpmf( i | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n]] ) , theta ) ;
+          target += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
     }
   }
-      
+
 }
 
 generated quantities {
@@ -292,11 +297,11 @@ generated quantities {
   for(n in 1:N_missing){
     if(!start_or_end_period[n])
     {
-       log_lik += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+       log_lik += neg_binomial_lpmf( sum_count_censored[n] |  alpha_reduced_missing[n] , theta ) ;
 
     } else {
        for(i in min_count_censored[n]:max_count_censored[n])
-          log_lik += neg_binomial_lpmf( i | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+          log_lik += neg_binomial_lpmf( i |  alpha_reduced_missing[n], theta ) ;
     }
   }
 

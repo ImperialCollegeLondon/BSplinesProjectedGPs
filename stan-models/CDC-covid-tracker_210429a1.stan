@@ -49,6 +49,7 @@ transformed parameters {
   matrix[A,W] alpha;
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
+  vector[N_missing] alpha_reduced_missing;
   matrix[W,num_basis] beta = to_matrix(beta_raw, W, num_basis); 
 
   for(w in 1:W)
@@ -67,6 +68,9 @@ transformed parameters {
     }
   }
 
+  for(n in 1:N_missing){
+    alpha_reduced_missing[n] = sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]);
+  }
 }
 
 model {
@@ -91,12 +95,12 @@ model {
   for(n in 1:N_missing){
     if(!start_or_end_period[n])
     {
-       target += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+       target += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n] , theta ) ;
        
 
     } else {
        for(i in min_count_censored[n]:max_count_censored[n])
-          target += neg_binomial_lpmf( i | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n]] ) , theta ) ;
+          target += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
     }
   }
       
@@ -132,11 +136,11 @@ generated quantities {
   for(n in 1:N_missing){
     if(!start_or_end_period[n])
     {
-       log_lik += neg_binomial_lpmf( sum_count_censored[n] | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+       log_lik += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n] , theta ) ;
 
     } else {
        for(i in min_count_censored[n]:max_count_censored[n])
-          log_lik += neg_binomial_lpmf( i | sum(alpha_reduced[age_missing[n], idx_weeks_missing[1:N_weeks_missing[n], n] ]) , theta ) ;
+          log_lik += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
     }
   }
 
