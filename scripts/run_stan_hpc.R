@@ -109,7 +109,7 @@ if(grepl('210408', stan_model)){
   cat("\n Adding adjacency matrix on week and age \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$A)
 }
-if(grepl('210416|210422a|210422e|210426a|210426g', stan_model)){
+if(grepl('210416|210422a|210422e|210426a|210426g|210429a', stan_model)){
   cat("\n Adding nodes index \n")
   stan_data = add_nodes_stan_data(stan_data)
 }
