@@ -77,11 +77,31 @@ make_convergence_diagnostics_stats = function(fit, outdir)
     LOO = .LOO$pointwise
   } 
   
+  sampler_params <- get_sampler_params(fit_cum, inc_warmup = FALSE)
+  sampler_diagnostics <- data.table()
+  for (i in colnames(sampler_params[[1]])) {
+    tmp <- data.table(t(sapply(sampler_params, function(x) quantile(x[, i],probs = c(0.025,0.5,0.975)))))
+    tmp[, diagnostics:=i ]
+    tmp[, chain:= seq_len(length(sampler_params))]
+    sampler_diagnostics <- rbind(sampler_diagnostics, tmp)
+  }
+  print(sampler_diagnostics)
+  
+  n_div <- check_all_diagnostics(fit_cum,outdir)
+  print(n_div)
+  if (n_div > 0){
+    cat("\n ----------- make parallel coordinates plot: start ----------- \n")
+    tryCatch({
+      make_parcoord_plot(fit,outdir,'.pdf')})
+    cat("\n ----------- make parallel coordinates plot: end ----------- \n")
+  }
+  
   # save
   saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum_", Code, ".rds"))
   saveRDS(Rhat_cum, file = paste0(outdir, "-Rhat_cum_", Code, ".rds"))
   saveRDS(WAIC, file = paste0(outdir, "-WAIC_", Code, ".rds"))
   saveRDS(LOO, file = paste0(outdir, "-LOO_", Code, ".rds"))
+  saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics_", Code, ".rds"))
 }
 
 make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir){
