@@ -109,19 +109,19 @@ if(grepl('210408', stan_model)){
   cat("\n Adding adjacency matrix on week and age \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$A)
 }
-if(grepl('210416|210422a|210422e|210426a|210426g|210429a', stan_model)){
+if(grepl('210416|210422a|210422e|210426a|210426g|210429a|210429f', stan_model)){
   cat("\n Adding nodes index \n")
   stan_data = add_nodes_stan_data(stan_data)
 }
-if(grepl('210416|210422d|210422e|210426f|210426g', stan_model)){
+if(grepl('210416|210422d|210422e|210426f|210426g|210429f|210429g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
-if(grepl('210429a1|210429b1|210429d1', stan_model)){
+if(grepl('210429a1|210429b1|210429d1|210429g1|210429f1', stan_model)){
   cat("\n With prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
-if(grepl('210429a2|210429b2|210429d2', stan_model)){
+if(grepl('210429a2|210429b2|210429d2|210429g2|210429f2', stan_model)){
   cat("\n With prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'log_normal')
 }
