@@ -101,7 +101,7 @@ if(grepl('210426|210429', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210426a|210426b|210426f|210426g|210429b|210429a', stan_model)){
+if(grepl('210426a|210426b|210426f|210426g|210429b|210429a|210429f|210429g', stan_model)){
   cat("\n Adding adjacency matrix on splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
