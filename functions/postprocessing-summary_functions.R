@@ -87,14 +87,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   }
   print(sampler_diagnostics)
   
-  n_div <- check_all_diagnostics(fit_cum,outdir)
-  print(n_div)
-  if (n_div > 0){
-    cat("\n ----------- make parallel coordinates plot: start ----------- \n")
-    tryCatch({
-      make_parcoord_plot(fit,outdir,'.pdf')})
-    cat("\n ----------- make parallel coordinates plot: end ----------- \n")
-  }
+  check_all_diagnostics(fit)
   
   # save
   saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum_", Code, ".rds"))
@@ -102,6 +95,18 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   saveRDS(WAIC, file = paste0(outdir, "-WAIC_", Code, ".rds"))
   saveRDS(LOO, file = paste0(outdir, "-LOO_", Code, ".rds"))
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics_", Code, ".rds"))
+}
+
+check_all_diagnostics <- function(fit) {
+  check_n_eff(fit)
+  check_rhat(fit)
+  n_div <- check_div(fit)
+  n_treedepth <- check_treedepth(fit,15)
+  check_energy(fit)
+  
+  cat('\nn_div',n_div, '\n' )
+  cat('\nn_treedepth',n_treedepth, '\n' )
+  saveRDS(list(n_div,n_treedepth), file=paste0(outdir,'-diagnostics_', Code, '.rds'))
 }
 
 make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir){
