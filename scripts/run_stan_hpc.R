@@ -38,8 +38,8 @@ rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to CDC and JHU data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-04-25.rds"))
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-04-11.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-05-01.rds"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-05-01.rds"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))

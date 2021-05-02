@@ -36,7 +36,7 @@ source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
 source(file.path(indir, "functions", "stan_utility_functions.R"))
 
 # some paths to data
-path_to_JHU_data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-04-11.rds"))
+path_to_JHU_data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-05-01.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 
 # set directories
