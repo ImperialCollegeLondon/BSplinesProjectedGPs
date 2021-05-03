@@ -40,6 +40,7 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 # path to CDC and JHU data
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-05-02.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-05-01.rds"))
+path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
@@ -63,8 +64,9 @@ age_max = 105
 # load CDC data
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
 
-# load JHU data
+# load JHU and scraped data data
 JHUData = readRDS(path.to.JHU.data)
+scrapedData = read.csv(path_to_scraped_data)
 
 # Create age maps
 create_map_age(age_max)
@@ -79,11 +81,13 @@ cat("Location ", as.character(loc_name), "\n")
 # plot data 
 if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  compare_CDC_JHU_error_plot(CDC_data = deathByAge,
-                             JHU_data = JHUData, 
-                             var.daily.deaths.CDC = 'daily.deaths', 
-                             outdir = outdir.fig)
-}
+  compare_CDC_JHU_Imperial_error_plot(CDC_data = deathByAge,
+                                    JHU_data = JHUData, 
+                                    scrapedData = scrapedData,
+                                    var.daily.deaths.CDC = 'daily.deaths', 
+                                    outdir = outdir.fig,
+                                    Code = Code)
+ }
 
 # reference date
 ref_date = as.Date('2020-08-29')
@@ -138,7 +142,7 @@ model = rstan::stan_model(path.to.stan.model)
 
 if(0){
   
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=1,warmup=0,chains=1,
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 

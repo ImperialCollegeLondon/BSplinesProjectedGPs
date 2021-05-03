@@ -324,29 +324,6 @@ add_adjacency_matrix_stan_data = function(stan_data, n, m)
         A[idx_row,idx_col] = 1
       }
 
-      # # top-left diagonal
-      # if(i - 1 > 0 & j - 1 > 0){
-      #   idx_col = n*(j-2) + i - 1
-      #   A[idx_row,idx_col] = 1
-      # }
-      #
-      # # bottom-right diagonal
-      # if(i + 1 <= n & j + 1 <= m){
-      #   idx_col = n*j + i + 1
-      #   A[idx_row,idx_col] = 1
-      # }
-      #
-      # # top-right diagonal
-      # if(i - 1 > 0 & j + 1 <= m){
-      #   idx_col = n*(j-2) + i + 1
-      #   A[idx_row,idx_col] = 1
-      # }
-      #
-      # # bottom-left diagonal
-      # if(i + 1  <= n & j - 1 > 0){
-      #   idx_col = n*j + i - 1
-      #   A[idx_row,idx_col] = 1
-      # }
     }
   }
 

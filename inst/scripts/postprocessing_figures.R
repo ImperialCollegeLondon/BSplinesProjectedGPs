@@ -35,8 +35,12 @@ source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
 source(file.path(indir, "functions", "stan_utility_functions.R"))
 
-# some paths to data
+# temporary
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-05-01.rds"))
+JHUData = readRDS(path.to.JHU.data)
+scrapedData = read.csv(path_to_scraped_data)
+
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
@@ -74,24 +78,18 @@ plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
 plot_probability_ratio(probability_ratio_table, outdir.fig)
 
-# plot compare to JHU 
-JHUData = readRDS(path.to.JHU.data)
+# plot compare to JHU and Imperial data
+
 # find overall cumulative deaths (across age groups)
 tmp = find_overall_cumulative_deaths(fit_cum, df_week, 'deaths_predict')
-# with CI
-compare_CDCestimation_JHU_error_plot_uncertainty(CDC_data = copy(tmp), JHU_data = JHUData, 
+compare_CDCestimation_JHU_Imperial_plot(CDC_data = copy(tmp), JHU_data = JHUData, scraped_data = scrapedData,
+                                        var.cum.deaths.CDC = 'M', outdir = outdir.fig)
+
+ # find overall cumulative deaths (by age groups)
+tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age), 'deaths_predict')
+compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                                  var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 
-
-# plot compare to scraped data 
-scraped_data = subset( as.data.table( read.csv( path_to_scraped_data )), code == Code)
-compare_CDCestimation_scrapeddata_error_plot_uncertainty(CDC_data = copy(tmp), scraped_data = scraped_data, 
-                                                         var.cum.deaths.CDC = 'M', outdir = outdir.fig, overall = T)
-# find cumulative deaths by reported DoH age groups
-tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(scraped_data$age), 'deaths_predict')
-compare_CDCestimation_scrapeddata_error_plot_uncertainty(CDC_data = copy(tmp), scraped_data = scraped_data, 
-                                                 var.cum.deaths.CDC = 'M', outdir = outdir.fig)
-
-cat("\n End postprocessing_figures.R \n")
+ cat("\n End postprocessing_figures.R \n")
 
 
