@@ -243,7 +243,7 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   tmp1 = merge(tmp1, select(tmp, -daily.deaths), by = c('age', 'date'), all.x = T)
   
   # save
-  saveRDS(tmp1, file = paste0(outdir, '-ProbabilityRatioTable_', Code, '.png'))
+  saveRDS(tmp1, file = paste0(outdir, '-ProbabilityRatioTable_', Code, '.rds'))
 
   return(tmp1)
 }
@@ -285,7 +285,7 @@ make_death_ratio_table = function(fit, df_week, df_state_age, data, outdir){
   tmp1 = merge(tmp1, tmp, by = c('age', 'date'), all.x = T)
   
   # save
-  saveRDS(tmp1, file = paste0(outdir, '-DeathRatioTable_', Code, '.png'))
+  saveRDS(tmp1, file = paste0(outdir, '-DeathRatioTable_', Code, '.rds'))
   
   return(tmp1)
 }
