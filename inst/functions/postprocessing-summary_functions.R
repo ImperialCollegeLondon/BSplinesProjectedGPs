@@ -269,6 +269,7 @@ make_death_ratio_table = function(fit, df_week, df_state_age, data, outdir){
                        q_label=p_labs), 
               by=c('age_index', 'week_index')]	
   tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1[, age := df_state_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_state_age$age)]
   tmp1[, code := Code]
