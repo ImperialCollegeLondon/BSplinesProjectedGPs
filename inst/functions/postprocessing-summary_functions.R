@@ -87,7 +87,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   }
   print(sampler_diagnostics)
   
-  check_all_diagnostics(fit)
+  check_all_diagnostics(fit, outdir)
   
   # save
   saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum_", Code, ".rds"))
@@ -97,7 +97,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics_", Code, ".rds"))
 }
 
-check_all_diagnostics <- function(fit) {
+check_all_diagnostics <- function(fit, outdir) {
   check_n_eff(fit)
   check_rhat(fit)
   n_div <- check_div(fit)

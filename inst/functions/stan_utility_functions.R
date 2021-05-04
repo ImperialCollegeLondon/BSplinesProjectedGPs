@@ -353,7 +353,7 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
   tmp1 = data.table(weekly_deaths = stan_data$sum_deaths)
   set(tmp1, NULL, 'weekly_deaths', stan_data$sum_deaths)
   set(tmp1, NULL, 'diff_sum_deaths', c(NA, tmp1[, diff(weekly_deaths)]))
-  tmp1[, rel_diff := diff_sum_deaths / weekly_deaths]
+  tmp1[, rel_diff := ifelse(weekly_deaths, diff_sum_deaths / weekly_deaths, weekly_deaths)]
   tmp1[, diff_sum_deaths_abs := abs(diff_sum_deaths)]
   tmp1[, source := 'CDC']
   
@@ -369,6 +369,8 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
   sd = stan_data$sum_deaths / (lin_fit$coefficients*2)
   
   if(distribution == 'gamma'){
+    if( any(sd == 0) ) sd[sd ==0] = 0.01
+    if( any(mean == 0) ) mean[mean ==0] = 0.01
     alpha = mean^2 / (sd^2)
     beta = mean / (sd^2) 
     stan_data$lambda_prior_parameters = rbind(alpha, beta)
