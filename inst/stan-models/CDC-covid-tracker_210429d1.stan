@@ -192,7 +192,7 @@ transformed parameters {
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
   vector[N_missing] alpha_reduced_missing;
-  matrix[W,num_basis] beta = gp(W, num_basis, IDX_WEEKS, age,
+  matrix[W,num_basis] beta = gp(W, num_basis, IDX_WEEKS, IDX_BASIS,
                               delta0, delta1, delta2, 
                               alpha_gp1_t, alpha_gp2_t, alpha_gp1_d, alpha_gp2_d,
                               rho_gp1_t_dist, rho_gp2_t_dist, rho_gp1_d_dist, rho_gp2_d_dist,
