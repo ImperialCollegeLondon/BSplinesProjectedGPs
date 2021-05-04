@@ -1,7 +1,7 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="210426a"
+STAN_MODEL="210429h2"
 CWD="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/"
 INDIR="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/"
 LOCATION_INDEX=1
@@ -30,10 +30,10 @@ mkdir \$PWD/\$STAN_MODEL-\$JOBID/data
 mkdir \$PWD/\$STAN_MODEL-\$JOBID/figure
 mkdir \$PWD/\$STAN_MODEL-\$JOBID/table
   
-Rscript ~/git/CDC-covid19-agespecific-mortality-data/scripts/run_stan_hpc.R -indir \$INDIR -outdir \$PWD -location.index $LOCATION_INDEX -stan_model \$STAN_MODEL -JOBID \$JOBID
+Rscript \$INDIR/scripts/run_stan_hpc.R -indir \$INDIR -outdir \$PWD -location.index $LOCATION_INDEX -stan_model \$STAN_MODEL -JOBID \$JOBID
   
-Rscript ~/git/CDC-covid19-agespecific-mortality-data/scripts/postprocessing_assess_mixing.R -indir \$INDIR -outdir \$PWD -location.index $LOCATION_INDEX -stan_model \$STAN_MODEL -JOBID \$JOBID
-Rscript ~/git/CDC-covid19-agespecific-mortality-data/scripts/postprocessing_figures.R -indir \$INDIR -outdir \$PWD -location.index $LOCATION_INDEX -stan_model \$STAN_MODEL -JOBID \$JOBID
+Rscript \$INDIR/scripts/postprocessing_assess_mixing.R -indir \$INDIR -outdir \$PWD -location.index $LOCATION_INDEX -stan_model \$STAN_MODEL -JOBID \$JOBID
+Rscript \$INDIR/scripts/postprocessing_figures.R -indir \$INDIR -outdir \$PWD -location.index $LOCATION_INDEX -stan_model \$STAN_MODEL -JOBID \$JOBID
   
 cp -R --no-preserve=mode,ownership \$PWD/* \$CWD
   
