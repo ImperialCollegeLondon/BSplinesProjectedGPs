@@ -509,3 +509,32 @@ plot_probability_ratio = function(probability_ratio_table, outdir)
   ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 8, h = 8)
 }
 
+plot_death_ratio = function(death_ratio_table, outdir)
+{
+  # plot
+  tmp = subset(death_ratio_table, age %in% c('45-54', '55-64', '65-74', '75-84', '85+'))
+  
+  ggplot(tmp, aes(x = date)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
+    geom_line(aes(y = M)) + 
+    geom_point(aes(y = death.ratio), col = 'darkred') + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    theme_bw() + 
+    geom_hline(aes(yintercept = 1)) +
+    facet_wrap(~age, scales = 'free', ncol = 1)+ 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 90)) +
+    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date, "%d-%b-%y")))
+  ggsave(file = paste0(outdir, '-DeathRatio_', Code, '.png'), w = 4, h = 10)
+  
+  ggplot(tmp, aes(x = date)) + 
+    geom_line(aes(y = M, col = age)) + 
+    geom_point(aes(y = death.ratio, col = age)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
+    theme_bw() + 
+    geom_hline(aes(yintercept = 1)) +
+    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date, "%d-%b-%y")), 
+         col = 'Age group')
+  ggsave(file = paste0(outdir, '-DeathRatio_elderly_', Code, '.png'), w = 8, h = 8)
+}

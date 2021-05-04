@@ -78,8 +78,11 @@ plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
 plot_probability_ratio(probability_ratio_table, outdir.fig)
 
-# plot compare to JHU and Imperial data
+# Plot deaths ratio of deaths over time
+death_ratio_table = make_death_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
+plot_death_ratio(death_ratio_table, outdir.fig)
 
+# plot compare to JHU and Imperial data
 # find overall cumulative deaths (across age groups)
 tmp = find_overall_cumulative_deaths(fit_cum, df_week, 'deaths_predict')
 compare_CDCestimation_JHU_Imperial_plot(CDC_data = copy(tmp), JHU_data = JHUData, scraped_data = scrapedData,

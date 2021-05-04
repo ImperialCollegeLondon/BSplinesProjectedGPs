@@ -248,6 +248,47 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   return(tmp1)
 }
 
+make_death_ratio_table = function(fit, df_week, df_state_age, data, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples$deaths_predict_state_age_strata) )
+  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
+  tmp2 = subset(tmp1, date <= ref_date)
+  tmp2 = tmp2[, list(value.ref = mean(value)), by = c('age_index')]
+  tmp1 = merge(tmp1, tmp2, by = c('age_index'))
+  tmp1[, value := value / value.ref]
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  tmp1[, code := Code]
+  
+  # find empirical estimate
+  tmp = select(data, daily.deaths, date, age)
+  tmp2 = subset(tmp, date <= ref_date)
+  tmp2 = tmp2[, list(daily.deaths.ref = mean(daily.deaths)), by = c('age')]
+  tmp = merge(tmp, tmp2, by = c('age'))
+  tmp[, death.ratio := daily.deaths / daily.deaths.ref]
+  subset(tmp, age %in% unique(data$age))
+  
+  tmp1 = merge(tmp1, tmp, by = c('age', 'date'), all.x = T)
+  
+  # save
+  saveRDS(tmp1, file = paste0(outdir, '-DeathRatioTable_', Code, '.png'))
+  
+  return(tmp1)
+}
+
 find_overall_cumulative_deaths = function(fit_cum, df_week, deaths_predict_var){
   
   ps <- c(0.5, 0.025, 0.975)
