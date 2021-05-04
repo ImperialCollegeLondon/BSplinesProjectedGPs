@@ -6,8 +6,8 @@ library(doParallel)
 
 indir ="~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-location.index = 1
-stan_model = "210429h1"
+location.index = 11
+stan_model = "210504a"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -101,7 +101,7 @@ if(grepl('210319d2|210319d3', stan_model)){
   cat("\n Using a GP \n")
   stan_data$age = matrix(stan_data$age, nrow = 106, ncol = 1)
 }
-if(grepl('210426|210429', stan_model)){
+if(grepl('210426|210429|210504', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
@@ -121,11 +121,11 @@ if(grepl('210416|210422d|210422e|210426f|210426g|210429f|210429g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
-if(grepl('210429a1|210429b1|210429d1|210429g1|210429f1|210429h1', stan_model)){
+if(grepl('210429a1|210429b1|210429d1|210429g1|210429f1|210429h1|210504a1|210504b1', stan_model)){
   cat("\n With prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
-if(grepl('210429a2|210429b2|210429d2|210429g2|210429f2|210429h2', stan_model)){
+if(grepl('210429a2|210429b2|210429d2|210429g2|210429f2|210429h2|210504a2|210504b2', stan_model)){
   cat("\n With prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'log_normal')
 }
