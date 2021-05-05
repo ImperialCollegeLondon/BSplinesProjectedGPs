@@ -66,28 +66,34 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   cat("the minimum and maximum Rhat are ", range(Rhat_cum), "\n")
   if(min(eff_sample_size_cum) < 500) cat('\nEffective sample size smaller than 500 \n')
   
-  # compute WAIC and LOO
-  re = rstan::extract(fit_cum)
-  if('log_lik' %in% names(re)){
-    log_lik <- loo::extract_log_lik(fit_cum)
-    .WAIC = loo::waic(log_lik)
-    .LOO = loo::loo(log_lik)
-    print(.WAIC); print(.LOO)
-    WAIC = .WAIC$pointwise
-    LOO = .LOO$pointwise
-  } 
+  tryCatch({
+    sampler_params <- get_sampler_params(fit_cum, inc_warmup = FALSE)
+    sampler_diagnostics <- data.table()
+    for (i in colnames(sampler_params[[1]])) {
+      tmp <- data.table(t(sapply(sampler_params, function(x) quantile(x[, i],probs = c(0.025,0.5,0.975)))))
+      tmp[, diagnostics:=i ]
+      tmp[, chain:= seq_len(length(sampler_params))]
+      sampler_diagnostics <- rbind(sampler_diagnostics, tmp)
+    }
+    print(sampler_diagnostics)
+  }, error = function(e) e)
   
-  sampler_params <- get_sampler_params(fit_cum, inc_warmup = FALSE)
-  sampler_diagnostics <- data.table()
-  for (i in colnames(sampler_params[[1]])) {
-    tmp <- data.table(t(sapply(sampler_params, function(x) quantile(x[, i],probs = c(0.025,0.5,0.975)))))
-    tmp[, diagnostics:=i ]
-    tmp[, chain:= seq_len(length(sampler_params))]
-    sampler_diagnostics <- rbind(sampler_diagnostics, tmp)
-  }
-  print(sampler_diagnostics)
+  
   
   check_all_diagnostics(fit, outdir)
+  
+  # compute WAIC and LOO
+  re = rstan::extract(fit_cum)
+  tryCatch({
+    
+    if('log_lik' %in% names(re)){
+      log_lik <- loo::extract_log_lik(fit_cum)
+      .WAIC = loo::waic(log_lik)
+      .LOO = loo::loo(log_lik)
+      print(.WAIC); print(.LOO)
+      WAIC = .WAIC$pointwise
+      LOO = .LOO$pointwise
+    }} , error = function(e) e)
   
   # save
   saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum_", Code, ".rds"))
