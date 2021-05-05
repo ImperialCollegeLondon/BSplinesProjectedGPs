@@ -254,6 +254,33 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   return(tmp1)
 }
 
+make_var_by_age_table = function(fit, df_week, df_state_age, data, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  tmp1[, code := Code]
+  
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name, 'Table_', Code, '.rds'))
+  
+  return(tmp1)
+}
+
 make_death_ratio_table = function(fit, df_week, df_state_age, data, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -430,7 +457,6 @@ find_sum_missing_deaths_state_age = function(fit, df_week, df_age_continuous, st
   
   return(tmp1)
 }
-
 
 find_sum_bounded_missing_deaths_state_age = function(fit, df_age_continuous, state_age_groups, stan_data, deaths_predict_var){
   

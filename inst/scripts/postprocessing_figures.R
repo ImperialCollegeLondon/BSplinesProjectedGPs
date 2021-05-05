@@ -74,6 +74,12 @@ plot_covariance_matrix(fit_cum, outdir = outdir.fig)
 # Plot estimate plane with CAR of ICAR
 plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
 
+# Plot imputed weekly data 
+death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, data, 'deaths_predict', outdir.table)
+plot_var_by_age(death_continuous_table, 'deaths_predict', outdir.fig)
+death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, data, 'deaths_predict_state_age_strata', outdir.table)
+plot_var_by_age(death_discrete_table, 'deaths_predict_state_age_strata', outdir.fig, discrete = T)
+
 # Plot probability ratio of deaths over time
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
 plot_probability_ratio(probability_ratio_table, outdir.fig)

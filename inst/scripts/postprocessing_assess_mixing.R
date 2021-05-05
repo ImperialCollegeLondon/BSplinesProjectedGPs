@@ -61,7 +61,7 @@ fit_cum <- readRDS(file=file)
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")
 make_convergence_diagnostics_stats(fit_cum, outdir.table)
-plot_convergence_diagnostics(fit_cum, "Daily deaths fit", 'daily', outfile = outdir.fig)
+# plot_convergence_diagnostics(fit_cum, "Daily deaths fit", 'daily', outfile = outdir.fig)
 
 # Make predictive checks table
 cat("\nMake posterior predictive checks table \n")
