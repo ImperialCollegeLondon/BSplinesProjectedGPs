@@ -526,7 +526,7 @@ plot_probability_ratio = function(probability_ratio_table, outdir)
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date, "%d-%b-%Y")))
+    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date-5, "%d-%b-%Y")))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 4, h = 8)
   
   tmp = subset(probability_ratio_table, age %in% c('45-54', '55-64', '65-74', '75-84', '85+'))
@@ -536,7 +536,7 @@ plot_probability_ratio = function(probability_ratio_table, outdir)
     # geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
     theme_bw() + 
     geom_hline(aes(yintercept = 1)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date, "%d-%b-%Y")))
+    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date-5, "%d-%b-%Y")))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 8, h = 8)
 }
 
