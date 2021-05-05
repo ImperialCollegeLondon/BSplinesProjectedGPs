@@ -148,7 +148,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
             panel.grid.minor = element_blank()) +
       labs(x = '', y = 'Age group',
            fill = 'Reported covid-19 deaths')
-    ggsave(p, file = paste0(outdir, '-deathByAge_', Code, '.png'), w = 5, h = 5)
+    ggsave(p, file = paste0(outdir, '-deathByAge_', Code, '.png'), w = 5, h = 5.2)
     
     p = ggplot(tmp, aes(x = date, y = age)) + 
       geom_raster(aes(fill = prop_deaths )) + 
