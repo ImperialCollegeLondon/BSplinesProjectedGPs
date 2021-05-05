@@ -32,7 +32,7 @@ make.PBS.header <- function(hpc.walltime=47, hpc.select=1, hpc.nproc=1, hpc.mem=
 
 
 pbshead = make.PBS.header(hpc.walltime = 30, hpc.nproc = args$nchains, hpc.mem = '100gb', 
-                          hpc.array = length(args$locations), hpc.log = file.path(args$CWD, paste0(args$STAN_MODEL, '-', args$JOBID)) )
+                          hpc.array = length(args$locations), hpc.log = file.path(args$CWD, paste0(args$STAN_MODEL, '-', args$JOBID, '/')) )
 
 
 pbshead = paste0(pbshead, '\n mkdir ', args$CWD, '/', args$STAN_MODEL,'-', args$JOBID, '\n')
