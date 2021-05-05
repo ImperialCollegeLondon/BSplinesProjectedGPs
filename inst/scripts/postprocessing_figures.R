@@ -78,7 +78,7 @@ plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
 death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
 plot_var_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
 death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
-plot_var_by_age(death_discrete_table, 'deaths_predict_state_age_strata', outdir.fig, data, discrete = T)
+plot_var_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
 
 # Plot probability ratio of deaths over time
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
