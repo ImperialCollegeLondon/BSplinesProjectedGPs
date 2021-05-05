@@ -86,7 +86,7 @@ cmd		<- paste(pbshead,cmd,sep='\n')
 
 
 #	submit job
-outfile		<- file.path(args$CWD, paste0(args$STAN_MODEL,'-',args$JOBID,'.pbs'))
+outfile		<- file.path(args$CWD, paste0('bash_', args$STAN_MODEL,'-',args$JOBID,'.pbs'))
 cat(cmd, file=outfile)
 cmd 		<- paste("qsub", outfile)
 cat(cmd)
