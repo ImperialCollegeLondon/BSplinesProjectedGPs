@@ -368,9 +368,10 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
   mean = stan_data$sum_deaths
   sd = stan_data$sum_deaths / (lin_fit$coefficients*2)
   
+  if( any(sd == 0) ) sd[sd ==0] = 0.01
+  if( any(mean == 0) ) mean[mean ==0] = 0.01
+  
   if(distribution == 'gamma'){
-    if( any(sd == 0) ) sd[sd ==0] = 0.01
-    if( any(mean == 0) ) mean[mean ==0] = 0.01
     alpha = mean^2 / (sd^2)
     beta = mean / (sd^2) 
     stan_data$lambda_prior_parameters = rbind(alpha, beta)
