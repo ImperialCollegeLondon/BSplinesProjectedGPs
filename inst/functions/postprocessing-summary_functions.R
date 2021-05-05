@@ -254,7 +254,7 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   return(tmp1)
 }
 
-make_var_by_age_table = function(fit, df_week, df_state_age, data, var_name, outdir){
+make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')

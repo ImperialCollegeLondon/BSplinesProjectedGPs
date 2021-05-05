@@ -59,7 +59,7 @@ plot_probability_deaths_age_contribution = function(fit, var_name, df_age, df_we
   
 }
 
-plot_var_by_age = function(tmp1, var_name, outdir, discrete = F){
+plot_var_by_age = function(tmp1, var_name, data, outdir, discrete = F){
   
   if(!discrete){
     tmp1[, age := as.numeric(age)]
@@ -75,16 +75,17 @@ plot_var_by_age = function(tmp1, var_name, outdir, discrete = F){
           panel.grid.minor = element_blank()) 
   
   if(discrete){
+    limits_wd = range(na.omit(data$daily.deaths))
     range_wd = sqrt(range(tmp1$M))
     p = p + 
       scale_y_discrete(expand = c(0,0))  + labs(x = '', y = 'Age group', fill = 'Estimated posterior median') + 
-      scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -2)) 
+      scale_fill_viridis_c(trans = 'sqrt', limits = limits_wd, breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -2)) 
   } else {
     p = p + 
       scale_y_continuous(expand = c(0,0))  +labs(x = '', y = 'Age', fill = 'Estimated posterior median') + 
       scale_fill_viridis_c(trans = 'sqrt')
   }
-  ggsave(p, file = paste0(outdir, "-posterior_", var_name, '_', Code, ".png") , w= 5, h = 5, limitsize = FALSE)
+  ggsave(p, file = paste0(outdir, "-posterior_", var_name, '_', Code, ".png") , w= 5, h = 5.2, limitsize = FALSE)
   
 }
 
