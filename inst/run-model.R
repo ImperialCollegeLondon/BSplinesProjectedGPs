@@ -35,6 +35,8 @@ pbshead = make.PBS.header(hpc.walltime = 30, hpc.nproc = args$nchains, hpc.mem =
                           hpc.array = length(args$locations), hpc.log = file.path(args$CWD, paste0(args$STAN_MODEL, '-', args$JOBID)) )
 
 
+pbshead = paste0(pbshead, '\n mkdir ', args$CWD, '/', args$STAN_MODEL,'-', args$JOBID, '\n')
+
 # PBS array
 cmds = vector(mode = 'list', length = length(args$locations))
 for(i in args$locations){
