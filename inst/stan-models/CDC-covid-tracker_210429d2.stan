@@ -172,7 +172,7 @@ transformed data
 }
 
 parameters {
-  real nu;
+  real<lower=0> nu;
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw;
   real<lower=0> alpha_gp1_t;
   real<lower=0> alpha_gp2_t;
@@ -221,7 +221,7 @@ transformed parameters {
 
 model {
   
-  nu ~ normal(0,1);
+  nu ~ exponential(1);
   lambda_raw ~ lognormal( lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
   
   delta1 ~ normal(0,1e-7);
