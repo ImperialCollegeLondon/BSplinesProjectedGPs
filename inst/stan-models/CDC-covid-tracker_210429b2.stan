@@ -77,6 +77,7 @@ transformed data {
   int Adj_sparse[Adj_n, 2];   // adjacency pairs
   vector[N] D_sparse;     // diagonal of D (number of neigbors for each site)
   vector[N] egv;       // eigenvalues of invsqrtD * Adj * invsqrtD
+  int N_log_lik = 0;
   
   { // generate sparse representation for Ajd
   int counter;
@@ -99,6 +100,23 @@ transformed data {
       invsqrtD[i] = 1 / sqrt(D_sparse[i]);
     }
     egv = eigenvalues_sym(quad_form(Adj, diag_matrix(invsqrtD)));
+  }
+  
+    
+  for(w in 1:W_OBSERVED){
+    for(i in idx_non_missing[1:N_idx_non_missing[w],w]){
+      N_log_lik += 1;
+    }
+  }
+  for(n in 1:N_missing){
+    if(!start_or_end_period[n])
+    {
+       N_log_lik += 1;
+
+    } else {
+       for(i in min_count_censored[n]:max_count_censored[n])
+          N_log_lik += 1;
+    }
   }
 }
 
@@ -177,7 +195,7 @@ model {
 }
 
 generated quantities {
-  real log_lik = 0;
+  real log_lik[N_log_lik];
   int deaths_predict[A,W];
   int deaths_predict_state_age_strata[B,W];
   matrix[A,W] probability_ratio;
@@ -195,22 +213,25 @@ generated quantities {
   }
   
   
-  for(w in 1:W_OBSERVED){
-
-    log_lik += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] | 
-                                alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
-  
-        
-  }
-  
-  for(n in 1:N_missing){
-    if(!start_or_end_period[n])
-    {
-       log_lik += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n] , theta ) ;
-
-    } else {
-       for(i in min_count_censored[n]:max_count_censored[n])
-          log_lik += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
+ {
+    int idx_log_lik = 0;
+    for(w in 1:W_OBSERVED){
+      for(i in idx_non_missing[1:N_idx_non_missing[w],w]){
+        idx_log_lik += 1; 
+        log_lik[idx_log_lik] = neg_binomial_lpmf(deaths[i,w] | alpha_reduced[i, IDX_WEEKS_OBSERVED[w]] , theta );
+      }
+    }
+    for(n in 1:N_missing){
+      if(!start_or_end_period[n])
+      {
+      idx_log_lik += 1; 
+       log_lik[idx_log_lik] = neg_binomial_lpmf( sum_count_censored[n] |  alpha_reduced_missing[n] , theta ) ;
+      } else {
+       for(i in min_count_censored[n]:max_count_censored[n]){
+          idx_log_lik += 1; 
+          log_lik[idx_log_lik] = neg_binomial_lpmf( i |  alpha_reduced_missing[n], theta ) ;
+       }
+      }
     }
   }
 
