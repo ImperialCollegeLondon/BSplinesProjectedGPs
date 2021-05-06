@@ -84,7 +84,7 @@ if(1){
   compare_CDC_JHU_Imperial_error_plot(CDC_data = deathByAge,
                                     JHU_data = JHUData, 
                                     scrapedData = scrapedData,
-                                    var.daily.deaths.CDC = 'daily.deaths', 
+                                    var.weekly.deaths.CDC = 'weekly.deaths', 
                                     outdir = outdir.fig,
                                     Code = Code)
  }

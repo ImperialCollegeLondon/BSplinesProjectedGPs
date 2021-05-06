@@ -1,9 +1,9 @@
-prepare_CDC_data = function(last.day,age_max,sex,indir, check_increasing_cumulative_deaths =0)
+prepare_CDC_data = function(last.week,age_max,sex,indir, check_increasing_cumulative_deaths =0)
   {
   
   path_to_data = file.path(indir, 'misc', 'data')
   
-  dates = seq.Date(as.Date("2020-03-01"), last.day, by = "day")
+  dates = seq.Date(as.Date("2020-03-01"), last.week, by = "week")
   
   file_format = ".csv"
   
@@ -116,10 +116,10 @@ group.age.specification.1 = function(tmp)
   tmp = subset(tmp, Age.group %in% c('0-0', '1-4', '5-14', '15-24', '25-34', '35-44', '45-54', '55-64', '65-74', '75-84', '85+'))
   tmp[, Age.group := factor(Age.group, c('0-0', '1-4', '5-14', '15-24', '25-34', '35-44', '45-54', '55-64', '65-74', '75-84', '85+'))]
   
-  # rm overall
+  # rm missing
   tmp = subset(tmp, !is.na(Age.group))
   
-  # check that the number of age group is the same for every stata/date combinations
+  # check that the number of age group is the same for every state/date combinations
   tmp1 = tmp[, list(N = .N), by = c('State', 'date')]
   stopifnot(all(tmp1$N == 11))
   
@@ -133,70 +133,71 @@ group.age.specification.1 = function(tmp)
   return(tmp)
 }
 
-find_daily_deaths = function(tmp, rm.COVID.19.Deaths= T)
+find_weekly_deaths = function(tmp, rm.COVID.19.Deaths= T)
   {
 
-  # ensure incrinsing cumulative deaths
+  # ensure increasing cumulative deaths
   tmp = ensure_increasing_cumulative_deaths(tmp)
   
   # find date index with NA
   tmp1 = tmp[, list(idx_NA = which(is.na(COVID.19.Deaths))), by = c("loc_label", 'age')]
   tmp1[, min_idx_NA := min(idx_NA), by = c("loc_label", 'age')]
   tmp1[, max_idx_NA := max(idx_NA), by = c("loc_label", 'age')]
+  
+  # check that na appear series
   tmp2 = tmp1[, list(is.inside = all( seq(unique(min_idx_NA), unique(max_idx_NA), 1) %in% idx_NA)), by = c("loc_label", 'age')]
   stopifnot(all(tmp2$is.inside == T))
   
+  # merge
   tmp2 = tmp1[, list(min_idx_NA = min(idx_NA), max_idx_NA = max(idx_NA)), by = c("loc_label", 'age')]
   tmp1 = unique(select(tmp, "loc_label", 'age'))
   tmp2 = merge(tmp1, tmp2, by = c("loc_label", 'age'), all.x = T)
   tmp = merge(tmp, tmp2, by = c("loc_label", 'age'))
+  
+  # find date index
   tmp[, date_idx := 1:length(date), by = c("loc_label", 'age')]
   tmp1 = tmp[, list(min_date_idx = min(date_idx), max_date_idx = max(date_idx)), by = c("loc_label", 'age')]
   tmp = merge(tmp, tmp1, by = c("loc_label", 'age'))
   
-  # find daily deaths
-  tmp[, daily.deaths := c(NA, diff(COVID.19.Deaths))]
-  tmp[, daily.deaths := as.numeric(daily.deaths)]
-  tmp[, min.sum.daily.deaths := NA]
-  tmp[, min.sum.daily.deaths := as.numeric(min.sum.daily.deaths)]
-  tmp[, max.sum.daily.deaths := NA]
-  tmp[, max.sum.daily.deaths := as.numeric(max.sum.daily.deaths)]
-  tmp[, sum.daily.deaths := NA]
-  tmp[, sum.daily.deaths := as.numeric(sum.daily.deaths)]
+  # find weekly deaths
+  tmp[, weekly.deaths := c(NA_integer_, diff(COVID.19.Deaths))]
+  tmp[, min.sum.weekly.deaths := NA_integer_]
+  tmp[, max.sum.weekly.deaths := NA_integer_]
+  tmp[, sum.weekly.deaths := NA_integer_]
   
-  # first day, daily death is NA
-  tmp[date_idx == 1, daily.deaths := NA]
+  # first week, weekly death is NA
+  tmp[date_idx == 1, weekly.deaths := NA_integer_]
 
   # boundaries deaths if NA
   # contained within the period
-  tmp[min_idx_NA != min_date_idx & max_idx_NA != max_date_idx, sum.daily.deaths := COVID.19.Deaths[max_idx_NA + 1], by = c("loc_label", 'age')]
+  tmp[min_idx_NA != min_date_idx & max_idx_NA != max_date_idx, sum.weekly.deaths := COVID.19.Deaths[max_idx_NA + 1], by = c("loc_label", 'age')]
   
   # beginning of the period
-  tmp[min_idx_NA == min_date_idx & max_idx_NA != max_date_idx, min.sum.daily.deaths := COVID.19.Deaths[max_idx_NA + 1] - max_COVID.19.Deaths, by = c("loc_label", 'age')]
-  tmp[min_idx_NA == min_date_idx & max_idx_NA != max_date_idx, max.sum.daily.deaths := COVID.19.Deaths[max_idx_NA + 1] - min_COVID.19.Deaths, by = c("loc_label", 'age')]
+  tmp[min_idx_NA == min_date_idx & max_idx_NA != max_date_idx, min.sum.weekly.deaths := COVID.19.Deaths[max_idx_NA + 1] - max_COVID.19.Deaths, by = c("loc_label", 'age')]
+  tmp[min_idx_NA == min_date_idx & max_idx_NA != max_date_idx, max.sum.weekly.deaths := COVID.19.Deaths[max_idx_NA + 1] - min_COVID.19.Deaths, by = c("loc_label", 'age')]
   
   # end of the period 
-  tmp[min_idx_NA != min_date_idx & max_idx_NA == max_date_idx, min.sum.daily.deaths := min_COVID.19.Deaths, by = c("loc_label", 'age')]
-  tmp[min_idx_NA != min_date_idx & max_idx_NA == max_date_idx, max.sum.daily.deaths := max_COVID.19.Deaths, by = c("loc_label", 'age')]
+  tmp[min_idx_NA != min_date_idx & max_idx_NA == max_date_idx, min.sum.weekly.deaths := min_COVID.19.Deaths, by = c("loc_label", 'age')]
+  tmp[min_idx_NA != min_date_idx & max_idx_NA == max_date_idx, max.sum.weekly.deaths := max_COVID.19.Deaths, by = c("loc_label", 'age')]
   
   # entire period
-  tmp[min_idx_NA == min_date_idx & max_idx_NA == max_date_idx, min.sum.daily.deaths := 0, by = c("loc_label", 'age')]
-  tmp[min_idx_NA == min_date_idx & max_idx_NA == max_date_idx, max.sum.daily.deaths := max_COVID.19.Deaths - 1, by = c("loc_label", 'age')]
+  tmp[min_idx_NA == min_date_idx & max_idx_NA == max_date_idx, min.sum.weekly.deaths := 0, by = c("loc_label", 'age')]
+  tmp[min_idx_NA == min_date_idx & max_idx_NA == max_date_idx, max.sum.weekly.deaths := max_COVID.19.Deaths - 1, by = c("loc_label", 'age')]
   
   # remove first date 
   dates = sort(unique(tmp$date))
   tmp = subset(tmp, date != dates[1])
   
-  # checks
-  stopifnot(nrow(tmp[daily.deaths < 0]) == 0)
-  tmp1 = subset(tmp, is.na(daily.deaths))
-  stopifnot(all( !is.na(tmp1$min.sum.daily.deaths) | !is.na(tmp1$sum.daily.deaths) ))
-  stopifnot(all( !is.na(tmp1$max.sum.daily.deaths) | !is.na(tmp1$sum.daily.deaths) ))
-  tmp2 = subset(tmp1, !is.na(max.sum.daily.deaths))
-  stopifnot(all(!is.na(tmp2$min.sum.daily.deaths)))
-  stopifnot(all(tmp2$min.sum.daily.deaths < tmp2$max.sum.daily.deaths))
-  tmp2 = subset(tmp1, !is.na(sum.daily.deaths))
-  stopifnot(all(tmp2$sum.daily.deaths >= 0))
+  # sanity checks
+  stopifnot(nrow(tmp[weekly.deaths < 0]) == 0)
+  tmp1 = subset(tmp, is.na(weekly.deaths))
+  stopifnot(all( !is.na(tmp1$min.sum.weekly.deaths) | !is.na(tmp1$sum.weekly.deaths) ))
+  stopifnot(all( !is.na(tmp1$max.sum.weekly.deaths) | !is.na(tmp1$sum.weekly.deaths) ))
+  tmp2 = subset(tmp1, !is.na(max.sum.weekly.deaths))
+  stopifnot(all(!is.na(tmp2$min.sum.weekly.deaths)))
+  stopifnot(all(tmp2$min.sum.weekly.deaths < tmp2$max.sum.weekly.deaths))
+  tmp2 = subset(tmp1, !is.na(sum.weekly.deaths))
+  stopifnot(all(tmp2$sum.weekly.deaths >= 0))
   
   tmp = select(tmp, -min_COVID.19.Deaths, -max_COVID.19.Deaths, -min_idx_NA, -max_idx_NA)
   
@@ -207,18 +208,18 @@ find_daily_deaths = function(tmp, rm.COVID.19.Deaths= T)
 }
 
 merge_deathByAge_over_Sex = function(tmp1, tmp2)
-  {
+{
   
-  setnames(tmp1, c('daily.deaths', 'sum.daily.deaths', 'min.sum.daily.deaths', 'max.sum.daily.deaths'), 
-           c('daily.deaths.sex_1', 'sum.daily.deaths.sex_1', 'min.sum.daily.deaths.sex_1', 'max.sum.daily.deaths.sex_1'))
-  setnames(tmp2, c('daily.deaths', 'sum.daily.deaths', 'min.sum.daily.deaths', 'max.sum.daily.deaths'), 
-           c('daily.deaths.sex_2', 'sum.daily.deaths.sex_2', 'min.sum.daily.deaths.sex_2', 'max.sum.daily.deaths.sex_2'))
+  setnames(tmp1, c('weekly.deaths', 'sum.weekly.deaths', 'min.sum.weekly.deaths', 'max.sum.weekly.deaths'), 
+           c('weekly.deaths.sex_1', 'sum.weekly.deaths.sex_1', 'min.sum.weekly.deaths.sex_1', 'max.sum.weekly.deaths.sex_1'))
+  setnames(tmp2, c('weekly.deaths', 'sum.weekly.deaths', 'min.sum.weekly.deaths', 'max.sum.weekly.deaths'), 
+           c('weekly.deaths.sex_2', 'sum.weekly.deaths.sex_2', 'min.sum.weekly.deaths.sex_2', 'max.sum.weekly.deaths.sex_2'))
   
   # find date index with NA
-  tmp3 = tmp1[, list(idx_NA = which(is.na(daily.deaths.sex_1))), by = c("loc_label", 'age')]
+  tmp3 = tmp1[, list(idx_NA = which(is.na(weekly.deaths.sex_1))), by = c("loc_label", 'age')]
   tmp3 = tmp3[, list(min_idx_NA.sex_1 = min(idx_NA), max_idx_NA.sex_1 = max(idx_NA)), by = c("loc_label", 'age')]
   tmp1 = merge(tmp1, tmp3, by = c("loc_label", 'age'), all.x = T)
-  tmp3 = tmp2[, list(idx_NA = which(is.na(daily.deaths.sex_2))), by = c("loc_label", 'age')]
+  tmp3 = tmp2[, list(idx_NA = which(is.na(weekly.deaths.sex_2))), by = c("loc_label", 'age')]
   tmp3 = tmp3[, list(min_idx_NA.sex_2 = min(idx_NA), max_idx_NA.sex_2 = max(idx_NA)), by = c("loc_label", 'age')]
   tmp2 = merge(tmp2, tmp3, by = c("loc_label", 'age'), all.x = T)
   
@@ -226,21 +227,17 @@ merge_deathByAge_over_Sex = function(tmp1, tmp2)
   
   tmp1 = merge(tmp1, tmp2, by = c('age', 'date', 'loc_label', 'date_idx', 'min_date_idx', 'max_date_idx'))
   
-  # reajust date idx after emoval of the first day
+  # reajust date idx after removal of the first week
   tmp1 = select(tmp1, -date_idx, -min_date_idx, -max_date_idx)
   tmp1[, date_idx := 1:length(date), by = c("loc_label", 'age')]
   tmp3 = tmp1[, list(min_date_idx = min(date_idx), max_date_idx = max(date_idx)), by = c("loc_label", 'age')]
   tmp1 = merge(tmp1, tmp3, by = c("loc_label", 'age'))
   
-  tmp1[, daily.deaths := as.numeric(NA)]
-  tmp1[, daily.deaths := as.numeric(daily.deaths)]
-  tmp1[, min.sum.daily.deaths := as.numeric(NA)]
-  tmp1[, min.sum.daily.deaths := as.numeric(min.sum.daily.deaths)]
-  tmp1[, max.sum.daily.deaths := as.numeric(NA)]
-  tmp1[, max.sum.daily.deaths := as.numeric(max.sum.daily.deaths)]
-  tmp1[, sum.daily.deaths := as.numeric(NA)]
-  tmp1[, sum.daily.deaths := as.numeric(sum.daily.deaths)]
-
+  tmp1[, weekly.deaths := NA_integer_]
+  tmp1[, min.sum.weekly.deaths := NA_integer_]
+  tmp1[, max.sum.weekly.deaths := NA_integer_]
+  tmp1[, sum.weekly.deaths := NA_integer_]
+  
   # both are at after the beginning of the period and both finish before the interval: 1
   # both are at after the beginning of the period and both finish after the interval: 1
   # both are at the beginning of the period and both finish after the interval: 1
@@ -255,426 +252,426 @@ merge_deathByAge_over_Sex = function(tmp1, tmp2)
   
   # both are after the beginning of the period and both finish before the interval
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
-        max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-        max_idx_NA.sex_1 < max_idx_NA.sex_2, 
-      sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-                          sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
+         max_idx_NA.sex_1 < max_idx_NA.sex_2, 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
          max_idx_NA.sex_2 < max_idx_NA.sex_1, 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
          max_idx_NA.sex_2 == max_idx_NA.sex_1, 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 , by = c('age', 'loc_label')]
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 , by = c('age', 'loc_label')]
   
   # both are after the beginning of the period and both finish after the interval
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) , by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) , by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx & 
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) , by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) , by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
-
+         !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
+  
   # both are at the beginning of the period and both finish after the interval
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) , by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) , by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
   
   # both are at the beginning of the period and both finish before the interval
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2 & (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2 & (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2  & (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2  & (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2  & !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2  & !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2)+ 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2)+ 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 +  sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 +  sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) , by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) , by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
   
   # both are at the beginning of the period and one finish after the interval
   # sex 2 finished after the interval
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx&
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx&
-         !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   
   # sex 1 finished after the interval
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) |is.na(sum.daily.deaths.sex_2)), 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) |is.na(sum.weekly.deaths.sex_2)), 
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-         !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   
   # both are after the beginning of the period and one finish after the interval
   # sex 2 finish after
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx&
-         is.na(sum.daily.deaths.sex_2), 
-       min.sum.daily.deaths := sum.daily.deaths.sex_1 + min.sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         is.na(sum.weekly.deaths.sex_2), 
+       min.sum.weekly.deaths := sum.weekly.deaths.sex_1 + min.sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx&
-         is.na(sum.daily.deaths.sex_2), 
-       max.sum.daily.deaths := sum.daily.deaths.sex_1 + max.sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         is.na(sum.weekly.deaths.sex_2), 
+       max.sum.weekly.deaths := sum.weekly.deaths.sex_1 + max.sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx&
-         !is.na(sum.daily.deaths.sex_1), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_1), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   
   
   # sex 1 finish after
-   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
+  tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-          is.na(sum.daily.deaths.sex_1), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
-   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
-          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-          is.na(sum.daily.deaths.sex_1), 
-        max.sum.daily.deaths := max.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-          sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
-   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
-          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-          !is.na(sum.daily.deaths.sex_1), 
-        sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-          sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
-   
+         is.na(sum.weekly.deaths.sex_1), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+  tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
+         max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
+         is.na(sum.weekly.deaths.sex_1), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+  tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
+         max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
+         !is.na(sum.weekly.deaths.sex_1), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+  
   # one is at the beginning of the period and both finish before the period
   # sex 1 is at the beginning
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.daily.deaths.sex_1), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.weekly.deaths.sex_1), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.daily.deaths.sex_1), 
-       max.sum.daily.deaths := max.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.weekly.deaths.sex_1), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2 & !is.na(sum.daily.deaths.sex_1), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2 & !is.na(sum.weekly.deaths.sex_1), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_1), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_1), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_1), 
-       max.sum.daily.deaths := max.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_1), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & !is.na(sum.daily.deaths.sex_1), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & !is.na(sum.weekly.deaths.sex_1), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_1), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 , by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_1), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 , by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_1), 
-       max.sum.daily.deaths := max.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_1), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & !is.na(sum.daily.deaths.sex_1), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & !is.na(sum.weekly.deaths.sex_1), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
   
   # sex 2 is at the beginning
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.daily.deaths.sex_2), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.weekly.deaths.sex_2), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.daily.deaths.sex_2), 
-       max.sum.daily.deaths := max.sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2 & is.na(sum.weekly.deaths.sex_2), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_1 < max_idx_NA.sex_2 & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_1 < max_idx_NA.sex_2 & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):unique(max_idx_NA.sex_2)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_2), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_2), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_2), 
-       max.sum.daily.deaths := max.sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_2), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 < max_idx_NA.sex_1 & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 < max_idx_NA.sex_1 & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):unique(max_idx_NA.sex_1)]), by = c('age', 'loc_label')]
   
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_2), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1 , by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_2), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1 , by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.daily.deaths.sex_2), 
-       max.sum.daily.deaths := max.sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1, by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & is.na(sum.weekly.deaths.sex_2), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1, by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 != max_date_idx & 
-         max_idx_NA.sex_2 == max_idx_NA.sex_1 & !is.na(sum.daily.deaths.sex_2), 
-       sum.daily.deaths := sum.daily.deaths.sex_2 + sum.daily.deaths.sex_1, by = c('age', 'loc_label')]
+         max_idx_NA.sex_2 == max_idx_NA.sex_1 & !is.na(sum.weekly.deaths.sex_2), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_2 + sum.weekly.deaths.sex_1, by = c('age', 'loc_label')]
   
   # one is at the beginning of the period and both finish after the period
   # sex 1 is at the beginning
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx, 
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1)  + 
-         min.sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1)  + 
+         min.sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx, 
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         max.sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
-
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         max.sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
+  
   # sex 2 is at the beginning
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx , 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_1 + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2), by = c('age', 'loc_label')]
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_1 + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 == max_date_idx, 
-       max.sum.daily.deaths := max.sum.daily.deaths.sex_1 + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2), by = c('age', 'loc_label')]
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_1 + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2), by = c('age', 'loc_label')]
   
   # one is at the beginning of the period and one finish after the period
   # sex 1 is at the beginning and sex 1 finish after the period
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-         is.na(sum.daily.deaths.sex_1), 
-       min.sum.daily.deaths := min.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         is.na(sum.weekly.deaths.sex_1), 
+       min.sum.weekly.deaths := min.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx&
-         is.na(sum.daily.deaths.sex_1), 
-         max.sum.daily.deaths := max.sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         is.na(sum.weekly.deaths.sex_1), 
+       max.sum.weekly.deaths := max.sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx&
-         !is.na(sum.daily.deaths.sex_1), 
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_1), 
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   
   # sex 1 is at the beginning and sex 2 does not finish  before the period
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) | is.na(sum.daily.deaths.sex_2)),
-         min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) | is.na(sum.weekly.deaths.sex_2)),
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx&
-         (is.na(sum.daily.deaths.sex_1) | is.na(sum.daily.deaths.sex_2)),
-         max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) | is.na(sum.weekly.deaths.sex_2)),
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 == min_date_idx & min_idx_NA.sex_2 != min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx&
-         !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2),
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2),
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   
   # sex 2 is at the beginning and sex 1 does not finish before the period
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) | is.na(sum.daily.deaths.sex_2)),
-       min.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), min.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), min.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) | is.na(sum.weekly.deaths.sex_2)),
+       min.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), min.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), min.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-         (is.na(sum.daily.deaths.sex_1) | is.na(sum.daily.deaths.sex_2)),
-       max.sum.daily.deaths := ifelse(is.na(unique(sum.daily.deaths.sex_1)), max.sum.daily.deaths.sex_1, sum.daily.deaths.sex_1) + 
-         ifelse(is.na(unique(sum.daily.deaths.sex_2)), max.sum.daily.deaths.sex_2, sum.daily.deaths.sex_2) + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         (is.na(sum.weekly.deaths.sex_1) | is.na(sum.weekly.deaths.sex_2)),
+       max.sum.weekly.deaths := ifelse(is.na(unique(sum.weekly.deaths.sex_1)), max.sum.weekly.deaths.sex_1, sum.weekly.deaths.sex_1) + 
+         ifelse(is.na(unique(sum.weekly.deaths.sex_2)), max.sum.weekly.deaths.sex_2, sum.weekly.deaths.sex_2) + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 == max_date_idx & max_idx_NA.sex_2 != max_date_idx &
-         !is.na(sum.daily.deaths.sex_1) & !is.na(sum.daily.deaths.sex_2),
-       sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_1) & !is.na(sum.weekly.deaths.sex_2),
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_2[(unique(max_idx_NA.sex_2)+1):(unique(max_idx_NA.sex_1)-1)]), by = c('age', 'loc_label')]
   
   # sex 2 is at the beginning and sex 2 does not finish before the period
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         is.na(sum.daily.deaths.sex_2),
-         min.sum.daily.deaths := sum.daily.deaths.sex_1 + min.sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         is.na(sum.weekly.deaths.sex_2),
+       min.sum.weekly.deaths := sum.weekly.deaths.sex_1 + min.sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         is.na(sum.daily.deaths.sex_2),
-         max.sum.daily.deaths := sum.daily.deaths.sex_1 + max.sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         is.na(sum.weekly.deaths.sex_2),
+       max.sum.weekly.deaths := sum.weekly.deaths.sex_1 + max.sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   tmp1[min_idx_NA.sex_1 != min_date_idx & min_idx_NA.sex_2 == min_date_idx & 
          max_idx_NA.sex_1 != max_date_idx & max_idx_NA.sex_2 == max_date_idx &
-         !is.na(sum.daily.deaths.sex_2),
-          sum.daily.deaths := sum.daily.deaths.sex_1 + sum.daily.deaths.sex_2 + 
-         sum(daily.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
+         !is.na(sum.weekly.deaths.sex_2),
+       sum.weekly.deaths := sum.weekly.deaths.sex_1 + sum.weekly.deaths.sex_2 + 
+         sum(weekly.deaths.sex_1[(unique(max_idx_NA.sex_1)+1):(unique(max_idx_NA.sex_2)-1)]), by = c('age', 'loc_label')]
   
   # sex 1 doesn't have any NA
-  tmp1[is.na(min_idx_NA.sex_1) & !is.na(min_idx_NA.sex_2) & !is.na(sum.daily.deaths.sex_2), 
-       daily.deaths := sum(daily.deaths.sex_1[unique(min_idx_NA.sex_2):unique(max_idx_NA.sex_2)]) + 
-         sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
-  tmp1[is.na(min_idx_NA.sex_1) & !is.na(min_idx_NA.sex_2) & is.na(sum.daily.deaths.sex_2), 
-       min.sum.daily.deaths := sum(daily.deaths.sex_1[unique(min_idx_NA.sex_2):unique(max_idx_NA.sex_2)]) + 
-         min.sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
-  tmp1[is.na(min_idx_NA.sex_1) & !is.na(min_idx_NA.sex_2) & is.na(sum.daily.deaths.sex_2), 
-       max.sum.daily.deaths := sum(daily.deaths.sex_1[unique(min_idx_NA.sex_2):unique(max_idx_NA.sex_2)]) + 
-         max.sum.daily.deaths.sex_2, by = c('age', 'loc_label')]
+  tmp1[is.na(min_idx_NA.sex_1) & !is.na(min_idx_NA.sex_2) & !is.na(sum.weekly.deaths.sex_2), 
+       weekly.deaths := sum(weekly.deaths.sex_1[unique(min_idx_NA.sex_2):unique(max_idx_NA.sex_2)]) + 
+         sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
+  tmp1[is.na(min_idx_NA.sex_1) & !is.na(min_idx_NA.sex_2) & is.na(sum.weekly.deaths.sex_2), 
+       min.sum.weekly.deaths := sum(weekly.deaths.sex_1[unique(min_idx_NA.sex_2):unique(max_idx_NA.sex_2)]) + 
+         min.sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
+  tmp1[is.na(min_idx_NA.sex_1) & !is.na(min_idx_NA.sex_2) & is.na(sum.weekly.deaths.sex_2), 
+       max.sum.weekly.deaths := sum(weekly.deaths.sex_1[unique(min_idx_NA.sex_2):unique(max_idx_NA.sex_2)]) + 
+         max.sum.weekly.deaths.sex_2, by = c('age', 'loc_label')]
   
   # sex 2 doesn't have any NA
-  tmp1[!is.na(min_idx_NA.sex_1) & is.na(min_idx_NA.sex_2) & !is.na(sum.daily.deaths.sex_1), 
-       daily.deaths := sum(daily.deaths.sex_2[unique(min_idx_NA.sex_1):unique(max_idx_NA.sex_1)]) + 
-         sum.daily.deaths.sex_1, by = c('age', 'loc_label')]
-  tmp1[!is.na(min_idx_NA.sex_1) & is.na(min_idx_NA.sex_2) & is.na(sum.daily.deaths.sex_1), 
-       min.sum.daily.deaths := sum(daily.deaths.sex_2[unique(min_idx_NA.sex_1):unique(max_idx_NA.sex_1)]) + 
-         min.sum.daily.deaths.sex_1, by = c('age', 'loc_label')]
-  tmp1[!is.na(min_idx_NA.sex_1) & is.na(min_idx_NA.sex_2) & is.na(sum.daily.deaths.sex_1), 
-       max.sum.daily.deaths := sum(daily.deaths.sex_2[unique(min_idx_NA.sex_1):unique(max_idx_NA.sex_1)]) + 
-         max.sum.daily.deaths.sex_1, by = c('age', 'loc_label')]
-
+  tmp1[!is.na(min_idx_NA.sex_1) & is.na(min_idx_NA.sex_2) & !is.na(sum.weekly.deaths.sex_1), 
+       weekly.deaths := sum(weekly.deaths.sex_2[unique(min_idx_NA.sex_1):unique(max_idx_NA.sex_1)]) + 
+         sum.weekly.deaths.sex_1, by = c('age', 'loc_label')]
+  tmp1[!is.na(min_idx_NA.sex_1) & is.na(min_idx_NA.sex_2) & is.na(sum.weekly.deaths.sex_1), 
+       min.sum.weekly.deaths := sum(weekly.deaths.sex_2[unique(min_idx_NA.sex_1):unique(max_idx_NA.sex_1)]) + 
+         min.sum.weekly.deaths.sex_1, by = c('age', 'loc_label')]
+  tmp1[!is.na(min_idx_NA.sex_1) & is.na(min_idx_NA.sex_2) & is.na(sum.weekly.deaths.sex_1), 
+       max.sum.weekly.deaths := sum(weekly.deaths.sex_2[unique(min_idx_NA.sex_1):unique(max_idx_NA.sex_1)]) + 
+         max.sum.weekly.deaths.sex_1, by = c('age', 'loc_label')]
   
-  # non missing daily deaths
-  tmp1[daily.deaths.sex_1 >= 0 & daily.deaths.sex_2 >= 0, daily.deaths := daily.deaths.sex_1 + daily.deaths.sex_2, by = c('age', 'loc_label')]
   
-  # checks 
-  tmp2 = subset(tmp1, is.na(daily.deaths))
-  which(!is.na(tmp2$min.sum.daily.deaths) | !is.na(tmp2$sum.daily.deaths))
-  tmp2[ !(!is.na(tmp2$min.sum.daily.deaths) | !is.na(tmp2$sum.daily.deaths)) ]
-  stopifnot(all( !is.na(tmp2$min.sum.daily.deaths) | !is.na(tmp2$sum.daily.deaths) ))
-  stopifnot(all( !is.na(tmp2$max.sum.daily.deaths) | !is.na(tmp2$sum.daily.deaths)))
-  stopifnot(!any( !is.na(tmp2$min.sum.daily.deaths) & !is.na(tmp2$sum.daily.deaths) ) )
-  stopifnot(!any( !is.na(tmp2$max.sum.daily.deaths) & !is.na(tmp2$sum.daily.deaths)))
-  tmp3 = subset(tmp1, !is.na(min.sum.daily.deaths))
-  stopifnot(all(!is.na(tmp3$max.sum.daily.deaths)))
-  stopifnot(all(tmp3$min.sum.daily.deaths < tmp3$max.sum.daily.deaths))
-  tmp3 = subset(tmp1, !is.na(max.sum.daily.deaths))
-  stopifnot(all(!is.na(tmp3$min.sum.daily.deaths)))
-  stopifnot(all(tmp3$min.sum.daily.deaths < tmp3$max.sum.daily.deaths))
-  tmp3 = subset(tmp1, !is.na(sum.daily.deaths))
-  stopifnot(all(tmp3$sum.daily.deaths >= 0))
+  # non missing weekly deaths
+  tmp1[weekly.deaths.sex_1 >= 0 & weekly.deaths.sex_2 >= 0, weekly.deaths := weekly.deaths.sex_1 + weekly.deaths.sex_2, by = c('age', 'loc_label')]
+  
+  # sanity checks 
+  tmp2 = subset(tmp1, is.na(weekly.deaths))
+  which(!is.na(tmp2$min.sum.weekly.deaths) | !is.na(tmp2$sum.weekly.deaths))
+  tmp2[ !(!is.na(tmp2$min.sum.weekly.deaths) | !is.na(tmp2$sum.weekly.deaths)) ]
+  stopifnot(all( !is.na(tmp2$min.sum.weekly.deaths) | !is.na(tmp2$sum.weekly.deaths) ))
+  stopifnot(all( !is.na(tmp2$max.sum.weekly.deaths) | !is.na(tmp2$sum.weekly.deaths)))
+  stopifnot(!any( !is.na(tmp2$min.sum.weekly.deaths) & !is.na(tmp2$sum.weekly.deaths) ) )
+  stopifnot(!any( !is.na(tmp2$max.sum.weekly.deaths) & !is.na(tmp2$sum.weekly.deaths)))
+  tmp3 = subset(tmp1, !is.na(min.sum.weekly.deaths))
+  stopifnot(all(!is.na(tmp3$max.sum.weekly.deaths)))
+  stopifnot(all(tmp3$min.sum.weekly.deaths < tmp3$max.sum.weekly.deaths))
+  tmp3 = subset(tmp1, !is.na(max.sum.weekly.deaths))
+  stopifnot(all(!is.na(tmp3$min.sum.weekly.deaths)))
+  stopifnot(all(tmp3$min.sum.weekly.deaths < tmp3$max.sum.weekly.deaths))
+  tmp3 = subset(tmp1, !is.na(sum.weekly.deaths))
+  stopifnot(all(tmp3$sum.weekly.deaths >= 0))
   
   for(Loc in unique(tmp1$loc_label)){
     for(Age in unique(tmp1$age)){
       tmp3 = subset(tmp1, loc_label == Loc & age == Age)
-      .idx_missing = which(is.na(tmp3$daily.deaths))
+      .idx_missing = which(is.na(tmp3$weekly.deaths))
       
       if(length(.idx_missing) == 0)
         next
-      stopifnot( length(unique(tmp3$min.sum.daily.deaths[.idx_missing])) == 1)
-      stopifnot( length(unique(tmp3$max.sum.daily.deaths[.idx_missing])) == 1)
-      stopifnot( length(unique(tmp3$sum.daily.deaths[.idx_missing])) == 1)
+      stopifnot( length(unique(tmp3$min.sum.weekly.deaths[.idx_missing])) == 1)
+      stopifnot( length(unique(tmp3$max.sum.weekly.deaths[.idx_missing])) == 1)
+      stopifnot( length(unique(tmp3$sum.weekly.deaths[.idx_missing])) == 1)
     }
   }
   
   # final
-  tmp1 = select(tmp1, 'date', 'loc_label', 'age', 'min.sum.daily.deaths', 'max.sum.daily.deaths', 'sum.daily.deaths', 'daily.deaths')
+  tmp1 = select(tmp1, 'date', 'loc_label', 'age', 'min.sum.weekly.deaths', 'max.sum.weekly.deaths', 'sum.weekly.deaths', 'weekly.deaths')
   tmp = merge(tmp, tmp1, by = c('age', 'loc_label'))
   
   return(tmp)
@@ -682,42 +679,48 @@ merge_deathByAge_over_Sex = function(tmp1, tmp2)
 
 incorporate_AllSexes_information = function(tmp1, tmp2)
 {
-  tmp = incorporate_AllSexes_boundary_information(tmp1, tmp2)
-  tmp = incorporate_AllSexes_totalsum_information(tmp)
+  # check that the total sum exact value is the same btw the Male and Female merged data set and the all sexe
+  tmp = incorporate_AllSexes_totalsum_information(tmp1, tmp2)
+  
+  # check that the total sum boundaries are the same btw the Male and Female merged data set and the all sexe
+  tmp = incorporate_AllSexes_boundary_information(tmp)
   
   return(tmp)
 }
 
-incorporate_AllSexes_totalsum_information = function(tmp)
+incorporate_AllSexes_boundary_information = function(tmp)
 {
   
   for(Loc in unique(tmp$loc_label)){
     for(Age in unique(tmp$age)){
       
       tmp3 = subset(tmp, loc_label == Loc & age == Age)
-      .idx_missing = which(is.na(tmp3$daily.deaths))
+      .idx_missing = which(is.na(tmp3$weekly.deaths))
       
       if(length(.idx_missing) == 0)
         next
       
-      if(all(!is.na(tmp3$sum.daily.deaths[.idx_missing])))
+      if(all(!is.na(tmp3$sum.weekly.deaths[.idx_missing])))
         next
       
-      stopifnot( length(unique(tmp3$min.sum.daily.deaths[.idx_missing])) <= 2)
-      stopifnot( length(unique(tmp3$max.sum.daily.deaths[.idx_missing])) <= 2)
+      stopifnot( length(unique(tmp3$min.sum.weekly.deaths[.idx_missing])) <= 2)
+      stopifnot( length(unique(tmp3$max.sum.weekly.deaths[.idx_missing])) <= 2)
       
-      stopifnot(tmp3[.idx_missing]$min.sum.daily.deaths[1] >= tmp3[.idx_missing]$min.sum.daily.deaths[length(.idx_missing)])
-      stopifnot(tmp3[.idx_missing]$max.sum.daily.deaths[1] >= tmp3[.idx_missing]$max.sum.daily.deaths[length(.idx_missing)])
+      stopifnot(tmp3[.idx_missing]$min.sum.weekly.deaths[1] >= tmp3[.idx_missing]$min.sum.weekly.deaths[length(.idx_missing)])
+      stopifnot(tmp3[.idx_missing]$max.sum.weekly.deaths[1] >= tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)])
       
-      if(tmp3[.idx_missing]$min.sum.daily.deaths[1] > tmp3[.idx_missing]$min.sum.daily.deaths[length(.idx_missing)])
-        tmp3[.idx_missing]$min.sum.daily.deaths = tmp3[.idx_missing]$min.sum.daily.deaths[length(.idx_missing)]
+      # check that the boundaries of weekly death sum are unique
+      # it is possible that they are greater in the Male and Female merged data set 
+      # so we can use the All sexes to find tighter boundaries
+      if(tmp3[.idx_missing]$min.sum.weekly.deaths[1] > tmp3[.idx_missing]$min.sum.weekly.deaths[length(.idx_missing)])
+        tmp3[.idx_missing]$min.sum.weekly.deaths = tmp3[.idx_missing]$min.sum.weekly.deaths[length(.idx_missing)]
       
-      if(tmp3[.idx_missing]$max.sum.daily.deaths[1] > tmp3[.idx_missing]$max.sum.daily.deaths[length(.idx_missing)])
-        tmp3[.idx_missing]$max.sum.daily.deaths =  tmp3[.idx_missing]$max.sum.daily.deaths[length(.idx_missing)]
+      if(tmp3[.idx_missing]$max.sum.weekly.deaths[1] > tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)])
+        tmp3[.idx_missing]$max.sum.weekly.deaths =  tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)]
       
       if(max(.idx_missing) == nrow(tmp3) & min(.idx_missing) != 1){
-        tmp3[.idx_missing]$min.sum.daily.deaths = 1
-        tmp3[.idx_missing]$max.sum.daily.deaths = 9
+        tmp3[.idx_missing]$min.sum.weekly.deaths = 1
+        tmp3[.idx_missing]$max.sum.weekly.deaths = 9
       }
       
       tmp = anti_join(tmp, tmp3, by = c('loc_label', 'age'))
@@ -729,7 +732,7 @@ incorporate_AllSexes_totalsum_information = function(tmp)
   return(tmp)
 }
 
-incorporate_AllSexes_boundary_information = function(tmp1, tmp2)
+incorporate_AllSexes_totalsum_information = function(tmp1, tmp2)
 {
   
   locations = unique(tmp1$loc_label)
@@ -738,62 +741,64 @@ incorporate_AllSexes_boundary_information = function(tmp1, tmp2)
   for(Loc in locations){
     for(Age in ages){
       
+      # male and female merged data set
       tmp3 = subset(tmp1, loc_label == Loc & age == Age)
+      # all sexes dataset
       tmp4 = subset(tmp2, loc_label == Loc & age == Age)
       tmp3 = subset(tmp3, date < min(tmp4$date))
       
-      .idx_missing.daily = which(is.na(tmp3$daily.deaths))
-      .idx_missing.daily2 = which(is.na(tmp4$daily.deaths))
+      .idx_missing.weekly = which(is.na(tmp3$weekly.deaths))
+      .idx_missing.weekly2 = which(is.na(tmp4$weekly.deaths))
       .idx_non_missing.cum = which(!is.na(tmp4$COVID.19.Deaths))
       
-      if(length(.idx_missing.daily) == 0)
+      if(length(.idx_missing.weekly) == 0)
         next
       if(length(.idx_non_missing.cum) == 0)
         next
-      if(!nrow(tmp3) %in% .idx_missing.daily)
+      if(!nrow(tmp3) %in% .idx_missing.weekly)
         next
       
-      # verify that sum daily death is equal to the first value of COVID.19.Deaths
-      if(!is.na(tmp3[nrow(tmp3)]$sum.daily.deaths) & !is.na(tmp4[1]$COVID.19.Deaths))
+      # verify that sum weekly death is equal to the first value of COVID.19.Deaths
+      if(!is.na(tmp3[nrow(tmp3)]$sum.weekly.deaths) & !is.na(tmp4[1]$COVID.19.Deaths))
       {
-        if(is.na(tmp4[1]$daily.deaths)){
-          tmp4[1]$daily.deaths = tmp3[nrow(tmp3)]$sum.daily.deaths
+        if(is.na(tmp4[1]$weekly.deaths)){
+          tmp4[1]$weekly.deaths = tmp3[nrow(tmp3)]$sum.weekly.deaths
           tmp2 = anti_join(tmp2, tmp4, by = c('loc_label', 'age'))
           tmp2 = rbind(tmp2, tmp4)
           
         }
-        if(tmp3[nrow(tmp3)]$sum.daily.deaths == tmp4[1]$COVID.19.Deaths)
+        if(tmp3[nrow(tmp3)]$sum.weekly.deaths == tmp4[1]$COVID.19.Deaths)
           next
-        if(tmp3[nrow(tmp3)]$sum.daily.deaths != tmp4[1]$COVID.19.Deaths){
-          tmp3[.idx_missing.daily]$sum.daily.deaths = tmp4[1]$COVID.19.Deaths
+        if(tmp3[nrow(tmp3)]$sum.weekly.deaths != tmp4[1]$COVID.19.Deaths){
+          tmp3[.idx_missing.weekly]$sum.weekly.deaths = tmp4[1]$COVID.19.Deaths
           tmp1 = anti_join(tmp1, tmp3, by = c('loc_label', 'age'))
           tmp1 = rbind(tmp1, tmp3)
           
         }
       }
 
-      # fill sum daily death with first value of COVID.19.Deaths if NA doesn't start at the beginning of the period
+      # fill sum weekly death with first value of COVID.19.Deaths if NA doesn't start at the beginning of the period
       first_non_missing_cum = tmp4$COVID.19.Deaths[.idx_non_missing.cum[1]]
-      if(1 %in% .idx_missing.daily & is.na(tmp3[nrow(tmp3)]$sum.daily.deaths))
+      if(1 %in% .idx_missing.weekly & is.na(tmp3[nrow(tmp3)]$sum.weekly.deaths))
       {
-        stopifnot(all(is.na(tmp3[.idx_missing.daily]$sum.daily.deaths )))
-        tmp3[.idx_missing.daily]$max.sum.daily.deaths = first_non_missing_cum
+        stopifnot(all(is.na(tmp3[.idx_missing.weekly]$sum.weekly.deaths )))
+        tmp3[.idx_missing.weekly]$max.sum.weekly.deaths = first_non_missing_cum
         
-        .idx_missing.daily2 = c(.idx_missing.daily2, .idx_non_missing.cum[1])
-        stopifnot(all(is.na(tmp4[.idx_missing.daily2]$sum.daily.deaths )))
-        tmp4[.idx_missing.daily2]$min.sum.daily.deaths = unique(tmp3[.idx_missing.daily]$min.sum.daily.deaths)
-        tmp4[.idx_missing.daily2]$max.sum.daily.deaths = first_non_missing_cum
-        tmp4[.idx_non_missing.cum[1]]$daily.deaths = NA
+        .idx_missing.weekly2 = c(.idx_missing.weekly2, .idx_non_missing.cum[1])
+        stopifnot(all(is.na(tmp4[.idx_missing.weekly2]$sum.weekly.deaths )))
+        tmp4[.idx_missing.weekly2]$min.sum.weekly.deaths = unique(tmp3[.idx_missing.weekly]$min.sum.weekly.deaths)
+        tmp4[.idx_missing.weekly2]$max.sum.weekly.deaths = first_non_missing_cum
+        tmp4[.idx_non_missing.cum[1]]$weekly.deaths = NA_integer_
       } else {
         
-        tmp3[.idx_missing.daily]$sum.daily.deaths = first_non_missing_cum
-        tmp3[.idx_missing.daily]$min.sum.daily.deaths = NA
-        tmp3[.idx_missing.daily]$max.sum.daily.deaths = NA
-        .idx_missing.daily2 = c(.idx_missing.daily2, .idx_non_missing.cum[1])
-        tmp4[.idx_missing.daily2]$sum.daily.deaths = first_non_missing_cum
-        tmp4[.idx_missing.daily2]$min.sum.daily.deaths = NA
-        tmp4[.idx_missing.daily2]$max.sum.daily.deaths = NA
-        tmp4[.idx_non_missing.cum[1]]$daily.deaths = NA
+        tmp3[.idx_missing.weekly]$sum.weekly.deaths = first_non_missing_cum
+        tmp3[.idx_missing.weekly]$min.sum.weekly.deaths = NA_integer_
+        tmp3[.idx_missing.weekly]$max.sum.weekly.deaths = NA_integer_
+        .idx_missing.weekly2 = c(.idx_missing.weekly2, .idx_non_missing.cum[1])
+        tmp4[.idx_missing.weekly2]$sum.weekly.deaths = first_non_missing_cum
+        tmp4[.idx_missing.weekly2]$min.sum.weekly.deaths = NA_integer_
+        tmp4[.idx_missing.weekly2]$max.sum.weekly.deaths = NA_integer_
+        tmp4[.idx_non_missing.cum[1]]$weekly.deaths = NA_integer_
       }
       
       tmp1 = anti_join(tmp1, tmp3, by = c('loc_label', 'age'))

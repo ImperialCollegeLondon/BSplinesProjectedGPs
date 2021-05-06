@@ -1,7 +1,7 @@
-compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, var.daily.deaths.CDC, outdir, Code = NULL)
+compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, var.weekly.deaths.CDC, outdir, Code = NULL)
 {
   # find errors 
-  CDCdata = CDC_data[, list(cumulative_deaths.CDC = sum(na.omit( get(var.daily.deaths.CDC) ))), by = c('code', 'date')]
+  CDCdata = CDC_data[, list(cumulative_deaths.CDC = sum(na.omit( get(var.weekly.deaths.CDC) ))), by = c('code', 'date')]
   
   # take cumulative deaths
   CDCdata[, cumulative_deaths.CDC := cumsum(cumulative_deaths.CDC), by = c('code', 'code')]
@@ -14,12 +14,7 @@ compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, 
   scrapedData = scrapedData[, list(cum.deaths = sum(cum.deaths)), by = c('code', 'date')]
   scrapedData[, date := as.Date(date)]
   scrapedData = subset(scrapedData, date <= max(CDCdata$date))
-  
-  
-  # tmp1 = merge(JHUData, CDCdata, by = c('code', 'date'))
-  # tmp1[, prop_diff := abs(cumulative_deaths - cumulative_deaths.CDC) / cumulative_deaths ]
-  # tmp1 = tmp1[, list(prop_diff = sum(prop_diff) / length(date)), by = c('code') ]
-  
+
   # plot
   JHUData[, source := 'JHU']
   CDCdata[, source := 'CDC']
@@ -28,10 +23,7 @@ compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, 
   setnames(scrapedData, 'cum.deaths', 'cumulative_deaths')
   
   tmp2 = rbind(rbind(JHUData, CDCdata),scrapedData)
-  # tmp2 = merge(tmp2, tmp1, by = 'code')
-  # tmp2[, code_2 := paste0(code, ', ', round(prop_diff*100, digits = 2), ' % error')]
-  
-  
+
   if(!dir.exists( basename(outdir) )){
     dir.create( basename(outdir), recursive = T )
   }
@@ -67,7 +59,7 @@ compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, 
 plot_data = function(deathByAge, outdir, Code = NULL)
 {
   p = ggplot(deathByAge, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = daily.deaths )) + 
+    geom_raster(aes(fill = weekly.deaths )) + 
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(trans = 'sqrt', breaks = c(100,1000,3000)) +
@@ -82,11 +74,11 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   ggsave(p, file = paste0(outdir, '-deathByAge.png'), w = 12, h = 10)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = min.sum.daily.deaths )) + 
+    geom_raster(aes(fill = min.sum.weekly.deaths )) + 
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30),
-                         limits = c(0,max(na.omit(deathByAge$max.sum.daily.deaths)))) +
+                         limits = c(0,max(na.omit(deathByAge$max.sum.weekly.deaths)))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -94,14 +86,14 @@ plot_data = function(deathByAge, outdir, Code = NULL)
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank()) +
     labs(x = '', y = 'Age group',
-         fill = "Value sum of covid-19 daily deaths", title = 'lower bound')
+         fill = "Value sum of covid-19 weekly deaths", title = 'lower bound')
   
   p2 = ggplot(deathByAge, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = max.sum.daily.deaths )) + 
+    geom_raster(aes(fill = max.sum.weekly.deaths )) + 
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                         limits = c(0,max(na.omit(deathByAge$max.sum.daily.deaths)))) +
+                         limits = c(0,max(na.omit(deathByAge$max.sum.weekly.deaths)))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -109,14 +101,14 @@ plot_data = function(deathByAge, outdir, Code = NULL)
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank()) +
     labs(x = '', y = 'Age group',
-         fill = "Value sum of covid-19 daily deaths", title = 'upper bound')
+         fill = "Value sum of covid-19 weekly deaths", title = 'upper bound')
   
   p3 = ggplot(deathByAge, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = sum.daily.deaths )) + 
+    geom_raster(aes(fill = sum.weekly.deaths )) + 
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                         limits = c(0,max(na.omit(deathByAge$max.sum.daily.deaths)))) +
+                         limits = c(0,max(na.omit(deathByAge$max.sum.weekly.deaths)))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -124,20 +116,20 @@ plot_data = function(deathByAge, outdir, Code = NULL)
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank()) +
     labs(x = '', y = 'Age group',
-         fill = "Value sum of covid-19 daily deaths", title = 'exact sum')
+         fill = "Value sum of covid-19 weekly deaths", title = 'exact sum')
   
   p = ggpubr::ggarrange(p1, p2, p3,  common.legend = T, legend = 'bottom')
   ggsave(p, file = paste0(outdir, '-deathByAge_boundaries.png'), w = 20, h = 25)
   
   if(!is.null(Code)){
     tmp = subset(deathByAge, code == Code)
-    tmp1 = tmp[, list(total_deaths = sum(na.omit(daily.deaths))), by = 'date']
+    tmp1 = tmp[, list(total_deaths = sum(na.omit(weekly.deaths))), by = 'date']
     tmp = merge(tmp, tmp1, by = 'date')
-    tmp[, prop_deaths := daily.deaths / total_deaths]
+    tmp[, prop_deaths := weekly.deaths / total_deaths]
       
-    range_wd = sqrt(range(na.omit(tmp$daily.deaths)))
+    range_wd = sqrt(range(na.omit(tmp$weekly.deaths)))
     p = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = daily.deaths )) + 
+      geom_raster(aes(fill = weekly.deaths )) + 
       theme_bw() +
       scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -2) ) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
@@ -165,10 +157,10 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     ggsave(p, file = paste0(outdir, '-deathByAge_prop_', Code, '.png'), w = 5, h = 5.2)
     
     p1 = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = min.sum.daily.deaths )) + 
+      geom_raster(aes(fill = min.sum.weekly.deaths )) + 
       theme_bw() +
       scale_fill_viridis_c(breaks = c(0,10,20,30),
-                           limits = c(0,max(na.omit(tmp$max.sum.daily.deaths)))) +
+                           limits = c(0,max(na.omit(tmp$max.sum.weekly.deaths)))) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       scale_y_discrete(expand = c(0,0)) + 
       theme(legend.position = 'bottom',
@@ -180,10 +172,10 @@ plot_data = function(deathByAge, outdir, Code = NULL)
            fill = "Sum of unobserved covid-19 weekly deaths", title = 'Lower bound')
     
     p2 = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = max.sum.daily.deaths )) + 
+      geom_raster(aes(fill = max.sum.weekly.deaths )) + 
       theme_bw() +
       scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                           limits = c(0,max(na.omit(tmp$max.sum.daily.deaths)))) +
+                           limits = c(0,max(na.omit(tmp$max.sum.weekly.deaths)))) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       scale_y_discrete(expand = c(0,0)) + 
       theme(legend.position = 'bottom',
@@ -195,10 +187,10 @@ plot_data = function(deathByAge, outdir, Code = NULL)
            fill = "Sum of unobserved covid-19 weekly deaths", title = 'Upper bound')
     
     p3 = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = sum.daily.deaths )) + 
+      geom_raster(aes(fill = sum.weekly.deaths )) + 
       theme_bw() +
       scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                           limits = c(0,max(na.omit(tmp$max.sum.daily.deaths)))) +
+                           limits = c(0,max(na.omit(tmp$max.sum.weekly.deaths)))) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       scale_y_discrete(expand = c(0,0)) + 
       theme(legend.position = 'bottom',

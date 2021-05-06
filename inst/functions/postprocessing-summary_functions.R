@@ -22,37 +22,13 @@ make_predictive_checks_table = function(fit, df_week, df_state_age, data, deaths
   tmp1[, age := factor(age, levels = levels(data$age))]
   
   # stat
-  tmp1[, inside.CI := daily.deaths <= CU & daily.deaths >= CL]
+  tmp1[, inside.CI := weekly.deaths <= CU & weekly.deaths >= CL]
   
   # save
   saveRDS(tmp1, file = paste0(outdir, '-predictive_checks_table_', Code, '.rds'))
   
   return(tmp1)
 }
-
-add_intervals_missing_data = function(data, stan_data, base_week_idx = 0){
-  
-  # include missing information
-  df_missing = as.data.table( reshape2::melt(stan_data$idx_weeks_missing) )[,-1]
-  setnames(df_missing, 1:2, c('idx_serie_missing', 'week_index'))
-  df_missing = subset(df_missing, week_index != -1)
-  
-  tmp = data.table(age_index = stan_data$age_missing,
-                   min_count_censored = stan_data$min_count_censored,
-                   max_count_censored = stan_data$max_count_censored,
-                   sum_count_censored = stan_data$sum_count_censored,
-                   idx_serie_missing = 1:length(stan_data$age_missing))
-  tmp[min_count_censored == -1, min_count_censored := NA]
-  tmp[max_count_censored == -1, max_count_censored := NA]
-  tmp[sum_count_censored == -1, sum_count_censored := NA]
-  
-  df_missing = merge(df_missing, tmp, by = 'idx_serie_missing')
-  
-  tmp1 = merge(data, df_missing, by = c('week_index', 'age_index'), all.x = T)
-
-  return(tmp1)
-}
-
 
 make_convergence_diagnostics_stats = function(fit, outdir)
   {
@@ -235,10 +211,10 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   tmp1 = merge(tmp1, tmp2, by = 'age')
   
   # find empirical estimate
-  tmp = select(data, daily.deaths, date, age)
-  tmp2 = tmp[, list(total.deaths = sum(na.omit(daily.deaths))), by = 'date']
+  tmp = select(data, weekly.deaths, date, age)
+  tmp2 = tmp[, list(total.deaths = sum(na.omit(weekly.deaths))), by = 'date']
   tmp = merge(tmp, tmp2, by = 'date')
-  tmp[, emp.prob := daily.deaths / total.deaths]
+  tmp[, emp.prob := weekly.deaths / total.deaths]
   tmp2 = subset(tmp, date <= ref_date)
   tmp2 = tmp2[, list(emp.prob = mean(emp.prob)), by = c('age')]
   setnames(tmp2, 'emp.prob', 'emp.prob.ref')
@@ -246,7 +222,7 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   tmp[, emp.prob.ratio := emp.prob / emp.prob.ref]
   subset(tmp, age %in% unique(data$age))
   
-  tmp1 = merge(tmp1, select(tmp, -daily.deaths), by = c('age', 'date'), all.x = T)
+  tmp1 = merge(tmp1, select(tmp, -weekly.deaths), by = c('age', 'date'), all.x = T)
   
   # save
   saveRDS(tmp1, file = paste0(outdir, '-ProbabilityRatioTable_', Code, '.rds'))
@@ -308,11 +284,11 @@ make_death_ratio_table = function(fit, df_week, df_state_age, data, outdir){
   tmp1[, code := Code]
   
   # find empirical estimate
-  tmp = select(data, daily.deaths, date, age)
+  tmp = select(data, weekly.deaths, date, age)
   tmp2 = subset(tmp, date <= ref_date)
-  tmp2 = tmp2[, list(daily.deaths.ref = mean(daily.deaths)), by = c('age')]
+  tmp2 = tmp2[, list(weekly.deaths.ref = mean(weekly.deaths)), by = c('age')]
   tmp = merge(tmp, tmp2, by = c('age'))
-  tmp[, death.ratio := daily.deaths / daily.deaths.ref]
+  tmp[, death.ratio := weekly.deaths / weekly.deaths.ref]
   subset(tmp, age %in% unique(data$age))
   
   tmp1 = merge(tmp1, tmp, by = c('age', 'date'), all.x = T)
@@ -519,3 +495,27 @@ find_sum_bounded_missing_deaths_state_age = function(fit, df_age_continuous, sta
   
   return(tmp1)
 }
+
+# 
+# add_intervals_missing_data = function(data, stan_data, base_week_idx = 0){
+#   
+#   # include missing information
+#   df_missing = as.data.table( reshape2::melt(stan_data$idx_weeks_missing) )[,-1]
+#   setnames(df_missing, 1:2, c('idx_serie_missing', 'week_index'))
+#   df_missing = subset(df_missing, week_index != -1)
+#   
+#   tmp = data.table(age_index = stan_data$age_missing,
+#                    min_count_censored = stan_data$min_count_censored,
+#                    max_count_censored = stan_data$max_count_censored,
+#                    sum_count_censored = stan_data$sum_count_censored,
+#                    idx_serie_missing = 1:length(stan_data$age_missing))
+#   tmp[min_count_censored == -1, min_count_censored := NA]
+#   tmp[max_count_censored == -1, max_count_censored := NA]
+#   tmp[sum_count_censored == -1, sum_count_censored := NA]
+#   
+#   df_missing = merge(df_missing, tmp, by = 'idx_serie_missing')
+#   
+#   tmp1 = merge(data, df_missing, by = c('week_index', 'age_index'), all.x = T)
+#   
+#   return(tmp1)
+# }

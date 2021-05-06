@@ -54,7 +54,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     
     Week = sort(unique(tmp$date))[w]
     
-    tmp1 = subset(tmp, date == Week & !is.na( daily.deaths ))
+    tmp1 = subset(tmp, date == Week & !is.na( weekly.deaths ))
     df_non_missing = unique(select(tmp1, age_from, age_to, age))
     
     # number of non missing age category 
@@ -66,8 +66,8 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
 
     # deaths
     tmp1 = copy(tmp)
-    tmp1[is.na(daily.deaths), daily.deaths := -1]
-    deaths = reshape2::dcast(tmp1, age ~ date, value.var = 'daily.deaths')[,-1]
+    tmp1[is.na(weekly.deaths), weekly.deaths := -1]
+    deaths = reshape2::dcast(tmp1, age ~ date, value.var = 'weekly.deaths')[,-1]
   }
   
   # create map for series with missing data
@@ -81,8 +81,8 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     Age = unique(tmp$age)[a]
     tmp1 = subset(tmp, age == Age)
     
-    .idx_missing = which(is.na(tmp1$daily.deaths))
-    .idx_missing_full = which(df_week$date %in% tmp1[is.na(daily.deaths)]$date)
+    .idx_missing = which(is.na(tmp1$weekly.deaths))
+    .idx_missing_full = which(df_week$date %in% tmp1[is.na(weekly.deaths)]$date)
     
     if(length(.idx_missing) == 0) next
     
@@ -94,15 +94,15 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     
     age_missing[N_missing] = a
     
-    if(is.na(unique(tmp1$sum.daily.deaths[.idx_missing])))
+    if(is.na(unique(tmp1$sum.weekly.deaths[.idx_missing])))
     {
-      stopifnot(length(unique(tmp1$min.sum.daily.deaths[.idx_missing])) == 1)
-      min_count_censored[N_missing] = unique(tmp1$min.sum.daily.deaths[.idx_missing])
-      max_count_censored[N_missing] = unique(tmp1$max.sum.daily.deaths[.idx_missing])
+      stopifnot(length(unique(tmp1$min.sum.weekly.deaths[.idx_missing])) == 1)
+      min_count_censored[N_missing] = unique(tmp1$min.sum.weekly.deaths[.idx_missing])
+      max_count_censored[N_missing] = unique(tmp1$max.sum.weekly.deaths[.idx_missing])
       sum_count_censored[N_missing] = -1
       start_or_end_period[N_missing] = 1
     } else {
-      sum_count_censored[N_missing] = unique(tmp1$sum.daily.deaths[.idx_missing])
+      sum_count_censored[N_missing] = unique(tmp1$sum.weekly.deaths[.idx_missing])
       min_count_censored[N_missing] = max_count_censored[N_missing] = -1
       start_or_end_period[N_missing] = 0
     }

@@ -61,7 +61,7 @@ fit_cum <- readRDS(file=file)
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")
 make_convergence_diagnostics_stats(fit_cum, outdir.table)
-# plot_convergence_diagnostics(fit_cum, "Daily deaths fit", 'daily', outfile = outdir.fig)
+# plot_convergence_diagnostics(fit_cum, "weekly deaths fit", 'weekly', outfile = outdir.fig)
 
 # Make predictive checks table
 cat("\nMake posterior predictive checks table \n")
@@ -71,8 +71,8 @@ predictive_checks_table = make_predictive_checks_table(fit_cum, df_week, df_age_
 # plot predictive checks table
 cat("\nMake posterior predictive checks plots \n")
 plot_posterior_predictive_checks(predictive_checks_table, 
-                                 variable = "daily.deaths", 
-                                 lab = "Daily COVID-19 deaths", 
+                                 variable = "weekly.deaths", 
+                                 lab = "weekly COVID-19 deaths", 
                                  outdir = outdir.fig)
 
 # plot predictive check cumulative

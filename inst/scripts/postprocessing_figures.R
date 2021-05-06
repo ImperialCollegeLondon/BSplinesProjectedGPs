@@ -1,7 +1,6 @@
 
 cat("\n Begin postprocessing_figures.R \n")
 
-
 library(rstan)
 library(data.table)
 library(dplyr)
@@ -58,21 +57,20 @@ load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
 outdir.fig = outdir.fig.post
 outdir.fit = outdir.fit.post
 
-# load fit cumulative deaths
-cat("Load fits \n")
-file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
-fit_cum <- readRDS(file=file)
-
-# Plots continuous age distribution alpha
-cat("\nMake continuous age distribution plots \n")
-plot_probability_deaths_age_contribution(fit_cum, 'phi', df_age_continuous, df_week, "daily COVID-19 deaths", outdir = outdir.fig)
-plot_probability_deaths_age_contribution(fit_cum, 'phi_reduced', df_age_reporting, df_week, "daily COVID-19 deaths", outdir = outdir.fig, discrete = T)
 
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
 
-# Plot estimate plane with CAR of ICAR
+# Plot estimate B-splines parameters plane 
 plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
+
+# Plots continuous age distribution alpha
+cat("\nMake continuous age distribution plots \n")
+age_contribution_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi', outdir.table)
+plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', "weekly COVID-19 deaths", outdir = outdir.fig)
+age_discrete_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi_reduced', outdir.table)
+plot_probability_deaths_age_contribution(age_discrete_continuous_table, 'phi_reduced', "weekly COVID-19 deaths", outdir = outdir.fig, discrete = T)
+
 
 # Plot imputed weekly data 
 death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
@@ -80,13 +78,16 @@ plot_var_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
 death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
 plot_var_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
 
+
 # Plot probability ratio of deaths over time
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
 plot_probability_ratio(probability_ratio_table, outdir.fig)
 
+
 # Plot deaths ratio of deaths over time
 death_ratio_table = make_death_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
 plot_death_ratio(death_ratio_table, outdir.fig)
+
 
 # plot compare to JHU and Imperial data
 # find overall cumulative deaths (across age groups)
@@ -94,11 +95,11 @@ tmp = find_overall_cumulative_deaths(fit_cum, df_week, 'deaths_predict')
 compare_CDCestimation_JHU_Imperial_plot(CDC_data = copy(tmp), JHU_data = JHUData, scraped_data = scrapedData,
                                         var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 
- # find overall cumulative deaths (by age groups)
+# find overall cumulative deaths (by age groups)
 tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age), 'deaths_predict')
 compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                                  var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 
- cat("\n End postprocessing_figures.R \n")
+cat("\n End postprocessing_figures.R \n")
 
 
