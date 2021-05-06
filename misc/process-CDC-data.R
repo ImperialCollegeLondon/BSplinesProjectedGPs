@@ -22,7 +22,7 @@ deathByAge_Female = prepare_CDC_data(last.day, age_max, sex = 'Female', indir)
 deathByAge_Female = find_weekly_deaths(deathByAge_Female)
 deathByAge = merge_deathByAge_over_Sex(copy(deathByAge_Male), copy(deathByAge_Female))
 
-# second part available for all sexes M
+# second part available for all sexes 
 deathByAge_AllSexes = prepare_CDC_data(last.day, age_max, sex = 'All Sexes', indir)
 deathByAge_AllSexes = find_weekly_deaths(deathByAge_AllSexes, rm.COVID.19.Deaths = F)
 deathByAge_AllSexes = select(deathByAge_AllSexes, -c(date_idx, min_date_idx, max_date_idx))
