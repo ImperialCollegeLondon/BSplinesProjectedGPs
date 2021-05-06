@@ -51,6 +51,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_AL"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('AL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_AL"))){
+  tmp <- readRDS(file.to.table("diagnostics_AL"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('AL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_AL"))){
@@ -74,6 +83,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_AK"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_AK"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('AK' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_AK"))){
+  tmp <- readRDS(file.to.table("diagnostics_AK"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -104,6 +122,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_AZ"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('AZ' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_AZ"))){
+  tmp <- readRDS(file.to.table("diagnostics_AZ"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('AZ' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_AZ"))){
@@ -127,6 +154,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_AR"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_AR"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('AR' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_AR"))){
+  tmp <- readRDS(file.to.table("diagnostics_AR"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -156,6 +192,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_CA"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('CA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_CA"))){
+  tmp <- readRDS(file.to.table("diagnostics_CA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('CA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_CA"))){
@@ -182,6 +227,25 @@ if(file.exists(file.to.table("eff_sample_size_cum_CO"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('CO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_CO"))){
+  tmp <- readRDS(file.to.table("diagnostics_CO"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('CO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_CO"))){
+  tmp <- readRDS(file.to.table("diagnostics_CO"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
+
 #### WAIC
 ```{r, include=('CO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_CO"))){
@@ -205,6 +269,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_CT"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_CT"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('CT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_CT"))){
+  tmp <- readRDS(file.to.table("diagnostics_CT"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -234,6 +307,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_DE"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('DE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_DE"))){
+  tmp <- readRDS(file.to.table("diagnostics_DE"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('DE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_DE"))){
@@ -257,6 +339,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_DC"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_DC"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('DC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_DC"))){
+  tmp <- readRDS(file.to.table("diagnostics_DC"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -286,6 +377,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_FL"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('FL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_FL"))){
+  tmp <- readRDS(file.to.table("diagnostics_FL"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('FL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_FL"))){
@@ -309,6 +409,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_GA"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_GA"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('GA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_GA"))){
+  tmp <- readRDS(file.to.table("diagnostics_GA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -338,6 +447,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_HI"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('HI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_HI"))){
+  tmp <- readRDS(file.to.table("diagnostics_HI"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('HI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_HI"))){
@@ -361,6 +479,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_ID"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_ID"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('ID' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_ID"))){
+  tmp <- readRDS(file.to.table("diagnostics_ID"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -390,6 +517,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_IL"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('IL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_IL"))){
+  tmp <- readRDS(file.to.table("diagnostics_IL"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('IL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_IL"))){
@@ -413,6 +549,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_IN"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_IN"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('IN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_IN"))){
+  tmp <- readRDS(file.to.table("diagnostics_IN"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -442,6 +587,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_IA"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('IA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_IA"))){
+  tmp <- readRDS(file.to.table("diagnostics_IA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('IA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_IA"))){
@@ -465,6 +619,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_KS"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_KS"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('KS' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_KS"))){
+  tmp <- readRDS(file.to.table("diagnostics_KS"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -494,6 +657,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_KY"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('KY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_KY"))){
+  tmp <- readRDS(file.to.table("diagnostics_KY"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('KY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_KY"))){
@@ -517,6 +689,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_LA"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_LA"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('LA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_LA"))){
+  tmp <- readRDS(file.to.table("diagnostics_LA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -546,6 +727,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_ME"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('ME' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_ME"))){
+  tmp <- readRDS(file.to.table("diagnostics_ME"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('ME' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_ME"))){
@@ -569,6 +759,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_MD"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_MD"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('MD' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_MD"))){
+  tmp <- readRDS(file.to.table("diagnostics_MD"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -598,6 +797,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_MA"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('MA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_MA"))){
+  tmp <- readRDS(file.to.table("diagnostics_MA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('MA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MA"))){
@@ -621,6 +829,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_MI"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_MI"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('MI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_MI"))){
+  tmp <- readRDS(file.to.table("diagnostics_MI"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -650,6 +867,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_MN"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('MN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_MN"))){
+  tmp <- readRDS(file.to.table("diagnostics_MN"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('MN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MN"))){
@@ -673,6 +899,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_MS"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_MS"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('MS' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_MS"))){
+  tmp <- readRDS(file.to.table("diagnostics_MS"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -702,6 +937,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_MO"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('MO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_MO"))){
+  tmp <- readRDS(file.to.table("diagnostics_MO"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('MO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MO"))){
@@ -725,6 +969,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_MT"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_MT"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('MT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_MT"))){
+  tmp <- readRDS(file.to.table("diagnostics_MT"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -754,6 +1007,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_NE"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('NE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NE"))){
+  tmp <- readRDS(file.to.table("diagnostics_NE"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('NE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NE"))){
@@ -777,6 +1039,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_NV"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_NV"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('NV' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NV"))){
+  tmp <- readRDS(file.to.table("diagnostics_NV"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -806,6 +1077,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_NH"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('NH' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NH"))){
+  tmp <- readRDS(file.to.table("diagnostics_NH"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('NH' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NH"))){
@@ -829,6 +1109,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_NJ"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_NJ"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('NJ' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NJ"))){
+  tmp <- readRDS(file.to.table("diagnostics_NJ"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -858,6 +1147,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_NM"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('NM' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NM"))){
+  tmp <- readRDS(file.to.table("diagnostics_NM"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('NM' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NM"))){
@@ -881,6 +1179,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_NY"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_NY"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('NY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NY"))){
+  tmp <- readRDS(file.to.table("diagnostics_NY"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -910,6 +1217,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_NYC"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('NYC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NYC"))){
+  tmp <- readRDS(file.to.table("diagnostics_NYC"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('NYC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NYC"))){
@@ -933,6 +1249,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_NC"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_NC"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('NC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_NC"))){
+  tmp <- readRDS(file.to.table("diagnostics_NC"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -962,6 +1287,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_ND"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('ND' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_ND"))){
+  tmp <- readRDS(file.to.table("diagnostics_ND"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('ND' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_ND"))){
@@ -985,6 +1319,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_OH"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_OH"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('OH' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_OH"))){
+  tmp <- readRDS(file.to.table("diagnostics_OH"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -1014,6 +1357,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_OK"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('OK' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_OK"))){
+  tmp <- readRDS(file.to.table("diagnostics_OK"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('OK' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_OK"))){
@@ -1037,6 +1389,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_OR"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_OR"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('OR' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_OR"))){
+  tmp <- readRDS(file.to.table("diagnostics_OR"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -1067,6 +1428,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_PA"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('PA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_PA"))){
+  tmp <- readRDS(file.to.table("diagnostics_PA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('PA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_PA"))){
@@ -1090,6 +1460,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_RI"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_RI"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('RI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_RI"))){
+  tmp <- readRDS(file.to.table("diagnostics_RI"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -1119,6 +1498,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_SC"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('SC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_SC"))){
+  tmp <- readRDS(file.to.table("diagnostics_SC"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('SC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_SC"))){
@@ -1142,6 +1530,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_SD"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_SD"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('SD' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_SD"))){
+  tmp <- readRDS(file.to.table("diagnostics_SD"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -1171,6 +1568,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_TN"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('TN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_TN"))){
+  tmp <- readRDS(file.to.table("diagnostics_TN"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('TN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_TN"))){
@@ -1194,6 +1600,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_TX"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_TX"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('TX' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_TX"))){
+  tmp <- readRDS(file.to.table("diagnostics_TX"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -1223,6 +1638,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_UT"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('UT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_UT"))){
+  tmp <- readRDS(file.to.table("diagnostics_UT"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('UT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_UT"))){
@@ -1246,6 +1670,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_VT"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_VT"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('VT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_VT"))){
+  tmp <- readRDS(file.to.table("diagnostics_VT"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -1275,6 +1708,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_VA"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('VA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_VA"))){
+  tmp <- readRDS(file.to.table("diagnostics_VA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('VA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_VA"))){
@@ -1298,6 +1740,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_WA"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_WA"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('WA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_WA"))){
+  tmp <- readRDS(file.to.table("diagnostics_WA"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
@@ -1327,6 +1778,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_WV"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('WV' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_WV"))){
+  tmp <- readRDS(file.to.table("diagnostics_WV"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('WV' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_WV"))){
@@ -1353,6 +1813,15 @@ if(file.exists(file.to.table("eff_sample_size_cum_WI"))){
 }
 ```
 
+#### Number of divergence and treedepth
+
+```{r, include=('WI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_WI"))){
+  tmp <- readRDS(file.to.table("diagnostics_WI"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
 #### WAIC
 ```{r, include=('WI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_WI"))){
@@ -1376,6 +1845,15 @@ Listed below are the parameters with an effective sample size smaller than 500.
 if(file.exists(file.to.table("eff_sample_size_cum_WY"))){
   neff <- readRDS(file.to.table("eff_sample_size_cum_WY"))
   neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('WY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_WY"))){
+  tmp <- readRDS(file.to.table("diagnostics_WY"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
 }
 ```
 
