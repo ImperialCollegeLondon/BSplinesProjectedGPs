@@ -6,10 +6,10 @@ library(data.table)
 library(dplyr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
-outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results'
-location.index = 1
-stan_model = "210422b"
-JOBID = 29432
+outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
+location.index = 2
+stan_model = "210505b1"
+JOBID = 2967
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -56,6 +56,10 @@ load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
 outdir.fig = outdir.fig.post
 outdir.fit = outdir.fit.post
 
+# load fit cumulative deaths
+cat("Load fits \n")
+file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
+fit_cum <- readRDS(file=file)
 
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
