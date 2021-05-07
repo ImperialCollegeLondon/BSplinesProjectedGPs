@@ -450,7 +450,7 @@ plot_mean_age_death = function(mean_age_death, outdir){
             legend.position = 'bottom') +
       labs(x = '', y = '', fill = 'Mean age death') + 
       scale_fill_viridis_c(option = 'B')
-    ggsave(file = paste0(outdir, '-MeanAgeDeath.png'), w = 6, h = 2 * length(unique(mean_age_death$loc_label)))
+    ggsave(file = paste0(outdir, '-MeanAgeDeath.png'), w = 6, h = 2 * length(unique(mean_age_death$loc_label)), limitsize = F)
   }
 }
 

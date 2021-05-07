@@ -4,10 +4,10 @@ library(dplyr)
 library(tidyverse)
 library(viridis)
 
-indir = "~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
+indir = "/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/" # path to the repo
 outdir = file.path(indir, "results")
-stan_model = "210329b"
-JOBID = 11496
+stan_model = "210505b1"
+JOBID = 2967
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -32,13 +32,16 @@ source(file.path(indir, "functions", "postprocessing-utils.R"))
 run_tag = paste0(stan_model, "-", JOBID)
 outdir.fit = file.path(outdir, run_tag, "fits")
 outdir.data = file.path(outdir, run_tag, "data")
-outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
-outdir.table = file.path(outdir, run_tag, "table", run_tag)
+outdir.fig.post = file.path(outdir, run_tag, "figure", run_tag)
 
 # find locs
 files = list.files(path = outdir.fit)
 locs = unique(gsub(paste0("fit_cumulative_deaths_(.+)_.*"), "\\1", files))
 locs = locs[!grepl('location', locs)]
+
+# load image 
+load(file.path(outdir.data, paste0("stanin_", locs[1], "_",run_tag,".RData")))
+outdir.fig = outdir.fig.post
 
 # plot contribution over time
 mean_age_death = vector(mode = 'list', length = length(locs))

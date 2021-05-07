@@ -7,7 +7,7 @@ library(dplyr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
-location.index = 2
+location.index = 48
 stan_model = "210505b1"
 JOBID = 2967
 
@@ -102,9 +102,12 @@ compare_CDCestimation_JHU_Imperial_plot(CDC_data = copy(tmp), JHU_data = JHUData
                                         var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 
 # find overall cumulative deaths (by age groups)
-tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age), 'deaths_predict')
-compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
-                                                 var.cum.deaths.CDC = 'M', outdir = outdir.fig)
+if(nrow(subset(scrapedData, code == Code)) > 0 ){
+  tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age), 'deaths_predict')
+  compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
+                                          var.cum.deaths.CDC = 'M', outdir = outdir.fig)
+}
+
 
 cat("\n End postprocessing_figures.R \n")
 
