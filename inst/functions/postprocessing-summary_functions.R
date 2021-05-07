@@ -79,107 +79,6 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics_", Code, ".rds"))
 }
 
-check_all_diagnostics <- function(fit, outdir) {
-  check_n_eff(fit)
-  check_rhat(fit)
-  n_div <- check_div(fit)
-  n_treedepth <- check_treedepth(fit,15)
-  check_energy(fit)
-  
-  cat('\nn_div',n_div, '\n' )
-  cat('\nn_treedepth',n_treedepth, '\n' )
-  saveRDS(list(n_div,n_treedepth), file=paste0(outdir,'-diagnostics_', Code, '.rds'))
-}
-
-check_treedepth <- function(fit, max_depth = 10) {
-  sampler_params <- rstan::get_sampler_params(fit, inc_warmup=FALSE)
-  treedepths <- do.call(rbind, sampler_params)[,'treedepth__']
-  n = length(treedepths[sapply(treedepths, function(x) x == max_depth)])
-  N = length(treedepths)
-  
-  print(sprintf('%s of %s iterations saturated the maximum tree depth of %s (%s%%)',
-                n, N, max_depth, 100 * n / N))
-  if (n > 0)
-    print('  Run again with max_depth set to a larger value to avoid saturation')
-  return(n)
-}
-
-check_energy <- function(fit) {
-  sampler_params <- rstan::get_sampler_params(fit, inc_warmup=FALSE)
-  no_warning <- TRUE
-  for (n in 1:length(sampler_params)) {
-    energies = sampler_params[n][[1]][,'energy__']
-    numer = sum(diff(energies)*2) / length(energies)
-    denom = var(energies)
-    if (numer / denom < 0.2) {
-      print(sprintf('Chain %s: E-BFMI = %s', n, numer / denom))
-      no_warning <- FALSE
-    }
-  }
-  if (no_warning)
-    print('E-BFMI indicated no pathological behavior')
-  else
-    print('  E-BFMI below 0.2 indicates you may need to reparameterize your model')
-}
-
-check_n_eff <- function(fit) {
-  fit_summary <- rstan::summary(fit, probs = c(0.5))$summary
-  # remove na neff
-  fit_summary <- fit_summary[!is.na(fit_summary[,5]),]
-  N <- dim(fit_summary)[[1]]
-  
-  iter <- dim(rstan::extract(fit)[[1]])[[1]]
-  
-  no_warning <- TRUE
-  for (n in 1:N) {
-    ratio <- fit_summary[,5][n] / iter
-    if (ratio < 0.001) {
-      print(sprintf('n_eff / iter for parameter %s is %s!',
-                    rownames(fit_summary)[n], ratio))
-      no_warning <- FALSE
-    }
-  }
-  if (no_warning)
-    print('n_eff / iter looks reasonable for all parameters')
-  else
-    print('  n_eff / iter below 0.001 indicates that the effective sample size has likely been overestimated')
-}
-
-check_div <- function(fit) {
-  sampler_params <- rstan::get_sampler_params(fit, inc_warmup=FALSE)
-  divergent <- do.call(rbind, sampler_params)[,'divergent__']
-  n = sum(divergent)
-  N = length(divergent)
-  
-  print(sprintf('%s of %s iterations ended with a divergence (%s%%)',
-                n, N, 100 * n / N))
-  if (n > 0)
-    print('  Try running with larger adapt_delta to remove the divergences')
-  # return iterations ended with a divergence
-  return(n)
-}
-
-check_rhat <- function(fit) {
-  fit_summary <- rstan::summary(fit, probs = c(0.5))$summary
-  # remove na neff
-  fit_summary <- fit_summary[!is.na(fit_summary[,6]),]
-  N <- dim(fit_summary)[[1]]
-  
-  no_warning <- TRUE
-  for (n in 1:N) {
-    rhat <- fit_summary[,6][n]
-    if (rhat > 1.1 || is.infinite(rhat) || is.nan(rhat)) {
-      print(sprintf('Rhat for parameter %s is %s!',
-                    rownames(fit_summary)[n], rhat))
-      no_warning <- FALSE
-    }
-  }
-  if (no_warning)
-    print('Rhat looks reasonable for all parameters')
-  else
-    print('  Rhat above 1.1 indicates that the chains very likely have not mixed')
-}
-
 make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -496,6 +395,33 @@ find_sum_bounded_missing_deaths_state_age = function(fit, df_age_continuous, sta
   return(tmp1)
 }
 
+find_mean_age_death = function(fit, df_week, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[['phi']]) )
+  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  tmp1 = tmp1[, list( 	value= sum(age_index*value)), 
+              by=c('iterations', 'week_index')]	
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('week_index')]	
+  tmp1 = dcast(tmp1, week_index  ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
+  tmp1[, code := Code]
+  
+  # save
+  saveRDS(tmp1, file = paste0(outdir, '-MeanAgeOfDeath_', Code, '.rds'))
+  
+  return(tmp1)
+}
 # 
 # add_intervals_missing_data = function(data, stan_data, base_week_idx = 0){
 #   

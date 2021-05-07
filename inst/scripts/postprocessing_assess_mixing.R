@@ -29,10 +29,9 @@ if(length(args_line) > 0)
 
 
 # load functions
-source(file.path(indir, "functions", "summary_functions.R"))
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
-source(file.path(indir, "functions", "stan_utility_functions.R"))
+source(file.path(indir, "functions", "postprocessing-utils.R"))
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)

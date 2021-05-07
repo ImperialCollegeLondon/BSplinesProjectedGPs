@@ -73,7 +73,7 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, lab, outdir,
   
   p = ggplot(tmp1, aes(x = age)) + 
     theme_bw() +
-    labs(y = paste0("Relative contribution to ", lab), x = "Age", title = paste(Code)) + 
+    labs(y = paste0("Contribution to ", lab), x = "Age", title = paste(Code)) + 
     facet_wrap(~date)
   
   if(discrete){
@@ -421,6 +421,37 @@ plot_death_ratio = function(death_ratio_table, outdir)
     labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date, "%d-%b-%y")), 
          col = 'Age group')
   ggsave(file = paste0(outdir, '-DeathRatio_elderly_', Code, '.png'), w = 8, h = 8)
+}
+
+
+
+plot_mean_age_death = function(mean_age_death, outdir){
+  if(length(unique(mean_age_death$code)) == 1)
+  {
+    ggplot(mean_age_death, aes(x = date)) + 
+      geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
+      geom_line(aes(y = M)) + 
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      theme_bw() + 
+      theme(axis.text.x = element_text(angle = 90)) +
+      labs(x = '', y = 'Mean age death')
+    ggsave(file = paste0(outdir, '-MeanAgeDeath_', Code, '.png'), w = 4, h = 4)
+  }
+  
+  else {
+    
+    mean_age_death[, loc_label := factor(loc_label, levels= sort(unique(mean_age_death$loc_label), decreasing = T))]
+    ggplot(mean_age_death, aes(x = date, y = loc_label)) + 
+      geom_raster(aes(fill = M)) +
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      scale_y_discrete(expand = c(0,0)) + 
+      theme_bw() + 
+      theme(axis.text.x = element_text(angle = 90), 
+            legend.position = 'bottom') +
+      labs(x = '', y = '', fill = 'Mean age death') + 
+      scale_fill_viridis_c(option = 'B')
+    ggsave(file = paste0(outdir, '-MeanAgeDeath.png'), w = 6, h = 2 * length(unique(mean_age_death$loc_label)))
+  }
 }
 
 # savepdf <- function(fname, width=16, height=10)

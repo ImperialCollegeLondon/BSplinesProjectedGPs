@@ -1875,3 +1875,13 @@ if(file.exists(file.to.table("LOO_WY"))){
 
 
 
+
+
+## Mean age of deceased individuals over time
+
+```{r, out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.figure("MeanAgeDeath"))){
+  knitr::include_graphics(file.to.figure("MeanAgeDeath"))
+}
+```
+

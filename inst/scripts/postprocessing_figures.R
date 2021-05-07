@@ -29,16 +29,15 @@ if(length(args_line) > 0)
 
 
 # load functions
-source(file.path(indir, "functions", "summary_functions.R"))
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
-source(file.path(indir, "functions", "stan_utility_functions.R"))
-
-# temporary
-path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-05-01.rds"))
-JHUData = readRDS(path.to.JHU.data)
-scrapedData = read.csv(path_to_scraped_data)
+source(file.path(indir, "functions", "postprocessing-utils.R"))
+# 
+# # temporary
+# path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
+# path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-05-01.rds"))
+# JHUData = readRDS(path.to.JHU.data)
+# scrapedData = read.csv(path_to_scraped_data)
 
 
 # set directories
@@ -68,8 +67,8 @@ plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
 cat("\nMake continuous age distribution plots \n")
 age_contribution_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', "weekly COVID-19 deaths", outdir = outdir.fig)
-age_discrete_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi_reduced', outdir.table)
-plot_probability_deaths_age_contribution(age_discrete_continuous_table, 'phi_reduced', "weekly COVID-19 deaths", outdir = outdir.fig, discrete = T)
+age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi_reduced', outdir.table)
+plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', "weekly COVID-19 deaths", outdir = outdir.fig, discrete = T)
 
 
 # Plot imputed weekly data 
@@ -88,6 +87,9 @@ plot_probability_ratio(probability_ratio_table, outdir.fig)
 death_ratio_table = make_death_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
 plot_death_ratio(death_ratio_table, outdir.fig)
 
+# Plot mean age of death over time 
+mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)
+plot_mean_age_death(mean_age_death, outdir.fig)
 
 # plot compare to JHU and Imperial data
 # find overall cumulative deaths (across age groups)
