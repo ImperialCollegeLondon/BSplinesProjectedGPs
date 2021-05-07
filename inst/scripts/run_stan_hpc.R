@@ -6,7 +6,7 @@ library(doParallel)
 
 indir ="~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-location.index = 26
+location.index = 2
 stan_model = "210505b1"
 JOBID = round(runif(1,1,1000))
 
