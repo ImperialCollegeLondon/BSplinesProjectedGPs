@@ -83,5 +83,8 @@ plot_sum_missing_deaths(tmp1, outdir.fig)
 tmp1 = find_sum_bounded_missing_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
 setnames(tmp1, 'age_state_index', 'age_index')
 plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
+
+
+
 cat("\n End postprocessing_assess_mixing.R \n")
 

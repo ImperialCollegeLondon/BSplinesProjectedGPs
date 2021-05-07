@@ -128,10 +128,12 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     tmp[, prop_deaths := weekly.deaths / total_deaths]
       
     range_wd = sqrt(range(na.omit(tmp$weekly.deaths)))
+    digits_cut= ifelse(range_wd[2]/100 > 1, 2, 1)
+    digits_cut= ifelse(range_wd[2]/10 > 1, digits_cut, 0)
     p = ggplot(tmp, aes(x = date, y = age)) + 
       geom_raster(aes(fill = weekly.deaths )) + 
       theme_bw() +
-      scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -2) ) +
+      scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut) ) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       scale_y_discrete(expand = c(0,0)) + 
       theme(legend.position = 'bottom',

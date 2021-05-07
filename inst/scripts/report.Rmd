@@ -41,7 +41,7 @@ args$JOBID
 
 `r if ('AL' %in% args$states) '### Alabama'`
 
-#### Effective sample size
+#### Effective sample size 
 Listed below are the parameters with an effective sample size smaller than 500.
 
 ```{r, include=('AL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
@@ -63,14 +63,14 @@ if(file.exists(file.to.table("diagnostics_AL"))){
 #### WAIC
 ```{r, include=('AL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_AL"))){
-  apply(readRDS(file.to.table("WAIC_AL")), 2, sum)
+  print(readRDS(file.to.table("WAIC_AL")))
 }
 ```
 
 #### LOO
 ```{r, include=('AL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_AL"))){
-  apply(readRDS(file.to.table("LOO_AL")), 2, sum)
+  print(readRDS(file.to.table("LOO_AL")))
 }
 ```
 
@@ -98,14 +98,14 @@ if(file.exists(file.to.table("diagnostics_AK"))){
 #### WAIC
 ```{r, include=('AK' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_AK"))){
-  apply(readRDS(file.to.table("WAIC_AK")), 2, sum)
+  print(readRDS(file.to.table("WAIC_AK")))
 }
 ```
 
 #### LOO
 ```{r, include=('AK' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_AK"))){
-  apply(readRDS(file.to.table("LOO_AK")), 2, sum)
+  print(readRDS(file.to.table("LOO_AK")))
 }
 ```
 
@@ -134,14 +134,14 @@ if(file.exists(file.to.table("diagnostics_AZ"))){
 #### WAIC
 ```{r, include=('AZ' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_AZ"))){
-  apply(readRDS(file.to.table("WAIC_AZ")), 2, sum)
+  print(readRDS(file.to.table("WAIC_AZ")))
 }
 ```
 
 #### LOO
 ```{r, include=('AZ' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_AZ"))){
-  apply(readRDS(file.to.table("LOO_AZ")), 2, sum)
+  print(readRDS(file.to.table("LOO_AZ")))
 }
 ```
 
@@ -169,14 +169,14 @@ if(file.exists(file.to.table("diagnostics_AR"))){
 #### WAIC
 ```{r, include=('AR' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_AR"))){
-  apply(readRDS(file.to.table("WAIC_AR")), 2, sum)
+  print(readRDS(file.to.table("WAIC_AR")))
 }
 ```
 
 #### LOO
 ```{r, include=('AR' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_AR"))){
-  apply(readRDS(file.to.table("LOO_AR")), 2, sum)
+  print(readRDS(file.to.table("LOO_AR")))
 }
 ```
 
@@ -204,14 +204,14 @@ if(file.exists(file.to.table("diagnostics_CA"))){
 #### WAIC
 ```{r, include=('CA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_CA"))){
-  apply(readRDS(file.to.table("WAIC_CA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_CA")))
 }
 ```
 
 #### LOO
 ```{r, include=('CA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_CA"))){
-  apply(readRDS(file.to.table("LOO_CA")), 2, sum)
+  print(readRDS(file.to.table("LOO_CA")))
 }
 ```
 
@@ -249,14 +249,14 @@ if(file.exists(file.to.table("diagnostics_CO"))){
 #### WAIC
 ```{r, include=('CO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_CO"))){
-  apply(readRDS(file.to.table("WAIC_CO")), 2, sum)
+  print(readRDS(file.to.table("WAIC_CO")))
 }
 ```
 
 #### LOO
 ```{r, include=('CO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_CO"))){
-  apply(readRDS(file.to.table("LOO_CO")), 2, sum)
+  print(readRDS(file.to.table("LOO_CO")))
 }
 ```
 
@@ -284,14 +284,14 @@ if(file.exists(file.to.table("diagnostics_CT"))){
 #### WAIC
 ```{r, include=('CT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_CT"))){
-  apply(readRDS(file.to.table("WAIC_CT")), 2, sum)
+  print(readRDS(file.to.table("WAIC_CT")))
 }
 ```
 
 #### LOO
 ```{r, include=('CT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_CT"))){
-  apply(readRDS(file.to.table("LOO_CT")), 2, sum)
+  print(readRDS(file.to.table("LOO_CT")))
 }
 ```
 
@@ -319,14 +319,14 @@ if(file.exists(file.to.table("diagnostics_DE"))){
 #### WAIC
 ```{r, include=('DE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_DE"))){
-  apply(readRDS(file.to.table("WAIC_DE")), 2, sum)
+  print(readRDS(file.to.table("WAIC_DE")))
 }
 ```
 
 #### LOO
 ```{r, include=('DE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_DE"))){
-  apply(readRDS(file.to.table("LOO_DE")), 2, sum)
+  print(readRDS(file.to.table("LOO_DE")))
 }
 ```
 
@@ -354,14 +354,14 @@ if(file.exists(file.to.table("diagnostics_DC"))){
 #### WAIC
 ```{r, include=('DC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_DC"))){
-  apply(readRDS(file.to.table("WAIC_DC")), 2, sum)
+  print(readRDS(file.to.table("WAIC_DC")))
 }
 ```
 
 #### LOO
 ```{r, include=('DC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_DC"))){
-  apply(readRDS(file.to.table("LOO_DC")), 2, sum)
+  print(readRDS(file.to.table("LOO_DC")))
 }
 ```
 
@@ -389,14 +389,14 @@ if(file.exists(file.to.table("diagnostics_FL"))){
 #### WAIC
 ```{r, include=('FL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_FL"))){
-  apply(readRDS(file.to.table("WAIC_FL")), 2, sum)
+  print(readRDS(file.to.table("WAIC_FL")))
 }
 ```
 
 #### LOO
 ```{r, include=('FL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_FL"))){
-  apply(readRDS(file.to.table("LOO_FL")), 2, sum)
+  print(readRDS(file.to.table("LOO_FL")))
 }
 ```
 
@@ -424,14 +424,14 @@ if(file.exists(file.to.table("diagnostics_GA"))){
 #### WAIC
 ```{r, include=('GA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_GA"))){
-  apply(readRDS(file.to.table("WAIC_GA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_GA")))
 }
 ```
 
 #### LOO
 ```{r, include=('GA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_GA"))){
-  apply(readRDS(file.to.table("LOO_GA")), 2, sum)
+  print(readRDS(file.to.table("LOO_GA")))
 }
 ```
 
@@ -459,14 +459,14 @@ if(file.exists(file.to.table("diagnostics_HI"))){
 #### WAIC
 ```{r, include=('HI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_HI"))){
-  apply(readRDS(file.to.table("WAIC_HI")), 2, sum)
+  print(readRDS(file.to.table("WAIC_HI")))
 }
 ```
 
 #### LOO
 ```{r, include=('HI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_HI"))){
-  apply(readRDS(file.to.table("LOO_HI")), 2, sum)
+  print(readRDS(file.to.table("LOO_HI")))
 }
 ```
 
@@ -494,14 +494,14 @@ if(file.exists(file.to.table("diagnostics_ID"))){
 #### WAIC
 ```{r, include=('ID' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_ID"))){
-  apply(readRDS(file.to.table("WAIC_ID")), 2, sum)
+  print(readRDS(file.to.table("WAIC_ID")))
 }
 ```
 
 #### LOO
 ```{r, include=('ID' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_ID"))){
-  apply(readRDS(file.to.table("LOO_ID")), 2, sum)
+  print(readRDS(file.to.table("LOO_ID")))
 }
 ```
 
@@ -529,16 +529,52 @@ if(file.exists(file.to.table("diagnostics_IL"))){
 #### WAIC
 ```{r, include=('IL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_IL"))){
-  apply(readRDS(file.to.table("WAIC_IL")), 2, sum)
+  print(readRDS(file.to.table("WAIC_IL")))
 }
 ```
 
 #### LOO
 ```{r, include=('IL' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_IL"))){
-  apply(readRDS(file.to.table("LOO_IL")), 2, sum)
+  print(readRDS(file.to.table("LOO_IL")))
 }
 ```
+
+`r if ('ID' %in% args$states) '### Idaho'`
+
+#### Effective sample size
+Listed below are the parameters with an effective sample size smaller than 500.
+
+```{r, include=('ID' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("eff_sample_size_cum_ID"))){
+  neff <- readRDS(file.to.table("eff_sample_size_cum_ID"))
+  neff[which(neff<500)]
+}
+```
+
+#### Number of divergence and treedepth
+
+```{r, include=('ID' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("diagnostics_ID"))){
+  tmp <- readRDS(file.to.table("diagnostics_ID"))
+  matrix(c('divergences', 'treedepth', tmp[[1]], tmp[[2]]), nrow = 2, ncol = 2, byrow = T)
+}
+```
+
+#### WAIC
+```{r, include=('ID' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("WAIC_ID"))){
+  print(readRDS(file.to.table("WAIC_ID")))
+}
+```
+
+#### LOO
+```{r, include=('ID' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
+if(file.exists(file.to.table("LOO_ID"))){
+  print(readRDS(file.to.table("LOO_ID")))
+}
+```
+
 
 `r if ('IN' %in% args$states) '### Indiana'`
 
@@ -564,14 +600,14 @@ if(file.exists(file.to.table("diagnostics_IN"))){
 #### WAIC
 ```{r, include=('IN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_IN"))){
-  apply(readRDS(file.to.table("WAIC_IN")), 2, sum)
+  print(readRDS(file.to.table("WAIC_IN")))
 }
 ```
 
 #### LOO
 ```{r, include=('IN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_IN"))){
-  apply(readRDS(file.to.table("LOO_IN")), 2, sum)
+  print(readRDS(file.to.table("LOO_IN")))
 }
 ```
 
@@ -599,14 +635,14 @@ if(file.exists(file.to.table("diagnostics_IA"))){
 #### WAIC
 ```{r, include=('IA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_IA"))){
-  apply(readRDS(file.to.table("WAIC_IA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_IA")))
 }
 ```
 
 #### LOO
 ```{r, include=('IA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_IA"))){
-  apply(readRDS(file.to.table("LOO_IA")), 2, sum)
+  print(readRDS(file.to.table("LOO_IA")))
 }
 ```
 
@@ -634,14 +670,14 @@ if(file.exists(file.to.table("diagnostics_KS"))){
 #### WAIC
 ```{r, include=('KS' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_KS"))){
-  apply(readRDS(file.to.table("WAIC_KS")), 2, sum)
+  print(readRDS(file.to.table("WAIC_KS")))
 }
 ```
 
 #### LOO
 ```{r, include=('KS' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_KS"))){
-  apply(readRDS(file.to.table("LOO_KS")), 2, sum)
+  print(readRDS(file.to.table("LOO_KS")))
 }
 ```
 
@@ -669,14 +705,14 @@ if(file.exists(file.to.table("diagnostics_KY"))){
 #### WAIC
 ```{r, include=('KY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_KY"))){
-  apply(readRDS(file.to.table("WAIC_KY")), 2, sum)
+  print(readRDS(file.to.table("WAIC_KY")))
 }
 ```
 
 #### LOO
 ```{r, include=('KY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_KY"))){
-  apply(readRDS(file.to.table("LOO_KY")), 2, sum)
+  print(readRDS(file.to.table("LOO_KY")))
 }
 ```
 
@@ -704,14 +740,14 @@ if(file.exists(file.to.table("diagnostics_LA"))){
 #### WAIC
 ```{r, include=('LA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_LA"))){
-  apply(readRDS(file.to.table("WAIC_LA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_LA")))
 }
 ```
 
 #### LOO
 ```{r, include=('LA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_LA"))){
-  apply(readRDS(file.to.table("LOO_LA")), 2, sum)
+  print(readRDS(file.to.table("LOO_LA")))
 }
 ```
 
@@ -739,14 +775,14 @@ if(file.exists(file.to.table("diagnostics_ME"))){
 #### WAIC
 ```{r, include=('ME' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_ME"))){
-  apply(readRDS(file.to.table("WAIC_ME")), 2, sum)
+  print(readRDS(file.to.table("WAIC_ME")))
 }
 ```
 
 #### LOO
 ```{r, include=('ME' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_ME"))){
-  apply(readRDS(file.to.table("LOO_ME")), 2, sum)
+  print(readRDS(file.to.table("LOO_ME")))
 }
 ```
 
@@ -774,14 +810,14 @@ if(file.exists(file.to.table("diagnostics_MD"))){
 #### WAIC
 ```{r, include=('MD' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MD"))){
-  apply(readRDS(file.to.table("WAIC_MD")), 2, sum)
+  print(readRDS(file.to.table("WAIC_MD")))
 }
 ```
 
 #### LOO
 ```{r, include=('MD' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_MD"))){
-  apply(readRDS(file.to.table("LOO_MD")), 2, sum)
+  print(readRDS(file.to.table("LOO_MD")))
 }
 ```
 
@@ -809,14 +845,14 @@ if(file.exists(file.to.table("diagnostics_MA"))){
 #### WAIC
 ```{r, include=('MA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MA"))){
-  apply(readRDS(file.to.table("WAIC_MA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_MA")))
 }
 ```
 
 #### LOO
 ```{r, include=('MA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_MA"))){
-  apply(readRDS(file.to.table("LOO_MA")), 2, sum)
+  print(readRDS(file.to.table("LOO_MA")))
 }
 ```
 
@@ -844,14 +880,14 @@ if(file.exists(file.to.table("diagnostics_MI"))){
 #### WAIC
 ```{r, include=('MI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MI"))){
-  apply(readRDS(file.to.table("WAIC_MI")), 2, sum)
+  print(readRDS(file.to.table("WAIC_MI")))
 }
 ```
 
 #### LOO
 ```{r, include=('MI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_MI"))){
-  apply(readRDS(file.to.table("LOO_MI")), 2, sum)
+  print(readRDS(file.to.table("LOO_MI")))
 }
 ```
 
@@ -879,14 +915,14 @@ if(file.exists(file.to.table("diagnostics_MN"))){
 #### WAIC
 ```{r, include=('MN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MN"))){
-  apply(readRDS(file.to.table("WAIC_MN")), 2, sum)
+  print(readRDS(file.to.table("WAIC_MN")))
 }
 ```
 
 #### LOO
 ```{r, include=('MN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_MN"))){
-  apply(readRDS(file.to.table("LOO_MN")), 2, sum)
+  print(readRDS(file.to.table("LOO_MN")))
 }
 ```
 
@@ -914,14 +950,14 @@ if(file.exists(file.to.table("diagnostics_MS"))){
 #### WAIC
 ```{r, include=('MS' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MS"))){
-  apply(readRDS(file.to.table("WAIC_MS")), 2, sum)
+  print(readRDS(file.to.table("WAIC_MS")))
 }
 ```
 
 #### LOO
 ```{r, include=('MS' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_MS"))){
-  apply(readRDS(file.to.table("LOO_MS")), 2, sum)
+  print(readRDS(file.to.table("LOO_MS")))
 }
 ```
 
@@ -949,14 +985,14 @@ if(file.exists(file.to.table("diagnostics_MO"))){
 #### WAIC
 ```{r, include=('MO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MO"))){
-  apply(readRDS(file.to.table("WAIC_MO")), 2, sum)
+  print(readRDS(file.to.table("WAIC_MO")))
 }
 ```
 
 #### LOO
 ```{r, include=('MO' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_MO"))){
-  apply(readRDS(file.to.table("LOO_MO")), 2, sum)
+  print(readRDS(file.to.table("LOO_MO")))
 }
 ```
 
@@ -984,14 +1020,14 @@ if(file.exists(file.to.table("diagnostics_MT"))){
 #### WAIC
 ```{r, include=('MT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_MT"))){
-  apply(readRDS(file.to.table("WAIC_MT")), 2, sum)
+  print(readRDS(file.to.table("WAIC_MT")))
 }
 ```
 
 #### LOO
 ```{r, include=('MT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_MT"))){
-  apply(readRDS(file.to.table("LOO_MT")), 2, sum)
+  print(readRDS(file.to.table("LOO_MT")))
 }
 ```
 
@@ -1019,14 +1055,14 @@ if(file.exists(file.to.table("diagnostics_NE"))){
 #### WAIC
 ```{r, include=('NE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NE"))){
-  apply(readRDS(file.to.table("WAIC_NE")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NE")))
 }
 ```
 
 #### LOO
 ```{r, include=('NE' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NE"))){
-  apply(readRDS(file.to.table("LOO_NE")), 2, sum)
+  print(readRDS(file.to.table("LOO_NE")))
 }
 ```
 
@@ -1054,14 +1090,14 @@ if(file.exists(file.to.table("diagnostics_NV"))){
 #### WAIC
 ```{r, include=('NV' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NV"))){
-  apply(readRDS(file.to.table("WAIC_NV")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NV")))
 }
 ```
 
 #### LOO
 ```{r, include=('NV' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NV"))){
-  apply(readRDS(file.to.table("LOO_NV")), 2, sum)
+  print(readRDS(file.to.table("LOO_NV")))
 }
 ```
 
@@ -1089,14 +1125,14 @@ if(file.exists(file.to.table("diagnostics_NH"))){
 #### WAIC
 ```{r, include=('NH' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NH"))){
-  apply(readRDS(file.to.table("WAIC_NH")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NH")))
 }
 ```
 
 #### LOO
 ```{r, include=('NH' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NH"))){
-  apply(readRDS(file.to.table("LOO_NH")), 2, sum)
+  print(readRDS(file.to.table("LOO_NH")))
 }
 ```
 
@@ -1124,14 +1160,14 @@ if(file.exists(file.to.table("diagnostics_NJ"))){
 #### WAIC
 ```{r, include=('NJ' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NJ"))){
-  apply(readRDS(file.to.table("WAIC_NJ")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NJ")))
 }
 ```
 
 #### LOO
 ```{r, include=('NJ' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NJ"))){
-  apply(readRDS(file.to.table("LOO_NJ")), 2, sum)
+  print(readRDS(file.to.table("LOO_NJ")))
 }
 ```
 
@@ -1159,14 +1195,14 @@ if(file.exists(file.to.table("diagnostics_NM"))){
 #### WAIC
 ```{r, include=('NM' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NM"))){
-  apply(readRDS(file.to.table("WAIC_NM")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NM")))
 }
 ```
 
 #### LOO
 ```{r, include=('NM' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NM"))){
-  apply(readRDS(file.to.table("LOO_NM")), 2, sum)
+  print(readRDS(file.to.table("LOO_NM")))
 }
 ```
 
@@ -1194,14 +1230,14 @@ if(file.exists(file.to.table("diagnostics_NY"))){
 #### WAIC
 ```{r, include=('NY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NY"))){
-  apply(readRDS(file.to.table("WAIC_NY")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NY")))
 }
 ```
 
 #### LOO
 ```{r, include=('NY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NY"))){
-  apply(readRDS(file.to.table("LOO_NY")), 2, sum)
+  print(readRDS(file.to.table("LOO_NY")))
 }
 ```
 
@@ -1229,14 +1265,14 @@ if(file.exists(file.to.table("diagnostics_NYC"))){
 #### WAIC
 ```{r, include=('NYC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NYC"))){
-  apply(readRDS(file.to.table("WAIC_NYC")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NYC")))
 }
 ```
 
 #### LOO
 ```{r, include=('NYC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NYC"))){
-  apply(readRDS(file.to.table("LOO_NYC")), 2, sum)
+  print(readRDS(file.to.table("LOO_NYC")))
 }
 ```
 
@@ -1264,14 +1300,14 @@ if(file.exists(file.to.table("diagnostics_NC"))){
 #### WAIC
 ```{r, include=('NC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_NC"))){
-  apply(readRDS(file.to.table("WAIC_NC")), 2, sum)
+  print(readRDS(file.to.table("WAIC_NC")))
 }
 ```
 
 #### LOO
 ```{r, include=('NC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_NC"))){
-  apply(readRDS(file.to.table("LOO_NC")), 2, sum)
+  print(readRDS(file.to.table("LOO_NC")))
 }
 ```
 
@@ -1299,14 +1335,14 @@ if(file.exists(file.to.table("diagnostics_ND"))){
 #### WAIC
 ```{r, include=('ND' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_ND"))){
-  apply(readRDS(file.to.table("WAIC_ND")), 2, sum)
+  print(readRDS(file.to.table("WAIC_ND")))
 }
 ```
 
 #### LOO
 ```{r, include=('ND' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_ND"))){
-  apply(readRDS(file.to.table("LOO_ND")), 2, sum)
+  print(readRDS(file.to.table("LOO_ND")))
 }
 ```
 
@@ -1334,14 +1370,14 @@ if(file.exists(file.to.table("diagnostics_OH"))){
 #### WAIC
 ```{r, include=('OH' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_OH"))){
-  apply(readRDS(file.to.table("WAIC_OH")), 2, sum)
+  print(readRDS(file.to.table("WAIC_OH")))
 }
 ```
 
 #### LOO
 ```{r, include=('OH' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_OH"))){
-  apply(readRDS(file.to.table("LOO_OH")), 2, sum)
+  print(readRDS(file.to.table("LOO_OH")))
 }
 ```
 
@@ -1369,14 +1405,14 @@ if(file.exists(file.to.table("diagnostics_OK"))){
 #### WAIC
 ```{r, include=('OK' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_OK"))){
-  apply(readRDS(file.to.table("WAIC_OK")), 2, sum)
+  print(readRDS(file.to.table("WAIC_OK")))
 }
 ```
 
 #### LOO
 ```{r, include=('OK' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_OK"))){
-  apply(readRDS(file.to.table("LOO_OK")), 2, sum)
+  print(readRDS(file.to.table("LOO_OK")))
 }
 ```
 
@@ -1404,14 +1440,14 @@ if(file.exists(file.to.table("diagnostics_OR"))){
 #### WAIC
 ```{r, include=('OR' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_OR"))){
-  apply(readRDS(file.to.table("WAIC_OR")), 2, sum)
+  print(readRDS(file.to.table("WAIC_OR")))
 }
 ```
 
 #### LOO
 ```{r, include=('OR' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_OR"))){
-  apply(readRDS(file.to.table("LOO_OR")), 2, sum)
+  print(readRDS(file.to.table("LOO_OR")))
 }
 ```
 
@@ -1440,14 +1476,14 @@ if(file.exists(file.to.table("diagnostics_PA"))){
 #### WAIC
 ```{r, include=('PA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_PA"))){
-  apply(readRDS(file.to.table("WAIC_PA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_PA")))
 }
 ```
 
 #### LOO
 ```{r, include=('PA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_PA"))){
-  apply(readRDS(file.to.table("LOO_PA")), 2, sum)
+  print(readRDS(file.to.table("LOO_PA")))
 }
 ```
 
@@ -1475,14 +1511,14 @@ if(file.exists(file.to.table("diagnostics_RI"))){
 #### WAIC
 ```{r, include=('RI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_RI"))){
-  apply(readRDS(file.to.table("WAIC_RI")), 2, sum)
+  print(readRDS(file.to.table("WAIC_RI")))
 }
 ```
 
 #### LOO
 ```{r, include=('RI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_RI"))){
-  apply(readRDS(file.to.table("LOO_RI")), 2, sum)
+  print(readRDS(file.to.table("LOO_RI")))
 }
 ```
 
@@ -1510,14 +1546,14 @@ if(file.exists(file.to.table("diagnostics_SC"))){
 #### WAIC
 ```{r, include=('SC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_SC"))){
-  apply(readRDS(file.to.table("WAIC_SC")), 2, sum)
+  print(readRDS(file.to.table("WAIC_SC")))
 }
 ```
 
 #### LOO
 ```{r, include=('SC' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_SC"))){
-  apply(readRDS(file.to.table("LOO_SC")), 2, sum)
+  print(readRDS(file.to.table("LOO_SC")))
 }
 ```
 
@@ -1545,14 +1581,14 @@ if(file.exists(file.to.table("diagnostics_SD"))){
 #### WAIC
 ```{r, include=('SD' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_SD"))){
-  apply(readRDS(file.to.table("WAIC_SD")), 2, sum)
+  print(readRDS(file.to.table("WAIC_SD")))
 }
 ```
 
 #### LOO
 ```{r, include=('SD' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_SD"))){
-  apply(readRDS(file.to.table("LOO_SD")), 2, sum)
+  print(readRDS(file.to.table("LOO_SD")))
 }
 ```
 
@@ -1580,14 +1616,14 @@ if(file.exists(file.to.table("diagnostics_TN"))){
 #### WAIC
 ```{r, include=('TN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_TN"))){
-  apply(readRDS(file.to.table("WAIC_TN")), 2, sum)
+  print(readRDS(file.to.table("WAIC_TN")))
 }
 ```
 
 #### LOO
 ```{r, include=('TN' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_TN"))){
-  apply(readRDS(file.to.table("LOO_TN")), 2, sum)
+  print(readRDS(file.to.table("LOO_TN")))
 }
 ```
 
@@ -1615,14 +1651,14 @@ if(file.exists(file.to.table("diagnostics_TX"))){
 #### WAIC
 ```{r, include=('TX' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_TX"))){
-  apply(readRDS(file.to.table("WAIC_TX")), 2, sum)
+  print(readRDS(file.to.table("WAIC_TX")))
 }
 ```
 
 #### LOO
 ```{r, include=('TX' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_TX"))){
-  apply(readRDS(file.to.table("LOO_TX")), 2, sum)
+  print(readRDS(file.to.table("LOO_TX")))
 }
 ```
 
@@ -1650,14 +1686,14 @@ if(file.exists(file.to.table("diagnostics_UT"))){
 #### WAIC
 ```{r, include=('UT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_UT"))){
-  apply(readRDS(file.to.table("WAIC_UT")), 2, sum)
+  print(readRDS(file.to.table("WAIC_UT")))
 }
 ```
 
 #### LOO
 ```{r, include=('UT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_UT"))){
-  apply(readRDS(file.to.table("LOO_UT")), 2, sum)
+  print(readRDS(file.to.table("LOO_UT")))
 }
 ```
 
@@ -1685,14 +1721,14 @@ if(file.exists(file.to.table("diagnostics_VT"))){
 #### WAIC
 ```{r, include=('VT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_VT"))){
-  apply(readRDS(file.to.table("WAIC_VT")), 2, sum)
+  print(readRDS(file.to.table("WAIC_VT")))
 }
 ```
 
 #### LOO
 ```{r, include=('VT' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_VT"))){
-  apply(readRDS(file.to.table("LOO_VT")), 2, sum)
+  print(readRDS(file.to.table("LOO_VT")))
 }
 ```
 
@@ -1720,14 +1756,14 @@ if(file.exists(file.to.table("diagnostics_VA"))){
 #### WAIC
 ```{r, include=('VA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_VA"))){
-  apply(readRDS(file.to.table("WAIC_VA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_VA")))
 }
 ```
 
 #### LOO
 ```{r, include=('VA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_VA"))){
-  apply(readRDS(file.to.table("LOO_VA")), 2, sum)
+  print(readRDS(file.to.table("LOO_VA")))
 }
 ```
 
@@ -1755,14 +1791,14 @@ if(file.exists(file.to.table("diagnostics_WA"))){
 #### WAIC
 ```{r, include=('WA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_WA"))){
-  apply(readRDS(file.to.table("WAIC_WA")), 2, sum)
+  print(readRDS(file.to.table("WAIC_WA")))
 }
 ```
 
 #### LOO
 ```{r, include=('WA' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_WA"))){
-  apply(readRDS(file.to.table("LOO_WA")), 2, sum)
+  print(readRDS(file.to.table("LOO_WA")))
 }
 ```
 
@@ -1790,14 +1826,14 @@ if(file.exists(file.to.table("diagnostics_WV"))){
 #### WAIC
 ```{r, include=('WV' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_WV"))){
-  apply(readRDS(file.to.table("WAIC_WV")), 2, sum)
+  print(readRDS(file.to.table("WAIC_WV")))
 }
 ```
 
 #### LOO
 ```{r, include=('WV' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_WV"))){
-  apply(readRDS(file.to.table("LOO_WV")), 2, sum)
+  print(readRDS(file.to.table("LOO_WV")))
 }
 ```
 
@@ -1825,14 +1861,14 @@ if(file.exists(file.to.table("diagnostics_WI"))){
 #### WAIC
 ```{r, include=('WI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_WI"))){
-  apply(readRDS(file.to.table("WAIC_WI")), 2, sum)
+  print(readRDS(file.to.table("WAIC_WI")))
 }
 ```
 
 #### LOO
 ```{r, include=('WI' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_WI"))){
-  apply(readRDS(file.to.table("LOO_WI")), 2, sum)
+  print(readRDS(file.to.table("LOO_WI")))
 }
 ```
 
@@ -1860,14 +1896,14 @@ if(file.exists(file.to.table("diagnostics_WY"))){
 #### WAIC
 ```{r, include=('WY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("WAIC_WY"))){
-  apply(readRDS(file.to.table("WAIC_WY")), 2, sum)
+  print(readRDS(file.to.table("WAIC_WY")))
 }
 ```
 
 #### LOO
 ```{r, include=('WY' %in% args$states), out.width="120%", fig.show='hold', fig.align='centre', echo=FALSE}
 if(file.exists(file.to.table("LOO_WY"))){
-  apply(readRDS(file.to.table("LOO_WY")), 2, sum)
+  print(readRDS(file.to.table("LOO_WY")))
 }
 ```
 
