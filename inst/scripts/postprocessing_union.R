@@ -32,6 +32,7 @@ source(file.path(indir, "functions", "postprocessing-utils.R"))
 run_tag = paste0(stan_model, "-", JOBID)
 outdir.fit = file.path(outdir, run_tag, "fits")
 outdir.data = file.path(outdir, run_tag, "data")
+outdir.table.post = file.path(outdir, run_tag, "table")
 outdir.fig.post = file.path(outdir, run_tag, "figure", run_tag)
 
 # find locs
@@ -42,6 +43,7 @@ locs = locs[!grepl('location', locs)]
 # load image 
 load(file.path(outdir.data, paste0("stanin_", locs[1], "_",run_tag,".RData")))
 outdir.fig = outdir.fig.post
+outdir.tab = outdir.table.post
 
 # plot contribution over time
 mean_age_death = vector(mode = 'list', length = length(locs))
