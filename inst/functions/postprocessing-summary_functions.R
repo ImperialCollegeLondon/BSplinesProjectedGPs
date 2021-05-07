@@ -64,6 +64,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
     
     if('log_lik' %in% names(re)){
       log_lik <- loo::extract_log_lik(fit_cum)
+      log_lik = log_lik[!is.na(log_lik[,1]),]
       .WAIC = loo::waic(log_lik)
       .LOO = loo::loo(log_lik)
       print(.WAIC); print(.LOO)

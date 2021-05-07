@@ -7,9 +7,9 @@ library(dplyr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results'
-location.index = 1
-stan_model = "210426d"
-JOBID = 28373
+location.index = 26
+stan_model = "210505b1"
+JOBID = 2967
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)

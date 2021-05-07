@@ -32,7 +32,7 @@ source(file.path(indir, "functions", "postprocessing-utils.R"))
 run_tag = paste0(stan_model, "-", JOBID)
 outdir.fit = file.path(outdir, run_tag, "fits")
 outdir.data = file.path(outdir, run_tag, "data")
-outdir.table.post = file.path(outdir, run_tag, "table")
+outdir.table.post = file.path(outdir, run_tag, "table", run_tag)
 outdir.fig.post = file.path(outdir, run_tag, "figure", run_tag)
 
 # find locs
@@ -48,11 +48,11 @@ outdir.tab = outdir.table.post
 # plot contribution over time
 mean_age_death = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  mean_age_death[[i]] = readRDS(paste0(outdir.table, '-MeanAgeOfDeath_', locs[i], '.rds'))
+  mean_age_death[[i]] = readRDS(paste0(outdir.tab, '-MeanAgeOfDeath_', locs[i], '.rds'))
 }
 mean_age_death = do.call('rbind', mean_age_death)
 mean_age_death = merge(mean_age_death, unique(select(deathByAge, code, loc_label)), by = 'code')
-plot_mean_age_death(mean_age_death, outdir.fig)
+plot_mean_age_death(copy(mean_age_death), outdir.fig)
 
 
 
