@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210429b1"
+stan_model = "210505b1"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -143,7 +143,7 @@ if(0){
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=15000,warmup=5000,chains=8,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 
 # save
@@ -152,7 +152,6 @@ cat('\n Save file', file, '\n')
 while(!file.exists(file)){
   tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
 }
-
 
 
 
