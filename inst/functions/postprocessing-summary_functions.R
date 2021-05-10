@@ -80,7 +80,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics_", Code, ".rds"))
 }
 
-make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir){
+make_probability_ratio_table = function(fit, df_week, df_state_age, data, stan_data, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -115,7 +115,8 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, outdir
   tmp2 = tmp[, list(total.deaths = sum(na.omit(weekly.deaths))), by = 'date']
   tmp = merge(tmp, tmp2, by = 'date')
   tmp[, emp.prob := weekly.deaths / total.deaths]
-  tmp2 = subset(tmp, date <= ref_date)
+  ref_dates = subset(df_week, week_index %in% stan_data$w_ref_index)$date
+  tmp2 = subset(tmp, date %in% ref_dates)
   tmp2 = tmp2[, list(emp.prob = mean(emp.prob)), by = c('age')]
   setnames(tmp2, 'emp.prob', 'emp.prob.ref')
   tmp = merge(tmp, tmp2, by = c('age'))

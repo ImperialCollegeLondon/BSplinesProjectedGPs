@@ -9,6 +9,9 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   if(!is.null(last_date_previous_spec))
     stopifnot(last_date_previous_spec == min(tmp$date)-7)
   
+  # keep from the first week with more than 0 total deaths
+  # tmp1 = tmp[, list(total.weekly.deaths = sum(na.omit(weekly.deaths))), by = c('date') ]
+  
   # create map of original age groups 
   df_state_age_strata = unique(select(tmp, age_from, age_to, age))
   df_state_age_strata[, age_index := 1:nrow(df_state_age_strata)]
@@ -41,10 +44,9 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   if(W == 0) return(NULL)
   
   # ref date
-  w_ref_index = NA
-  if(min(df_week$date) <= ref_date & max(df_week$date) >= ref_date)
-    w_ref_index = subset(df_week, date == ref_date )$week_index
-  
+  W_ref_index = 6*4
+  w_ref_index = sort(rev(subset(df_week, date <= ref_date )$week_index)[1:W_ref_index])
+
   # create map of original age groups without NA 
   N_idx_non_missing = vector(mode = 'integer', length = W_OBSERVED)
   idx_non_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
@@ -163,6 +165,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      IDX_WEEKS = 1:W,
                      IDX_WEEKS_OBSERVED = IDX_WEEKS_OBSERVED,
                      IDX_WEEKS_OBSERVED_REPEATED = IDX_WEEKS_OBSERVED_REPEATED,
+                     W_ref_index = W_ref_index,
                      w_ref_index = w_ref_index,
                      A = nrow(df_age_continuous),
                      age = df_age_continuous$age,
@@ -350,8 +353,7 @@ add_nodes_stan_data = function(stan_data)
 add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
 {
 
-  tmp1 = data.table(weekly_deaths = stan_data$sum_deaths)
-  set(tmp1, NULL, 'weekly_deaths', stan_data$sum_deaths)
+  tmp1 = data.table(weekly_deaths = stan_data$sum_deaths + 5*(stan_data$B - stan_data$N_idx_non_missing))
   set(tmp1, NULL, 'diff_sum_deaths', c(NA, tmp1[, diff(weekly_deaths)]))
   tmp1[, rel_diff := ifelse(weekly_deaths, diff_sum_deaths / weekly_deaths, weekly_deaths)]
   tmp1[, diff_sum_deaths_abs := abs(diff_sum_deaths)]
@@ -365,8 +367,8 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
   
   lin_fit = lm(weekly_deaths~diff_sum_deaths_abs-1, data = tmp1)
   
-  mean = stan_data$sum_deaths
-  sd = stan_data$sum_deaths / (lin_fit$coefficients*2)
+  mean = tmp1$weekly_deaths
+  sd = tmp1$weekly_deaths / (lin_fit$coefficients*2)
   
   if( any(sd == 0) ) sd[sd ==0] = 0.01
   if( any(mean == 0) ) mean[mean ==0] = 0.01

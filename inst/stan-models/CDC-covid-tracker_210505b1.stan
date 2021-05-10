@@ -1,31 +1,7 @@
 functions {
-  vector row_sums(int[,] X) 
-  {
-      int n_rows = dims(X)[1]; // this will give number of rows
-      vector[n_rows] s;
-      matrix [dims(X)[1], dims(X)[2]] mat_X;
-      mat_X = to_matrix(X);
-      for (i in 1:n_rows) s[i] = sum(row(mat_X, i));
-      return s;
-  }
-  
-
     matrix kron_mvprod(matrix A, matrix B, matrix V) 
     {
         return transpose(A*transpose(B*V));
-    }
-  
-    matrix calculate_eigenvalues(vector A, vector B, int n1, int n2, real sigma2) 
-    {
-        matrix[n1,n2] e;
-            for(i in 1:n1) 
-            {
-                for(j in 1:n2) 
-                {
-                    e[i,j] = (A[i]*B[j] + sigma2);
-                }
-            }
-        return(e);
     }
     
   matrix gp(int T, int D, real[] time, real[] delay,
@@ -34,8 +10,6 @@ functions {
             vector rho_gp1_t_dist, vector rho_gp1_d_dist,
             matrix z1)
   {
-    matrix[T,D] lambda;
-    matrix[T,D] lambda_gp1;
     
     matrix[T,D] GP1;//long range
     
@@ -82,15 +56,7 @@ functions {
     
     GP1 = kron_mvprod(L_K1_d, L_K1_t, z1);
 
-    for (t in 1:T)
-        {
-            for(d in 1:D)
-                {
-                    lambda_gp1[t,d] = exp(GP1[t,d]);
-                    lambda[t,d] = lambda_gp1[t,d] ;
-                }
-        }
-    return(lambda);
+    return(GP1);
   }
 }
 
@@ -100,7 +66,8 @@ data{
   int<lower=0,upper=W> W_NOT_OBSERVED; // number of weeks not observed 
   int<lower=1, upper=W> IDX_WEEKS_OBSERVED[W_OBSERVED]; // index of the weeks observed 
   int<lower=1, upper=W> IDX_WEEKS_OBSERVED_REPEATED[W]; // index of the weeks observed where missing is equal to the previous one 
-  int<lower=0,upper=W> w_ref_index; // week index to compare the death prob
+  int<lower=0,upper=W> W_ref_index; // number of index to compare the death prob
+  int<lower=0,upper=W> w_ref_index[W_ref_index]; // week index to compare the death prob
   int<lower=0> A; // continuous age
   int<lower=0> B; // first age band specification
   int<lower=0,upper=B> N_idx_non_missing[W_OBSERVED];
@@ -253,8 +220,8 @@ generated quantities {
   for(w in 1:W){
 
     // phi ratio
-    probability_ratio[:,w] = phi[:,w] ./ (phi[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
-    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
+    probability_ratio[:,w] = phi[:,w] ./ (phi[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
+    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
     
     // predict deaths
     deaths_predict[:,w] = neg_binomial_rng(alpha[:,w], theta );

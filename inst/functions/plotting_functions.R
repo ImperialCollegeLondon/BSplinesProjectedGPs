@@ -78,7 +78,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30),
-                         limits = c(0,max(na.omit(deathByAge$sum.weekly.deaths,deathByAge$max.sum.weekly.deaths)))) +
+                         limits = c(0,max(c(na.omit(deathByAge$sum.weekly.deaths),na.omit(deathByAge$max.sum.weekly.deaths))))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -93,7 +93,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                         limits = c(0,max(na.omit(deathByAge$sum.weekly.deaths,deathByAge$max.sum.weekly.deaths)))) +
+                         limits = c(0,max(c(na.omit(deathByAge$sum.weekly.deaths),na.omit(deathByAge$max.sum.weekly.deaths))))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -108,7 +108,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     facet_wrap(~loc_label) + 
     theme_bw() +
     scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                         limits = c(0,max(na.omit(deathByAge$sum.weekly.deaths, deathByAge$max.sum.weekly.deaths)))) +
+                         limits = c(0,max(c(na.omit(deathByAge$sum.weekly.deaths), na.omit(deathByAge$max.sum.weekly.deaths))))) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     theme(legend.position = 'bottom',
@@ -162,7 +162,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
       geom_raster(aes(fill = min.sum.weekly.deaths )) + 
       theme_bw() +
       scale_fill_viridis_c(breaks = c(0,10,20,30),
-                           limits = c(0,max(na.omit(tmp$sum.weekly.deaths,tmp$max.sum.weekly.deaths)))) +
+                           limits = c(0,max(c(na.omit(tmp$sum.weekly.deaths),na.omit(tmp$max.sum.weekly.deaths))))) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       scale_y_discrete(expand = c(0,0)) + 
       theme(legend.position = 'bottom',
@@ -177,7 +177,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
       geom_raster(aes(fill = max.sum.weekly.deaths )) + 
       theme_bw() +
       scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                           limits = c(0,max(na.omit(tmp$sum.weekly.deaths,tmp$max.sum.weekly.deaths)))) +
+                           limits = c(0,max(c(na.omit(tmp$sum.weekly.deaths),na.omit(tmp$max.sum.weekly.deaths))))) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       scale_y_discrete(expand = c(0,0)) + 
       theme(legend.position = 'bottom',
@@ -192,7 +192,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
       geom_raster(aes(fill = sum.weekly.deaths )) + 
       theme_bw() +
       scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                           limits = c(0,max(na.omit(tmp$sum.weekly.deaths, tmp$max.sum.weekly.deaths)))) +
+                           limits = c(0,max(c(na.omit(tmp$sum.weekly.deaths), na.omit(tmp$max.sum.weekly.deaths))))) +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       scale_y_discrete(expand = c(0,0)) + 
       theme(legend.position = 'bottom',

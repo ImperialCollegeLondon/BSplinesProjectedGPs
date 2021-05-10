@@ -6,7 +6,7 @@ library(doParallel)
 
 indir ="~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-location.index = 2
+location.index = 1
 stan_model = "210505b1"
 JOBID = round(runif(1,1,1000))
 
@@ -90,14 +90,14 @@ if(1){
  }
 
 # reference date
-ref_date = as.Date('2020-08-29')
+ref_date = as.Date('2020-12-05')
 cat("The reference date is", as.character(ref_date), "\n")
 
 # Prepare stan data
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data = tmp
 
-if(grepl('210426|210429|210504|210505', stan_model)){
+if(grepl('210426|210429a|210429b|210429d|210429e|210429f|210429g|210504|210505', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
@@ -138,12 +138,12 @@ model = rstan::stan_model(path.to.stan.model)
 
 if(0){
   
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=1000,warmup=100,chains=1,
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=3500,warmup=500,chains=8,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 
 # save

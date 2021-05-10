@@ -7,9 +7,9 @@ library(dplyr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
-location.index = 48
+location.index = 1
 stan_model = "210505b1"
-JOBID = 2967
+JOBID = 11377
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -32,13 +32,6 @@ if(length(args_line) > 0)
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
 source(file.path(indir, "functions", "postprocessing-utils.R"))
-# 
-# # temporary
-# path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-# path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-05-01.rds"))
-# JHUData = readRDS(path.to.JHU.data)
-# scrapedData = read.csv(path_to_scraped_data)
-
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
@@ -64,14 +57,16 @@ fit_cum <- readRDS(file=file)
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
 
+
 # Plot estimate B-splines parameters plane 
-plot_posterior_plane(fit_cum, df_week, outdir = outdir.fig)
+plot_posterior_plane(fit_cum, df_week, stan_data, outdir = outdir.fig)
+
 
 # Plots continuous age distribution alpha
 cat("\nMake continuous age distribution plots \n")
 age_contribution_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', "weekly COVID-19 deaths", outdir = outdir.fig)
-age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi_reduced', outdir.table)
+age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', "weekly COVID-19 deaths", outdir = outdir.fig, discrete = T)
 
 
@@ -83,8 +78,8 @@ plot_var_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, o
 
 
 # Plot probability ratio of deaths over time
-probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
-plot_probability_ratio(probability_ratio_table, outdir.fig)
+probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, stan_data, outdir.table)
+plot_probability_ratio(probability_ratio_table, df_week, stan_data, outdir.fig)
 
 
 # Plot deaths ratio of deaths over time

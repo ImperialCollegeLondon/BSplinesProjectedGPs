@@ -73,20 +73,30 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, lab, outdir,
   
   p = ggplot(tmp1, aes(x = age)) + 
     theme_bw() +
-    labs(y = paste0("Contribution to ", lab), x = "Age", title = paste(Code)) + 
-    facet_wrap(~date)
+    labs(y = paste0("Contribution to ", lab), x = "Age") + 
+    facet_wrap(~date) + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA))
+  
+  dates = unique(tmp1$date)
+  tmp2 = subset(tmp1, date %in% dates[seq(1, length(dates), length.out =3)])
+  p1 = ggplot(tmp2, aes(x = age)) + 
+    theme_bw() +
+    labs(y = paste0("Contribution to ", lab), x = "Age") + 
+    facet_wrap(~date, ncol = 1)+ 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA))
   
   if(discrete){
-    p = p + 
-      geom_point(aes(y = M)) +
-      geom_errorbar(aes(ymin= CL, ymax = CU)) 
+    p = p + geom_point(aes(y = M)) + geom_errorbar(aes(ymin= CL, ymax = CU)) 
+    p1 = p1 + geom_point(aes(y = M)) + geom_errorbar(aes(ymin= CL, ymax = CU)) 
   } else {
-    p = p + 
-      geom_line(aes(y = M)) +
-      geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
+    p = p + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
+    p1 = p1 + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
   }
     
   ggsave(p, file = paste0(outdir, "-continuous_contribution_", var_name, '_', Code, ".png") , w= 10, h = 8, limitsize = FALSE)
+  ggsave(p1, file = paste0(outdir, "-continuous_contribution_short_", var_name, '_', Code, ".png") , w= 4, h = 8, limitsize = FALSE)
   
   p = ggplot(tmp1, aes(x = date, y = age)) +
     geom_raster(aes(fill = M))  + 
@@ -326,8 +336,10 @@ plot_covariance_matrix = function(fit_cum, outdir)
   
 }
 
-plot_posterior_plane = function(fit_cum, df_week, outdir)
+plot_posterior_plane = function(fit_cum, df_week, stan_data, outdir)
 {
+  
+  if(is.null(stan_data$num_basis)) return(NULL)
   
   euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
   fit_samples = extract(fit_cum)
@@ -365,11 +377,26 @@ plot_posterior_plane = function(fit_cum, df_week, outdir)
   
 }
 
-plot_probability_ratio = function(probability_ratio_table, outdir)
+plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, outdir)
 {
+  dates = format( range( subset(df_week, week_index %in% stan_data$w_ref_index)$date ), "%d-%b-%Y")
+
   # plot
-  tmp = subset(probability_ratio_table, age %in% c('55-64', '65-74', '75-84', '85+'))
+  ggplot(probability_ratio_table, aes(x = date)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
+    geom_line(aes(y = M)) + 
+    geom_point(aes(y = emp.prob.ratio), col = 'darkred') + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    theme_bw() + 
+    geom_hline(aes(yintercept = 1)) +
+    facet_wrap(~age,  ncol =1)+ 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 90)) +
+    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 4, h = 8)
   
+  tmp = subset(probability_ratio_table, age %in% c('55-64', '65-74', '75-84', '85+'))
   ggplot(tmp, aes(x = date)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
     geom_line(aes(y = M)) + 
@@ -381,8 +408,8 @@ plot_probability_ratio = function(probability_ratio_table, outdir)
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date-5, "%d-%b-%Y")))
-  ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 4, h = 8)
+    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 4, h = 8)
   
   tmp = subset(probability_ratio_table, age %in% c('45-54', '55-64', '65-74', '75-84', '85+'))
   ggplot(tmp, aes(x = date)) + 
@@ -391,8 +418,8 @@ plot_probability_ratio = function(probability_ratio_table, outdir)
     # geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
     theme_bw() + 
     geom_hline(aes(yintercept = 1)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date-5, "%d-%b-%Y")))
-  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 8, h = 8)
+    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_median_', Code, '.png'), w = 8, h = 8)
 }
 
 plot_death_ratio = function(death_ratio_table, outdir)
@@ -410,8 +437,7 @@ plot_death_ratio = function(death_ratio_table, outdir)
     facet_wrap(~age, ncol = 1)+ 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
-          axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date, "%d-%b-%y")))
+          axis.text.x = element_text(angle = 90))
   ggsave(file = paste0(outdir, '-DeathRatio_', Code, '.png'), w = 4, h = 8)
   
   ggplot(tmp, aes(x = date)) + 
@@ -419,9 +445,7 @@ plot_death_ratio = function(death_ratio_table, outdir)
     geom_point(aes(y = death.ratio, col = age)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
     theme_bw() + 
-    geom_hline(aes(yintercept = 1)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean before ', format(ref_date, "%d-%b-%y")), 
-         col = 'Age group')
+    geom_hline(aes(yintercept = 1)) 
   ggsave(file = paste0(outdir, '-DeathRatio_elderly_', Code, '.png'), w = 8, h = 8)
 }
 
