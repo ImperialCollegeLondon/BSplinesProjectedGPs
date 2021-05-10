@@ -101,6 +101,10 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
   tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age), 'deaths_predict')
   compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = 'M', outdir = outdir.fig)
+  
+  tmp = find_cumulative_deaths_givensum_state_age(fit_cum, df_week, df_age_continuous, scrapedData)
+  compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
+                                          var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 }
 
 
