@@ -4,7 +4,8 @@ data{
   int<lower=0,upper=W> W_NOT_OBSERVED; // number of weeks not observed 
   int<lower=1, upper=W> IDX_WEEKS_OBSERVED[W_OBSERVED]; // index of the weeks observed 
   int<lower=1, upper=W> IDX_WEEKS_OBSERVED_REPEATED[W]; // index of the weeks observed where missing is equal to the previous one 
-  int<lower=0,upper=W> w_ref_index; // week index to compare the death prob
+  int<lower=0,upper=W> W_ref_index; // number of index to compare the death prob
+  int<lower=0,upper=W> w_ref_index[W_ref_index]; // week index to compare the death prob
   int<lower=0> A; // continuous age
   int<lower=0> B; // first age band specification
   int<lower=0,upper=B> N_idx_non_missing[W_OBSERVED];
@@ -136,8 +137,8 @@ generated quantities {
   for(w in 1:W){
 
     // phi ratio
-    probability_ratio[:,w] = phi[:,w] ./ (phi[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
-    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
+    probability_ratio[:,w] = phi[:,w] ./ (phi[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
+    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
     
     // predict deaths
     deaths_predict[:,w] = neg_binomial_rng(alpha[:,w], theta );
