@@ -486,6 +486,50 @@ find_cumulative_deaths_givensum_state_age = function(fit, df_week, df_age_contin
   return(tmp1)
 }
 
+find_phi_state_age = function(fit, df_week, df_age_continuous, age_state){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) return()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit_cum)
+  
+  # df age
+  df_age_state = data.table(age = age_state)
+  df_age_state[, age_index := 1:nrow(df_age_state)]
+  df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
+  df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
+  df_age_state[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+  df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
+  df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
+  df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
+  df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
+  
+  
+  # tmp1
+  tmp1 = as.data.table( reshape2::melt(fit_samples['phi']) )
+  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  
+  # sum by state age group
+  tmp1 = merge(tmp1, df_age_continuous, 'age_index')
+  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
+  
+  # take the cum sum
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('week_index', 'age_state_index')]	
+  tmp1 = dcast(tmp1, week_index + age_state_index ~ q_label, value.var = "q")
+  
+  tmp1[, code := Code]
+  
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
+  tmp1 = merge(tmp1, df_age_state, by.x = 'age_state_index', by.y = 'age_index')
+  
+  return(tmp1)
+}
 
 # 
 # add_intervals_missing_data = function(data, stan_data, base_week_idx = 0){

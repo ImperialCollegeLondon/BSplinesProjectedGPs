@@ -240,7 +240,7 @@ compare_CDCestimation_Imperial_age_plot = function(CDC_data, scraped_data, var.c
   
   # plot
   scraped_data[, source := 'Imperial COVID-19 Team']
-  CDC_data[, source := 'CDC']
+  CDC_data[, source := 'Estimated']
   
   tmp2 = rbind(scraped_data, CDC_data)
   tmp2 = subset(tmp2, code %in% unique(CDC_data$code) & date <= max(CDC_data$date))
@@ -261,6 +261,56 @@ compare_CDCestimation_Imperial_age_plot = function(CDC_data, scraped_data, var.c
           axis.text.x = element_text(angle = 90)) + 
     labs(y = 'Cumulative COVID-19 attributable deaths', col = '', fill = '', x = '')
   ggsave(p, file = paste0(outdir, '-comparison_Imperial_CDC_uncertainty_', Code, '.png'), w = 4, h = 8, limitsize = F)
+  
+}
+
+
+compare_CDCestimation_Imperial_age_prop_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, df_week, outdir, overall = F)
+{
+  df_week2 = df_week[, list(date = seq.Date(date, (date+6), by = 'day')), by = c('week_index')]
+  df_week2 = rbind(data.table(date = seq(min(df_week$date) - 7, min(df_week$date) - 1, by = 'day'), week_index = 0), df_week2)
+  
+  scraped_data = select(as.data.table(scraped_data), code, date, age, daily.deaths)
+  scraped_data = subset(scraped_data, code == Code)
+  scraped_data[, date := as.Date(date)]
+  scraped_data = merge(scraped_data, df_week2, by = 'date')
+  tmp = scraped_data[, list(weekly.deaths = sum(daily.deaths)), by = c('age', 'week_index')]
+  tmp1 = tmp[, list(total.deaths = sum(weekly.deaths)), by = c('week_index')]
+  tmp = merge(tmp, tmp1, by = c('week_index') )
+  tmp[, prop.deaths := weekly.deaths / total.deaths]
+  tmp = merge(tmp, df_week, by = 'week_index')
+  tmp[, CL := NA]
+  tmp[, CU := NA]
+  tmp = select(tmp, date, age, prop.deaths, CL, CU)
+  tmp = subset(tmp, date < max(tmp$date))
+  
+  # prepare CDC estimations
+  CDC_data = select(as.data.table(CDC_data), date, age, var.cum.deaths.CDC, CL, CU)
+  setnames(CDC_data, var.cum.deaths.CDC, 'prop.deaths')
+  
+  # plot
+  tmp[, source := 'Imperial COVID-19 Team']
+  CDC_data[, source := 'Estimated']
+  
+  tmp2 = rbind(tmp, CDC_data)
+  tmp2 = subset(tmp2,  date <= max(CDC_data$date))
+  tmp2[, age := factor(age, levels = unique(tmp$age))]
+  
+  col = viridisLite::viridis(3, option = "B", direction = -1, end = 0.8)
+  
+  p = ggplot(tmp2, aes(x = date, y = prop.deaths)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
+    geom_line(aes(col = source), size = 1) +
+    theme_bw() + 
+    scale_color_manual(values = col[c(1,2)]) + 
+    scale_fill_manual(values = col[c(1,2)]) +
+    facet_wrap(~age,  scale = 'free', ncol = 2) + 
+    theme(legend.position = 'bottom',
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text.x = element_text(angle = 90)) + 
+    labs(y = 'Contribution to weekly COVID-19 deaths', col = '', fill = '', x = '')
+  ggsave(p, file = paste0(outdir, '-comparison_Imperial_CDC_prop_', Code, '.png'), w = 4, h = 8, limitsize = F)
   
 }
 
