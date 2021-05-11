@@ -386,10 +386,20 @@ plot_covariance_matrix = function(fit_cum, outdir)
   
 }
 
-plot_posterior_plane = function(fit_cum, df_week, stan_data, outdir)
+plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, outdir)
 {
   
-  if(is.null(stan_data$num_basis)) return(NULL)
+  # if(is.null(stan_data$num_basis)) return(NULL)
+  
+  row_name = 'week_index'
+  column_name = 'basis_function_index'
+  column_lab = "Basis function index"
+  n_y = stan_data$num_basis
+  if(is.null(stan_data$num_basis)){
+    column_name = 'age_index'
+    n_y = stan_data$A
+    column_lab = "Age"
+  }
   
   euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
   fit_samples = extract(fit_cum)
@@ -397,9 +407,6 @@ plot_posterior_plane = function(fit_cum, df_week, stan_data, outdir)
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
   tmp1 = as.data.table( reshape2::melt( fit_samples$beta ))
-  row_name = 'week_index'
-  column_name = 'basis_function_index'
-  if(max(tmp1$Var3) == stan_data$A) column_name = 'Age'
   setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
   tmp1 = tmp1[, list(q = quantile(value, prob=ps), q_label=p_labs), by=c(column_name, row_name)]
   tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
@@ -415,38 +422,41 @@ plot_posterior_plane = function(fit_cum, df_week, stan_data, outdir)
   plot.new()
   plot.window(
     xlim = c(1 - 0.5, stan_data$W + 0.5),
-    ylim = c(1 - 0.5, stan_data$num_basis + 0.5))
-  image  (1:stan_data$W, 1:stan_data$num_basis,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
-  contour(1:stan_data$W, 1:stan_data$num_basis,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
+    ylim = c(1 - 0.5, n_y + 0.5))
+  image  (1:stan_data$W, 1:n_y,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
+  contour(1:stan_data$W, 1:n_y,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
   axis(side = 1, at = seq(1, stan_data$W, 5), labels = format(unique(tmp1$date), '%b %Y')[seq(1, stan_data$W, 5)], lwd = 0.5)
-  axis(side = 2, at = seq(1, stan_data$num_basis, 2), labels = rev(seq(2, stan_data$num_basis, 2)), lwd = 0.5)
+  if(column_name == 'basis_function_index') axis(side = 2, at = seq(1, n_y, 2), labels = max(n_y) - seq(1, n_y, 2) + 1, lwd = 0.5)
+  if(column_name == 'age_index') axis(side = 2, at = seq(1, n_y, 10), labels = max(n_y) - seq(1, n_y, 10), lwd = 0.5)
   box(lwd = 0.5)
   mtext("Date", side = 1, adj = 0.5, line = -1.5, outer = TRUE)
-  mtext("Basis function index",     side = 2, adj = 0.5, line = -1.5, outer = TRUE)
+  mtext(column_lab,     side = 2, adj = 0.5, line = -1.5, outer = TRUE)
   dev.off()
-  
+
 }
 
 plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, outdir)
 {
   dates = format( range( subset(df_week, week_index %in% stan_data$w_ref_index)$date ), "%d-%b-%Y")
-
+  tmp = subset(probability_ratio_table, age %in% c('55-64', '65-74', '75-84', '85+'))
+  
+  max(tmp$CU)
   # plot
   ggplot(probability_ratio_table, aes(x = date)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
     geom_line(aes(y = M)) + 
     geom_point(aes(y = emp.prob.ratio), col = 'darkred') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    coord_cartesian(ylim = c(0, max(tmp$CU))) +
     theme_bw() + 
-    geom_hline(aes(yintercept = 1)) +
+    geom_hline(aes(yintercept = 1), col = 'darkblue') +
     facet_wrap(~age,  ncol =1)+ 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
     labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
-  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 4, h = 8)
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 4, h = 12)
   
-  tmp = subset(probability_ratio_table, age %in% c('55-64', '65-74', '75-84', '85+'))
   ggplot(tmp, aes(x = date)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
     geom_line(aes(y = M)) + 
@@ -483,7 +493,7 @@ plot_death_ratio = function(death_ratio_table, outdir)
     geom_point(aes(y = death.ratio), col = 'darkred') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     theme_bw() + 
-    geom_hline(aes(yintercept = 1)) +
+    geom_hline(aes(yintercept = 1), col = 'darkblue') +
     facet_wrap(~age, ncol = 1)+ 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 

@@ -8,8 +8,8 @@ library(dplyr)
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
 location.index = 1
-stan_model = "210505b1"
-JOBID = 11377
+stan_model = "210429h1"
+JOBID = 10296
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -59,7 +59,7 @@ plot_covariance_matrix(fit_cum, outdir = outdir.fig)
 
 
 # Plot estimate B-splines parameters plane 
-plot_posterior_plane(fit_cum, df_week, stan_data, outdir = outdir.fig)
+plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
 
 
 # Plots continuous age distribution alpha
