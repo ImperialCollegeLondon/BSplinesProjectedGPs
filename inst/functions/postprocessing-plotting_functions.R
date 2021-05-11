@@ -139,11 +139,11 @@ plot_var_by_age = function(tmp1, var_name, data, outdir, discrete = F){
     digits_cut= ifelse(range_wd[2]/10 > 1, digits_cut, 0)
     p = p + 
       scale_y_discrete(expand = c(0,0))  + labs(x = '', y = 'Age group', fill = 'Estimated posterior median') + 
-      scale_fill_viridis_c(limits = limits_wd, breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut)) 
+      scale_fill_viridis_c(trans = 'sqrt', limits = limits_wd, breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut)) 
   } else {
     p = p + 
       scale_y_continuous(expand = c(0,0))  +labs(x = '', y = 'Age', fill = 'Estimated posterior median') + 
-      scale_fill_viridis_c(trans = 'sqrt')
+      scale_fill_viridis_c()
   }
   ggsave(p, file = paste0(outdir, "-posterior_", var_name, '_', Code, ".png") , w= 5, h = 5.2, limitsize = FALSE)
   
@@ -455,7 +455,7 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
     labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
-  ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 4, h = 12)
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 4, h = 14)
   
   ggplot(tmp, aes(x = date)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
