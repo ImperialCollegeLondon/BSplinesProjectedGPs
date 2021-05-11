@@ -139,7 +139,7 @@ plot_var_by_age = function(tmp1, var_name, data, outdir, discrete = F){
     digits_cut= ifelse(range_wd[2]/10 > 1, digits_cut, 0)
     p = p + 
       scale_y_discrete(expand = c(0,0))  + labs(x = '', y = 'Age group', fill = 'Estimated posterior median') + 
-      scale_fill_viridis_c(trans = 'sqrt', limits = limits_wd, breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut)) 
+      scale_fill_viridis_c(limits = limits_wd, breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut)) 
   } else {
     p = p + 
       scale_y_continuous(expand = c(0,0))  +labs(x = '', y = 'Age', fill = 'Estimated posterior median') + 
