@@ -229,7 +229,6 @@ compare_CDCestimation_JHU_DoH_plot = function(CDC_data, JHU_data, scraped_data, 
           axis.text.x = element_text(angle = 90)) 
   ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_DoH_uncertainty_', Code, '.png'), w = 4, h = 4, limitsize = F)
 }
-scraped_data = copy(scrapedData)
 
 compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
 {
