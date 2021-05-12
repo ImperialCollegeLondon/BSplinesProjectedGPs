@@ -71,20 +71,19 @@ predictive_checks_table = make_predictive_checks_table(fit_cum, df_week, df_age_
 cat("\nMake posterior predictive checks plots \n")
 plot_posterior_predictive_checks(predictive_checks_table, 
                                  variable = "weekly.deaths", 
-                                 lab = "weekly COVID-19 deaths", 
                                  outdir = outdir.fig)
 
 # plot predictive check cumulative
 cat("\nMake posterior predictive checks cumulative plots \n")
-tmp1 = find_sum_missing_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
-setnames(tmp1, 'age_state_index', 'age_index')
+tmp1 = find_cumsum_nonr_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
 plot_sum_missing_deaths(tmp1, outdir.fig)
 
-tmp1 = find_sum_bounded_missing_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
-setnames(tmp1, 'age_state_index', 'age_index')
+tmp1 = find_sum_nonr_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict', outdir.table)
 plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
 
 
 cat("\n End postprocessing_assess_mixing.R \n")
+
+
 

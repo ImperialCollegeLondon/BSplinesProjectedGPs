@@ -65,9 +65,9 @@ plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = ou
 # Plots continuous age distribution alpha
 cat("\nMake continuous age distribution plots \n")
 age_contribution_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi', outdir.table)
-plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', "weekly COVID-19 deaths", outdir = outdir.fig)
+plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
 age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'phi_reduced', outdir.table)
-plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', "weekly COVID-19 deaths", outdir = outdir.fig, discrete = T)
+plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 
 
 # Plot imputed weekly data 
@@ -90,24 +90,21 @@ plot_death_ratio(death_ratio_table, outdir.fig)
 mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)
 plot_mean_age_death(mean_age_death, outdir.fig)
 
-# plot compare to JHU and Imperial data
+# plot compare to JHU and DoH data
 # find overall cumulative deaths (across age groups)
 tmp = find_overall_cumulative_deaths(fit_cum, df_week, 'deaths_predict')
-compare_CDCestimation_JHU_Imperial_plot(CDC_data = copy(tmp), JHU_data = JHUData, scraped_data = scrapedData,
+compare_CDCestimation_JHU_DoH_plot(CDC_data = copy(tmp), JHU_data = JHUData, scraped_data = scrapedData,
                                         var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 
 # find overall cumulative deaths (by age groups)
 if(nrow(subset(scrapedData, code == Code)) > 0 ){
-  tmp = find_cumulative_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age), 'deaths_predict')
-  compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
-                                          var.cum.deaths.CDC = 'M', outdir = outdir.fig)
   
   tmp = find_cumulative_deaths_givensum_state_age(fit_cum, df_week, df_age_continuous, scrapedData)
-  compare_CDCestimation_Imperial_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
+  compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = 'M', outdir = outdir.fig)
   
   tmp = find_phi_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age))
-  compare_CDCestimation_Imperial_age_prop_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
+  compare_CDCestimation_DoH_age_prop_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = 'M', df_week, outdir = outdir.fig)
 }
 

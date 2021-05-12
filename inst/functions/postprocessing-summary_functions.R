@@ -226,53 +226,7 @@ find_overall_cumulative_deaths = function(fit_cum, df_week, deaths_predict_var){
   return(tmp1)
 }
 
-find_cumulative_deaths_state_age = function(fit, df_week, df_age_continuous, state_age_groups, deaths_predict_var){
-  
-  ps <- c(0.5, 0.025, 0.975)
-  p_labs <- c('M','CL','CU')
-  
-  if(is.null(fit)) return()
-  
-  # extract samples
-  fit_samples = rstan::extract(fit_cum)
-  
-  # df age
-  df_age_state = data.table(age = state_age_groups)
-  df_age_state[, age_index := 1:nrow(df_age_state)]
-  df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
-  df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
-  df_age_state[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
-  df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
-  df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
-  df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
-  df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
-  df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
-
-  
-  # tmp1
-  tmp1 = as.data.table( reshape2::melt(fit_samples[deaths_predict_var]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
-  
-  # sum by state age group
-  tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
-  
-  # take the cum sum
-  tmp1 = tmp1[, value := cumsum(value), by = c('iterations', 'age_state_index')]
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
-              by=c('week_index', 'age_state_index')]	
-  tmp1 = dcast(tmp1, week_index + age_state_index ~ q_label, value.var = "q")
-  
-  tmp1[, code := Code]
-  
-  tmp1 = merge(tmp1, df_week, by = 'week_index')
-  tmp1 = merge(tmp1, df_age_state, by.x = 'age_state_index', by.y = 'age_index')
-  
-  return(tmp1)
-}
-
-find_sum_missing_deaths_state_age = function(fit, df_week, df_age_continuous, state_age_groups, stan_data, deaths_predict_var){
+find_cumsum_nonr_deaths_state_age = function(fit, df_week, df_age_continuous, state_age_groups, stan_data, deaths_predict_var){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -331,11 +285,12 @@ find_sum_missing_deaths_state_age = function(fit, df_week, df_age_continuous, st
   tmp1 = merge(tmp1, df_age_state, by.x = 'age_state_index', by.y = 'age_index')
   tmp1 = merge(tmp1, df_missing, by.x = c('age_state_index','week_index'), by.y = c('age_index','week_index'))
   
+  setnames(tmp1, 'age_state_index', 'age_index')
   
   return(tmp1)
 }
 
-find_sum_bounded_missing_deaths_state_age = function(fit, df_age_continuous, state_age_groups, stan_data, deaths_predict_var){
+find_sum_nonr_deaths_state_age = function(fit, df_age_continuous, state_age_groups, stan_data, deaths_predict_var, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -391,8 +346,16 @@ find_sum_bounded_missing_deaths_state_age = function(fit, df_age_continuous, sta
   tmp1[, code := Code]
   
   tmp1 = merge(tmp1, df_age_state, by.x = 'age_state_index', by.y = 'age_index')
-  tmp1 = merge(tmp1, df_missing,by.x = 'age_state_index', by.y = 'age_index')
+  tmp1 = merge(tmp1, unique(select(df_missing, -week_index)),by.x = 'age_state_index', by.y = 'age_index')
   
+  setnames(tmp1, 'age_state_index', 'age_index')
+  
+  # inside CI?
+  tmp1[is.na(sum_count_censored), inside.CI := (CL >= min_count_censored & CL <= max_count_censored) | (CU >= min_count_censored & CU <= max_count_censored) | (CL <= min_count_censored & CU >= max_count_censored)]
+  tmp1[!is.na(sum_count_censored), inside.CI := sum_count_censored >= CL & sum_count_censored <= CU]
+  
+  # save
+  saveRDS(tmp1, file = paste0(outdir, '-predictive_checks_table2_', Code, '.rds'))
   
   return(tmp1)
 }
@@ -551,6 +514,52 @@ find_phi_state_age = function(fit, df_week, df_age_continuous, age_state){
 #   df_missing = merge(df_missing, tmp, by = 'idx_serie_missing')
 #   
 #   tmp1 = merge(data, df_missing, by = c('week_index', 'age_index'), all.x = T)
+#   
+#   return(tmp1)
+# }
+
+# find_cumulative_deaths_state_age = function(fit, df_week, df_age_continuous, state_age_groups, deaths_predict_var){
+#   
+#   ps <- c(0.5, 0.025, 0.975)
+#   p_labs <- c('M','CL','CU')
+#   
+#   if(is.null(fit)) return()
+#   
+#   # extract samples
+#   fit_samples = rstan::extract(fit_cum)
+#   
+#   # df age
+#   df_age_state = data.table(age = state_age_groups)
+#   df_age_state[, age_index := 1:nrow(df_age_state)]
+#   df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
+#   df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
+#   df_age_state[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+#   df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
+#   df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
+#   df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+#   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
+#   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
+#   
+#   
+#   # tmp1
+#   tmp1 = as.data.table( reshape2::melt(fit_samples[deaths_predict_var]) )
+#   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+#   
+#   # sum by state age group
+#   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
+#   tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
+#   
+#   # take the cum sum
+#   tmp1 = tmp1[, value := cumsum(value), by = c('iterations', 'age_state_index')]
+#   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+#                        q_label=p_labs), 
+#               by=c('week_index', 'age_state_index')]	
+#   tmp1 = dcast(tmp1, week_index + age_state_index ~ q_label, value.var = "q")
+#   
+#   tmp1[, code := Code]
+#   
+#   tmp1 = merge(tmp1, df_week, by = 'week_index')
+#   tmp1 = merge(tmp1, df_age_state, by.x = 'age_state_index', by.y = 'age_index')
 #   
 #   return(tmp1)
 # }

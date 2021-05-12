@@ -81,7 +81,7 @@ cat("Location ", as.character(loc_name), "\n")
 # plot data 
 if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  compare_CDC_JHU_Imperial_error_plot(CDC_data = deathByAge,
+  compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                     JHU_data = JHUData, 
                                     scrapedData = scrapedData,
                                     var.weekly.deaths.CDC = 'weekly.deaths', 

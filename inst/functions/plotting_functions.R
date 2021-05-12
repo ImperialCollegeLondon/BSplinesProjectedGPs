@@ -1,4 +1,4 @@
-compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, var.weekly.deaths.CDC, outdir, Code = NULL)
+compare_CDC_JHU_DoH_error_plot = function(CDC_data, JHU_data, scrapedData, var.weekly.deaths.CDC, outdir, Code = NULL)
 {
   # find errors 
   CDCdata = CDC_data[, list(cumulative_deaths.CDC = sum(na.omit( get(var.weekly.deaths.CDC) ))), by = c('code', 'date')]
@@ -18,7 +18,7 @@ compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, 
   # plot
   JHUData[, source := 'JHU']
   CDCdata[, source := 'CDC']
-  scrapedData[, source := 'Imperial COVID-19 Team']
+  scrapedData[, source := 'DoH']
   setnames(CDCdata, 'cumulative_deaths.CDC', 'cumulative_deaths')
   setnames(scrapedData, 'cum.deaths', 'cumulative_deaths')
   
@@ -34,11 +34,11 @@ compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, 
     geom_line() +
     facet_wrap(~code, nrow = length(unique(tmp2$code)), scale = 'free') + 
     theme_bw()  +
-    labs(x = '', y = 'Cumulative COVID-19 attributable deaths', col = '') + 
+    labs(x = '', y = 'Cumulative COVID-19 deaths', col = '') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     theme(legend.position = 'bottom',
           axis.text.x = element_text(angle = 90)) 
-  ggsave(p, file = paste0(outdir, '-comparison_JHU_Imperial_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
   
   if(!is.null(Code)){
     tmp = subset(tmp2, code == Code)
@@ -47,11 +47,11 @@ compare_CDC_JHU_Imperial_error_plot = function(CDC_data, JHU_data, scrapedData, 
       geom_line() +
       theme_bw() + 
       scale_color_viridis_d(option = "B", direction = -1, end = 0.8) +
-      labs(x = '', y = 'Cumulative COVID-19 \nattributable deaths', col = '') + 
+      labs(x = '', y = 'Cumulative COVID-19 \ndeaths', col = '') + 
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
       theme(legend.position = 'bottom',
             axis.text.x = element_text(angle = 90)) 
-    ggsave(p, file = paste0(outdir, '-comparison_JHU_Imperial_CDC_', Code, '.pdf'), w = 5, h = 3, limitsize = F)
+    ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC_', Code, '.pdf'), w = 5, h = 3, limitsize = F)
     
   }
 }

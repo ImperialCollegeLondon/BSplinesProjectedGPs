@@ -32,7 +32,7 @@ plot_convergence_diagnostics = function(fit, title, suffix, outfile)
   
 }
 
-plot_posterior_predictive_checks = function(data, variable, lab, outdir)
+plot_posterior_predictive_checks = function(data, variable, outdir)
 {
   
   data[, PPP := paste0('inside CI: ', round(mean(na.omit(inside.CI))*100, digits = 2), '%'), by = 'date']
@@ -46,10 +46,12 @@ plot_posterior_predictive_checks = function(data, variable, lab, outdir)
     geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
     geom_point(aes(y = get(variable)), col = "red", size = 1) + 
     theme_bw() +
-    labs(y = lab, x = "") + 
+    labs(y = "Weekly COVID-19 deaths", x = "Age") + 
     facet_wrap(~date_ppp, scale = 'free_y') + 
-    theme(axis.text.x = element_text(angle = 90))
-  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+    theme(axis.text.x = element_text(angle = 90),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA)) 
+  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_", Code,".png") , w= 15, h = 10, limitsize = FALSE)
   
   # posterior predictive check
   p = ggplot(data, aes(x = date)) + 
@@ -57,14 +59,16 @@ plot_posterior_predictive_checks = function(data, variable, lab, outdir)
     geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
     geom_point(aes(y = get(variable)), col = "red", size = 1) + 
     theme_bw() +
-    labs(y = lab, x = "") + 
+    labs(y = "Weekly COVID-19 deaths", x = "Week") + 
     facet_wrap(~age, ncol = 3, scale = 'free_y') + 
-    theme(axis.text.x = element_text(angle = 90))
+    theme(axis.text.x = element_text(angle = 90),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA))
   ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
   
 }
 
-plot_probability_deaths_age_contribution = function(tmp1, var_name, lab, outdir, discrete = F){
+plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, discrete = F){
   
   if(!discrete)
     tmp1[, age := as.numeric(age)]
@@ -73,7 +77,7 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, lab, outdir,
   
   p = ggplot(tmp1, aes(x = age)) + 
     theme_bw() +
-    labs(y = paste0("Contribution to ", lab), x = "Age") + 
+    labs(y = 'Share of age groups among weekly COVID-19 deaths', x = "Age") + 
     facet_wrap(~date) + 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA))
@@ -82,7 +86,7 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, lab, outdir,
   tmp2 = subset(tmp1, date %in% dates[seq(1, length(dates), length.out =3)])
   p1 = ggplot(tmp2, aes(x = age)) + 
     theme_bw() +
-    labs(y = paste0("Contribution to ", lab), x = "Age") + 
+    labs(y = 'Share of age groups among weekly COVID-19 deaths', x = "Age") + 
     facet_wrap(~date, ncol = 1)+ 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA))
@@ -180,7 +184,7 @@ plot_sum_bounded_missing_deaths = function(tmp, outdir)
   
 }
 
-compare_CDCestimation_JHU_Imperial_plot = function(CDC_data, JHU_data, scraped_data, var.cum.deaths.CDC, outdir)
+compare_CDCestimation_JHU_DoH_plot = function(CDC_data, JHU_data, scraped_data, var.cum.deaths.CDC, outdir)
 {
   # prepare JHU data
   JHUData = select(as.data.table(JHUData), code, date, cumulative_deaths)
@@ -189,7 +193,7 @@ compare_CDCestimation_JHU_Imperial_plot = function(CDC_data, JHU_data, scraped_d
   JHUData[, CL := NA]
   JHUData[, CU := NA]
   
-  # prepare Imperial data
+  # prepare DoH data
   scraped_data = select(as.data.table(scraped_data), code, date, cum.deaths, age)
   scraped_data = scraped_data[, list(cum.deaths = sum(cum.deaths)), by = c('code', 'date')]
   scraped_data = subset(scraped_data, code == Code)
@@ -204,7 +208,7 @@ compare_CDCestimation_JHU_Imperial_plot = function(CDC_data, JHU_data, scraped_d
   
   # plot
   JHUData[, source := 'JHU']
-  scraped_data[, source := 'Imperial COVID-19 Team']
+  scraped_data[, source := 'DoH']
   CDC_data[, source := 'CDC']
   
   tmp2 = rbind(rbind(JHUData, CDC_data), scraped_data)
@@ -219,32 +223,38 @@ compare_CDCestimation_JHU_Imperial_plot = function(CDC_data, JHU_data, scraped_d
     scale_y_continuous(limits = Limits) +
     scale_color_viridis_d(option = "B", direction = -1, end = 0.8) + 
     scale_fill_viridis_d(option = "B", direction = -1, end = 0.8) + 
-    labs(x = '', y = 'Cumulative COVID-19 \nattributable deaths', col = '', fill = '') + 
+    labs(x = '', y = 'Cumulative COVID-19 \ndeaths', col = '', fill = '') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     theme(legend.position = 'bottom',
           axis.text.x = element_text(angle = 90)) 
-  ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_Imperial_uncertainty_', Code, '.png'), w = 4, h = 4, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_JHU_CDC_DoH_uncertainty_', Code, '.png'), w = 4, h = 4, limitsize = F)
 }
+scraped_data = copy(scrapedData)
 
-compare_CDCestimation_Imperial_age_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
+compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
 {
-  scraped_data = select(as.data.table(scraped_data), code, date, age, cum.deaths)
+  scraped_data = select(as.data.table(scraped_data), code, date, age, daily.deaths)
   scraped_data = subset(scraped_data, code == Code)
   scraped_data[, date := as.Date(date)]
   scraped_data[, CL := NA]
   scraped_data[, CU := NA]
+  scraped_data = subset(scraped_data, date >= min(CDC_data$date))
+  ages = unique(scraped_data$age)
+  scraped_data = scraped_data[order(code, age, date)]
+  scraped_data[, cum.deaths := cumsum(daily.deaths), by = 'age']
+  scraped_data = select(scraped_data, -daily.deaths)
   
   # prepare CDC estimations
   CDC_data = select(as.data.table(CDC_data), code, date, age, var.cum.deaths.CDC, CL, CU)
   setnames(CDC_data, var.cum.deaths.CDC, 'cum.deaths')
   
   # plot
-  scraped_data[, source := 'Imperial COVID-19 Team']
+  scraped_data[, source := 'DoH']
   CDC_data[, source := 'Estimated']
   
   tmp2 = rbind(scraped_data, CDC_data)
-  tmp2 = subset(tmp2, code %in% unique(CDC_data$code) & date <= max(CDC_data$date))
-  tmp2[, age := factor(age, levels = unique(scraped_data$age))]
+  tmp2[, age := factor(age, levels = ages)]
+  tmp2[, source := factor(source, levels = c('Estimated', 'DoH'))]
   
   col = viridisLite::viridis(3, option = "B", direction = -1, end = 0.8)
   
@@ -259,13 +269,13 @@ compare_CDCestimation_Imperial_age_plot = function(CDC_data, scraped_data, var.c
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text.x = element_text(angle = 90)) + 
-    labs(y = 'Cumulative COVID-19 attributable deaths', col = '', fill = '', x = '')
-  ggsave(p, file = paste0(outdir, '-comparison_Imperial_CDC_uncertainty_', Code, '.png'), w = 4, h = 8, limitsize = F)
+    labs(y = 'Cumulative COVID-19 deaths', col = '', fill = '', x = '')
+  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_uncertainty_', Code, '.png'), w = 4, h = 8, limitsize = F)
   
 }
 
 
-compare_CDCestimation_Imperial_age_prop_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, df_week, outdir, overall = F)
+compare_CDCestimation_DoH_age_prop_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, df_week, outdir, overall = F)
 {
   df_week2 = df_week[, list(date = seq.Date(date, (date+6), by = 'day')), by = c('week_index')]
   df_week2 = rbind(data.table(date = seq(min(df_week$date) - 7, min(df_week$date) - 1, by = 'day'), week_index = 0), df_week2)
@@ -289,7 +299,7 @@ compare_CDCestimation_Imperial_age_prop_plot = function(CDC_data, scraped_data, 
   setnames(CDC_data, var.cum.deaths.CDC, 'prop.deaths')
   
   # plot
-  tmp[, source := 'Imperial COVID-19 Team']
+  tmp[, source := 'DoH']
   CDC_data[, source := 'Estimated']
   
   tmp2 = rbind(tmp, CDC_data)
@@ -309,8 +319,8 @@ compare_CDCestimation_Imperial_age_prop_plot = function(CDC_data, scraped_data, 
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text.x = element_text(angle = 90)) + 
-    labs(y = 'Contribution to weekly COVID-19 deaths', col = '', fill = '', x = '')
-  ggsave(p, file = paste0(outdir, '-comparison_Imperial_CDC_prop_', Code, '.png'), w = 4, h = 8, limitsize = F)
+    labs(y = 'Share of age groups among weekly COVID-19 deaths', col = '', fill = '', x = '')
+  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 4, h = 8, limitsize = F)
   
 }
 
@@ -454,7 +464,7 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+    labs(x = '', y = paste0('Ratio of the share of age groups among weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 4, h = 14)
   
   ggplot(tmp, aes(x = date)) + 
@@ -468,7 +478,7 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+    labs(x = '', y = paste0('Ratio of the share of age groups among weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 4, h = 8)
   
   tmp = subset(probability_ratio_table, age %in% c('45-54', '55-64', '65-74', '75-84', '85+'))
@@ -478,7 +488,7 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
     # geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
     theme_bw() + 
     geom_hline(aes(yintercept = 1)) +
-    labs(x = '', y = paste0('Ratio of the share of weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+    labs(x = '', y = paste0('Ratio of the share of age groups among weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_median_', Code, '.png'), w = 8, h = 8)
 }
 
