@@ -325,11 +325,13 @@ compare_CDCestimation_DoH_age_prop_plot = function(CDC_data, scraped_data, var.c
 
 plot_covariance_matrix = function(fit_cum, outdir)
 {
-  samples = extract(fit_cum)
   
   if(is.null(stan_data$Adj)) return()
   if(!is.null(stan_data$node1)) return()
   if(!is.null(stan_data$num_basis_rows)) return()
+  
+  
+  samples = extract(fit_cum)
   
   D = diag( apply(stan_data$Adj, 2, sum) )
   tau_m = median(samples$tau)
