@@ -4,59 +4,30 @@ functions {
         return transpose(A*transpose(B*V));
     }
     
-  matrix gp(int T, int D, real[] time, real[] delay,
+  matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
             real delta0,
-            real alpha_gp1_t, real alpha_gp1_d, 
-            vector rho_gp1_t_dist, vector rho_gp1_d_dist,
+            real alpha_gp1, real alpha_gp2, 
+            real rho_gp1, real rho_gp2,
             matrix z1)
   {
     
-    matrix[T,D] GP1;//long range
+    matrix[N_rows,N_columns] GP;
     
-    matrix[T, T] K1_t;
-    matrix[T, T] L_K1_t;
+    matrix[N_rows, N_rows] K1;
+    matrix[N_rows, N_rows] L_K1;
     
-    matrix[D, D] K1_d;
-    matrix[D, D] L_K1_d;
+    matrix[N_columns, N_columns] K2;
+    matrix[N_columns, N_columns] L_K2;
     
-    real sq_alpha1_t = square(alpha_gp1_t);
-    real sq_alpha1_d = square(alpha_gp1_d);
-    
-    real K1diag_t = sq_alpha1_t + delta0;
-    real K1diag_d = sq_alpha1_d + delta0;
-    
- //time   
-    for (i in 1:T) 
-        {
-            K1_t[i, i] = K1diag_t;
-            for (j in (i + 1):T) 
-                {
-                    K1_t[i, j] = sq_alpha1_t
-                            * exp(-0.5 * dot_self((time[i] - time[j]) ./ rho_gp1_t_dist)) ; //long range sq exp                         
-                    K1_t[j, i] = K1_t[i, j];
-                }
-        }
-    K1_t[T, T] = K1diag_t;
-    
- //delay   
-    for (i in 1:D) 
-        {
-            K1_d[i, i] = K1diag_d;
-            for (j in (i + 1):D) 
-                {
-                    K1_d[i, j] = sq_alpha1_d
-                            * exp(-0.5 * dot_self((delay[i] - delay[j]) ./ rho_gp1_d_dist)) ; //long range sq exp
-                    K1_d[j, i] = K1_d[i, j];
-                }
-        }
-    K1_d[D, D] = K1diag_d;
+    K1 = cov_exp_quad(rows_idx, alpha_gp1, rho_gp1) + diag_matrix(rep_vector(delta0, N_rows));
+    K2 = cov_exp_quad(columns_index, alpha_gp2, rho_gp2) + diag_matrix(rep_vector(delta0, N_columns));
 
-    L_K1_t = cholesky_decompose(K1_t);
-    L_K1_d = cholesky_decompose(K1_d);
+    L_K1 = cholesky_decompose(K1);
+    L_K2 = cholesky_decompose(K2);
     
-    GP1 = kron_mvprod(L_K1_d, L_K1_t, z1);
+    GP = kron_mvprod(L_K2, L_K1, z1);
 
-    return(GP1);
+    return(GP);
   }
 }
 
@@ -123,11 +94,11 @@ transformed data
 parameters {
   real<lower=0> nu;
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw;
-  real<lower=0> alpha_gp1_t;
-  real<lower=0> alpha_gp1_d;
   matrix[W,num_basis] z1;
-  vector<lower=0>[1] rho_gp1_t_dist; 
-  vector<lower=0>[1] rho_gp1_d_dist;
+  real<lower=0> alpha_gp1;
+  real<lower=0> alpha_gp2;
+  real<lower=0> rho_gp1; 
+  real<lower=0> rho_gp2;
 }
 
 transformed parameters {
@@ -140,8 +111,8 @@ transformed parameters {
   vector[N_missing] alpha_reduced_missing;
   matrix[W,num_basis] beta = gp(W, num_basis, IDX_WEEKS, IDX_BASIS,
                               delta0,
-                              alpha_gp1_t, alpha_gp1_d, 
-                              rho_gp1_t_dist,  rho_gp1_d_dist,
+                              alpha_gp1, alpha_gp2, 
+                              rho_gp1,  rho_gp2,
                               z1); 
 
   for(w in 1:W)
@@ -171,28 +142,22 @@ model {
   nu ~ exponential(1);
   lambda_raw ~ gamma( lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
   
-  alpha_gp1_t ~ normal(0,1);
-  alpha_gp1_d ~ normal(0,1);
+  alpha_gp1 ~ normal(0,1);
+  alpha_gp2 ~ normal(0,1);
   
-  rho_gp1_t_dist ~ inv_gamma(5, 5);
-  rho_gp1_d_dist ~ inv_gamma(5, 5);
+  rho_gp1 ~ inv_gamma(5, 5);
+  rho_gp2 ~ inv_gamma(5, 5);
 
-    for(t in 1:W)
-    {
-        for(d in 1:num_basis)
-            {
-                {
-                   z1[t,d] ~ normal(0,0.1);
-                }
-            }
+  for(i in 1:W){
+    for(j in 1:num_basis){
+      z1[i,j] ~ normal(0,0.1);
     }
+  }
     
   for(w in 1:W_OBSERVED){
   
-
     target += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] |
                                 alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
-  
         
   }
   
