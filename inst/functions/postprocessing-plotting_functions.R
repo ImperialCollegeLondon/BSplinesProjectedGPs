@@ -329,6 +329,7 @@ plot_covariance_matrix = function(fit_cum, outdir)
   
   if(is.null(stan_data$Adj)) return()
   if(!is.null(stan_data$node1)) return()
+  if(!is.null(stan_data$num_basis_rows)) return()
   
   D = diag( apply(stan_data$Adj, 2, sum) )
   tau_m = median(samples$tau)
