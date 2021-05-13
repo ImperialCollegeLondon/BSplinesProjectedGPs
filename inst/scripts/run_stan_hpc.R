@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210505b1"
+stan_model = "210513"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -97,7 +97,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data = tmp
 
-if(grepl('210429a|210429b|210505', stan_model)){
+if(grepl('210429a|210429b|210505|210513', stan_model)){
   cat("\n Using splines \n")
   stan_data = add_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
@@ -113,7 +113,7 @@ if(grepl('210429f|210429g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$W, m = stan_data$num_basis)
 }
-if(grepl('210429a1|210429b1|210429h1|210505b1', stan_model)){
+if(grepl('210429a1|210429b1|210429h1|210505b1|210513', stan_model)){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
