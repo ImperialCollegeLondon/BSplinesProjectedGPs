@@ -190,7 +190,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   return(stan_data)
 }
 
-add_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
+add_1D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
 {
   
   knots = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots)]
@@ -205,6 +205,28 @@ add_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
   # B <- t(splines::bs(age, knots=age, degree=spline_degree, intercept = T)) 
   return(stan_data)
 }
+
+add_2D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8)
+{
+  
+  knots_rows = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots_rows)]
+  knots_columns = (1:stan_data$W)[seq(1, stan_data$W, length.out = n_knots_columns)]
+  
+  stan_data$num_basis_rows = length(knots_rows) + spline_degree - 1
+  stan_data$num_basis_columns = length(knots_columns) + spline_degree - 1
+  
+  stan_data$IDX_BASIS_ROWS = 1:stan_data$num_basis_rows
+  stan_data$IDX_BASIS_COLUMNS = 1:stan_data$num_basis_columns
+  
+  stan_data$BASIS_ROWS = bsplines(stan_data$age, knots_rows, spline_degree)
+  stan_data$BASIS_COLUMNS = bsplines(1:stan_data$W, knots_columns, spline_degree)
+  
+  stopifnot(all( apply(stan_data$BASIS_ROWS, 1, sum) > 0  ))
+  stopifnot(all( apply(stan_data$BASIS_COLUMNS, 1, sum) > 0  ))
+
+  return(stan_data)
+}
+
 
 add_diff_matrix = function(stan_data, n, m, order = 2)
 {

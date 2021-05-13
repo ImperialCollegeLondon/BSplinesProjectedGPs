@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210513"
+stan_model = "210513b"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -79,7 +79,7 @@ Code = locations[location.index,]$code
 cat("Location ", as.character(loc_name), "\n")
 
 # plot data 
-if(1){
+if(0){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                     JHU_data = JHUData, 
@@ -97,13 +97,21 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data = tmp
 
-if(grepl('210429a|210429b|210505|210513', stan_model)){
-  cat("\n Using splines \n")
-  stan_data = add_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
+if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
+  cat("\n Using 1D splines \n")
+  stan_data = add_1D_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210429a|210429b', stan_model)){
-  cat("\n Adding adjacency matrix on splines parameters \n")
-  stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$W, m = stan_data$num_basis)
+if(grepl('210505c|210429a2|210429b2|210513b', stan_model)){
+  cat("\n Using 2D splines \n")
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8)
+}
+if(grepl('210429a1|210429b1', stan_model)){
+  cat("\n Adding adjacency matrix on 1D splines parameters \n")
+  stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis, m = stan_data$W)
+}
+if(grepl('210429a2|210429b2', stan_model)){
+  cat("\n Adding adjacency matrix on 2D splines parameters \n")
+  stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
 if(grepl('210429a', stan_model)){
   cat("\n Adding nodes index \n")
@@ -111,9 +119,9 @@ if(grepl('210429a', stan_model)){
 }
 if(grepl('210429f|210429g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
-  stan_data = add_diff_matrix(stan_data, n = stan_data$W, m = stan_data$num_basis)
+  stan_data = add_diff_matrix(stan_data, n = stan_data$num_basis, m = stan_data$W)
 }
-if(grepl('210429a1|210429b1|210429h1|210505b1|210513', stan_model)){
+if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }

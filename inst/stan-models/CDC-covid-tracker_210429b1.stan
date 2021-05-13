@@ -138,12 +138,12 @@ transformed parameters {
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
   vector[N_missing] alpha_reduced_missing;
-  matrix[W,num_basis] beta = to_matrix(beta_raw, W, num_basis); 
+  matrix[num_basis,W] beta = to_matrix(beta_raw, num_basis,W); 
   
   for(w in 1:W)
   {
     
-    phi[:,w] = softmax( to_vector( beta[w,:]*BASIS ) ); 
+    phi[:,w] = softmax( to_vector((beta[:,w]')*BASIS) ); 
     
     alpha[:,w] = phi[:,w] * lambda[w] / nu ;
     

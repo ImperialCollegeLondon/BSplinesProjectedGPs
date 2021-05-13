@@ -1,3 +1,39 @@
+functions {
+  /**
+  * Return the log probability of a proper conditional autoregressive (CAR) prior 
+  * with a sparse representation for the adjacency matrix
+  *
+  * @param phi Vector containing the parameters with a CAR prior
+  * @param tau Precision parameter for the CAR prior (real)
+  * @param alpha Dependence (usually spatial) parameter for the CAR prior (real)
+  * @param W_sparse Sparse representation of adjacency matrix (int array)
+  * @param n Length of phi (int)
+  * @param W_n Number of adjacent pairs (int)
+  * @param D_sparse Number of neighbors for each location (vector)
+  * @param lambda Eigenvalues of D^{-1/2}*W*D^{-1/2} (vector)
+  *
+  * @return Log probability density of CAR prior up to additive constant
+  */
+  real sparse_car_lpdf(vector phi, real tau, real alpha, 
+    int[,] W_sparse, vector D_sparse, vector lambda, int n, int W_n) {
+      row_vector[n] phit_D; // phi' * D
+      row_vector[n] phit_W; // phi' * W
+      vector[n] ldet_terms;
+    
+      phit_D = (phi .* D_sparse)';
+      phit_W = rep_row_vector(0, n);
+      for (i in 1:W_n) {
+        phit_W[W_sparse[i, 1]] = phit_W[W_sparse[i, 1]] + phi[W_sparse[i, 2]];
+        phit_W[W_sparse[i, 2]] = phit_W[W_sparse[i, 2]] + phi[W_sparse[i, 1]];
+      }
+    
+      for (i in 1:n) ldet_terms[i] = log1m(alpha * lambda[i]);
+      return 0.5 * (n * log(tau)
+                    + sum(ldet_terms)
+                    - tau * (phit_D * phi - alpha * (phit_W * phi)));
+  }
+}
+
 data{
   int<lower=0> W; // number of weeks 
   int<lower=0,upper=W> W_OBSERVED; // number of weeks observed 
@@ -28,18 +64,45 @@ data{
   int max_count_censored[N_missing]; // range of the censored data if it ends after the period
   
   //splines
-  int num_basis;
-  matrix[num_basis, A] BASIS; 
+  int num_basis_rows;
+  int num_basis_columns;
+  matrix[num_basis_rows, A] BASIS_ROWS; 
+  matrix[num_basis_columns, W] BASIS_COLUMNS; 
   
-  // ICAR model
-  int N; // W * num_basis
-  int<lower=0> N_edges;
-  int<lower=1, upper=N> node1[N_edges];
-  int<lower=1, upper=N> node2[N_edges];
+  // CAR model
+  int N; // num_basis_rows * num_basis_columns
+  matrix<lower = 0, upper = 1>[N, N] Adj; // adjacency matrix
+  int Adj_n;                // number of adjacent region pairs
 }
 
 transformed data{
+  int Adj_sparse[Adj_n, 2];   // adjacency pairs
+  vector[N] D_sparse;     // diagonal of D (number of neigbors for each site)
+  vector[N] egv;       // eigenvalues of invsqrtD * Adj * invsqrtD
   int N_log_lik = 0;
+  
+  { // generate sparse representation for Ajd
+  int counter;
+  counter = 1;
+  // loop over upper triangular part of Adj to identify neighbor pairs
+    for (i in 1:(N - 1)) {
+      for (j in (i + 1):N) {
+        if (Adj[i, j] == 1) {
+          Adj_sparse[counter, 1] = i;
+          Adj_sparse[counter, 2] = j;
+          counter = counter + 1;
+        }
+      }
+    }
+  }
+  for (i in 1:N) D_sparse[i] = sum(Adj[i]);
+  {
+    vector[N] invsqrtD;  
+    for (i in 1:N) {
+      invsqrtD[i] = 1 / sqrt(D_sparse[i]);
+    }
+    egv = eigenvalues_sym(quad_form(Adj, diag_matrix(invsqrtD)));
+  }
     
   for(w in 1:W_OBSERVED){
     for(i in idx_non_missing[1:N_idx_non_missing[w],w]){
@@ -61,6 +124,8 @@ parameters {
   vector[N] beta_raw; 
   real<lower=0> nu;
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw;
+  real<lower = 0> tau;
+  real<lower = 0, upper = 1> p;
 }
 
 transformed parameters {
@@ -71,12 +136,13 @@ transformed parameters {
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
   vector[N_missing] alpha_reduced_missing;
-  matrix[num_basis,W] beta = to_matrix(beta_raw, num_basis, W); 
+  matrix[num_basis_rows, num_basis_columns] beta = to_matrix(beta_raw, num_basis_rows, num_basis_columns); 
+  matrix[A, W] f = (BASIS_ROWS') * beta * BASIS_COLUMNS;
 
   for(w in 1:W)
   {
     
-    phi[:,w] = softmax( to_vector((beta[:,w]')*BASIS) ); 
+    phi[:,w] = softmax( f[:,w] ); 
     
     alpha[:,w] = phi[:,w] * lambda[w] / nu;
     
@@ -96,20 +162,18 @@ transformed parameters {
 
 model {
   
-  nu ~ exponential(1);
+  target += exponential_lpdf(nu | 1);
   
-  lambda_raw ~ gamma( lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
+  target += exponential_lpdf(tau | 1);
   
-  target += -0.5 * dot_self(beta_raw[node1] - beta_raw[node2]);
-  // soft sum-to-zero constraint on phi)
-  sum(beta_raw) ~ normal(0, 0.001 * N);  // equivalent to mean(phi) ~ normal(0,0.001)
+  target += gamma_lpdf( lambda_raw | lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
+    
+  beta_raw ~ sparse_car(tau, p, Adj_sparse, D_sparse, egv, N, Adj_n);
 
   for(w in 1:W_OBSERVED){
     
-
     target += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] | 
                                 alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
-  
         
   }
   
@@ -168,5 +232,7 @@ generated quantities {
   }
 
 }
+
+
 
 

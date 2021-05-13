@@ -400,14 +400,27 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   
   # if(is.null(stan_data$num_basis)) return(NULL)
   
-  row_name = 'week_index'
-  column_name = 'basis_function_index'
-  column_lab = "Basis function index"
-  n_y = stan_data$num_basis
+  column_name = 'week_index'
+  column_lab = 'Date'
+  row_name = 'basis_function_index_age'
+  row_lab = "Basis function index"
+  n_rows = stan_data$num_basis
+  n_columns = stan_data$W
   if(is.null(stan_data$num_basis)){
-    column_name = 'age_index'
-    n_y = stan_data$A
-    column_lab = "Age"
+    row_name = 'age_index'
+    row_lab = "Age"
+    column_name = 'week_index'
+    column_lab = 'Date'
+    n_rows = stan_data$A
+    n_columns = stan_data$W
+  }
+  if(!is.null(stan_data$num_basis_rows)){
+    column_name = 'basis_function_index_week'
+    column_lab = 'Week basis function'
+    row_name = 'basis_function_index_age'
+    row_lab = "Age basis functions"
+    n_rows = stan_data$num_basis_rows
+    n_columns = stan_data$num_basis_columns
   }
   
   euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
@@ -420,26 +433,29 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   tmp1 = tmp1[, list(q = quantile(value, prob=ps), q_label=p_labs), by=c(column_name, row_name)]
   tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
   setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
-  tmp1 = merge(tmp1, df_week, by = row_name)
+  
+  if(is.null(stan_data$num_basis_rows)) tmp1 = merge(tmp1, df_week, by = column_name)
   
   ## Smooth estimate
-  z <- as.matrix( dcast(tmp1, get(column_name)~get(row_name), value.var = "M")[,-1] ) 
+  z <- as.matrix( dcast(tmp1, get(row_name)~get(column_name), value.var = "M")[,-1] ) 
   z.range <- range(z)
   z =  t( apply(z, 2, rev) )
   
   png(paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4, units = 'in', res = 300, pointsize = 10)
   plot.new()
   plot.window(
-    xlim = c(1 - 0.5, stan_data$W + 0.5),
-    ylim = c(1 - 0.5, n_y + 0.5))
-  image  (1:stan_data$W, 1:n_y,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
-  contour(1:stan_data$W, 1:n_y,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
-  axis(side = 1, at = seq(1, stan_data$W, 5), labels = format(unique(tmp1$date), '%b %Y')[seq(1, stan_data$W, 5)], lwd = 0.5)
-  if(column_name == 'basis_function_index') axis(side = 2, at = seq(1, n_y, 2), labels = max(n_y) - seq(1, n_y, 2) + 1, lwd = 0.5)
-  if(column_name == 'age_index') axis(side = 2, at = seq(1, n_y, 10), labels = max(n_y) - seq(1, n_y, 10), lwd = 0.5)
+    xlim = c(1 - 0.5, n_columns + 0.5),
+    ylim = c(1 - 0.5, n_rows + 0.5))
+  image  (1:n_columns, 1:n_rows,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
+  contour(1:n_columns, 1:n_rows,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
+  
+  if(column_name == 'week_index') axis(side = 1, at = seq(2, stan_data$W, 5), labels = format(unique(tmp1$date), '%b %Y')[seq(2, stan_data$W, 5)], lwd = 0.5)
+  if(column_name != 'week_index') axis(side = 1, at = seq(1, n_columns, 2), labels = seq(1, n_columns, 2) , lwd = 0.5)
+  if(row_name != 'age_index') axis(side = 2, at = seq(1, n_rows, 2), labels = max(n_rows) - seq(1, n_rows, 2) + 1, lwd = 0.5)
+  if(row_name == 'age_index') axis(side = 2, at = seq(1, n_rows, 10), labels = max(n_rows) - seq(1, n_rows, 10), lwd = 0.5)
   box(lwd = 0.5)
-  mtext("Date", side = 1, adj = 0.5, line = -1.5, outer = TRUE)
-  mtext(column_lab,     side = 2, adj = 0.5, line = -1.5, outer = TRUE)
+  mtext(row_lab, side = 2, adj = 0.5, line = -1.5, outer = TRUE)
+  mtext(column_lab,     side = 1, adj = 0.5, line = -1.5, outer = TRUE)
   dev.off()
 
 }
