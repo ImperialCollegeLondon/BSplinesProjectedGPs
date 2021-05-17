@@ -68,6 +68,38 @@ plot_posterior_predictive_checks = function(data, variable, outdir)
   
 }
 
+plot_ratio_contribution = function(ratio_contribution, outdir)
+{
+  ggplot(ratio_contribution, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = M)) + 
+    facet_wrap(~loc_label) + 
+    theme_bw() + 
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 90)) + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    scale_y_discrete(expand = c(0,0)) + 
+    scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, trans = 'log', breaks = c(0.2, 1, 20)) + 
+    labs(x= '', y = 'Age groups', fill = 'Estimated posterior median')
+  ggsave(file = paste0(outdir, '-ProbabilityRatio.png'), w = 9, h = length(unique(ratio_contribution$loc_label)) / 4, limitsize = F)
+  
+  tmp = subset(ratio_contribution, age %in% c('35-44', '45-54', '55-64', '65-74', '75-84', '85+'))
+  # tmp = subset(tmp, date > as.Date('2020-06-01'))
+  ggplot(tmp, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = M)) + 
+    facet_wrap(~loc_label) + 
+    theme_bw() + 
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 90),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA)) + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    scale_y_discrete(expand = c(0,0)) + 
+    scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, trans = 'log', breaks = c(0.2, 1, 5)) + 
+    labs(x= '', y = 'Age groups', fill = 'Estimated posterior median')
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_ederly.png'), w = 9, h = length(unique(ratio_contribution$loc_label)) / 4, limitsize = F)
+  
+}
+
 plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, discrete = F){
   
   if(!discrete)
@@ -237,7 +269,7 @@ compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.de
   scraped_data[, date := as.Date(date)]
   scraped_data[, CL := NA]
   scraped_data[, CU := NA]
-  scraped_data = subset(scraped_data, date >= min(CDC_data$date))
+  scraped_data = subset(scraped_data, date >=  min(CDC_data$date) - 7)
   ages = unique(scraped_data$age)
   scraped_data = scraped_data[order(code, age, date)]
   scraped_data[, cum.deaths := cumsum(daily.deaths), by = 'age']

@@ -79,7 +79,7 @@ Code = locations[location.index,]$code
 cat("Location ", as.character(loc_name), "\n")
 
 # plot data 
-if(0){
+if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                     JHU_data = JHUData, 
@@ -103,7 +103,7 @@ if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
 }
 if(grepl('210505c|210429a2|210429b2|210513b', stan_model)){
   cat("\n Using 2D splines \n")
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 16, n_knots_columns = 8)
 }
 if(grepl('210429a1|210429b1', stan_model)){
   cat("\n Adding adjacency matrix on 1D splines parameters \n")

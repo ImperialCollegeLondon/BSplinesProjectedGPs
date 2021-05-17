@@ -249,22 +249,22 @@ add_diff_matrix = function(stan_data, n, m, order = 2)
   return(stan_data)
 }
 
-bspline = function(x, k, degree, intervals)
+bspline = function(x, k, order, intervals)
   {
   
-  if(degree == 1){
+  if(order == 1){
     return(x >= intervals[k] & x < intervals[k+1])
   }
   
   w1 = 0; w2 = 0
   
-  if(intervals[k] != intervals[k+degree-1])
-    w1 = (x - intervals[k]) / (intervals[k+degree-1] - intervals[k])
-  if(intervals[k+1] != intervals[k+degree])
-    w2 = 1 - (x - intervals[k+1]) / (intervals[k+degree] - intervals[k+1])
+  if(intervals[k] != intervals[k+order-1])
+    w1 = (x - intervals[k]) / (intervals[k+order-1] - intervals[k])
+  if(intervals[k+1] != intervals[k+order])
+    w2 = 1 - (x - intervals[k+1]) / (intervals[k+order] - intervals[k+1])
   
-  spline = w1 * bspline(x, k, degree - 1, intervals) +
-    w2 * bspline(x, k+1, degree - 1, intervals)
+  spline = w1 * bspline(x, k, order - 1, intervals) +
+    w2 * bspline(x, k+1, order - 1, intervals)
   
   return(spline)
 }
