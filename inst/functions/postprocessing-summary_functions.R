@@ -72,12 +72,16 @@ make_convergence_diagnostics_stats = function(fit, outdir)
       LOO = .LOO$pointwise
     }} , error = function(e) e)
   
+  # time of execution
+  time = sum(get_elapsed_time(fit))
+  
   # save
   saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum_", Code, ".rds"))
   saveRDS(Rhat_cum, file = paste0(outdir, "-Rhat_cum_", Code, ".rds"))
   saveRDS(.WAIC, file = paste0(outdir, "-WAIC_", Code, ".rds"))
   saveRDS(.LOO, file = paste0(outdir, "-LOO_", Code, ".rds"))
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics_", Code, ".rds"))
+  saveRDS(time, file = paste0(outdir, "-time_elapsed_", Code, ".rds"))
 }
 
 make_probability_ratio_table = function(fit, df_week, df_state_age, data, stan_data, outdir){
