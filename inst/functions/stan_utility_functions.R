@@ -316,41 +316,8 @@ add_adjacency_matrix_stan_data = function(stan_data, n, m)
   {
 
   N = n * m
-  A = matrix(nrow = N, ncol = N, 0)
-
-  for(i in 1:n){
-
-    for(j in 1:m){
-
-      #cat('\n Processing ', i, j)
-      idx_row = n*(j-1) + i
-
-      # top
-      if(i - 1 > 0){
-        idx_col = n*(j-1) + i - 1
-        A[idx_row,idx_col] = 1
-      }
-
-      # bottom
-      if(i + 1 <= n){
-        idx_col = n*(j-1) + i + 1
-        A[idx_row,idx_col] = 1
-      }
-
-      # left
-      if(j - 1 > 0){
-        idx_col = n*(j-2) + i
-        A[idx_row,idx_col] = 1
-      }
-
-      # right
-      if(j + 1 <= m){
-        idx_col = n*j + i
-        A[idx_row,idx_col] = 1
-      }
-
-    }
-  }
+  
+  A = find_adjacency_matrix(n,m)
 
   stan_data$N = N
   stan_data$Adj = A
@@ -358,6 +325,48 @@ add_adjacency_matrix_stan_data = function(stan_data, n, m)
 
   return(stan_data)
 }
+
+find_adjacency_matrix = function(n,m){
+  N = n * m
+  
+  A = matrix(nrow = N, ncol = N, 0)
+  
+  for(i in 1:n){
+    
+    for(j in 1:m){
+      
+      #cat('\n Processing ', i, j)
+      idx_row = n*(j-1) + i
+      
+      # top
+      if(i - 1 > 0){
+        idx_col = n*(j-1) + i - 1
+        A[idx_row,idx_col] = 1
+      }
+      
+      # bottom
+      if(i + 1 <= n){
+        idx_col = n*(j-1) + i + 1
+        A[idx_row,idx_col] = 1
+      }
+      
+      # left
+      if(j - 1 > 0){
+        idx_col = n*(j-2) + i
+        A[idx_row,idx_col] = 1
+      }
+      
+      # right
+      if(j + 1 <= m){
+        idx_col = n*j + i
+        A[idx_row,idx_col] = 1
+      }
+      
+    }
+  }
+  return(A)
+}
+
 
 add_nodes_stan_data = function(stan_data)
  {

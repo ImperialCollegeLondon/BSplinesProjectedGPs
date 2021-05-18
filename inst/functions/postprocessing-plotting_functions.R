@@ -216,6 +216,22 @@ plot_sum_bounded_missing_deaths = function(tmp, outdir)
   
 }
 
+plot_mortality_rate = function(mortality_rate_table, outdir)
+{
+  
+  
+  ggplot(mortality_rate_table, aes(x = date)) + 
+    geom_line(aes(y = M)) +
+    geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
+    facet_wrap(~age, scale = 'free_y') + 
+    labs(x = '', y = 'COVID-19 mortality rate', col = '', fill = '') + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 90))  +
+    theme_bw()
+  ggsave(p, file = paste0(outdir, '-MortalityRate_', Code, '.png'), w = 7, h =7, limitsize = F)
+}
+
 compare_CDCestimation_JHU_DoH_plot = function(CDC_data, JHU_data, scraped_data, var.cum.deaths.CDC, outdir)
 {
   # prepare JHU data
