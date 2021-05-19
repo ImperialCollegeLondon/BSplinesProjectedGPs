@@ -77,8 +77,8 @@ plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_r
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '12+', outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65+', outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '80+', outdir.table)
-make_contribution_ref(fit, JHUData, data, df_week, df_age_continuous, outdir.table)
-make_contribution_ref_adj(fit, JHUData, data, df_week, pop_data, outdir.table)
+make_contribution_ref(fit_cum, JHUData, data, df_week, df_age_continuous, outdir.table)
+make_contribution_ref_adj(fit_cum, JHUData, data, df_week, pop_data, outdir.table)
 
 # Plot imputed weekly data 
 death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
