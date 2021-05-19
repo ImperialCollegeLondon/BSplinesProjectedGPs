@@ -249,7 +249,7 @@ plot_mortality_rate = function(mortality_rate_table, outdir)
 {
   
   
-  ggplot(mortality_rate_table, aes(x = date)) + 
+  p = ggplot(mortality_rate_table, aes(x = date)) + 
     geom_line(aes(y = M)) +
     geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
     facet_wrap(~age, scale = 'free_y') + 
