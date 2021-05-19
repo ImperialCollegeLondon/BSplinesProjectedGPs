@@ -65,13 +65,13 @@ plot_covariance_matrix(fit_cum, outdir = outdir.fig)
 
 
 # Plot estimate B-splines parameters plane 
-plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
+ppp = plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
 
 
 # Plots continuous age distribution phi
 cat("\nMake continuous age distribution plots \n")
 age_contribution_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi', outdir.table)
-plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
+pc = plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
 age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '12+', outdir.table)
@@ -82,9 +82,9 @@ make_contribution_ref_adj(fit, JHUData, data, df_week, pop_data, outdir.table)
 
 # Plot imputed weekly data 
 death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
-plot_var_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
+plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
 death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
-plot_var_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
+plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
 
 # Plot mortality rate
 mortality_rate_table = make_mortality_rate_table(fit_cum, df_week, pop_data, JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
@@ -123,6 +123,28 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
   compare_CDCestimation_DoH_age_prop_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = 'M', df_week, outdir = outdir.fig)
 }
+
+# make panel figure
+data = select(data, date, age, loc_label, code, weekly.deaths)
+tmp1 = data[, list(total_deaths = sum(na.omit(weekly.deaths))), by = 'date']
+data = merge(data, tmp1, by = 'date')
+data[, prop_deaths := weekly.deaths / total_deaths]
+data$method = 'observation'
+
+age_contribution_discrete_table$method = 'BS-GP-SE'
+p1 = plot_contribution_comparison_method(age_contribution_discrete_table, data, model_name = 'BS-GP-SE')
+
+death_discrete_table$method = 'BS-GP-SE'
+p2 = plot_death_comparison_method(death_discrete_table, data, 'BS-GP-SE')
+
+ppp = ppp + theme(legend.position = 'left') + labs(fill = 'B-Splines\nparameters')
+p = grid.arrange(p1, p2, pc[[1]], ppp, layout_matrix = rbind(c(1, 1, 1, 3), 
+                                                         c(2, 2, 2, 3), 
+                                                         c(NA, 4, NA, 3)), widths = c(0.2, 1, 0.2, 0.8), heights = c(1, 1, 0.9))
+ggsave(p, file = paste0(outdir.fig, '-panel_plot_', Code, '.png'), w = 9, h = 9)
+
+
+
 
 
 cat("\n End postprocessing_figures.R \n")

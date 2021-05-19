@@ -100,7 +100,7 @@ plot_ratio_contribution = function(ratio_contribution, outdir)
   
 }
 
-plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, discrete = F){
+plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, discrete = F, limits = NULL, wo_ytext = F, wo_legend = F){
   
   if(!discrete)
     tmp1[, age := as.numeric(age)]
@@ -130,13 +130,18 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
     p = p + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
     p1 = p1 + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
   }
+  if(is.null(limits)){
+    p = p + coord_cartesian(ylim = limits)
+  }
     
-  ggsave(p, file = paste0(outdir, "-continuous_contribution_", var_name, '_', Code, ".png") , w= 10, h = 8, limitsize = FALSE)
-  ggsave(p1, file = paste0(outdir, "-continuous_contribution_short_", var_name, '_', Code, ".png") , w= 4, h = 8, limitsize = FALSE)
-  
+  if(!is.null(outdir)){
+    ggsave(p, file = paste0(outdir, "-continuous_contribution_", var_name, '_', Code, ".png") , w= 10, h = 8, limitsize = FALSE)
+    ggsave(p1, file = paste0(outdir, "-continuous_contribution_short_", var_name, '_', Code, ".png") , w= 4, h = 8, limitsize = FALSE)
+    
+  }
+
   p = ggplot(tmp1, aes(x = date, y = age)) +
     geom_raster(aes(fill = M))  + 
-    scale_fill_viridis_c(option = "E") + 
     theme(legend.position='bottom') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     theme(legend.position = 'bottom',
@@ -144,16 +149,30 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
           panel.grid.major = element_blank(), 
           panel.grid.minor = element_blank()) 
   
+  if(is.null(limits)){
+    p = p + scale_fill_viridis_c(option = "E") 
+  } else {
+    p = p + scale_fill_viridis_c(option = "E", limits= limits) 
+  }
+  
+  if(wo_ytext)
+    p = p + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
+  
+  if(wo_legend)
+    p = p + theme(legend.position = 'none')
+  
   if(discrete){
     p = p + scale_y_discrete(expand = c(0,0))  + labs(x = '', y = 'Age group', fill = 'Estimated posterior value') 
   } else {
     p = p + scale_y_continuous(expand = c(0,0))  +labs(x = '', y = 'Age', fill = 'Estimated posterior value') 
   }
-  ggsave(p, file = paste0(outdir, '-continuous_contribution_allweeks_', var_name, '_', Code, '.png'), w = 5, h = 5.2)
-  
+  if(!is.null(outdir)){
+    ggsave(p, file = paste0(outdir, '-continuous_contribution_allweeks_', var_name, '_', Code, '.png'), w = 5, h = 5.2)
+  }
+  return(list(p1, p))
 }
 
-plot_var_by_age = function(tmp1, var_name, data, outdir, discrete = F){
+plot_imputed_deaths_by_age = function(tmp1, var_name, data, outdir, discrete = F, wo_ytext = F,  wo_legend = F){
   
   if(!discrete){
     tmp1[, age := as.numeric(age)]
@@ -181,8 +200,18 @@ plot_var_by_age = function(tmp1, var_name, data, outdir, discrete = F){
       scale_y_continuous(expand = c(0,0))  +labs(x = '', y = 'Age', fill = 'Estimated posterior median') + 
       scale_fill_viridis_c()
   }
-  ggsave(p, file = paste0(outdir, "-posterior_", var_name, '_', Code, ".png") , w= 5, h = 5.2, limitsize = FALSE)
   
+  if(wo_ytext)
+    p = p + theme(axis.text.y = element_blank(), axis.title.y = element_blank())
+  if(wo_legend)
+    p = p + theme(legend.position = 'none')
+  
+  if(!is.null(outdir)){
+    ggsave(p, file = paste0(outdir, "-posterior_", var_name, '_', Code, ".png") , w= 5, h = 5.2, limitsize = FALSE)
+    
+  }
+
+  return(p)
 }
 
 plot_sum_missing_deaths = function(tmp, outdir)
@@ -487,28 +516,22 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   
   if(is.null(stan_data$num_basis_rows)) tmp1 = merge(tmp1, df_week, by = column_name)
   
-  ## Smooth estimate
-  z <- as.matrix( dcast(tmp1, get(row_name)~get(column_name), value.var = "M")[,-1] ) 
-  z.range <- range(z)
-  z =  t( apply(z, 2, rev) )
+  p = ggplot(tmp1, aes(x = get(column_name), y = get(row_name))) + 
+    geom_raster(aes(fill = M ), interpolate = TRUE) + 
+    theme_bw() +
+    scale_x_continuous(expand = c(0,0)) + 
+    theme(legend.position = 'none',
+          axis.text.x = element_text(angle = 90), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank()) +
+    labs(x = column_lab, y = row_lab, fill ='') +
+    scale_fill_viridis_c(option = 'inferno', begin = 0.55) +
+    scale_y_reverse(expand = c(0,0)) + 
+    geom_contour(aes(z=M), bins = 12, color = "gray50", 
+                 size = 0.5, alpha = 0.5) 
+  ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
   
-  png(paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4, units = 'in', res = 300, pointsize = 10)
-  plot.new()
-  plot.window(
-    xlim = c(1 - 0.5, n_columns + 0.5),
-    ylim = c(1 - 0.5, n_rows + 0.5))
-  image  (1:n_columns, 1:n_rows,  z, zlim = z.range, useRaster = TRUE, add = TRUE, col = hcl.colors(12, "YlOrRd", rev = F))
-  contour(1:n_columns, 1:n_rows,  z, levels = euro.levs, labcex = 0.5, lwd = 0.2, add = TRUE)
-  
-  if(column_name == 'week_index') axis(side = 1, at = seq(2, stan_data$W, 5), labels = format(unique(tmp1$date), '%b %Y')[seq(2, stan_data$W, 5)], lwd = 0.5)
-  if(column_name != 'week_index') axis(side = 1, at = seq(1, n_columns, 2), labels = seq(1, n_columns, 2) , lwd = 0.5)
-  if(row_name != 'age_index') axis(side = 2, at = seq(1, n_rows, 2), labels = max(n_rows) - seq(1, n_rows, 2) + 1, lwd = 0.5)
-  if(row_name == 'age_index') axis(side = 2, at = seq(1, n_rows, 10), labels = max(n_rows) - seq(1, n_rows, 10), lwd = 0.5)
-  box(lwd = 0.5)
-  mtext(row_lab, side = 2, adj = 0.5, line = -1.5, outer = TRUE)
-  mtext(column_lab,     side = 1, adj = 0.5, line = -1.5, outer = TRUE)
-  dev.off()
-
+  return(p)
 }
 
 plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, outdir)
@@ -614,6 +637,86 @@ plot_mean_age_death = function(mean_age_death, outdir){
       scale_fill_viridis_c(option = 'B')
     ggsave(file = paste0(outdir, '-MeanAgeDeath.png'), w = 6, h = length(unique(mean_age_death$loc_label)) / 4, limitsize = F)
   }
+}
+
+plot_contribution_comparison_method = function(tab_cd, data, model_name){
+  
+  tmp = copy(data)
+  setnames(tmp, 'prop_deaths', 'M')
+  set(tmp, NULL, 'CL', NA_real_)
+  set(tmp, NULL, 'CU', NA_real_)
+  
+  tmp = rbind(select(tab_cd, date, age, M, method), select(tmp, date, age, M, method))
+  tmp[, method := factor(method, c('observation', model_name))]
+
+  p = ggplot(tmp, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = M )) + 
+    theme_bw() +
+    scale_fill_viridis_c(option = "E") +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    scale_y_discrete(expand = c(0,0)) + 
+    labs(x = '', y = 'Age group',
+         fill = 'Share of\nweekly\nCOVID-19\ndeaths') + 
+    facet_grid(~method) + 
+    theme(legend.position = 'left',
+          axis.text.x = element_text(angle = 90), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white")) 
+  
+  return(p)
+}
+
+
+plot_death_comparison_method = function(tab_d, data, model_name){
+  
+  tmp = copy(data)
+  setnames(tmp, 'weekly.deaths', 'M')
+  set(tmp, NULL, 'CL', NA_real_)
+  set(tmp, NULL, 'CU', NA_real_)
+  
+  tmp = rbind(select(tab_d, date, age, M, method), select(tmp, date, age, M, method))
+  tmp[, method := factor(method, c('observation', model_name))]
+  
+  range_wd = sqrt(range(na.omit(data$weekly.deaths)))
+  digits_cut= ifelse(range_wd[2]/100 > 1, 2, 1)
+  digits_cut= ifelse(range_wd[2]/10 > 1, digits_cut, 0)
+  p =  ggplot(tmp, aes(x = date, y = age)) + 
+    geom_raster(aes(fill = M )) + 
+    theme_bw() +
+    scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut) ) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    scale_y_discrete(expand = c(0,0)) + 
+    labs(x = '', y = 'Age group',
+         fill = 'Reported\nCOVID-19\ndeaths') + 
+    facet_grid(~method) + 
+    theme(legend.position = 'left',
+          axis.text.x = element_text(angle = 90), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white")) 
+  
+  return(p)
+}
+
+plot_contribution_continuous_comparison_method = function(tab_cc, selected_method){
+  dates = unique(tab_cc$date)
+  tmp2 = subset(tab_cc, date %in% dates[seq(1, length(dates), length.out =3)])
+  tmp2[, age := as.numeric(age)]
+  limit_SE = range(subset(tab_cc, method == selected_method)$CL, subset(tab_cc, method == selected_method)$CU)
+  p = ggplot(tmp2, aes(x = age)) + 
+    geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
+    theme_bw() +
+    labs(y = 'Share of age groups among weekly COVID-19 deaths', x = "Age") + 
+    facet_grid(date~method) +
+    coord_cartesian(ylim = limit_SE) + 
+    theme(panel.border = element_rect(colour = "black", fill = NA), 
+        legend.key = element_blank(), 
+        strip.background = element_rect(colour="white", fill="white")) 
+  return(p)
+  
 }
 
 # savepdf <- function(fname, width=16, height=10)
