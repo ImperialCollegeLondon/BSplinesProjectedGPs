@@ -88,7 +88,7 @@ plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strat
 
 # Plot mortality rate
 mortality_rate_table = make_mortality_rate_table(fit_cum, df_week, pop_data, JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
-plot_mortality_rate(mortality_rate_table)
+plot_mortality_rate(mortality_rate_table, outdir.fig)
 
 
 # Plot probability ratio of deaths over time
