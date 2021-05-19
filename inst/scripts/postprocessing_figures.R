@@ -4,6 +4,7 @@ cat("\n Begin postprocessing_figures.R \n")
 library(rstan)
 library(data.table)
 library(dplyr)
+library(gridExtra)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
