@@ -487,12 +487,12 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   n_rows = stan_data$num_basis
   n_columns = stan_data$W
   if(is.null(stan_data$num_basis)){
-    row_name = 'age_index'
-    row_lab = "Age"
-    column_name = 'week_index'
-    column_lab = 'Date'
-    n_rows = stan_data$A
-    n_columns = stan_data$W
+    row_name = 'week_index'
+    row_lab = "Date" 
+    column_name = 'age_index' 
+    column_lab = 'Age'
+    n_rows = stan_data$W
+    n_columns = stan_data$A
   }
   if(!is.null(stan_data$num_basis_rows)){
     column_name = 'basis_function_index_week'
@@ -514,7 +514,7 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
   setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
   
-  if(is.null(stan_data$num_basis_rows)) tmp1 = merge(tmp1, df_week, by = column_name)
+  if(is.null(stan_data$num_basis_rows)) tmp1 = merge(tmp1, df_week, by = row_name)
   
   p = ggplot(tmp1, aes(x = get(column_name), y = get(row_name))) + 
     geom_raster(aes(fill = M ), interpolate = TRUE) + 
@@ -701,10 +701,11 @@ plot_death_comparison_method = function(tab_d, data, model_name){
   return(p)
 }
 
-plot_contribution_continuous_comparison_method = function(tab_cc, selected_method){
+plot_contribution_continuous_comparison_method = function(tab_cc, selected_method, model_name){
   dates = unique(tab_cc$date)
   tmp2 = subset(tab_cc, date %in% dates[seq(1, length(dates), length.out =3)])
   tmp2[, age := as.numeric(age)]
+  tmp2[, method := factor(method, c('observation', model_name))]
   limit_SE = range(subset(tab_cc, method == selected_method)$CL, subset(tab_cc, method == selected_method)$CU)
   p = ggplot(tmp2, aes(x = age)) + 
     geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
