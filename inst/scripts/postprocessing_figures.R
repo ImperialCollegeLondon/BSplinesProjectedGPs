@@ -61,9 +61,16 @@ cat("Load fits \n")
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
 
+# find date for the first 10th cumulative deaths
+date_10thcum = subset(data, !is.na(weekly.deaths))
+date_10thcum = date_10thcum[, list(weekly.deaths = sum(weekly.deaths)), by = 'date']
+date_10thcum[, cum.deaths := cumsum(weekly.deaths)]
+date_10thcum = date_10thcum[ cum.deaths >=10, min(date)]
+cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
+fouragegroups = c('0-24', '25-49', '50-79', '80+')
+
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
-
 
 # Plot estimate B-splines parameters plane 
 ppp = plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
@@ -75,11 +82,15 @@ age_contribution_continuous_table = make_var_by_age_table(fit_cum, df_week, df_a
 pc = plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
 age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '12+', outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65+', outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '80+', outdir.table)
-make_contribution_ref(fit_cum, JHUData, data, df_week, df_age_continuous, outdir.table)
-make_contribution_ref_adj(fit_cum, JHUData, data, df_week, pop_data, outdir.table)
+
+make_contribution_ref(fit_cum, date_10thcum, fouragegroups, data, df_week, df_age_continuous, outdir.table)
+make_contribution_ref_adj(fit_cum, date_10thcum, fouragegroups, data, df_week, pop_data, outdir.table)
+
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '0-64', date_10thcum, outdir.table)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-79', date_10thcum, outdir.table)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65+', date_10thcum, outdir.table)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '80+', date_10thcum, outdir.table)
+
 
 # Plot imputed weekly data 
 death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
@@ -87,8 +98,9 @@ plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdi
 death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
 plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
 
+
 # Plot mortality rate
-mortality_rate_table = make_mortality_rate_table(fit_cum, df_week, pop_data, JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
+mortality_rate_table = make_mortality_rate_table(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, outdir.fig)
 
 
@@ -116,13 +128,10 @@ compare_CDCestimation_JHU_DoH_plot(CDC_data = copy(tmp), JHU_data = JHUData, scr
 # find overall cumulative deaths (by age groups)
 if(nrow(subset(scrapedData, code == Code)) > 0 ){
   
-  tmp = find_cumulative_deaths_givensum_state_age(fit_cum, df_week, df_age_continuous, scrapedData, 'cum.deaths')
+  tmp = find_cumulative_deaths_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths')
   compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = 'M', outdir = outdir.fig)
-  
-  tmp = find_phi_state_age(fit_cum, df_week, df_age_continuous, unique(subset(scrapedData, code == Code)$age))
-  compare_CDCestimation_DoH_age_prop_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
-                                          var.cum.deaths.CDC = 'M', df_week, outdir = outdir.fig)
+
 }
 
 # make panel figure

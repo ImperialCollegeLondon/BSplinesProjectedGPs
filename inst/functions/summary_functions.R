@@ -2,7 +2,7 @@ create_map_age = function(age_max){
   # create map by 5-year age bands
   df_age_continuous <<- data.table(age_from = 0:age_max,
                                    age_to = 0:age_max,
-                                   age_index = 0:age_max,
+                                   age_index = 1:(age_max+1),
                                    age = 0:age_max)
   
   # create map for reporting age groups before 2020-09-02

@@ -309,17 +309,14 @@ compare_CDCestimation_JHU_DoH_plot = function(CDC_data, JHU_data, scraped_data, 
 
 compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
 {
-  scraped_data = select(as.data.table(scraped_data), code, date, age, daily.deaths)
+  scraped_data = select(as.data.table(scraped_data), code, date, age, cum.deaths)
   scraped_data = subset(scraped_data, code == Code)
   scraped_data[, date := as.Date(date)]
   scraped_data[, CL := NA]
   scraped_data[, CU := NA]
-  scraped_data = subset(scraped_data, date >=  min(CDC_data$date) - 7)
   ages = unique(scraped_data$age)
   scraped_data = scraped_data[order(code, age, date)]
-  scraped_data[, cum.deaths := cumsum(daily.deaths), by = 'age']
-  scraped_data = select(scraped_data, -daily.deaths)
-  
+
   # prepare CDC estimations
   CDC_data = select(as.data.table(CDC_data), code, date, age, var.cum.deaths.CDC, CL, CU)
   setnames(CDC_data, var.cum.deaths.CDC, 'cum.deaths')
@@ -504,7 +501,7 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   }
   
   euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
-  fit_samples = extract(fit_cum)
+  fit_samples = rstan::extract(fit_cum)
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -531,6 +528,26 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
                  size = 0.5, alpha = 0.5) 
   ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
   
+
+  if(is.null(stan_data$num_basis_rows)){
+    
+    p = ggplot(tmp1, aes(x = date, y = get(column_name))) + 
+      geom_raster(aes(fill = M ), interpolate = TRUE) + 
+      theme_bw() +
+      theme(legend.position = 'none',
+            axis.text.x = element_text(angle = 90), 
+            panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank()) +
+      labs(y = column_lab, x = row_lab, fill ='') +
+      scale_fill_viridis_c(option = 'inferno', begin = 0.55) +
+      scale_y_reverse(expand = c(0,0)) + 
+      geom_contour(aes(z=M), bins = 12, color = "gray50", 
+                   size = 0.5, alpha = 0.5)  + 
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
+    ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
+    
+  }
+    
   return(p)
 }
 
@@ -717,6 +734,44 @@ plot_contribution_continuous_comparison_method = function(tab_cc, selected_metho
         legend.key = element_blank(), 
         strip.background = element_rect(colour="white", fill="white")) 
   return(p)
+  
+}
+
+plot_mortality_rate_all_states = function(mortality_rate, outdir)
+{
+  for(a in unique(mortality_rate$age_index))
+  {
+    tmp = subset(mortality_rate, age_index == a & date == max(mortality_rate$date))
+    age = unique(tmp$age)
+    tmp = tmp[order(M)]
+    tmp[, loc_label := factor(loc_label, tmp$loc_label)]
+    ggplot(tmp, aes(x=loc_label, y = M)) + 
+      geom_bar(aes(fill = M), stat="identity") +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      scale_fill_viridis_c(option = 'A', end = 0.95) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+            legend.position = 'none', 
+            panel.grid.major= element_blank()) + 
+      scale_y_continuous(expand = c(0,0)) +
+      labs(x ='', y = paste0('Cumulated COVID-19 attributable death\namong individuals ', age, ' as of ', format(unique(tmp$date), '%b %Y')))
+    ggsave(paste0(outdir, '-MortalityRate.png'), w = 7, h = 4)
+  }
+}
+
+plot_contribution_all_states = function(contribution, outdir){
+  contribution[, loc_label := factor(loc_label, levels = sort(unique(contribution$loc_label), decreasing = T))]
+  ggplot(contribution, aes(x= date, y = loc_label)) + 
+    geom_raster(aes(fill = M)) + 
+    facet_wrap(~age) + 
+    scale_fill_viridis(option = 'B') +
+    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+          legend.position = 'bottom', 
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white")) + 
+    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+    labs(x = '', y = '', fill = 'Contribution to\nCOVID-19 weekly deaths')
+  ggsave(paste0(outdir, '-Contribution6580.png'), w = 4, h = 7)
   
 }
 
