@@ -103,7 +103,7 @@ if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
 }
 if(grepl('210505c|210429a2|210429b2|210513b', stan_model)){
   cat("\n Using 2D splines \n")
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 16, n_knots_columns = 8)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 14, n_knots_columns = 4)
 }
 if(grepl('210429a1|210429b1', stan_model)){
   cat("\n Adding adjacency matrix on 1D splines parameters \n")
@@ -139,7 +139,7 @@ model = rstan::stan_model(path.to.stan.model)
 
 if(0){
   
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=1,warmup=0,chains=1,
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 
