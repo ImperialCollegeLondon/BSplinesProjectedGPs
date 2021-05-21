@@ -290,6 +290,7 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, data, 
   # adjust by population proportion
   tmp1 = merge(tmp1, select(pop_data1, age_index, pop_prop, pop_prop_US), by = 'age_index')
   tmp1[, value := value / pop_prop * pop_prop_US]
+  tmp1[, value := value / sum(value), by = c('iterations', 'age_index')]
   
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
@@ -306,7 +307,7 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, data, 
 }
 
 
-find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_groups, date_10thcum, pop_data, outdir){
+find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_group, date_10thcum, pop_data, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -323,6 +324,17 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
   df_week1 = subset(df_week1, month %in% min(df_week1$month):(min(df_week1$month) + 2))
   
   # df age
+  if(grepl('\\+', age_group))
+  {
+    age_groups = c(paste0('0-', as.numeric(gsub('(.+)-.*', '\\1', age_group))-1), age_group)
+  } else if(grepl('0', age_group))
+  {
+    age_groups = c(age_group, paste0(as.numeric(gsub('.*-(.+)', '\\1', age_group))+1, '+'))
+  } else{
+    age_groups = c(paste0('0-', as.numeric(gsub('(.+)-.*', '\\1', age_group))-1), age_group,
+                   paste0(as.numeric(gsub('.*-(.+)', '\\1', age_group))+1, '+'))
+    
+  }
   df_age_state = data.table(age = age_groups)
   df_age_state[, age_index := 1:nrow(df_age_state)]
   df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
@@ -335,43 +347,50 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
   set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
   set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
   set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
-  df_age_continuous1 = subset(df_age_continuous, age_from >= as.numeric(df_age_state$age_from) & age_to <= as.numeric(df_age_state$age_to))
+  df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
+  df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
   # find population proportion
   pop_data1 = copy(pop_data)
-  pop_data1[, age_index := 1:nrow(pop_data1)]
   pop_data1[, age_from := gsub('(.+)-.*', '\\1', age)]
   pop_data1[, age_to := gsub('.*-(.+)', '\\1', age)]
   pop_data1[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
   pop_data1[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   set(pop_data1, NULL, 'age_from', pop_data1[,as.numeric(age_from)])
   set(pop_data1, NULL, 'age_to', pop_data1[,as.numeric(age_to)])
-  pop_data1[, pop_prop := pop / Total]
   tmp = pop_data1[, list(pop = sum(pop)), by = 'age']
   tmp[, pop_prop_US := pop / sum(pop_data$pop)]
   pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
-  pop_data1 = subset(pop_data1, code == Code & age_from >= as.numeric(df_age_state$age_from) & age_to <= as.numeric(df_age_state$age_to))
-  pop_data1 = pop_data1[, list(pop = sum(pop), pop_prop = sum(pop_prop), pop_prop_US = sum(pop_prop_US)), by = c('Total', 'code')]
-  stopifnot(nrow(pop_data1) == 1)
+  pop_data1[, age_state_index := which(df_age_state$age_from <= age_from & df_age_state$age_to >= age_to), by = c('loc_label', 'age_from')]
+  pop_data1[, pop_prop := pop / Total]
+  pop_data1 = pop_data1[, list(pop = sum(pop), pop_prop = sum(pop_prop), pop_prop_US = sum(pop_prop_US)), by = c('Total', 'code', 'age_state_index')]
+  pop_data1[, multiplier := pop_prop / pop_prop_US]
+  pop_data1 = subset(pop_data1, code == Code)
+  stopifnot(nrow(pop_data1) == length(age_groups))
   
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[['phi']]) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
   
   # sum by state age group
-  tmp1 = merge(tmp1, df_age_continuous1, 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'iterations')]
+  tmp1 = merge(tmp1, df_age_continuous, 'age_index')
+  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'iterations', 'age_state_index')]
   
   # # find reference
   tmp2 = subset(tmp1, week_index %in% df_week1$week_index)
-  tmp2 = tmp2[, list(value_ref = mean(value)), by = c('iterations')]
-  tmp1 = merge(tmp1, tmp2, by = c('iterations'))
+  tmp2 = tmp2[, list(value_ref = mean(value)), by = c('iterations', 'age_state_index')]
+  tmp1 = merge(tmp1, tmp2, by = c('iterations', 'age_state_index'))
   tmp1[, value_rel := value / value_ref]
   
-  # adjust by poplation proportion
+  # adjust by population proportion
   tmp1[, value_adj := value / pop_data1$pop_prop * pop_data1$pop_prop_US]
+  tmp1[, value_adj := value_adj / sum(value_adj), by = c('iterations', 'week_index')]
   tmp1[, value_ref_adj := value_ref / pop_data1$pop_prop * pop_data1$pop_prop_US]
+  tmp1[, value_ref_adj := value_ref_adj / sum(value_ref_adj), by = c('iterations', 'week_index')]
   tmp1[, value_rel_adj := value_adj / value_ref_adj ]
+  
+  # keep only interested age group 
+  tmp1 = subset(tmp1, age_state_index == which(age_groups == age_group))
   
   # take quantiles
   tmp2 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
@@ -400,13 +419,13 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
   setnames(tmp1, p_labs, paste0(p_labs, '_rel_adj'))
   tmp1 = merge(tmp2, tmp1, by = 'week_index')
   
-  tmp1[, age := age_groups]
+  tmp1[, age := age_group]
   tmp1[, code := Code]
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1[, after.10thcumdeaths := date >= date_10thcum]
 
-  saveRDS(tmp1, file = paste0(outdir, '-Contribution_Age_', age_groups,'_', Code, '.rds'))
+  saveRDS(tmp1, file = paste0(outdir, '-Contribution_Age_', age_group,'_', Code, '.rds'))
 
   return(tmp1)
 }
