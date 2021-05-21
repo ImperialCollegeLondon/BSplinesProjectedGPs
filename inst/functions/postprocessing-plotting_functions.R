@@ -748,32 +748,127 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
     ggplot(tmp, aes(x=loc_label, y = M)) + 
       geom_bar(aes(fill = M), stat="identity") +
       geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
-      scale_fill_viridis_c(option = 'A', end = 0.95) + 
+      scale_fill_viridis_c(option = 'A', end = 0.9) + 
       theme_bw() +
       theme(axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
             legend.position = 'none', 
             panel.grid.major= element_blank()) + 
-      scale_y_continuous(expand = c(0,0)) +
-      labs(x ='', y = paste0('Cumulated COVID-19 attributable death\namong individuals ', age, ' as of ', format(unique(tmp$date), '%b %Y')))
-    ggsave(paste0(outdir, '-MortalityRate.png'), w = 7, h = 4)
+      scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
+      labs(x ='', y = paste0('Cumulated COVID-19 attributable deaths\namong individuals ', age, ' as of ', format(unique(tmp$date), '%b %Y')))
+    ggsave(paste0(outdir, paste0('-MortalityRate_', age, '.png')), w = 8, h = 5)
   }
 }
 
-plot_contribution_all_states = function(contribution, outdir){
-  contribution[, loc_label := factor(loc_label, levels = sort(unique(contribution$loc_label), decreasing = T))]
+plot_contribution_all_states = function(contribution, vaccinedata,outdir){
+  
+  date_10 = vaccinedata[prop_vaccinated_65p_1shot >= 0.1, min(date)]
+  date_20 = vaccinedata[prop_vaccinated_65p_1shot >= 0.2, min(date)]
+  date_30 = vaccinedata[prop_vaccinated_65p_1shot >= 0.3, min(date)]
+  date_40 = vaccinedata[prop_vaccinated_65p_1shot >= 0.4, min(date)]
+  vacinnedates = data.table(prop = paste0(c(0.1, 0.2, 0.3, 0.4)*100, '%'), date = c(date_10, date_20, date_30, date_40))
+  vacinnedates = subset(vacinnedates, date <= max(contribution$date))
+  
+  contribution = subset(contribution, after.10thcumdeaths == T)
+  contribution[, loc_label := factor(loc_label, levels = sort(as.character(unique(contribution$loc_label)), decreasing = T))]
+ 
   ggplot(contribution, aes(x= date, y = loc_label)) + 
-    geom_raster(aes(fill = M)) + 
+    geom_raster(aes(fill = M), alpha = 0.9) + 
     facet_wrap(~age) + 
-    scale_fill_viridis(option = 'B') +
+    scale_fill_viridis(option = 'B') + 
+    theme_bw() +
     theme(axis.text.x = element_text(angle= 45, hjust = 1), 
           legend.position = 'bottom', 
+          legend.box="vertical", legend.margin=margin(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           legend.key = element_blank(), 
           strip.background = element_rect(colour="white", fill="white")) + 
     scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
-    labs(x = '', y = '', fill = 'Contribution to\nCOVID-19 weekly deaths')
-  ggsave(paste0(outdir, '-Contribution6580.png'), w = 4, h = 7)
+    geom_vline(data = vacinnedates, aes(xintercept= date, linetype = prop), col = 'grey20') +
+    labs(x = '', y = '', fill = 'Contribution to\nCOVID-19 weekly deaths', 
+         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose')
+  ggsave(paste0(outdir, '-Contribution.png'), w = 6, h = 9)
+  
+  
+  ggplot(contribution, aes(x= date, y = loc_label)) + 
+    geom_raster(aes(fill = M_rel)) + 
+    facet_wrap(~age) + 
+    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = 0, trans = 'log10') + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+          legend.position = 'bottom', 
+          legend.box="vertical", legend.margin=margin(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white")) + 
+    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y")  + 
+    geom_vline(data = vacinnedates, aes(xintercept= date, linetype = prop), col = 'grey20') +
+    labs(x = '', y = '', fill = 'Ratio in contribution to weekly\nCOVID-19 deaths relative to\nbaseline period', 
+         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose') 
+  ggsave(paste0(outdir, '-Contribution_ratio.png'), w = 6, h = 9)
+  
+  contribution[, loc_label := factor(loc_label, levels = sort(as.character(unique(contribution$loc_label)), decreasing = F))]
+  
+  ggplot(contribution, aes(x= date, y = age)) + 
+    geom_raster(aes(fill = M_rel)) + 
+    facet_wrap(~loc_label) + 
+    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = 0, trans = 'log10') + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+          legend.position = 'bottom', 
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white")) + 
+    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+    geom_vline(data = vacinnedates, aes(xintercept= date, linetype = prop), col = 'grey20') +
+    labs(x = '', y = '', fill = 'Ratio in contribution to weekly\nCOVID-19 deaths relative to\nbaseline period', 
+         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose') 
+  ggsave(paste0(outdir, '-Contribution_ratio_2.png'), w = 8, h = 6)
   
 }
+
+
+plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_adj, outdir){
+  tmp = subset(contribution_ref, age == '80+')
+  tmp = tmp[order(M)]
+  contribution_ref[, loc_label := factor(loc_label, unique(tmp$loc_label))]
+  ggplot(contribution_ref, aes(x = loc_label, y = M)) + 
+    geom_bar(aes(fill = M), stat = 'identity') +
+    geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+    facet_grid(age~division,  scales = "free", space = 'free_x') + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white"), 
+          legend.position = 'none')  +
+    scale_fill_viridis(option = 'B', trans = 'sqrt') + 
+    scale_y_continuous(labels = scales::percent) + 
+    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths during the baseline period'))
+  ggsave(paste0(outdir, '-Contribution_ref.png'), w = 9, h = 6)
+  
+  contribution_ref_adj[, loc_label := factor(loc_label, unique(tmp$loc_label))]
+  ggplot(contribution_ref_adj, aes(x = loc_label, y = M)) + 
+    geom_bar(aes(fill = M), stat = 'identity') +
+    geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+    facet_grid(age~division,  scales = "free", space = 'free_x') + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white"), 
+          legend.position = 'none')  +
+    scale_fill_viridis(option = 'B', trans = 'sqrt') + 
+    scale_y_continuous(labels = scales::percent) + 
+    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths in\nage-standardised populations during the baseline period'))
+  ggsave(paste0(outdir, '-Contribution_ref_adj.png'), w = 9, h = 6)
+  
+}
+
 
 # savepdf <- function(fname, width=16, height=10)
 # {

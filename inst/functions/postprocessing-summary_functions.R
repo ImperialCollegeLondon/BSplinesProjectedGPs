@@ -178,6 +178,10 @@ make_contribution_ref = function(fit, data_10thdeaths, fouragegroups, data, df_w
   df_age[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age, NULL, 'age_from', df_age[,as.numeric(age_from)])
+  set(df_age, NULL, 'age_to', df_age[,as.numeric(age_to)])
+  set(df_age, NULL, 'age_to_index', df_age[,as.numeric(age_to_index)])
+  set(df_age, NULL, 'age_from_index', df_age[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age$age_from_index <= age_index & df_age$age_to_index >= age_index), by = 'age_index']
   
@@ -226,6 +230,10 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, data, 
   df_age[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age, NULL, 'age_from', df_age[,as.numeric(age_from)])
+  set(df_age, NULL, 'age_to', df_age[,as.numeric(age_to)])
+  set(df_age, NULL, 'age_to_index', df_age[,as.numeric(age_to_index)])
+  set(df_age, NULL, 'age_from_index', df_age[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age$age_from_index <= age_index & df_age$age_to_index >= age_index), by = 'age_index']
   
@@ -239,6 +247,10 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, data, 
   pop_data1[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   pop_data1[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   pop_data1[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(pop_data1, NULL, 'age_from', pop_data1[,as.numeric(age_from)])
+  set(pop_data1, NULL, 'age_to', pop_data1[,as.numeric(age_to)])
+  set(pop_data1, NULL, 'age_to_index', pop_data1[,as.numeric(age_to_index)])
+  set(pop_data1, NULL, 'age_from_index', pop_data1[,as.numeric(age_from_index)])
   pop_data1[, age_state_index := which(df_age$age_from_index <= age_from_index & df_age$age_to_index >= age_to_index), by = 'age_index']
   pop_data1 = pop_data1[, list(pop = sum(pop)), by = c('Total', 'age_state_index', 'code')]
   setnames(pop_data1, 'age_state_index', 'age_index')
@@ -294,7 +306,7 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, data, 
 }
 
 
-find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_groups, date_10thcum, outdir){
+find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_groups, date_10thcum, pop_data, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -319,7 +331,28 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
   df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age_state, NULL, 'age_from', df_age_state[,as.numeric(age_from)])
+  set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
+  set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
+  set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
   df_age_continuous1 = subset(df_age_continuous, age_from >= as.numeric(df_age_state$age_from) & age_to <= as.numeric(df_age_state$age_to))
+  
+  # find population proportion
+  pop_data1 = copy(pop_data)
+  pop_data1[, age_index := 1:nrow(pop_data1)]
+  pop_data1[, age_from := gsub('(.+)-.*', '\\1', age)]
+  pop_data1[, age_to := gsub('.*-(.+)', '\\1', age)]
+  pop_data1[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+  pop_data1[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
+  set(pop_data1, NULL, 'age_from', pop_data1[,as.numeric(age_from)])
+  set(pop_data1, NULL, 'age_to', pop_data1[,as.numeric(age_to)])
+  pop_data1[, pop_prop := pop / Total]
+  tmp = pop_data1[, list(pop = sum(pop)), by = 'age']
+  tmp[, pop_prop_US := pop / sum(pop_data$pop)]
+  pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
+  pop_data1 = subset(pop_data1, code == Code & age_from >= as.numeric(df_age_state$age_from) & age_to <= as.numeric(df_age_state$age_to))
+  pop_data1 = pop_data1[, list(pop = sum(pop), pop_prop = sum(pop_prop), pop_prop_US = sum(pop_prop_US)), by = c('Total', 'code')]
+  stopifnot(nrow(pop_data1) == 1)
   
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[['phi']]) )
@@ -335,18 +368,36 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
   tmp1 = merge(tmp1, tmp2, by = c('iterations'))
   tmp1[, value_rel := value / value_ref]
   
+  # adjust by poplation proportion
+  tmp1[, value_adj := value / pop_data1$pop_prop * pop_data1$pop_prop_US]
+  tmp1[, value_ref_adj := value_ref / pop_data1$pop_prop * pop_data1$pop_prop_US]
+  tmp1[, value_rel_adj := value_adj / value_ref_adj ]
+  
   # take quantiles
   tmp2 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
               by=c('week_index')]	
   tmp2 = dcast(tmp2, week_index ~ q_label, value.var = "q")
   
-  tmp1 = tmp1[, list( 	q= quantile(value_rel, prob=ps, na.rm = T),
+  tmp3 = tmp1[, list( 	q= quantile(value_rel, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('week_index')]	
+  tmp3 = dcast(tmp3, week_index ~ q_label, value.var = "q")
+  setnames(tmp3, p_labs, paste0(p_labs, '_rel'))
+  tmp2 = merge(tmp2, tmp3, by = 'week_index')
+  
+  tmp3 = tmp1[, list( 	q= quantile(value_adj, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('week_index')]	
+  tmp3 = dcast(tmp3, week_index ~ q_label, value.var = "q")
+  setnames(tmp3, p_labs, paste0(p_labs, '_adj'))
+  tmp2 = merge(tmp2, tmp3, by = 'week_index')
+  
+  tmp1 = tmp1[, list( 	q= quantile(value_rel_adj, prob=ps, na.rm = T),
                        q_label=p_labs), 
               by=c('week_index')]	
   tmp1 = dcast(tmp1, week_index ~ q_label, value.var = "q")
-  setnames(tmp1, p_labs, paste0(p_labs, '_rel'))
-  
+  setnames(tmp1, p_labs, paste0(p_labs, '_rel_adj'))
   tmp1 = merge(tmp2, tmp1, by = 'week_index')
   
   tmp1[, age := age_groups]
@@ -448,7 +499,11 @@ find_cumsum_nonr_deaths_state_age = function(fit, df_week, df_age_continuous, st
   df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
-  df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
+  set(df_age_state, NULL, 'age_from', df_age_state[,as.numeric(age_from)])
+  set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
+  set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
+  set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
+  df_age_continuous[, age_index := as.numeric(1:nrow(df_age_continuous))]
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
   # include missing information
@@ -512,6 +567,10 @@ find_sum_nonr_deaths_state_age = function(fit, df_age_continuous, state_age_grou
   df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age_state, NULL, 'age_from', df_age_state[,as.numeric(age_from)])
+  set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
+  set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
+  set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
@@ -610,6 +669,10 @@ find_cumulative_deaths_givensum_state_age = function(fit, date_10thcum, df_week,
   df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age_state, NULL, 'age_from', df_age_state[,as.numeric(age_from)])
+  set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
+  set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
+  set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
@@ -690,6 +753,10 @@ find_phi_state_age = function(fit, df_week, df_age_continuous, age_state){
   df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age_state, NULL, 'age_from', df_age_state[,as.numeric(age_from)])
+  set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
+  set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
+  set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
@@ -735,6 +802,10 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   df_age[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
   df_age[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age, NULL, 'age_from', df_age[,as.numeric(age_from)])
+  set(df_age, NULL, 'age_to', df_age[,as.numeric(age_to)])
+  set(df_age, NULL, 'age_to_index', df_age[,as.numeric(age_to_index)])
+  set(df_age, NULL, 'age_from_index', df_age[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age$age_from_index <= age_index & df_age$age_to_index >= age_index), by = 'age_index']
   
