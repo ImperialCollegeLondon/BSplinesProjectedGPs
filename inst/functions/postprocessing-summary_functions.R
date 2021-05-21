@@ -290,7 +290,7 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, data, 
   # adjust by population proportion
   tmp1 = merge(tmp1, select(pop_data1, age_index, pop_prop, pop_prop_US), by = 'age_index')
   tmp1[, value := value / pop_prop * pop_prop_US]
-  tmp1[, value := value / sum(value), by = c('iterations', 'age_index')]
+  tmp1[, value := value / sum(value), by = c('iterations')]
   
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
@@ -326,7 +326,7 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
   # df age
   if(grepl('\\+', age_group))
   {
-    age_groups = c(paste0('0-', as.numeric(gsub('(.+)-.*', '\\1', age_group))-1), age_group)
+    age_groups = c(paste0('0-', as.numeric(gsub('(.+)\\+', '\\1', age_group))-1), age_group)
   } else if(grepl('0', age_group))
   {
     age_groups = c(age_group, paste0(as.numeric(gsub('.*-(.+)', '\\1', age_group))+1, '+'))
@@ -335,6 +335,7 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
                    paste0(as.numeric(gsub('.*-(.+)', '\\1', age_group))+1, '+'))
     
   }
+  
   df_age_state = data.table(age = age_groups)
   df_age_state[, age_index := 1:nrow(df_age_state)]
   df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
@@ -383,7 +384,8 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, age_
   tmp1[, value_rel := value / value_ref]
   
   # adjust by population proportion
-  tmp1[, value_adj := value / pop_data1$pop_prop * pop_data1$pop_prop_US]
+  tmp1 = merge(tmp1, pop_data1, by = 'age_state_index')
+  tmp1[, value_adj := value * multiplier]
   tmp1[, value_adj := value_adj / sum(value_adj), by = c('iterations', 'week_index')]
   tmp1[, value_ref_adj := value_ref / pop_data1$pop_prop * pop_data1$pop_prop_US]
   tmp1[, value_ref_adj := value_ref_adj / sum(value_ref_adj), by = c('iterations', 'week_index')]
