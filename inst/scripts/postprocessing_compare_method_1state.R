@@ -2,13 +2,15 @@ library(rstan)
 library(data.table)
 library(dplyr)
 library(gridExtra)
+library(loo)
+library(ggpubr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
-outdir = '~/git/CDC-covid19-agespecific-mortality-data/inst/results/testing_knots'
+outdir = '~/git/CDC-covid19-agespecific-mortality-data/inst/results'
 location.index = 1
-stan_model = c("210429b2", '210513b', '210505c1', '210513b')
-JOBID = c(4116, 13254, 12392, 6187)
-model_name = c('GP-BS-CAR', 'GP-SE', 'GP-BS-SE', 'GP-IN')
+stan_model = c("210429h1", '210513b', '210429b2', '210505c1')
+JOBID = c(17173, 4197, 3708, 3934)
+model_name = c('GP-SE', 'GP-BS-I', 'GP-BS-CAR', 'GP-BS-SE')
 
 # load functions
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
@@ -47,8 +49,8 @@ for(i in seq_along(JOBID)){
 tab_d = do.call('rbind', tab_d)
 p_d = plot_death_comparison_method(tab_d,  data, model_name)
 
-p = grid.arrange(p_cd, p_d, nrow = 2)
-# ggsave()
+p = ggarrange(p_d, p_cd, nrow = 2, labels = c('A', 'B'), label.x = 0.1)
+ggsave(p, file= paste0(outdir.table[1], '-deaths_predict_state_age_strata_compmethod_AL.png'), w = 10, h = 5)
 
 
 # load contribution table continuous
@@ -59,9 +61,18 @@ for(i in seq_along(JOBID)){
   tab_cc[[i]] = tab
 }
 tab_cc = do.call('rbind', tab_cc)
-p = plot_contribution_continuous_comparison_method(tab_cc, 'GP-BS-SE')
-# ggsave()
+p = plot_contribution_continuous_comparison_method(tab_cc, 'GP-BS-SE', model_name)
+ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_AL.png'), w = 6, h = 4)
 
 
-# surface 
+
+# LOO
+LOO = list()
+for(i in seq_along(JOBID)){
+  LOO[[i]] = readRDS( paste0(outdir.table[i], "-LOO_AL.rds") )
+}
+
+loo_compare(LOO[[2]], LOO[[3]], LOO[[4]])
+
+loo_compare(LOO[[1]], LOO[[4]])
 

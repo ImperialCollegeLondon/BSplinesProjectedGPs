@@ -759,20 +759,26 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
   }
 }
 
-plot_contribution_all_states = function(contribution, vaccinedata,outdir){
+plot_contribution_all_states = function(contribution, vaccinedata, outdir){
   
-  date_10 = vaccinedata[prop_vaccinated_65p_1shot >= 0.1, min(date)]
-  date_20 = vaccinedata[prop_vaccinated_65p_1shot >= 0.2, min(date)]
-  date_30 = vaccinedata[prop_vaccinated_65p_1shot >= 0.3, min(date)]
-  date_40 = vaccinedata[prop_vaccinated_65p_1shot >= 0.4, min(date)]
-  vacinnedates = data.table(prop = paste0(c(0.1, 0.2, 0.3, 0.4)*100, '%'), date = c(date_10, date_20, date_30, date_40))
-  vacinnedates = subset(vacinnedates, date <= max(contribution$date))
+  tmp = vaccinedata[prop_vaccinated_fully >= 0.25, list(date = min(date), prop = 0.25), by = 'age']
+  tmp1 = vaccinedata[prop_vaccinated_fully >= 0.5, list(date = min(date), prop = 0.5), by = 'age']
+  tmp = rbind(tmp, tmp1)
+  tmp[, prop_name := paste0(prop*100, '%')]
+  set(tmp, NULL, 'date', tmp[, as.Date(date)])
+  tmp = subset(tmp, age %in% unique(contribution$age))
+  tmp1 = copy(tmp)
+  setnames(tmp1, 'age', 'age_name')
+  tmp1[, age := '0-64']
   
   contribution = subset(contribution, after.10thcumdeaths == T)
   contribution[, loc_label := factor(loc_label, levels = sort(as.character(unique(contribution$loc_label)), decreasing = T))]
  
   ggplot(contribution, aes(x= date, y = loc_label)) + 
     geom_raster(aes(fill = M), alpha = 0.9) + 
+    geom_vline(data = subset(tmp, age == '75+'), aes(xintercept= date, linetype = prop_name), col = 'grey40') +
+    geom_vline(data = subset(tmp, age == '65-74'), aes(xintercept= date, linetype = prop_name), col = 'grey70') +
+    geom_vline(data = tmp1, aes(xintercept= date, linetype = prop_name, col = age_name)) +
     facet_wrap(~age) + 
     scale_fill_viridis(option = 'B') + 
     theme_bw() +
@@ -784,14 +790,66 @@ plot_contribution_all_states = function(contribution, vaccinedata,outdir){
           legend.key = element_blank(), 
           strip.background = element_rect(colour="white", fill="white")) + 
     scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
-    geom_vline(data = vacinnedates, aes(xintercept= date, linetype = prop), col = 'grey20') +
+    scale_color_manual(values = c('grey70', 'grey40')) + 
     labs(x = '', y = '', fill = 'Contribution to\nCOVID-19 weekly deaths', 
-         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose')
+         linetype = 'Proportion of vaccinated\nwith at least one dose', 
+         color = 'in age') +
+    guides(fill = guide_colourbar(order = 1),linetype = guide_legend(order=2), color = guide_legend(order=3))
   ggsave(paste0(outdir, '-Contribution.png'), w = 6, h = 9)
+  
+  ggplot(contribution, aes(x= date, y = loc_label)) + 
+    geom_raster(aes(fill = M_adj), alpha = 0.9) + 
+    geom_vline(data = subset(tmp, age == '75+'), aes(xintercept= date, linetype = prop_name), col = 'grey40') +
+    geom_vline(data = subset(tmp, age == '65-74'), aes(xintercept= date, linetype = prop_name), col = 'grey70') +
+    geom_vline(data = tmp1, aes(xintercept= date, linetype = prop_name, col = age_name)) +
+    facet_wrap(~age) + 
+    scale_fill_viridis(option = 'B') + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+          legend.position = 'bottom', 
+          legend.box="vertical", legend.margin=margin(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white")) + 
+    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+    scale_color_manual(values = c('grey70', 'grey40')) + 
+    labs(x = '', y = '', fill = 'Contribution to\nCOVID-19 weekly deaths', 
+         linetype = 'Proportion of vaccinated\nwith at least one dose', 
+         color = 'in age') +
+    guides(fill = guide_colourbar(order = 1),linetype = guide_legend(order=2), color = guide_legend(order=3))
+  ggsave(paste0(outdir, '-Contribution_adj.png'), w = 6, h = 9)
   
   
   ggplot(contribution, aes(x= date, y = loc_label)) + 
     geom_raster(aes(fill = M_rel)) + 
+    geom_vline(data = subset(tmp, age == '75+'), aes(xintercept= date, linetype = prop_name), col = 'grey40') +
+    geom_vline(data = subset(tmp, age == '65-74'), aes(xintercept= date, linetype = prop_name), col = 'grey70') +
+    geom_vline(data = tmp1, aes(xintercept= date, linetype = prop_name, col = age_name)) +
+    facet_wrap(~age) + 
+    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = 0, trans = 'log10') + 
+    
+    theme_bw() +
+    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+          legend.position = 'bottom', 
+          legend.box="vertical", legend.margin=margin(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white")) + 
+    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y")  + 
+    scale_color_manual(values = c('grey70', 'grey40')) + 
+    labs(x = '', y = '', fill = 'Ratio in contribution to weekly\nCOVID-19 deaths relative to\nbaseline period', 
+         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose',
+         color = 'in age') +
+    guides(fill = guide_colourbar(order = 1),linetype = guide_legend(order=2), color = guide_legend(order=3))
+  ggsave(paste0(outdir, '-Contribution_ratio.png'), w = 6, h = 9)
+  
+  ggplot(contribution, aes(x= date, y = loc_label)) + 
+    geom_raster(aes(fill = M_rel_adj)) + 
+    geom_vline(data = subset(tmp, age == '75+'), aes(xintercept= date, linetype = prop_name), col = 'grey40') +
+    geom_vline(data = subset(tmp, age == '65-74'), aes(xintercept= date, linetype = prop_name), col = 'grey70') +
+    geom_vline(data = tmp1, aes(xintercept= date, linetype = prop_name, col = age_name)) +
     facet_wrap(~age) + 
     scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = 0, trans = 'log10') + 
     theme_bw() +
@@ -803,29 +861,13 @@ plot_contribution_all_states = function(contribution, vaccinedata,outdir){
           legend.key = element_blank(), 
           strip.background = element_rect(colour="white", fill="white")) + 
     scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y")  + 
-    geom_vline(data = vacinnedates, aes(xintercept= date, linetype = prop), col = 'grey20') +
+    scale_color_manual(values = c('grey70', 'grey40')) + 
     labs(x = '', y = '', fill = 'Ratio in contribution to weekly\nCOVID-19 deaths relative to\nbaseline period', 
-         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose') 
-  ggsave(paste0(outdir, '-Contribution_ratio.png'), w = 6, h = 9)
+         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose',
+         color = 'in age') +
+    guides(fill = guide_colourbar(order = 1),linetype = guide_legend(order=2), color = guide_legend(order=3))
+  ggsave(paste0(outdir, '-Contribution_ratio_adj.png'), w = 6, h = 9)
   
-  contribution[, loc_label := factor(loc_label, levels = sort(as.character(unique(contribution$loc_label)), decreasing = F))]
-  
-  ggplot(contribution, aes(x= date, y = age)) + 
-    geom_raster(aes(fill = M_rel)) + 
-    facet_wrap(~loc_label) + 
-    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = 0, trans = 'log10') + 
-    theme_bw() +
-    theme(axis.text.x = element_text(angle= 45, hjust = 1), 
-          legend.position = 'bottom', 
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          legend.key = element_blank(), 
-          strip.background = element_rect(colour="white", fill="white")) + 
-    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
-    geom_vline(data = vacinnedates, aes(xintercept= date, linetype = prop), col = 'grey20') +
-    labs(x = '', y = '', fill = 'Ratio in contribution to weekly\nCOVID-19 deaths relative to\nbaseline period', 
-         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose') 
-  ggsave(paste0(outdir, '-Contribution_ratio_2.png'), w = 8, h = 6)
   
 }
 
