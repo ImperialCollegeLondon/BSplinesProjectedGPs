@@ -89,10 +89,11 @@ make_contribution_ref_adj(fit_cum, date_10thcum, fouragegroups, data, df_week, p
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '0-64', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-79', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-74', date_10thcum, pop_data, outdir.table)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '75-84', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65+', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '75+', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '80+', date_10thcum, pop_data, outdir.table)
-
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '85+', date_10thcum, pop_data, outdir.table)
 
 # Plot imputed weekly data 
 death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
