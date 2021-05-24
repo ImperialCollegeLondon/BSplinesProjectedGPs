@@ -67,7 +67,7 @@ date_10thcum = date_10thcum[, list(weekly.deaths = sum(weekly.deaths)), by = 'da
 date_10thcum[, cum.deaths := cumsum(weekly.deaths)]
 date_10thcum = date_10thcum[ cum.deaths >=10, min(date)]
 cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
-fouragegroups = c('0-24', '25-49', '50-79', '80+')
+fouragegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)

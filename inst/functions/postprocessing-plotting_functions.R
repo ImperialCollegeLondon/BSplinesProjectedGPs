@@ -872,13 +872,17 @@ plot_contribution_all_states = function(contribution, vaccinedata, outdir){
 }
 
 
-plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_adj, outdir){
+plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_adj, deathByAge, outdir){
+  
   tmp = subset(contribution_ref, age == '80+')
   tmp = tmp[order(M)]
   contribution_ref[, loc_label := factor(loc_label, unique(tmp$loc_label))]
+  deathByAge_red = subset(deathByAge, age %in% unique(contribution_ref$age))
+  
   ggplot(contribution_ref, aes(x = loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat = 'identity') +
     geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+    geom_point(data = deathByAge_red, aes(y = prop_deaths), col = 'red') + 
     facet_grid(age~division,  scales = "free", space = 'free_x') + 
     theme_bw() +
     theme(axis.text.x = element_text(angle= 45, hjust = 1), 
@@ -888,7 +892,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
           strip.background = element_rect(colour="white", fill="white"), 
           legend.position = 'none')  +
     scale_fill_viridis(option = 'B', trans = 'sqrt') + 
-    scale_y_continuous(labels = scales::percent) + 
+    scale_y_continuous(labels = scales::percent) +
     labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths during the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref.png'), w = 9, h = 6)
   
