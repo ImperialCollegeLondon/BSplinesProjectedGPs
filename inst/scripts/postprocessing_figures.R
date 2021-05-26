@@ -67,7 +67,9 @@ date_10thcum = date_10thcum[, list(weekly.deaths = sum(weekly.deaths)), by = 'da
 date_10thcum[, cum.deaths := cumsum(weekly.deaths)]
 date_10thcum = date_10thcum[ cum.deaths >=10, min(date)]
 cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
-fouragegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
+fouragegroups = c('0-24', '25-54', '55-79', '80+')
+fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
+
 
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
@@ -83,8 +85,8 @@ pc = plot_probability_deaths_age_contribution(age_contribution_continuous_table,
 age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 
-make_contribution_ref(fit_cum, date_10thcum, fouragegroups, data, df_week, df_age_continuous, outdir.table)
-make_contribution_ref_adj(fit_cum, date_10thcum, fouragegroups, data, df_week, pop_data, outdir.table)
+make_contribution_ref(fit_cum, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
+make_contribution_ref_adj(fit_cum, date_10thcum, fiveagegroups, data, df_week, pop_data, outdir.table)
 
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '0-64', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-79', date_10thcum, pop_data, outdir.table)
