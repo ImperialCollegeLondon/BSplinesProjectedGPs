@@ -4,18 +4,18 @@ functions {
         return transpose(A*transpose(B*V));
     }
     
-  matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
+  matrix gp(int N_rows, int N_columns, 
             real delta0,
-            real alpha_gp1, real alpha_gp2, 
+            real alpha_gp, 
             matrix z1)
   {
     
     matrix[N_rows,N_columns] GP;
     
-    matrix[N_rows, N_rows] K1 = alpha_gp1^2 * diag_matrix(rep_vector(1.0, N_rows));
+    matrix[N_rows, N_rows] K1 = alpha_gp^2 * diag_matrix(rep_vector(1.0, N_rows));
     matrix[N_rows, N_rows] L_K1;
     
-    matrix[N_columns, N_columns] K2 = alpha_gp2^2 *  diag_matrix(rep_vector(1.0, N_columns));
+    matrix[N_columns, N_columns] K2 = alpha_gp^2 *  diag_matrix(rep_vector(1.0, N_columns));
     matrix[N_columns, N_columns] L_K2;
     
     L_K1 = cholesky_decompose(K1);
@@ -38,22 +38,22 @@ data {
 transformed data {
   real delta = 1e-9;
 }
+
 parameters {
-  real<lower=0> alpha_1;
-  real<lower=0> alpha_2;
+  real<lower=0> alpha_gp;
   matrix[n,m] eta;
   real<lower=0> sigma;
 }
+
 transformed parameters {
-  matrix[n,m] f = gp(n, m, x_1, x_2,
+  matrix[n,m] f = gp(n, m, 
                               delta,
-                              alpha_1, alpha_2, 
+                              alpha_gp, 
                               eta);
 }
 
 model {
-  alpha_1 ~ std_normal();
-  alpha_2 ~ std_normal();
+  alpha_gp ~ std_normal();
   sigma ~ std_normal();
   
   for(i in 1:n){

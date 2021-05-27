@@ -6,7 +6,7 @@ functions {
     
   matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
             real delta0,
-            real alpha_gp1, real alpha_gp2, 
+            real alpha_gp, 
             real rho_gp1, real rho_gp2,
             matrix z1)
   {
@@ -19,8 +19,8 @@ functions {
     matrix[N_columns, N_columns] K2;
     matrix[N_columns, N_columns] L_K2;
     
-    K1 = cov_exp_quad(rows_idx, alpha_gp1, rho_gp1) + diag_matrix(rep_vector(delta0, N_rows));
-    K2 = cov_exp_quad(columns_index, alpha_gp2, rho_gp2) + diag_matrix(rep_vector(delta0, N_columns));
+    K1 = cov_exp_quad(rows_idx, alpha_gp, rho_gp1) + diag_matrix(rep_vector(delta0, N_rows));
+    K2 = cov_exp_quad(columns_index, alpha_gp, rho_gp2) + diag_matrix(rep_vector(delta0, N_columns));
 
     L_K1 = cholesky_decompose(K1);
     L_K2 = cholesky_decompose(K2);
@@ -45,15 +45,14 @@ transformed data {
 parameters {
   real<lower=0> rho_1;
   real<lower=0> rho_2;
-  real<lower=0> alpha_1;
-  real<lower=0> alpha_2;
+  real<lower=0> alpha_gp;
   matrix[n,m] eta;
   real<lower=0> sigma;
 }
 transformed parameters {
   matrix[n,m] f = gp(n, m, x_1, x_2,
                               delta,
-                              alpha_1, alpha_2, 
+                              alpha_gp, 
                               rho_1,  rho_2,
                               eta);
 }
@@ -61,8 +60,7 @@ transformed parameters {
 model {
   rho_1 ~ inv_gamma(5, 5);
   rho_2 ~ inv_gamma(5, 5);
-  alpha_1 ~ std_normal();
-  alpha_2 ~ std_normal();
+  alpha_gp ~ std_normal();
   sigma ~ std_normal();
   
   for(i in 1:n){
