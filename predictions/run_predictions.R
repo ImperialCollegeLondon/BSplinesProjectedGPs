@@ -2,7 +2,6 @@ library(rstan)
 library(ggplot2)
 library(data.table)
 library(gridExtra)
-library("plgp")
 library(dplyr)
 library(loo)
 library(grid)
@@ -28,13 +27,7 @@ model_GPBSSE = rstan::stan_model( file.path(indir, 'predictions', 'stan-models',
 ps <- c(0.5, 0.025, 0.975)
 p_labs = c('M', 'CL', 'CU', 'mean')
 
-# n <- 50
-# x <- seq(0,1,length=n)
-# X <- expand.grid(x, x)
-# y = generate_2DGP(X, lengthscales[1], sigma = 0.5)
-# training = data.table(x = X[,1], y = X[,2], obs = generate_2DGP(X, lengthscales[1], sigma = 0.5))
-# 
-# # tune 
+# tune 
 n_knots_x = 100
 n_knots_y = 100
 spline_degree = 3
