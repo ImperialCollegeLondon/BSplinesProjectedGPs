@@ -146,11 +146,11 @@ data = merge(data, tmp1, by = 'date')
 data[, prop_deaths := weekly.deaths / total_deaths]
 data$method = 'observation'
 
-age_contribution_discrete_table$method = 'BS-GP-SE'
-p1 = plot_contribution_comparison_method(age_contribution_discrete_table, data, model_name = 'BS-GP-SE')
+age_contribution_discrete_table$method = 'GP-BS-SE'
+p1 = plot_contribution_comparison_method(age_contribution_discrete_table, data, model_name = 'GP-BS-SE')
 
-death_discrete_table$method = 'BS-GP-SE'
-p2 = plot_death_comparison_method(death_discrete_table, data, 'BS-GP-SE')
+death_discrete_table$method = 'GP-BS-SE'
+p2 = plot_death_comparison_method(death_discrete_table, data, 'GP-BS-SE')
 
 ppp = ppp + theme(legend.position = 'left') + labs(fill = 'B-Splines\nparameters')
 p = grid.arrange(p1, p2, pc[[1]], ppp, layout_matrix = rbind(c(1, 1, 1, 3), 
