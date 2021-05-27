@@ -6,16 +6,16 @@ functions {
     
   matrix gp(int N_rows, int N_columns, 
             real delta0,
-            real alpha_gp1, real alpha_gp2, 
+            real alpha_gp, 
             matrix z1)
   {
     
     matrix[N_rows,N_columns] GP;
     
-    matrix[N_rows, N_rows] K1 = alpha_gp1^2 * diag_matrix(rep_vector(1.0, N_rows));
+    matrix[N_rows, N_rows] K1 = alpha_gp^2 * diag_matrix(rep_vector(1.0, N_rows));
     matrix[N_rows, N_rows] L_K1;
     
-    matrix[N_columns, N_columns] K2 = alpha_gp2^2 *  diag_matrix(rep_vector(1.0, N_columns));
+    matrix[N_columns, N_columns] K2 = alpha_gp^2 *  diag_matrix(rep_vector(1.0, N_columns));
     matrix[N_columns, N_columns] L_K2;
     
     L_K1 = cholesky_decompose(K1);
@@ -89,8 +89,7 @@ parameters {
   matrix[num_basis_rows,num_basis_columns] eta;
   real<lower=0> nu;
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw;
-  real<lower=0> alpha_1;
-  real<lower=0> alpha_2;
+  real<lower=0> alpha_gp;
 }
 
 transformed parameters {
@@ -103,7 +102,7 @@ transformed parameters {
   vector[N_missing] alpha_reduced_missing;
   matrix[num_basis_rows,num_basis_columns] beta = gp(num_basis_rows, num_basis_columns, 
                                                      delta,
-                                                     alpha_1, alpha_2, 
+                                                     alpha_gp,
                                                      eta); 
   matrix[A, W] f = (BASIS_ROWS') * beta * BASIS_COLUMNS;
 
@@ -129,8 +128,7 @@ transformed parameters {
 }
 
 model {
-  alpha_1 ~ std_normal();
-  alpha_2 ~ std_normal();
+  alpha_gp ~ std_normal();
   
   target += exponential_lpdf(nu | 1);
   

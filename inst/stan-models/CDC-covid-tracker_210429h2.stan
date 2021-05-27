@@ -6,16 +6,16 @@ functions {
     
   matrix gp(int N_rows, int N_columns, 
             real delta0,
-            real alpha_gp1, real alpha_gp2, 
+            real alpha_gp, 
             matrix z1)
   {
     
     matrix[N_rows,N_columns] GP;
     
-    matrix[N_rows, N_rows] K1 = alpha_gp1^2 * diag_matrix(rep_vector(1.0, N_rows));
+    matrix[N_rows, N_rows] K1 = alpha_gp^2 * diag_matrix(rep_vector(1.0, N_rows));
     matrix[N_rows, N_rows] L_K1;
     
-    matrix[N_columns, N_columns] K2 = alpha_gp2^2 *  diag_matrix(rep_vector(1.0, N_columns));
+    matrix[N_columns, N_columns] K2 = alpha_gp^2 *  diag_matrix(rep_vector(1.0, N_columns));
     matrix[N_columns, N_columns] L_K2;
     
     L_K1 = cholesky_decompose(K1);
@@ -86,8 +86,7 @@ transformed data
 parameters {
   real nu;
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw;
-  real<lower=0> alpha_gp1_t;
-  real<lower=0> alpha_gp1_d;
+  real<lower=0> alpha_gp;
   matrix[W,A] z1;
 }
 
@@ -101,7 +100,7 @@ transformed parameters {
   vector[N_missing] alpha_reduced_missing;
   matrix[W,A] beta = gp(W, A, 
                               delta0,
-                              alpha_gp1_t, alpha_gp1_d, 
+                              alpha_gp, 
                               z1);
 
   for(w in 1:W)
@@ -131,8 +130,7 @@ model {
   nu ~ normal(0,1);
   lambda_raw ~ gamma( lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
   
-  alpha_gp1_t ~ normal(0,1);
-  alpha_gp1_d ~ normal(0,1);
+  alpha_gp ~ normal(0,1);
 
 
     for(t in 1:W)
