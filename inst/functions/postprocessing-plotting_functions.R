@@ -109,7 +109,7 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
   
   p = ggplot(tmp1, aes(x = age)) + 
     theme_bw() +
-    labs(y = 'Share of age groups among weekly COVID-19 deaths', x = "Age") + 
+    labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
     facet_wrap(~date) + 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA))
@@ -118,7 +118,7 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
   tmp2 = subset(tmp1, date %in% dates[seq(1, length(dates), length.out =3)])
   p1 = ggplot(tmp2, aes(x = age)) + 
     theme_bw() +
-    labs(y = 'Share of age groups among weekly COVID-19 deaths', x = "Age") + 
+    labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
     facet_wrap(~date, ncol = 1)+ 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA))
@@ -392,7 +392,7 @@ compare_CDCestimation_DoH_age_prop_plot = function(CDC_data, scraped_data, var.c
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text.x = element_text(angle = 90)) + 
-    labs(y = 'Share of age groups among weekly COVID-19 deaths', col = '', fill = '', x = '')
+    labs(y = 'Age-specific contribution to COVID-19 weekly deaths', col = '', fill = '', x = '')
   ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 4, h = 8, limitsize = F)
   
 }
@@ -570,7 +570,7 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = paste0('Ratio of the share of age groups among weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+    labs(x = '', y = paste0('Ratio of the age-specific contribution to COVID-19 weekly deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_', Code, '.png'), w = 4, h = 14)
   
   ggplot(tmp, aes(x = date)) + 
@@ -584,7 +584,7 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle = 90)) +
-    labs(x = '', y = paste0('Ratio of the share of age groups among weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+    labs(x = '', y = paste0('Ratio of the age-specific contribution to COVID-19 weekly deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 4, h = 8)
   
   tmp = subset(probability_ratio_table, age %in% c('45-54', '55-64', '65-74', '75-84', '85+'))
@@ -594,7 +594,7 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
     # geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
     theme_bw() + 
     geom_hline(aes(yintercept = 1)) +
-    labs(x = '', y = paste0('Ratio of the share of age groups among weekly COVID-19 deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
+    labs(x = '', y = paste0('Ratio of the age-specific contribution to COVID-19 weekly deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_median_', Code, '.png'), w = 8, h = 8)
 }
 
@@ -673,7 +673,7 @@ plot_contribution_comparison_method = function(tab_cd, data, model_name){
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     scale_y_discrete(expand = c(0,0)) + 
     labs(x = '', y = 'Age group',
-         fill = 'Share of\nweekly\nCOVID-19\ndeaths') + 
+         fill = 'Contribution to\nweekly\nCOVID-19\ndeaths') + 
     facet_grid(~method) + 
     theme(legend.position = 'left',
           axis.text.x = element_text(angle = 90), 
@@ -727,7 +727,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, selected_metho
   p = ggplot(tmp2, aes(x = age)) + 
     geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
     theme_bw() +
-    labs(y = 'Share of age groups among weekly COVID-19 deaths', x = "Age") + 
+    labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
     facet_grid(date~method) +
     coord_cartesian(ylim = limit_SE) + 
     theme(panel.border = element_rect(colour = "black", fill = NA), 
@@ -892,14 +892,15 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
           legend.position = 'none')  +
     scale_fill_viridis(option = 'B', trans = 'sqrt') + 
     scale_y_continuous(labels = scales::percent) +
-    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths during the baseline period'))
+    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths\nduring the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref.png'), w = 9, h = 6)
   
-  ggplot(contribution_ref, aes(y = loc_label, x = M)) + 
+  ggplot(contribution_ref, aes(x = loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat = 'identity') +
-    geom_errorbarh(aes(xmin=CL, xmax=CU), height=.2, position=position_dodge(.9), color = 'grey30') + 
-    geom_point(data = deathByAge, aes(x = prop_deaths), col = 'turquoise') + 
-    facet_grid(division~age,  scales = "free", space = 'free_y') + 
+    geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+    geom_point(data = deathByAge, aes(y = prop_deaths), col = 'cyan3', size = 0.6) + 
+    #geom_point(data = deathByAge, aes(y = prop_deaths), col = 'turquoise') + 
+    facet_grid(age~division,  scales = "free_x", space = 'free_x') + 
     theme_bw() +
     theme(axis.text.x = element_text(angle= 45, hjust = 1), 
           panel.grid.major = element_blank(),
@@ -908,9 +909,9 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
           strip.background = element_rect(colour="white", fill="white"), 
           legend.position = 'none')  +
     scale_fill_viridis(option = 'B', trans = 'sqrt') + 
-    scale_x_continuous(labels = scales::percent) +
-    labs(y ='', x = paste0('Contribution to age groups to\nCOVID-19 deaths during the baseline period'))
-  ggsave(paste0(outdir, '-Contribution_ref2.png'), w = 6, h = 9)
+    scale_y_continuous(labels = scales::percent) +
+    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths\nduring the baseline period'))
+  ggsave(paste0(outdir, '-Contribution_ref_empr.png'), w = 9, h = 6)
   
   
   contribution_ref_adj[, loc_label := factor(loc_label, unique(tmp$loc_label))]
@@ -927,9 +928,9 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
           legend.position = 'none')  +
     scale_fill_viridis(option = 'B', trans = 'sqrt') + 
     scale_y_continuous(labels = scales::percent) + 
-    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths in\nage-standardised populations during the baseline period'))
+    labs(x ='', y = paste0('Age-specific contribution to COVID-19 deaths in\nage-standardised populations during the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref_adj.png'), w = 9, h = 6)
-  
+
 }
 
 
