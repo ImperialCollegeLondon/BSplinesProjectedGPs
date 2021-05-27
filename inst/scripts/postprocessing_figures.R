@@ -153,7 +153,7 @@ death_discrete_table$method = 'GP-BS-SE'
 p2 = plot_death_comparison_method(death_discrete_table, data, 'GP-BS-SE')
 
 ppp = ppp + theme(legend.position = 'left') + labs(fill = 'B-Splines\nparameters')
-p = grid.arrange(p1, p2, pc[[1]], ppp, layout_matrix = rbind(c(1, 1, 1, 3), 
+p = grid.arrange(p2, p1, pc[[1]], ppp, layout_matrix = rbind(c(1, 1, 1, 3), 
                                                          c(2, 2, 2, 3), 
                                                          c(NA, 4, NA, 3)), widths = c(0.2, 1, 0.2, 0.8), heights = c(1, 1, 0.9))
 ggsave(p, file = paste0(outdir.fig, '-panel_plot_', Code, '.png'), w = 9, h = 9)
