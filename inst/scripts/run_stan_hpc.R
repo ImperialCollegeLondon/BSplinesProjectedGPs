@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210513b"
+stan_model = "210429h1b"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -139,7 +139,7 @@ model = rstan::stan_model(path.to.stan.model)
 
 if(0){
   
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=10,warmup=1,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 
