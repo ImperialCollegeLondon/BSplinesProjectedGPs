@@ -148,7 +148,7 @@ model {
         for(d in 1:A)
             {
                 {
-                   z1[t,d] ~ normal(0,0.1);
+                   z1[t,d] ~ normal(0,1);
                 }
             }
     }

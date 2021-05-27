@@ -1,36 +1,29 @@
 functions {
-  /**
-  * Return the log probability of a proper conditional autoregressive (CAR) prior 
-  * with a sparse representation for the adjacency matrix
-  *
-  * @param phi Vector containing the parameters with a CAR prior
-  * @param tau Precision parameter for the CAR prior (real)
-  * @param alpha Dependence (usually spatial) parameter for the CAR prior (real)
-  * @param W_sparse Sparse representation of adjacency matrix (int array)
-  * @param n Length of phi (int)
-  * @param W_n Number of adjacent pairs (int)
-  * @param D_sparse Number of neighbors for each location (vector)
-  * @param lambda Eigenvalues of D^{-1/2}*W*D^{-1/2} (vector)
-  *
-  * @return Log probability density of CAR prior up to additive constant
-  */
-  real sparse_car_lpdf(vector phi, real tau, real alpha, 
-    int[,] W_sparse, vector D_sparse, vector lambda, int n, int W_n) {
-      row_vector[n] phit_D; // phi' * D
-      row_vector[n] phit_W; // phi' * W
-      vector[n] ldet_terms;
+    matrix kron_mvprod(matrix A, matrix B, matrix V) 
+    {
+        return transpose(A*transpose(B*V));
+    }
     
-      phit_D = (phi .* D_sparse)';
-      phit_W = rep_row_vector(0, n);
-      for (i in 1:W_n) {
-        phit_W[W_sparse[i, 1]] = phit_W[W_sparse[i, 1]] + phi[W_sparse[i, 2]];
-        phit_W[W_sparse[i, 2]] = phit_W[W_sparse[i, 2]] + phi[W_sparse[i, 1]];
-      }
+  matrix gp(int N_rows, int N_columns, 
+            real delta0,
+            real alpha_gp1, real alpha_gp2, 
+            matrix z1)
+  {
     
-      for (i in 1:n) ldet_terms[i] = log1m(alpha * lambda[i]);
-      return 0.5 * (n * log(tau)
-                    + sum(ldet_terms)
-                    - tau * (phit_D * phi - alpha * (phit_W * phi)));
+    matrix[N_rows,N_columns] GP;
+    
+    matrix[N_rows, N_rows] K1 = alpha_gp1^2 * diag_matrix(rep_vector(1.0, N_rows));
+    matrix[N_rows, N_rows] L_K1;
+    
+    matrix[N_columns, N_columns] K2 = alpha_gp2^2 *  diag_matrix(rep_vector(1.0, N_columns));
+    matrix[N_columns, N_columns] L_K2;
+    
+    L_K1 = cholesky_decompose(K1);
+    L_K2 = cholesky_decompose(K2);
+    
+    GP = kron_mvprod(L_K2, L_K1, z1);
+
+    return(GP);
   }
 }
 
@@ -72,6 +65,7 @@ data{
 }
 
 transformed data{
+  real delta = 1e-9;
   int N_log_lik = 0;
     
   for(w in 1:W_OBSERVED){
@@ -90,10 +84,13 @@ transformed data{
     }
   }
 }
+
 parameters {
-  matrix[num_basis_rows,num_basis_columns] beta;
+  matrix[num_basis_rows,num_basis_columns] eta;
   real<lower=0> nu;
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw;
+  real<lower=0> alpha_1;
+  real<lower=0> alpha_2;
 }
 
 transformed parameters {
@@ -104,6 +101,10 @@ transformed parameters {
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
   vector[N_missing] alpha_reduced_missing;
+  matrix[num_basis_rows,num_basis_columns] beta = gp(num_basis_rows, num_basis_columns, 
+                                                     delta,
+                                                     alpha_1, alpha_2, 
+                                                     eta); 
   matrix[A, W] f = (BASIS_ROWS') * beta * BASIS_COLUMNS;
 
   for(w in 1:W)
@@ -128,6 +129,8 @@ transformed parameters {
 }
 
 model {
+  alpha_1 ~ std_normal();
+  alpha_2 ~ std_normal();
   
   target += exponential_lpdf(nu | 1);
   
@@ -135,7 +138,7 @@ model {
     
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
-      beta[i,j] ~ normal(0,1);
+        eta[i,j] ~ std_normal();
     }
   }
   

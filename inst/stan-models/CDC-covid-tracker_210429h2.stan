@@ -1,15 +1,46 @@
+functions {
+    matrix kron_mvprod(matrix A, matrix B, matrix V) 
+    {
+        return transpose(A*transpose(B*V));
+    }
+    
+  matrix gp(int N_rows, int N_columns, 
+            real delta0,
+            real alpha_gp1, real alpha_gp2, 
+            matrix z1)
+  {
+    
+    matrix[N_rows,N_columns] GP;
+    
+    matrix[N_rows, N_rows] K1 = alpha_gp1^2 * diag_matrix(rep_vector(1.0, N_rows));
+    matrix[N_rows, N_rows] L_K1;
+    
+    matrix[N_columns, N_columns] K2 = alpha_gp2^2 *  diag_matrix(rep_vector(1.0, N_columns));
+    matrix[N_columns, N_columns] L_K2;
+    
+    L_K1 = cholesky_decompose(K1);
+    L_K2 = cholesky_decompose(K2);
+    
+    GP = kron_mvprod(L_K2, L_K1, z1);
+
+    return(GP);
+  }
+}
+
+
 data{
   int<lower=0> W; // number of weeks 
   int<lower=0,upper=W> W_OBSERVED; // number of weeks observed 
   int<lower=0,upper=W> W_NOT_OBSERVED; // number of weeks not observed 
   int<lower=1, upper=W> IDX_WEEKS_OBSERVED[W_OBSERVED]; // index of the weeks observed 
   int<lower=1, upper=W> IDX_WEEKS_OBSERVED_REPEATED[W]; // index of the weeks observed where missing is equal to the previous one 
-  int<lower=0,upper=W> w_ref_index; // week index to compare the death prob
+  int<lower=0,upper=W> W_ref_index; // number of index to compare the death prob
+  int<lower=0,upper=W> w_ref_index[W_ref_index]; // week index to compare the death prob
   int<lower=0> A; // continuous age
   int<lower=0> B; // first age band specification
   int<lower=0,upper=B> N_idx_non_missing[W_OBSERVED];
   int<lower=-1,upper=B> idx_non_missing[B,W_OBSERVED]; // indices non-missing deaths for W
-  vector[A] age; // age continuous
+  real age[A]; // age continuous
   real inv_sum_deaths[W_OBSERVED]; // inverse sum of deaths
   matrix[2,W_OBSERVED] lambda_prior_parameters; // parameters of the prior distribution of lambda
   int deaths[B,W_OBSERVED]; // daily deaths in age band b at time t
@@ -26,26 +57,38 @@ data{
   int min_count_censored[N_missing]; // range of the censored data if it ends after the period
   int max_count_censored[N_missing]; // range of the censored data if it ends after the period
   
-  //splines
-  int num_basis;
-  matrix[num_basis, A] BASIS; 
+  // GP
+  real IDX_WEEKS[W];
+}
+
+transformed data
+{   
+  real delta0 = 1e-9;  
+  int N_log_lik = 0;
   
-  // ICAR model
-  int N; // W * num_basis
-  int<lower=0> N_edges;
-  int<lower=1, upper=N> node1[N_edges];
-  int<lower=1, upper=N> node2[N_edges];
-  int D1_N; // W * num_basis
-  int D2_N; // W * num_basis
-  matrix[D1_N, W * num_basis] D1; // second order diff matrix on the rows
-  matrix[D2_N, W * num_basis] D2; // second order diff matrix on the columns
+  for(w in 1:W_OBSERVED){
+    for(i in idx_non_missing[1:N_idx_non_missing[w],w]){
+      N_log_lik += 1;
+    }
+  }
+  for(n in 1:N_missing){
+    if(!start_or_end_period[n])
+    {
+       N_log_lik += 1;
+
+    } else {
+       for(i in min_count_censored[n]:max_count_censored[n])
+          N_log_lik += 1;
+    }
+  }
 }
 
 parameters {
-  vector[N] beta_raw; 
-  real<lower=0> nu;
+  real nu;
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw;
-  real<lower=0> sigma[2];
+  real<lower=0> alpha_gp1_t;
+  real<lower=0> alpha_gp1_d;
+  matrix[W,A] z1;
 }
 
 transformed parameters {
@@ -56,14 +99,17 @@ transformed parameters {
   matrix[B,W] phi_reduced;
   matrix[B,W] alpha_reduced;
   vector[N_missing] alpha_reduced_missing;
-  matrix[W,num_basis] beta = to_matrix(beta_raw, W, num_basis); 
+  matrix[W,A] beta = gp(W, A, 
+                              delta0,
+                              alpha_gp1_t, alpha_gp1_d, 
+                              z1);
 
   for(w in 1:W)
   {
     
-    phi[:,w] = softmax( to_vector(beta[w,:]*BASIS) ); 
+    phi[:,w] = softmax( to_vector( beta[w,:] ) ); 
     
-    alpha[:,w] = phi[:,w] * lambda[w] / nu;
+    alpha[:,w] = phi[:,w] * lambda[w] / nu ;
     
   }
   
@@ -73,30 +119,36 @@ transformed parameters {
       phi_reduced[b,w] = sum(phi[age_from_state_age_strata[b]:age_to_state_age_strata[b], w]);
     }
   }
-
- for(n in 1:N_missing){
+  
+  for(n in 1:N_missing){
     alpha_reduced_missing[n] = sum(alpha_reduced[age_missing[n],  idx_weeks_missing[1:N_weeks_missing[n], n] ]);
   }
+
 }
 
 model {
   
-  nu ~ exponential(1);
-  sigma ~ cauchy(0,1);
-  target += gamma_lpdf( lambda_raw | lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
+  nu ~ normal(0,1);
+  lambda_raw ~ gamma( lambda_prior_parameters[1,:],lambda_prior_parameters[2,:]);
   
-  target += -0.5 * dot_self(beta_raw[node1] - beta_raw[node2]);
-  // soft sum-to-zero constraint on phi)
-  sum(beta_raw) ~ normal(0, 0.001 * N);  // equivalent to mean(phi) ~ normal(0,0.001)
+  alpha_gp1_t ~ normal(0,1);
+  alpha_gp1_d ~ normal(0,1);
 
-  // second order RW prior
-  D1 * beta_raw ~ normal(0, sigma[1]);
-  D2 * beta_raw ~ normal(0, sigma[2]);
-  
-  for(w in 1:W_OBSERVED){
+
+    for(t in 1:W)
+    {
+        for(d in 1:A)
+            {
+                {
+                   z1[t,d] ~ normal(0,1);
+                }
+            }
+    }
     
+  for(w in 1:W_OBSERVED){
+  
 
-    target += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] | 
+    target += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] |
                                 alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
   
         
@@ -105,19 +157,19 @@ model {
   for(n in 1:N_missing){
     if(!start_or_end_period[n])
     {
-       target += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n] , theta ) ;
        
-
-    } else {
+      target += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n], theta ) ;
+    } 
+    else {
        for(i in min_count_censored[n]:max_count_censored[n])
           target += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
     }
   }
-      
+
 }
 
 generated quantities {
-  real log_lik = 0;
+  real log_lik[N_log_lik];
   int deaths_predict[A,W];
   int deaths_predict_state_age_strata[B,W];
   matrix[A,W] probability_ratio;
@@ -126,8 +178,8 @@ generated quantities {
   for(w in 1:W){
 
     // phi ratio
-    probability_ratio[:,w] = phi[:,w] ./ (phi[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
-    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,1:w_ref_index] * rep_vector(1.0 / w_ref_index, w_ref_index));
+    probability_ratio[:,w] = phi[:,w] ./ (phi[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
+    probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
     
     // predict deaths
     deaths_predict[:,w] = neg_binomial_rng(alpha[:,w], theta );
@@ -135,25 +187,30 @@ generated quantities {
   }
   
   
-  for(w in 1:W_OBSERVED){
-
-    log_lik += neg_binomial_lpmf(deaths[idx_non_missing[1:N_idx_non_missing[w],w],w] | 
-                                alpha_reduced[idx_non_missing[1:N_idx_non_missing[w],w], IDX_WEEKS_OBSERVED[w]] , theta );
   
-        
-  }
-  
-  for(n in 1:N_missing){
-    if(!start_or_end_period[n])
-    {
-       log_lik += neg_binomial_lpmf( sum_count_censored[n] | alpha_reduced_missing[n] , theta ) ;
-
-    } else {
-       for(i in min_count_censored[n]:max_count_censored[n])
-          log_lik += neg_binomial_lpmf( i | alpha_reduced_missing[n] , theta ) ;
+  {
+    int idx_log_lik = 0;
+    for(w in 1:W_OBSERVED){
+      for(i in idx_non_missing[1:N_idx_non_missing[w],w]){
+        idx_log_lik += 1; 
+        log_lik[idx_log_lik] = neg_binomial_lpmf(deaths[i,w] | alpha_reduced[i, IDX_WEEKS_OBSERVED[w]] , theta );
+      }
+    }
+    for(n in 1:N_missing){
+      if(!start_or_end_period[n])
+      {
+      idx_log_lik += 1; 
+       log_lik[idx_log_lik] = neg_binomial_lpmf( sum_count_censored[n] |  alpha_reduced_missing[n] , theta ) ;
+      } else {
+       for(i in min_count_censored[n]:max_count_censored[n]){
+          idx_log_lik += 1; 
+          log_lik[idx_log_lik] = neg_binomial_lpmf( i |  alpha_reduced_missing[n], theta ) ;
+       }
+      }
     }
   }
 
 }
+
 
 

@@ -154,7 +154,7 @@ model {
 
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
-      z1[i,j] ~ normal(0,0.1);
+      z1[i,j] ~ normal(0,1);
     }
   }
     
