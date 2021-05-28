@@ -6,8 +6,8 @@ library(viridis)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst/" # path to the repo
 outdir = file.path(indir, "results")
-stan_model = "210505c1"
-JOBID = 8843
+stan_model = "210505c2"
+JOBID = 5353
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -26,6 +26,7 @@ if(length(args_line) > 0)
 # load functions
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
+source(file.path(indir, "functions", "postprocessing-statistics_functions.R"))
 source(file.path(indir, "functions", "summary_functions.R"))
 source(file.path(indir, "functions", "postprocessing-utils.R"))
 

@@ -892,7 +892,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
           legend.position = 'none')  +
     scale_fill_viridis(option = 'B', trans = 'sqrt') + 
     scale_y_continuous(labels = scales::percent) +
-    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths\nduring the baseline period'))
+    labs(x ='', y = paste0('Age-specific contribution to COVID-19 deaths\nduring the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref.png'), w = 9, h = 6)
   
   ggplot(contribution_ref, aes(x = loc_label, y = M)) + 
@@ -910,7 +910,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
           legend.position = 'none')  +
     scale_fill_viridis(option = 'B', trans = 'sqrt') + 
     scale_y_continuous(labels = scales::percent) +
-    labs(x ='', y = paste0('Contribution to age groups to COVID-19 deaths\nduring the baseline period'))
+    labs(x ='', y = paste0('Age-specific ontribution to COVID-19 deaths\nduring the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref_empr.png'), w = 9, h = 6)
   
   
