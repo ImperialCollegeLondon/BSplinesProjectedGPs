@@ -60,8 +60,8 @@ transformed parameters {
 }
 
 model {
-  sigma ~ std_normal();
-  alpha_gp ~ std_normal();
+  sigma ~ cauchy(0,1);
+  alpha_gp ~ cauchy(0,1);
   
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
