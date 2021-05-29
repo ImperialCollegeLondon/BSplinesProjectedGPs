@@ -101,9 +101,9 @@ if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
   cat("\n Using 1D splines \n")
   stan_data = add_1D_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210505c|210429a2|210429b2|210513', stan_model)){
+if(grepl('210505c|210429a2|210429b2|210513|210529b|210529c', stan_model)){
   cat("\n Using 2D splines \n")
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 14, n_knots_columns = 4)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 4)
 }
 if(grepl('210429a1|210429b1', stan_model)){
   cat("\n Adding adjacency matrix on 1D splines parameters \n")
