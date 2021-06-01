@@ -840,7 +840,7 @@ plot_contribution_all_states = function(contribution, vaccinedata, outdir){
     scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y")  + 
     scale_color_manual(values = c('grey70', 'grey40')) + 
     labs(x = '', y = '', fill = 'Ratio in contribution to weekly\nCOVID-19 deaths relative to\nbaseline period', 
-         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose',
+         linetype = 'Proportion of vaccinated\nwith at least one dose',
          color = 'in age') +
     guides(fill = guide_colourbar(order = 1),linetype = guide_legend(order=2), color = guide_legend(order=3))
   ggsave(paste0(outdir, '-Contribution_ratio.png'), w = 6, h = 9)
@@ -863,7 +863,7 @@ plot_contribution_all_states = function(contribution, vaccinedata, outdir){
     scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y")  + 
     scale_color_manual(values = c('grey70', 'grey40')) + 
     labs(x = '', y = '', fill = 'Ratio in contribution to weekly\nCOVID-19 deaths relative to\nbaseline period', 
-         linetype = 'Proportion of 65+ vaccinated\nwith at least one dose',
+         linetype = 'Proportion of vaccinated\nwith at least one dose',
          color = 'in age') +
     guides(fill = guide_colourbar(order = 1),linetype = guide_legend(order=2), color = guide_legend(order=3))
   ggsave(paste0(outdir, '-Contribution_ratio_adj.png'), w = 6, h = 9)
