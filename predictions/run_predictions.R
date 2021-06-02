@@ -78,7 +78,7 @@ stan_data = list(n = n, m = m, N = nrow(training),
                  num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
                  BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
                  IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS)
-fit <- rstan::sampling(model_GPBSSE,data=stan_data,iter=10,warmup=2,chains=3, 
+fit <- rstan::sampling(model_GPBSSE,data=stan_data,iter=1000,warmup=200,chains=3, 
                        control = list(max_treedepth = 15, adapt_delta = 0.99))
 saveRDS(fit, file.path(outdir, paste0('2D_BS-GP_nknots_', n_knots_x, '.rds')))
 
@@ -133,4 +133,4 @@ p3 = ggplot(training,aes(x=x,y=y)) +
   ggtitle('Training data') 
 
 p = ggpubr::ggarrange(p2,p3,p0,nrow =1,common.legend = T,  legend = 'bottom')
-ggsave(p, file= file.path(outdir, 'prediction.png'), w = 11, h = 15)
+ggsave(p, file= file.path(outdir, 'prediction.png'), w = 11, h = 7)

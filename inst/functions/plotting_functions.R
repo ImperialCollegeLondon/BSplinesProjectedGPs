@@ -58,20 +58,23 @@ compare_CDC_JHU_DoH_error_plot = function(CDC_data, JHU_data, scrapedData, var.w
 
 plot_data = function(deathByAge, outdir, Code = NULL)
 {
+  
   p = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = weekly.deaths )) + 
-    facet_wrap(~loc_label) + 
+    facet_wrap(~loc_label,ncol = 5) + 
     theme_bw() +
-    scale_fill_viridis_c(trans = 'sqrt', breaks = c(100,1000,3000)) +
+    scale_fill_viridis_c(trans = 'pseudo_log', breaks = c(10, 100,1000)) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    scale_y_discrete(expand = c(0,0)) + 
+    scale_y_discrete(expand = c(0,0), breaks = unique(deathByAge$age)[rep(c(T,F), length(unique(deathByAge$age))/2)]) + 
     theme(legend.position = 'bottom',
           axis.text.x = element_text(angle = 90), 
           panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank()) +
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(), 
+          strip.background = element_blank()) +
     labs(x = '', y = 'Age group',
-         fill = 'Reported covid-19 deaths')
-  ggsave(p, file = paste0(outdir, '-deathByAge.png'), w = 12, h = 10)
+         fill = 'Retrievable weekly\nCOVID-19 attributable deaths')
+  ggsave(p, file = paste0(outdir, '-deathByAge.png'), w = 7, h = 12)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = min.sum.weekly.deaths )) + 

@@ -13,17 +13,17 @@ source(file.path(indir, 'misc', "utils.R"))
 age_max = 105
 
 # Gather CDC data
-last.day = Sys.Date() - 1 # yesterday
+last.week = Sys.Date() - 1 # yesterweek
 
 # first part only available with Male and Female separation
-deathByAge_Male = prepare_CDC_data(last.day, age_max, sex = 'Male', indir)
+deathByAge_Male = prepare_CDC_data(last.week, age_max, sex = 'Male', indir)
 deathByAge_Male = find_weekly_deaths(deathByAge_Male)
-deathByAge_Female = prepare_CDC_data(last.day, age_max, sex = 'Female', indir)
+deathByAge_Female = prepare_CDC_data(last.week, age_max, sex = 'Female', indir)
 deathByAge_Female = find_weekly_deaths(deathByAge_Female)
 deathByAge = merge_deathByAge_over_Sex(copy(deathByAge_Male), copy(deathByAge_Female))
 
 # second part available for all sexes 
-deathByAge_AllSexes = prepare_CDC_data(last.day, age_max, sex = 'All Sexes', indir)
+deathByAge_AllSexes = prepare_CDC_data(last.week, age_max, sex = 'All Sexes', indir)
 deathByAge_AllSexes = find_weekly_deaths(deathByAge_AllSexes, rm.COVID.19.Deaths = F)
 deathByAge_AllSexes = select(deathByAge_AllSexes, -c(date_idx, min_date_idx, max_date_idx))
 deathByAge_res = incorporate_AllSexes_information(deathByAge, deathByAge_AllSexes)
@@ -37,7 +37,7 @@ deathByAge_res[!is.na(weekly.deaths), sum.weekly.deaths := NA]
 all(na.omit(subset(deathByAge_res, date == "2020-07-04")$weekly.deaths == 0))
 deathByAge_res = subset(deathByAge_res, !date %in% c(as.Date("2020-07-04"), as.Date("2020-07-11")))
 
-saveRDS(deathByAge_res, file.path(outdir, paste0('CDC-data_', last.day, '.rds')))
+saveRDS(deathByAge_res, file.path(outdir, paste0('CDC-data_', last.week, '.rds')))
 
 
 

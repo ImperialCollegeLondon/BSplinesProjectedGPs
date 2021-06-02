@@ -60,8 +60,8 @@ transformed parameters {
 model {
   rho_1 ~ inv_gamma(5, 5);
   rho_2 ~ inv_gamma(5, 5);
-  alpha_gp ~ std_normal();
-  sigma ~ std_normal();
+  alpha_gp ~ cauchy(0,1);
+  sigma ~ cauchy(0,1);
   
   for(i in 1:n){
     for(j in 1:m){

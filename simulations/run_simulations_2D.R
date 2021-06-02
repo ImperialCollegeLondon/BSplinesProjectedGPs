@@ -87,8 +87,6 @@ tmp = do.call('rbind', list(GP_2D_1[[1]], GP_I_2D_1[[1]],
                             BSGP_2D_1_3[[1]], BSGP_2D_2_3[[1]], BSGP_2D_3_3[[1]], 
                             BSIN_2D_1_3[[1]], BSIN_2D_2_3[[1]], BSIN_2D_3_3[[1]]))
 
-unique(tmp$method)
-
 tmp[grepl('GP-I', method), method := gsub('GP-I', 'GP-GN', method)]
 tmp[grepl('GP-GNN', method), method := gsub('GP-GNN', 'GP-GN', method)]
 tmp[grepl('BS-GP', method), method := gsub('BS-GP', 'GP-BS', method)]
@@ -111,6 +109,7 @@ for(l in lengthscales){
   tmp1 = rbind(unique(tmp1), tmp2)
   
   tmp1[, method2 := factor(method2, levels = c('observation', 'GP-GN', 'GP-SE', 'GP-BS-GN', 'GP-BS-SE'))]
+  tmp1[, n_knots := factor(n_knots, levels = sort(unique(tmp1$n_knots), decreasing = T))]
   
   tmp2 = subset(tmp1, method2 %in% c('observation',  'GP-GN', 'GP-SE' ))
   p1= ggplot(tmp2,aes(x=x_1,y=x_2)) +
@@ -143,92 +142,124 @@ for(l in lengthscales){
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.text.x = element_text(angle=90)) 
-  
-  # p2 = grid.arrange(p2, right = textGrob('Number of knots', vjust = 1.5, rot = 270))
-  p = grid.arrange(grobs = list(p1, p2), heights = c(0.5, 1.1), 
+
+    # p2 = grid.arrange(p2, right = textGrob('Number of knots', vjust = 1.5, rot = 270))
+  p = grid.arrange(grobs = list(p1, p2), heights = c(0.5, 0.95), 
                    layout_matrix= rbind(c(1,NA), c(2,2)), widths = c(1, 0.1), 
-                   right = textGrob('Number of knots', vjust = 1.5, rot = 270, hjust = -0.3))
+                   right = textGrob('Number of knots', vjust = 6.5, rot = 270, hjust = -0.3))
   
   ggsave(p, file = file.path(outdir, paste0('2D_comp_lengthscale_', l, '.png')), w = 5, h = 7)
 }
 
 # time of execution 
 tmp1 = subset(tmp, grepl('GP-SE', method))
-time_GP = paste0(round(unique(tmp1$time) / 60), ' minutes')
+min_GP = unique(tmp1$time)
+time_GP = paste0(round(min_GP / 60), ' minutes')
 
 tmp1 = subset(tmp, grepl('GP-BS-SE', method))
+min_GPSE_1 = unique(subset(tmp1, lengthscale == lengthscales[1] & n_knots == 30)$time)
+min_GPSE_2 = unique(subset(tmp1, lengthscale == lengthscales[2] & n_knots == 10)$time)
+min_GPSE_3 = unique(subset(tmp1, lengthscale == lengthscales[3] & n_knots == 10)$time)
 time_GPSE = list()
-time_GPSE[[1]] = paste0(round(max(subset(tmp1, lengthscale == lengthscales[1])$time)/ 60), ' minutes')
-time_GPSE[[2]] = paste0(round(max(subset(tmp1, lengthscale == lengthscales[2])$time)/ 60), ' minutes')
-time_GPSE[[3]] = paste0(round(max(subset(tmp1, lengthscale == lengthscales[3])$time)/ 60), ' minutes')
+time_GPSE[[1]] = paste0(round(min_GPSE_1/ 60), ' minutes')
+time_GPSE[[2]] = paste0(round(min_GPSE_2/ 60), ' minutes')
+time_GPSE[[3]] = paste0(round(min_GPSE_3/ 60), ' minutes')
 
-saveRDS(list(time_GP, time_GPSE), file = file.path(outdir, paste0('time_execution.rds')))
+avg_red = paste0(round(mean((1-c(min_GPSE_1/min_GP[1], min_GPSE_2/min_GP[2], min_GPSE_3/min_GP[3] ))* 100), digits = 2) , '\\%')
 
-loo_compare(loo(extract(GP_2D_1[[2]])$log_lik), 
-            loo(extract(BSGP_2D_1_1[[2]])$log_lik), loo(extract(BSGP_2D_2_1[[2]])$log_lik), loo(extract(BSGP_2D_3_1[[2]])$log_lik))
+saveRDS(list(time_GP, time_GPSE, avg_red), file = file.path(outdir, paste0('time_execution.rds')))
+
 
 # compare loo
 # first scenario
-loo_compare(loo(extract(GP_2D_1[[2]])$log_lik), loo(extract(GP_I_2D_1[[2]])$log_lik),
+com1 = loo_compare(loo(extract(GP_2D_1[[2]])$log_lik), loo(extract(GP_I_2D_1[[2]])$log_lik),
             loo(extract(BSGP_2D_1_1[[2]])$log_lik), loo(extract(BSGP_2D_2_1[[2]])$log_lik), loo(extract(BSGP_2D_3_1[[2]])$log_lik), 
             loo(extract(BSIN_2D_1_1[[2]])$log_lik), loo(extract(BSIN_2D_2_1[[2]])$log_lik), loo(extract(BSIN_2D_3_1[[2]])$log_lik))
 
 # second scenario
-loo_compare(loo(extract(GP_2D_2[[2]])$log_lik), loo(extract(GP_I_2D_2[[2]])$log_lik),
+com2 = loo_compare(loo(extract(GP_2D_2[[2]])$log_lik), loo(extract(GP_I_2D_2[[2]])$log_lik),
             loo(extract(BSGP_2D_1_2[[2]])$log_lik), loo(extract(BSGP_2D_2_2[[2]])$log_lik), loo(extract(BSGP_2D_3_2[[2]])$log_lik), 
             loo(extract(BSIN_2D_1_2[[2]])$log_lik), loo(extract(BSIN_2D_2_2[[2]])$log_lik), loo(extract(BSIN_2D_3_2[[2]])$log_lik))
 
 # third scenario
-loo_compare(loo(extract(GP_2D_3[[2]])$log_lik), loo(extract(GP_I_2D_3[[2]])$log_lik),
+com3 = loo_compare(loo(extract(GP_2D_3[[2]])$log_lik), loo(extract(GP_I_2D_3[[2]])$log_lik),
             loo(extract(BSGP_2D_1_3[[2]])$log_lik), loo(extract(BSGP_2D_2_3[[2]])$log_lik), loo(extract(BSGP_2D_3_3[[2]])$log_lik), 
             loo(extract(BSIN_2D_1_3[[2]])$log_lik), loo(extract(BSIN_2D_2_3[[2]])$log_lik), loo(extract(BSIN_2D_3_3[[2]])$log_lik))
 
+com11  = as.data.table(com1) 
+com11$model = rownames(com1)
+com11[, model_index := as.numeric(gsub('model(.+)', '\\1', model))]
+com11 = com11[order(model_index)]
+com11 = select(com11, elpd_diff, se_diff)
+com11[, elpd_diff:= gsub(" ", "", format(round(elpd_diff, digits = 2), nsmall =2)) ]
+com11[, se_diff:= gsub(" ", "", format(round(se_diff, digits = 2), nsmall =2)) ]
+
+com22  = as.data.table(com2) 
+com22$model = rownames(com2)
+com22[, model_index := as.numeric(gsub('model(.+)', '\\1', model))]
+com22 = com22[order(model_index)]
+com22 = select(com22, elpd_diff, se_diff)
+com22[, elpd_diff:= gsub(" ", "", format(round(elpd_diff, digits = 2), nsmall =2)) ]
+com22[, se_diff:= gsub(" ", "", format(round(se_diff, digits = 2), nsmall =2)) ]
+
+com33  = as.data.table(com3) 
+com33$model = rownames(com3)
+com33[, model_index := as.numeric(gsub('model(.+)', '\\1', model))]
+com33 = com33[order(model_index)]
+com33 = select(com33, elpd_diff, se_diff)
+com33[, elpd_diff:= gsub(" ", "", format(round(elpd_diff, digits = 2), nsmall =2)) ]
+com33[, se_diff:= gsub(" ", "", format(round(se_diff, digits = 2), nsmall =2)) ]
+
+
+saveRDS(list(com11, com22, com33), file = file.path(outdir, paste0('LOO_comp_all.rds')))
+
+
 # for text 
-LOO1 = list()
-LOO1[[1]] = round(loo_compare(loo(extract(BSGP_2D_2_1[[2]])$log_lik), loo(extract(BSIN_2D_2_1[[2]])$log_lik)), digits = 1)
-LOO1[[2]] = round(loo_compare(loo(extract(BSGP_2D_3_1[[2]])$log_lik), loo(extract(BSIN_2D_3_1[[2]])$log_lik)), digits = 1)
-
-LOO1[[3]] = round(loo_compare(loo(extract(BSGP_2D_2_1[[2]])$log_lik), loo(extract(GP_2D_1[[2]])$log_lik)), digits = 1)
-LOO1[[4]] = round(loo_compare(loo(extract(BSGP_2D_3_1[[2]])$log_lik), loo(extract(GP_2D_1[[2]])$log_lik)), digits = 1)
-
-LOO1[[5]] = round(loo_compare(loo(extract(BSGP_2D_1_3[[2]])$log_lik), loo(extract(GP_2D_3[[2]])$log_lik)), digits = 1)
-saveRDS(LOO1, file = file.path(outdir, paste0('LOO_1.rds')))
-
-
-LOO_GP = list(gsub(" ", "", format(round(loo(extract(GP_2D_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-              gsub(" ", "", format(round(loo(extract(GP_2D_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-              gsub(" ", "", format(round(loo(extract(GP_2D_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
-
-LOO_GP_I = list(gsub(" ", "", format(round(loo(extract(GP_I_2D_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-              gsub(" ", "", format(round(loo(extract(GP_I_2D_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-              gsub(" ", "", format(round(loo(extract(GP_I_2D_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
-
-LOO_BSGP_1 = list(gsub(" ", "", format(round(loo(extract(BSGP_2D_1_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-                  gsub(" ", "", format(round(loo(extract(BSGP_2D_1_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-                  gsub(" ", "", format(round(loo(extract(BSGP_2D_1_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
-
-LOO_BSGP_2 = list(gsub(" ", "",format(round(loo(extract(BSGP_2D_2_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-                  gsub(" ", "",format(round(loo(extract(BSGP_2D_2_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-                  gsub(" ", "",format(round(loo(extract(BSGP_2D_2_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
-
-LOO_BSGP_3 = list(gsub(" ", "",format(round(loo(extract(BSGP_2D_3_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-                  gsub(" ", "",format(round(loo(extract(BSGP_2D_3_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
-                  gsub(" ", "",format(round(loo(extract(BSGP_2D_3_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
-
-LOO_BSIN_1 = list( gsub(" ", "",format( round(loo(extract(BSIN_2D_1_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
-                   gsub(" ", "",format( round(loo(extract(BSIN_2D_1_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
-                   gsub(" ", "",format( round(loo(extract(BSIN_2D_1_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)))
-
-LOO_BSIN_2 = list(gsub(" ", "", format( round(loo(extract(BSIN_2D_2_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2) ),
-                  gsub(" ", "", format( round(loo(extract(BSIN_2D_2_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
-                  gsub(" ", "", format( round(loo(extract(BSIN_2D_2_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)))
-
-LOO_BSIN_3 = list(gsub(" ", "", format( round(loo(extract(BSIN_2D_3_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2) ),
-                  gsub(" ", "", format( round(loo(extract(BSIN_2D_3_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
-                  gsub(" ", "", format( round(loo(extract(BSIN_2D_3_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)))
-
-LOO_ = list(LOO_GP_I, LOO_GP, LOO_BSGP_1, LOO_BSGP_2, LOO_BSGP_3, 
-     LOO_BSIN_1, LOO_BSIN_2, LOO_BSIN_3)
-saveRDS(LOO_, file = file.path(outdir, paste0('LOO_all.rds')))
-
-
+# LOO1 = list()
+# LOO1[[1]] = round(loo_compare(loo(extract(BSGP_2D_2_1[[2]])$log_lik), loo(extract(BSIN_2D_2_1[[2]])$log_lik)), digits = 1)
+# LOO1[[2]] = round(loo_compare(loo(extract(BSGP_2D_3_1[[2]])$log_lik), loo(extract(BSIN_2D_3_1[[2]])$log_lik)), digits = 1)
+# 
+# LOO1[[3]] = round(loo_compare(loo(extract(BSGP_2D_2_1[[2]])$log_lik), loo(extract(GP_2D_1[[2]])$log_lik)), digits = 1)
+# LOO1[[4]] = round(loo_compare(loo(extract(BSGP_2D_3_1[[2]])$log_lik), loo(extract(GP_2D_1[[2]])$log_lik)), digits = 1)
+# 
+# LOO1[[5]] = round(loo_compare(loo(extract(BSGP_2D_1_3[[2]])$log_lik), loo(extract(GP_2D_3[[2]])$log_lik)), digits = 1)
+# saveRDS(LOO1, file = file.path(outdir, paste0('LOO_1.rds')))
+# 
+# 
+# LOO_GP = list(gsub(" ", "", format(round(loo(extract(GP_2D_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#               gsub(" ", "", format(round(loo(extract(GP_2D_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#               gsub(" ", "", format(round(loo(extract(GP_2D_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
+# 
+# LOO_GP_I = list(gsub(" ", "", format(round(loo(extract(GP_I_2D_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#               gsub(" ", "", format(round(loo(extract(GP_I_2D_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#               gsub(" ", "", format(round(loo(extract(GP_I_2D_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
+# 
+# LOO_BSGP_1 = list(gsub(" ", "", format(round(loo(extract(BSGP_2D_1_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#                   gsub(" ", "", format(round(loo(extract(BSGP_2D_1_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#                   gsub(" ", "", format(round(loo(extract(BSGP_2D_1_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
+# 
+# LOO_BSGP_2 = list(gsub(" ", "",format(round(loo(extract(BSGP_2D_2_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#                   gsub(" ", "",format(round(loo(extract(BSGP_2D_2_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#                   gsub(" ", "",format(round(loo(extract(BSGP_2D_2_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
+# 
+# LOO_BSGP_3 = list(gsub(" ", "",format(round(loo(extract(BSGP_2D_3_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#                   gsub(" ", "",format(round(loo(extract(BSGP_2D_3_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) ,
+#                   gsub(" ", "",format(round(loo(extract(BSGP_2D_3_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)) )
+# 
+# LOO_BSIN_1 = list( gsub(" ", "",format( round(loo(extract(BSIN_2D_1_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
+#                    gsub(" ", "",format( round(loo(extract(BSIN_2D_1_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
+#                    gsub(" ", "",format( round(loo(extract(BSIN_2D_1_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)))
+# 
+# LOO_BSIN_2 = list(gsub(" ", "", format( round(loo(extract(BSIN_2D_2_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2) ),
+#                   gsub(" ", "", format( round(loo(extract(BSIN_2D_2_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
+#                   gsub(" ", "", format( round(loo(extract(BSIN_2D_2_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)))
+# 
+# LOO_BSIN_3 = list(gsub(" ", "", format( round(loo(extract(BSIN_2D_3_1[[2]])$log_lik)$estimates, digits = 2), nsmall = 2) ),
+#                   gsub(" ", "", format( round(loo(extract(BSIN_2D_3_2[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)),
+#                   gsub(" ", "", format( round(loo(extract(BSIN_2D_3_3[[2]])$log_lik)$estimates, digits = 2), nsmall = 2)))
+# 
+# LOO_ = list(LOO_GP_I, LOO_GP, LOO_BSGP_1, LOO_BSGP_2, LOO_BSGP_3, 
+#      LOO_BSIN_1, LOO_BSIN_2, LOO_BSIN_3)
+# saveRDS(LOO_, file = file.path(outdir, paste0('LOO_all.rds')))
+# 
+# 
