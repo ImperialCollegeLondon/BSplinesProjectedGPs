@@ -153,18 +153,22 @@ for(l in lengthscales){
 
 # time of execution 
 tmp1 = subset(tmp, grepl('GP-SE', method))
-time_GP = paste0(round(unique(tmp1$time) / 60), ' minutes')
+min_GP = unique(tmp1$time)
+time_GP = paste0(round(min_GP / 60), ' minutes')
 
 tmp1 = subset(tmp, grepl('GP-BS-SE', method))
+min_GPSE_1 = unique(subset(tmp1, lengthscale == lengthscales[1] & n_knots == 30)$time)
+min_GPSE_2 = unique(subset(tmp1, lengthscale == lengthscales[2] & n_knots == 10)$time)
+min_GPSE_3 = unique(subset(tmp1, lengthscale == lengthscales[3] & n_knots == 10)$time)
 time_GPSE = list()
-time_GPSE[[1]] = paste0(round(max(subset(tmp1, lengthscale == lengthscales[1])$time)/ 60), ' minutes')
-time_GPSE[[2]] = paste0(round(max(subset(tmp1, lengthscale == lengthscales[2])$time)/ 60), ' minutes')
-time_GPSE[[3]] = paste0(round(max(subset(tmp1, lengthscale == lengthscales[3])$time)/ 60), ' minutes')
+time_GPSE[[1]] = paste0(round(min_GPSE_1/ 60), ' minutes')
+time_GPSE[[2]] = paste0(round(min_GPSE_2/ 60), ' minutes')
+time_GPSE[[3]] = paste0(round(min_GPSE_3/ 60), ' minutes')
 
-saveRDS(list(time_GP, time_GPSE), file = file.path(outdir, paste0('time_execution.rds')))
+avg_red = paste0(round(mean((1-c(min_GPSE_1/min_GP[1], min_GPSE_2/min_GP[2], min_GPSE_3/min_GP[3] ))* 100), digits = 2) , '\\%')
 
-loo_compare(loo(extract(GP_2D_1[[2]])$log_lik), 
-            loo(extract(BSGP_2D_1_1[[2]])$log_lik), loo(extract(BSGP_2D_2_1[[2]])$log_lik), loo(extract(BSGP_2D_3_1[[2]])$log_lik))
+saveRDS(list(time_GP, time_GPSE, avg_red), file = file.path(outdir, paste0('time_execution.rds')))
+
 
 # compare loo
 # first scenario
