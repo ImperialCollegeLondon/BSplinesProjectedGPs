@@ -61,7 +61,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   
   p = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = weekly.deaths )) + 
-    facet_wrap(~loc_label,ncol = 5) + 
+    facet_wrap(~loc_label,ncol = 6) + 
     theme_bw() +
     scale_fill_viridis_c(trans = 'pseudo_log', breaks = c(10, 100,1000)) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
@@ -74,7 +74,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
           strip.background = element_blank()) +
     labs(x = '', y = 'Age group',
          fill = 'Retrievable weekly\nCOVID-19 attributable deaths')
-  ggsave(p, file = paste0(outdir, '-deathByAge.png'), w = 7, h = 12)
+  ggsave(p, file = paste0(outdir, '-deathByAge.png'), w = 10, h = 12)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = min.sum.weekly.deaths )) + 
