@@ -710,9 +710,12 @@ find_cumulative_deaths_givensum_state_age = function(fit, date_10thcum, df_week,
   tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = 'date']
   tmp2 = tmp2[order( date)]
   dummy = (min(data_10thcum$date) - 7) %in% tmp2$date 
-  last.cum.deaths = max(subset(tmp2, date <= ifelse(dummy, min(data_10thcum$date) - 7, min(data_10thcum$date)))$cum.death)
+  last.date = as.Date(ifelse(dummy, as.character(min(data_10thcum$date) - 7), 
+                             as.character(min(data_10thcum$date))))
+  last.date = max(last.date, min(tmp2$date ))
+  last.cum.deaths = max(subset(tmp2, date <= last.date)$cum.death)
   tmp2 = unique(subset(tmp2, date %in% c(min(data_10thcum$date) - 7, data_10thcum$date)))
-  tmp2[, weekly.deaths := c(NA, diff(cum.death))]
+  tmp2[, weekly.deaths := c(diff(cum.death),NA)]
   tmp2 = unique(subset(tmp2, date %in% data$date))
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
