@@ -918,7 +918,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
   ggplot(contribution_ref_adj, aes(x = loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat = 'identity') +
     geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
-    facet_grid(age~division,  scales = "free", space = 'free_x') + 
+    facet_grid(age~division,  scales = "free_x", space = 'free_x') + 
     theme_bw() +
     theme(axis.text.x = element_text(angle= 45, hjust = 1), 
           panel.grid.major = element_blank(),

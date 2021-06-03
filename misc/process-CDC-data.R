@@ -34,10 +34,8 @@ deathByAge_res[!is.na(weekly.deaths), sum.weekly.deaths := NA]
 
 # last change, we see that all the weekly deaths are 0 on 2020-07-04 --> repeated update
 # em 2020-07-04 and 2020-07-11 are not obtainable
-all(na.omit(subset(deathByAge_res, date == "2020-07-04")$weekly.deaths == 0))
-deathByAge_res = subset(deathByAge_res, !date %in% c(as.Date("2020-07-04"), as.Date("2020-07-11")))
+all(na.omit(subset(deathByAge_res, date == "2020-06-27")$weekly.deaths == 0))
+deathByAge_res = subset(deathByAge_res, !date %in% c(as.Date("2020-07-04"), as.Date("2020-06-27")))
 
 saveRDS(deathByAge_res, file.path(outdir, paste0('CDC-data_', last.week, '.rds')))
-
-
 
