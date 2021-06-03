@@ -98,7 +98,7 @@ parameters {
 
 transformed parameters {
   vector<lower=0>[W] lambda = lambda_raw[IDX_WEEKS_OBSERVED_REPEATED];
-  real<lower=0> theta = nu / (1 + nu);
+  real<lower=0> theta = (1 / nu);
   matrix[A,W] phi;
   matrix[A,W] alpha;
   matrix[B,W] phi_reduced;
