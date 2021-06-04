@@ -17,8 +17,8 @@ statistics_contribution_all_states = function(contribution064, contribution6574,
   date_d = tmp75[M_rel_adj > 1 & date > "2020-07-18" , list(min_date = max(date)), by = 'loc_label']
   date_d = merge(date_d, tmp75, by = 'loc_label')
   date_d = date_d[M_rel_adj < 1 & date >= min_date, list(min_date = min(date)), by = 'loc_label']
-  datemin = date_d[min_date == min(min_date),list(loc_label = loc_label, date = format(min_date,  '%d %B, %Y'))]
-  datemax = date_d[min_date == max(min_date),list(loc_label = loc_label, date = format(min_date,  '%d %B, %Y'))]
+  datemin = date_d[min_date == min(min_date),list(loc_label = loc_label, date = format(min_date,  '%B %d, %Y'))]
+  datemax = date_d[min_date == max(min_date),list(loc_label = loc_label, date = format(min_date,  '%B %d, %Y'))]
   
   # fastest decrease
   speed = merge(date_d, tmp75, by = 'loc_label')
@@ -107,14 +107,14 @@ statistics_contribution_all_states = function(contribution064, contribution6574,
                                                              CU_rel_adj = paste0(round((1 - (CL_rel_adj))*100, 2), '\\%'),
                                                              loc_label = loc_label)][1:3,]
   
-  contribution_stats = list(baseline_date =format(date_red, '%d %B, %Y'), end_period = format(max(tmp75$date), '%d %B, %Y'),
+  contribution_stats = list(baseline_date =format(date_red, '%B %d, %Y'), end_period = format(max(tmp75$date), '%B %d, %Y'),
                             baseline_stat = red_baseline,
                             decreasemin = datemin, decreasemax = datemax, 
                             fastestdecrease = state_fast, slowestdecrease = state_slow, 
                             maxdecrease = decmax, mindecrease = decmin,
                             compensation = stat_comp,
-                            list(date75025 = format(date75025,  '%d %B, %Y'), vac75025av = vac75025av, vac75025max = vac75025max, vac75025min = vac75025min),
-                            list(date7505 = format(date7505,  '%d %B, %Y'), vac7505av = vac7505av, vac7505max = vac7505max,vac7505min = vac7505min))
+                            list(date75025 = format(date75025,  '%B %d, %Y'), vac75025av = vac75025av, vac75025max = vac75025max, vac75025min = vac75025min),
+                            list(date7505 = format(date7505,  '%B %d, %Y'), vac7505av = vac7505av, vac7505max = vac7505max,vac7505min = vac7505min))
   
   return(contribution_stats)
 }

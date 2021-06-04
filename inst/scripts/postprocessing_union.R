@@ -5,9 +5,9 @@ library(tidyverse)
 library(viridis)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst/" # path to the repo
-outdir = file.path(indir, "results")
-stan_model = "210505c2"
-JOBID = 5353
+outdir = file.path(indir, "results", 'new')
+stan_model = "210529b"
+JOBID = 2117
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -35,7 +35,7 @@ run_tag = paste0(stan_model, "-", JOBID)
 outdir = file.path(outdir, run_tag, run_tag)
 
 # laod CDC death by age data 
-deathByAge = readRDS( file.path(indir, "data", paste0("CDC-data_2021-05-02.rds")))
+deathByAge = readRDS( file.path(indir, "data", paste0("CDC-data_2021-06-02.rds")))
 age_max = 105
 create_map_age(age_max)
 fouragegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
@@ -123,7 +123,7 @@ mortality_rate = merge(mortality_rate, region_name, by = 'code')
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date))
 plot_mortality_rate_all_states(mortality_rate, outdir)
 
-max_date = format(unique(mortality_rate$date), '%d %B, %Y')
+max_date = format(unique(mortality_rate$date), '%B %d, %Y')
 dold2p = mortality_rate[age == '80+' & M > 0.02, loc_label]
 dold2p_n = paste0(paste0(dold2p[-length(dold2p)], collapse = ', '), ' and ', dold2p[length(dold2p)])
 dold3p = mortality_rate[age == '80+' & M > 0.03, loc_label]
