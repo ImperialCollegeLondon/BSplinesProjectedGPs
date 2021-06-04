@@ -477,60 +477,55 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   
   # if(is.null(stan_data$num_basis)) return(NULL)
   
-  column_name = 'week_index'
-  column_lab = 'Date'
-  row_name = 'basis_function_index_age'
-  row_lab = "Basis function index"
-  n_rows = stan_data$num_basis
-  n_columns = stan_data$W
-  if(is.null(stan_data$num_basis)){
-    row_name = 'week_index'
-    row_lab = "Date" 
-    column_name = 'age_index' 
-    column_lab = 'Age'
-    n_rows = stan_data$W
-    n_columns = stan_data$A
-  }
+  varname = 'beta'
+  row_name = 'week_index'
+  row_lab = "Date" 
+  column_name = 'age_index' 
+  column_lab = 'Age'
   if(!is.null(stan_data$num_basis_rows)){
-    column_name = 'basis_function_index_week'
-    column_lab = 'Week basis function'
-    row_name = 'basis_function_index_age'
-    row_lab = "Age basis functions"
-    n_rows = stan_data$num_basis_rows
-    n_columns = stan_data$num_basis_columns
+    varname = 'f'
+    row_name = 'age_index' 
+    column_name = 'week_index' 
   }
+  
+  # column_name = 'week_index'
+  # column_lab = 'Date'
+  # row_name = 'basis_function_index_age'
+  # row_lab = "Basis function index"
+  # n_rows = stan_data$num_basis
+  # n_columns = stan_data$W
+  # if(is.null(stan_data$num_basis)){
+  #   
+  # }
+  # if(!is.null(stan_data$num_basis_rows)){
+  #   column_name = 'basis_function_index_week'
+  #   column_lab = 'Week basis function'
+  #   row_name = 'basis_function_index_age'
+  #   row_lab = "Age basis functions"
+  #   n_rows = stan_data$num_basis_rows
+  #   n_columns = stan_data$num_basis_columns
+  # }
   
   euro.levs <- as.vector(outer(c(1, 2, 5), 10^(-3:3)))   
   fit_samples = rstan::extract(fit_cum)
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
-  tmp1 = as.data.table( reshape2::melt( fit_samples$beta ))
+  
+  tmp1 = as.data.table( reshape2::melt( fit_samples[[varname]] ))
   setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
   tmp1 = tmp1[, list(q = quantile(value, prob=ps), q_label=p_labs), by=c(column_name, row_name)]
   tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
   setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
   
-  if(is.null(stan_data$num_basis_rows)) tmp1 = merge(tmp1, df_week, by = row_name)
+  if(!is.null(stan_data$num_basis_rows)){
+    row_name_1 = row_name 
+    row_name = column_name 
+    column_name = row_name_1
+  }
   
-  p = ggplot(tmp1, aes(x = get(column_name), y = get(row_name))) + 
-    geom_raster(aes(fill = M ), interpolate = TRUE) + 
-    theme_bw() +
-    scale_x_continuous(expand = c(0,0)) + 
-    theme(legend.position = 'none',
-          axis.text.x = element_text(angle = 90), 
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank()) +
-    labs(x = column_lab, y = row_lab, fill ='') +
-    scale_fill_viridis_c(option = 'inferno', begin = 0.55) +
-    scale_y_reverse(expand = c(0,0)) + 
-    geom_contour(aes(z=M), bins = 12, color = "gray50", 
-                 size = 0.5, alpha = 0.5) 
-  ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
-  
+  tmp1 = merge(tmp1, df_week, by = row_name)
 
-  if(is.null(stan_data$num_basis_rows)){
-    
     p = ggplot(tmp1, aes(x = date, y = get(column_name))) + 
       geom_raster(aes(fill = M ), interpolate = TRUE) + 
       theme_bw() +
@@ -546,7 +541,6 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
     ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
     
-  }
     
   return(p)
 }
