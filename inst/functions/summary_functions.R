@@ -28,6 +28,6 @@ clean_vaccination_data = function(file){
   vaccinedata = rbind(vaccinedata, tmp)
   vaccinedata[, prop_vaccinated_1dosep := count_vaccinated_1dosep / Census]
   vaccinedata[, prop_vaccinated_fully := count_vaccinated_fully / Census]
-  
+  vaccinedata[, date := as.Date(date)]
   return(vaccinedata)
 }

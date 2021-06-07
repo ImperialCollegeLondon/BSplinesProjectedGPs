@@ -939,6 +939,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
 
 plot_death_ratio_winter = function(death_ratio_winter, vaccinedata, outdir){
   
+
   tmp = vaccinedata[prop_vaccinated_1dosep >= 0.5, list(date = min(date), prop = 0.5), by = 'age']
   tmp1 = vaccinedata[prop_vaccinated_1dosep >= 0.75, list(date = min(date), prop = 0.75), by = 'age']
   tmp1 = rbind(tmp, tmp1)
@@ -946,7 +947,7 @@ plot_death_ratio_winter = function(death_ratio_winter, vaccinedata, outdir){
   tmp1[, prop_name := paste0(prop*100, '%')]
   tmp1[, date := as.Date(date)]
   
-  tmp = subset(death_ratio_baseline, date >= as.Date('2020-12-01'))
+  tmp = subset(death_ratio_winter, date >= as.Date('2020-12-01'))
   ggplot(tmp, aes(x = date)) + 
     geom_line(aes(y = M, col = age)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) +
