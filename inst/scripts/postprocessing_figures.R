@@ -33,6 +33,7 @@ if(length(args_line) > 0)
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "postprocessing-summary_functions.R"))
 source(file.path(indir, "functions", "postprocessing-utils.R"))
+source(file.path(indir, "functions", "summary_functions.R"))
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
@@ -70,6 +71,10 @@ cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
 fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
+# vaccination data 
+file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
+vaccinedata = clean_vaccination_data(file)
+
 
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
@@ -85,9 +90,11 @@ pc = plot_probability_deaths_age_contribution(age_contribution_continuous_table,
 age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 
+# baseline contribution
 make_contribution_ref(fit_cum, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
-make_contribution_ref_adj(fit_cum, date_10thcum, fiveagegroups, data, df_week, pop_data, outdir.table)
+make_contribution_ref_adj(fit_cum, date_10thcum, fiveagegroups, df_week, pop_data, outdir.table)
 
+# contirbution over time per age groups
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '0-64', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-79', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-74', date_10thcum, pop_data, outdir.table)
@@ -97,17 +104,15 @@ find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '75+', date
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '80+', date_10thcum, pop_data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '85+', date_10thcum, pop_data, outdir.table)
 
-# Plot imputed weekly data 
-death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
-plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
-death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
-plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
-
-
 # Plot mortality rate
-mortality_rate_table = make_mortality_rate_table(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
+mortality_rate_table = make_mortality_rate_table(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, 
+                                                 JHUData, data, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, outdir.fig)
 
+# death ratio relative to baseline 
+death_ratio_winter = make_weekly_death_rate_table(fit_cum, c('0-74', '75+'), as.Date('2020-12-21'), df_week, 
+                             JHUData, data, df_age_continuous, 'cumulative_deaths' , outdir.table)
+plot_death_ratio_winter(death_ratio_winter, vaccinedata, outdir.fig)
 
 # Plot probability ratio of deaths over time
 probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, stan_data, outdir.table)
@@ -118,26 +123,26 @@ plot_probability_ratio(probability_ratio_table, df_week, stan_data, outdir.fig)
 death_ratio_table = make_death_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
 plot_death_ratio(death_ratio_table, outdir.fig)
 
+# Plot imputed weekly data 
+death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
+plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
+death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
+plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
+
 
 # Plot mean age of death over time 
 mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)
 plot_mean_age_death(mean_age_death, outdir.fig)
 
 
-# plot compare to JHU and DoH data
-# find overall cumulative deaths (across age groups)
-tmp = find_overall_cumulative_deaths(fit_cum, df_week, 'deaths_predict')
-compare_CDCestimation_JHU_DoH_plot(CDC_data = copy(tmp), JHU_data = JHUData, scraped_data = scrapedData,
-                                        var.cum.deaths.CDC = 'M', outdir = outdir.fig)
-
 # find overall cumulative deaths (by age groups)
 if(nrow(subset(scrapedData, code == Code)) > 0 ){
   
-  tmp = find_cumulative_deaths_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths')
+  tmp = find_cumulative_deaths_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
   compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = 'M', outdir = outdir.fig)
 
-}
+ }
 
 # make panel figure
 data = select(data, date, age, loc_label, code, weekly.deaths)

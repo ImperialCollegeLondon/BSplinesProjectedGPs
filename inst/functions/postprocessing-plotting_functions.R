@@ -337,13 +337,14 @@ compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.de
     theme_bw() + 
     scale_color_manual(values = col[c(1,2)]) + 
     scale_fill_manual(values = col[c(1,2)]) +
-    facet_wrap(~age,  scale = 'free', ncol = 2) + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    facet_wrap(~age,  scale = 'free_y', ncol = 1) + 
     theme(legend.position = 'bottom',
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
-          axis.text.x = element_text(angle = 90)) + 
+          axis.text.x = element_text(angle = 45,hjust=1,vjust=1)) + 
     labs(y = 'Cumulative COVID-19 deaths', col = '', fill = '', x = '')
-  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_uncertainty_', Code, '.png'), w = 4, h = 8, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_uncertainty_', Code, '.png'), w = 3, h = 10, limitsize = F)
   
 }
 
@@ -550,7 +551,6 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
   dates = format( range( subset(df_week, week_index %in% stan_data$w_ref_index)$date ), "%d-%b-%Y")
   tmp = subset(probability_ratio_table, age %in% c('55-64', '65-74', '75-84', '85+'))
   
-  max(tmp$CU)
   # plot
   ggplot(probability_ratio_table, aes(x = date)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
@@ -581,15 +581,26 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
     labs(x = '', y = paste0('Ratio of the age-specific contribution to COVID-19 weekly deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
   ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_', Code, '.png'), w = 4, h = 8)
   
-  tmp = subset(probability_ratio_table, age %in% c('45-54', '55-64', '65-74', '75-84', '85+'))
+  tmp = subset(probability_ratio_table, age %in% c('55-64', '65-74', '75-84', '85+'))
   ggplot(tmp, aes(x = date)) + 
     geom_line(aes(y = M, col = age)) + 
-    # geom_point(aes(y = emp.prob.ratio, col = age)) + 
-    # geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
+    # geom_point(aes(y = emp.prob.ratio, col = age)) +
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.1) +
     theme_bw() + 
-    geom_hline(aes(yintercept = 1)) +
-    labs(x = '', y = paste0('Ratio of the age-specific contribution to COVID-19 weekly deaths relative to its mean between ', dates[1], ' and ', dates[2] ))
-  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_median_', Code, '.png'), w = 8, h = 8)
+    geom_hline(aes(yintercept = 1), col = 'grey30', size = 0.3) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    labs(x = '', y = paste0('Percentage change in weekly deaths age-specific composition\ncompared to the baseline period'), col = 'Age group', 
+         fill = 'Age group') + 
+    scale_color_viridis_d(option = 'B', end = 0.9, begin = 0.2) + 
+    scale_fill_viridis_d(option = 'B', end = 0.9, begin = 0.2) + 
+    theme(axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+          panel.grid.major= element_blank(), legend.box="vertical", 
+          legend.margin=margin(), 
+          legend.position = 'bottom') + 
+    # geom_vline(data = tmp1, aes(xintercept = date, linetype = prop_name)) + 
+    guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
+  ggsave(file = paste0(outdir, '-ProbabilityRatio_elderly_median_', Code, '.png'), w = 6, h = 6)
+  
 }
 
 plot_death_ratio = function(death_ratio_table, outdir)
@@ -755,8 +766,8 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
 
 plot_contribution_all_states = function(contribution, vaccinedata, outdir){
   
-  tmp = vaccinedata[prop_vaccinated_fully >= 0.25, list(date = min(date), prop = 0.25), by = 'age']
-  tmp1 = vaccinedata[prop_vaccinated_fully >= 0.5, list(date = min(date), prop = 0.5), by = 'age']
+  tmp = vaccinedata[prop_vaccinated_1dosep >= 0.25, list(date = min(date), prop = 0.25), by = 'age']
+  tmp1 = vaccinedata[prop_vaccinated_1dosep >= 0.5, list(date = min(date), prop = 0.5), by = 'age']
   tmp = rbind(tmp, tmp1)
   tmp[, prop_name := paste0(prop*100, '%')]
   set(tmp, NULL, 'date', tmp[, as.Date(date)])
@@ -866,7 +877,7 @@ plot_contribution_all_states = function(contribution, vaccinedata, outdir){
 }
 
 
-plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_adj, deathByAge, outdir){
+plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_adj, outdir){
   
   tmp = subset(contribution_ref, age == '85+')
   tmp = tmp[order(M)]
@@ -875,7 +886,6 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
   ggplot(contribution_ref, aes(x = loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat = 'identity') +
     geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
-    #geom_point(data = deathByAge, aes(y = prop_deaths), col = 'turquoise') + 
     facet_grid(age~division,  scales = "free_x", space = 'free_x') + 
     theme_bw() +
     theme(axis.text.x = element_text(angle= 45, hjust = 1), 
@@ -892,8 +902,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
   ggplot(contribution_ref, aes(x = loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat = 'identity') +
     geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
-    geom_point(data = deathByAge, aes(y = prop_deaths), col = 'cyan3', size = 0.6) + 
-    #geom_point(data = deathByAge, aes(y = prop_deaths), col = 'turquoise') + 
+    geom_point(aes(y = emp_est), col = 'cyan3', size = 0.6) + 
     facet_grid(age~division,  scales = "free_x", space = 'free_x') + 
     theme_bw() +
     theme(axis.text.x = element_text(angle= 45, hjust = 1), 
@@ -925,6 +934,39 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
     labs(x ='', y = paste0('Age-specific contribution to COVID-19 deaths in\nage-standardised populations during the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref_adj.png'), w = 9, h = 6)
 
+}
+
+
+plot_death_ratio_winter = function(death_ratio_winter, vaccinedata, outdir){
+  
+  tmp = vaccinedata[prop_vaccinated_1dosep >= 0.5, list(date = min(date), prop = 0.5), by = 'age']
+  tmp1 = vaccinedata[prop_vaccinated_1dosep >= 0.75, list(date = min(date), prop = 0.75), by = 'age']
+  tmp1 = rbind(tmp, tmp1)
+  tmp1 = subset(tmp1, age == '75+')
+  tmp1[, prop_name := paste0(prop*100, '%')]
+  tmp1[, date := as.Date(date)]
+  
+  tmp = subset(death_ratio_baseline, date >= as.Date('2020-12-01'))
+  ggplot(tmp, aes(x = date)) + 
+    geom_line(aes(y = M, col = age)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) +
+    geom_point(aes(y = emp_est, col = age)) +
+    theme_bw() + 
+    geom_vline(data = tmp1, aes(xintercept = date, linetype = prop_name)) + 
+    scale_y_continuous(labels = scales::percent_format()) +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+          panel.grid.major= element_blank(), legend.box="vertical", 
+          legend.margin=margin())+ 
+    labs(y = 'Deaths as percentage of winter peak', x = '', col = 'Age group',  fill = 'Age group', 
+         linetype = 'Proportion of 75+ vaccinated\nwith at least one dose') + 
+    scale_linetype_manual(values = c(2,3)) + 
+    scale_color_viridis_d(option = 'B', begin = 0.2, end = 0.8)+ 
+    scale_fill_viridis_d(option = 'B', begin = 0.2, end = 0.8) + 
+    guides(linetype = guide_legend(order=2), color = guide_legend(order=1), fill = guide_legend(order=1)) 
+  ggsave(paste0(outdir, 'DeathsRatioWinter_', Code, '.png'), w = 6, h = 5)
+         
+         
 }
 
 
