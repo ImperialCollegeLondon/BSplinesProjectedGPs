@@ -14,3 +14,20 @@ create_map_age = function(age_max){
   df_age_reporting[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
   
 }
+
+clean_vaccination_data = function(file){
+  vaccinedata = as.data.table(read.csv(file))
+  vaccinedata = subset(vaccinedata, Demographic.Group %in% c("Ages_65-74_yrs", "Ages_75+_yrs"), 
+                       select = c('Date', 'Demographic.Group', 'People.with.at.least.one.dose', 'People.who.are.fully.vaccinated', 'Census'))
+  setnames(vaccinedata, 1:4, c('date', 'age', 'count_vaccinated_1dosep', 'count_vaccinated_fully'))
+  vaccinedata[, age := gsub('Ages_(.+)_yrs', '\\1', age)]
+  tmp = vaccinedata[, list(count_vaccinated_1dosep= sum(count_vaccinated_1dosep), 
+                           count_vaccinated_fully = sum(count_vaccinated_fully), 
+                           Census = sum(Census)), by = c('date')]
+  tmp[, age := '65+']
+  vaccinedata = rbind(vaccinedata, tmp)
+  vaccinedata[, prop_vaccinated_1dosep := count_vaccinated_1dosep / Census]
+  vaccinedata[, prop_vaccinated_fully := count_vaccinated_fully / Census]
+  
+  return(vaccinedata)
+}
