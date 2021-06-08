@@ -553,6 +553,60 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
   
 }
 
+plot_contribution_magnitude_all_states = function(contribution, death2agegroups, selected_states, outdir)
+{
+  
+  tmp = subset(contribution, code %in% selected_states)
+  tmp2 = subset(death2agegroups, code %in% selected_states)
+  
+  tmp1 = unique(select(tmp, code, loc_label))
+  tmp1[, code := factor(code, levels = selected_states)]
+  tmp1 = tmp1[order(code)]
+  
+  tmp[, loc_label := factor(loc_label, tmp1$loc_label)]
+  tmp2[, loc_label := factor(loc_label, tmp1$loc_label)]
+  
+  p1 = ggplot(tmp, aes(x= date) ) +
+    geom_line(aes(y = M, col = age)) + 
+    geom_point(aes(y = emp, col = age), size = 0.5) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
+    facet_wrap(~loc_label, nrow = 3) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme_bw() + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 45, hjust =1), 
+          panel.grid.major = element_blank(), 
+          axis.title.x = element_blank()) +
+    labs(y = 'Age-specific contribution to COVID-19 weekly deaths') + 
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
+    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)
+  
+  
+  p2 = ggplot(tmp2, aes(x= date) ) +
+    geom_line(aes(y = M, col = age)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
+    facet_wrap(~loc_label, nrow = 3, scale = 'free_y') +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme_bw() + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 45, hjust =1), 
+          panel.grid.major = element_blank(), 
+          axis.title.x = element_blank()) +
+    labs( y = 'Age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group') + 
+    scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
+    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)
+  
+  
+  p = ggpubr::ggarrange(p2,p1, common.legend = T, legend = 'bottom')
+  ggsave(p, file = paste0(outdir, '-ContributionMagnitude_panel.png'), w = 7, h = 8)
+  
+  
+  return(p)
+}
+
 plot_death_ratio = function(death_ratio_table, outdir)
 {
   # plot
@@ -807,6 +861,87 @@ plot_contribution_all_states = function(contribution, vaccinedata, outdir){
   
   
 }
+
+plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, selected_method, model_name){
+  
+  dates = unique(tab_cc$date)
+  dates = dates[seq(3, length(dates)-3, length.out =3)]
+  
+  limit_SE = range(subset(tab_cc, method == selected_method)$CL, subset(tab_cc, method == selected_method)$CU)
+  
+  tmp= tab_d[, list(sumM = sum(M)), by = c('date', 'method')]
+  df = data.frame(value = dates, y = max(tmp$sumM) - 100, 
+                  key = as.character(1:length(dates)), 
+                  x_prop = min(as.numeric(tab_cc$age)) +2,
+                  y_prop = limit_SE[2] -0.002, date=dates)
+  
+  
+  tmp2 = subset(tab_cc, date %in% dates)
+  tmp2[, age := as.numeric(age)]
+  tmp2[, method := factor(method,  model_name)]
+  
+  p1 = ggplot(tmp2, aes(x = age)) + 
+    geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
+    theme_bw() +
+    labs(y = 'Estimated age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
+    facet_grid(method~date) +
+    coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age))  +
+    geom_point(data = df, aes(x = x_prop, y = y_prop, col = key, shape = key), size =3, stroke = 1.5 ) + 
+    theme(panel.border = element_rect(colour = "black", fill = NA), 
+          # legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white"), 
+          panel.grid.major = element_blank(),
+          axis.title.y = element_text(size = rel(1.1)), 
+          plot.margin = unit(c(5.5,5.5,25,5.5), "pt"),
+          strip.text.x =  element_blank(),
+          strip.text.y =  element_text(size = rel(1)))  +
+    scale_shape_manual(name = "Dates", labels = plot_labels, values = c(21, 22, 23)) + 
+    scale_colour_manual(name = "Dates", labels = plot_labels, values = gg_color_hue(3)) 
+  
+  tmp3 = as.data.table(tab_d)
+  tmp3[, method := factor(method,  model_name)]
+  
+  plot_labels <- format(dates,  "%d-%b-%y")
+  
+  p2 = ggplot(tmp3, aes(x = date)) + 
+    theme_bw() +
+    labs(y = 'Estimated COVID-19 weekly deaths by age groups', x = "", color = '', shape = '', fill = 'Age group') + 
+    facet_grid(method~.) +
+    # coord_cartesian(ylim = limit_SE) + 
+    scale_fill_viridis_d(option = 'B', end = 0.95) + 
+    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+    geom_segment(data = df, aes(x = value, y = 0, xend = value, yend = y), 
+                 linetype = "dashed", colour = "grey30", alpha = 0.75) +
+    geom_point(data = df, aes(x = value, y = y, group = key, shape = key, col = key), size = 2, stroke = 1.5 ) +
+    scale_shape_manual(name = "", labels = plot_labels, values = c(21, 22, 23)) + 
+    scale_colour_manual(name = "", labels = plot_labels, values = gg_color_hue(3)) + 
+    geom_bar(aes(y = M, fill = age), stat = 'identity', width = 7)  +
+    theme(panel.border = element_rect(colour = "black", fill = NA), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white"), 
+          legend.position = 'bottom', 
+          panel.grid.major = element_blank(),
+          legend.justification = 'left', 
+          legend.box = 'vertical', 
+          legend.box.just = 'left',
+          strip.text = element_blank(), 
+          axis.title.y = element_text(size = rel(1.1)),
+          legend.text = element_text(size = rel(1)),
+          legend.title = element_text(size = rel(1.4)),
+          axis.text.x = element_text(angle= 40, hjust =1)
+    ) + 
+    guides(fill = guide_legend(order = 2, nrow=1,byrow=TRUE), col = F, shape = F)
+           # color = guide_legend(order=1, nrow=1,byrow=TRUE),  shape = guide_legend(order=1, nrow=1,byrow=TRUE))
+  
+  
+  
+  p= ggpubr::ggarrange(p2,p1, common.legend = T, legend.grob = get_legend(p2), legend = 'bottom',
+                       widths = c(0.3, 0.7))
+  
+  return(p)
+  
+}
+
 
 
 plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_adj, outdir){

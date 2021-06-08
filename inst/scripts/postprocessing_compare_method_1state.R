@@ -6,15 +6,16 @@ library(loo)
 library(ggpubr)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
-outdir = '~/git/CDC-covid19-agespecific-mortality-data/inst/results'
+outdir = '~/git/CDC-covid19-agespecific-mortality-data/inst/results/new'
 location.index = 1
-stan_model = c("210429h1", '210513b', '210429b2', '210505c1')
-JOBID = c(17173, 4197, 3708, 3934)
-model_name = c('GP-SE', 'GP-BS-I', 'GP-BS-CAR', 'GP-BS-SE')
+stan_model = c("210529d", '210429h1', '210529c', '210529b')
+JOBID = c(31678, 11762, 31345, 2117)
+model_name = c('GP-GN', 'GP-SE', 'GP-BS-GN', 'GP-BS-SE')
 
 # load functions
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions", "plotting_functions.R"))
+source(file.path(indir, "functions", "postprocessing-utils.R"))
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
@@ -28,29 +29,18 @@ data = merge(data, tmp1, by = 'date')
 data[, prop_deaths := weekly.deaths / total_deaths]
 data$method = 'observation'
 
-# load contribution table discrete
-tab_cd = list()
+# load comparison to DoH
+tab_doh = list()
 for(i in seq_along(JOBID)){
-  tab = readRDS( paste0(outdir.table[i], '-phi_reducedTable_AL.rds') )
-  tab$method = model_name[i]
-  tab_cd[[i]] = tab
+  tab = readRDS( paste0(outdir.table[i], '-CumDeathsComp_ScrapedData_AL.rds') )
+  scraped_data = tab[[1]]
+  tab[[2]]$method = model_name[i]
+  tab_doh[[i]] = tab[[2]]
 }
-tab_cd = do.call('rbind', tab_cd)
-p_cd = plot_contribution_comparison_method(tab_cd,  data, model_name)
+tab_doh = do.call('rbind', tab_doh)
 
-
-# death by age figure 
-tab_d = list()
-for(i in seq_along(JOBID)){
-  tab = readRDS( paste0(outdir.table[i], '-deaths_predict_state_age_strataTable_AL.rds') )
-  tab$method = model_name[i]
-  tab_d[[i]] = tab
-}
-tab_d = do.call('rbind', tab_d)
-p_d = plot_death_comparison_method(tab_d,  data, model_name)
-
-p = ggarrange(p_d, p_cd, nrow = 2, labels = c('A', 'B'), label.x = 0.1)
-ggsave(p, file= paste0(outdir.table[1], '-deaths_predict_state_age_strata_compmethod_AL.png'), w = 10, h = 5)
+p = compare_CDCestimation_DoH_age_plot_compmethod(tab_doh, scraped_data, model_name, selected_method = 'GP-SE')
+ggsave(p, file = paste0(outdir.table[1], '-comparison_DoH_CDC_uncertainty_', unique(tab_doh$code), '_commethod.png'), w = 7, h = 9, limitsize = F)
 
 
 # load contribution table continuous
@@ -61,9 +51,16 @@ for(i in seq_along(JOBID)){
   tab_cc[[i]] = tab
 }
 tab_cc = do.call('rbind', tab_cc)
-p = plot_contribution_continuous_comparison_method(tab_cc, 'GP-BS-SE', model_name)
-ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_AL.png'), w = 6, h = 4)
+tab_d = list()
+for(i in seq_along(JOBID)){
+  tab = readRDS( paste0(outdir.table[i], '-DeathByAgeTable_phi_reduced_AL.rds') )
+  tab$method = model_name[i]
+  tab_d[[i]] = tab
+}
+tab_d = do.call('rbind', tab_d)
 
+p = plot_contribution_continuous_comparison_method(tab_cc, tab_d, 'GP-BS-SE', model_name)
+ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_AL.png'), w = 10, h = 9)
 
 
 # LOO
@@ -72,7 +69,34 @@ for(i in seq_along(JOBID)){
   LOO[[i]] = readRDS( paste0(outdir.table[i], "-LOO_AL.rds") )
 }
 
-loo_compare(LOO[[2]], LOO[[3]], LOO[[4]])
+loo_compare(LOO[[1]], LOO[[3]], LOO[[4]])
 
-loo_compare(LOO[[1]], LOO[[4]])
+tmp = loo_compare(LOO[[2]], LOO[[4]])
+tmp = gsub(" ", "", format( round(tmp, digits = 2), nsmall = 2) )
+saveRDS(tmp, file = paste0(outdir.table[1], "-LOO_comp.rds"))
 
+# 
+# 
+# # load contribution table discrete
+# tab_cd = list()
+# for(i in seq_along(JOBID)){
+#   tab = readRDS( paste0(outdir.table[i], '-phi_reducedTable_AL.rds') )
+#   tab$method = model_name[i]
+#   tab_cd[[i]] = tab
+# }
+# tab_cd = do.call('rbind', tab_cd)
+# p_cd = plot_contribution_comparison_method(tab_cd,  data, model_name)
+# 
+# 
+# # death by age figure 
+# tab_d = list()
+# for(i in seq_along(JOBID)){
+#   tab = readRDS( paste0(outdir.table[i], '-deaths_predict_state_age_strataTable_AL.rds') )
+#   tab$method = model_name[i]
+#   tab_d[[i]] = tab
+# }
+# tab_d = do.call('rbind', tab_d)
+# p_d = plot_death_comparison_method(tab_d,  data, model_name)
+# 
+# p = ggarrange(p_d, p_cd, nrow = 2, labels = c('A', 'B'), label.x = 0.11)
+# ggsave(p, file= paste0(outdir.table[1], '-deaths_predict_state_age_strata_compmethod_AL.png'), w = 10, h = 5)
