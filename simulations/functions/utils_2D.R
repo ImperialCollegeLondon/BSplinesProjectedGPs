@@ -39,16 +39,16 @@ run_BSGP_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
   
   tmp = as.data.table( reshape2::melt(samples$f) )
   setnames(tmp, 2:3, c('rows_idx', 'column_idx'))
-  tmp = tmp[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                     q_label=p_labs), 
+  tmp = tmp[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                     q_label=c(p_labs, 'mean')), 
             by=c('rows_idx', 'column_idx')]	
   tmp = dcast(tmp, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp[, variable := 'f']
   
   tmp1 = as.data.table( reshape2::melt(samples$y_hat) )
   setnames(tmp1, 2:3, c('rows_idx', 'column_idx'))
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
+  tmp1 = tmp1[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                       q_label=c(p_labs, 'mean')), 
               by=c('rows_idx', 'column_idx')]	
   tmp1 = dcast(tmp1, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp1[, variable := 'y_hat']
@@ -158,16 +158,16 @@ run_BSIN_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
   
   tmp = as.data.table( reshape2::melt(samples$f) )
   setnames(tmp, 2:3, c('rows_idx', 'column_idx'))
-  tmp = tmp[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                     q_label=p_labs), 
+  tmp = tmp[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                     q_label=c(p_labs, 'mean')), 
             by=c('rows_idx', 'column_idx')]	
   tmp = dcast(tmp, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp[, variable := 'f']
   
   tmp1 = as.data.table( reshape2::melt(samples$y_hat) )
   setnames(tmp1, 2:3, c('rows_idx', 'column_idx'))
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
+  tmp1 = tmp1[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                       q_label=c(p_labs, 'mean')), 
               by=c('rows_idx', 'column_idx')]	
   tmp1 = dcast(tmp1, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp1[, variable := 'y_hat']
@@ -203,16 +203,16 @@ run_GP_I_2D = function(x_1, x_2, y, lab, outdir){
   
   tmp = as.data.table( reshape2::melt(samples$f) )
   setnames(tmp, 2:3, c('rows_idx', 'column_idx'))
-  tmp = tmp[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                     q_label=p_labs), 
+  tmp = tmp[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                     q_label=c(p_labs, 'mean')), 
             by=c('rows_idx', 'column_idx')]	
   tmp = dcast(tmp, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp[, variable := 'f']
   
   tmp1 = as.data.table( reshape2::melt(samples$y_hat) )
   setnames(tmp1, 2:3, c('rows_idx', 'column_idx'))
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
+  tmp1 = tmp1[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                       q_label=c(p_labs, 'mean')), 
               by=c('rows_idx', 'column_idx')]	
   tmp1 = dcast(tmp1, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp1[, variable := 'y_hat']
@@ -248,16 +248,16 @@ run_GP_2D = function(x_1, x_2, y, lab, outdir){
   
   tmp = as.data.table( reshape2::melt(samples$f) )
   setnames(tmp, 2:3, c('rows_idx', 'column_idx'))
-  tmp = tmp[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                     q_label=p_labs), 
+  tmp = tmp[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                     q_label=c(p_labs, 'mean')), 
             by=c('rows_idx', 'column_idx')]	
   tmp = dcast(tmp, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp[, variable := 'f']
   
   tmp1 = as.data.table( reshape2::melt(samples$y_hat) )
   setnames(tmp1, 2:3, c('rows_idx', 'column_idx'))
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
+  tmp1 = tmp1[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
+                       q_label=c(p_labs, 'mean')), 
               by=c('rows_idx', 'column_idx')]	
   tmp1 = dcast(tmp1, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp1[, variable := 'y_hat']
