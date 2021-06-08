@@ -463,11 +463,15 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1[, after.10thcumdeaths := date >= date_10thcum]
-  tmp1= merge(tmp1, empirical, by = c('date'))
   
+  if(with_empirical){
+    tmp1= merge(tmp1, empirical, by = c('date'))
+    
+  }
+
   saveRDS(tmp1, file = paste0(outdir, '-Contribution_Age_', age_group,'_', Code, '.rds'))
 
-  return(tmp1)
+  # return(tmp1)
 }
 
 
@@ -743,9 +747,9 @@ find_cumulative_deaths_givensum_state_age = function(fit, date_10thcum, df_week,
   
   # week index
   data_10thcum = subset(data, date >= date_10thcum)
-  data_comp = as.data.table( subset(data_comp, code == Code))
-  data_comp[, date := as.Date(date)]
-  tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = 'date']
+  tmp2 = as.data.table( subset(data_comp, code == Code))
+  tmp2[, date := as.Date(date)]
+  tmp2 = tmp2[, list(cum.death = sum(get(cum.death.var))), by = 'date']
   tmp2 = tmp2[order( date)]
   dummy = min(data_10thcum$date) %in% tmp2$date 
   last.cum.deaths = max(subset(tmp2, date == ifelse(dummy, min(data_10thcum$date) , 
@@ -794,7 +798,7 @@ find_cumulative_deaths_givensum_state_age = function(fit, date_10thcum, df_week,
   tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
   tmp1 = merge(tmp1, df_age_state, by = 'age_index')
   
-  saveRDS(tmp1, file = paste0(outdir, '-CumDeathsComp_', 'ScrapedData', '_', Code, '.rds'))
+  saveRDS(list(data_comp, tmp1), file = paste0(outdir, '-CumDeathsComp_', 'ScrapedData', '_', Code, '.rds'))
   
   return(tmp1)
 }
