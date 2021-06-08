@@ -107,7 +107,7 @@ find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_repo
 
 # Plot mortality rate
 mortality_rate_table = make_mortality_rate_table(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, 
-                                                 JHUData, data, df_age_continuous, 'cumulative_deaths' , outdir.table)
+                                                 JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, outdir.fig)
 
 # death ratio relative to baseline 
@@ -129,6 +129,7 @@ death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuo
 plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
 death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
 plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
+
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi_reduced', df_age_reporting, outdir.table)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table, 

@@ -465,7 +465,7 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   tmp1[, after.10thcumdeaths := date >= date_10thcum]
   
   if(with_empirical){
-    tmp1= merge(tmp1, empirical, by = c('date'))
+    tmp1= merge(tmp1, empirical, by = c('date'), all.x = T)
     
   }
 
@@ -746,17 +746,17 @@ find_cumulative_deaths_givensum_state_age = function(fit, date_10thcum, df_week,
   df_week1 = subset(df_week1, month %in% min(df_week1$month):(min(df_week1$month) + 2))
   
   # week index
-  data_10thcum = subset(data, date >= date_10thcum)
+  df_week_10thcum = subset(df_week, date >= date_10thcum)
   tmp2 = as.data.table( subset(data_comp, code == Code))
   tmp2[, date := as.Date(date)]
   tmp2 = tmp2[, list(cum.death = sum(get(cum.death.var))), by = 'date']
   tmp2 = tmp2[order( date)]
-  dummy = min(data_10thcum$date) %in% tmp2$date 
-  last.cum.deaths = max(subset(tmp2, date == ifelse(dummy, min(data_10thcum$date) , 
-                                                    (min(tmp2$date):(min(tmp2$date)+6))[min(tmp2$date):(min(tmp2$date)+6) %in% data_10thcum$date] ) )$cum.death )
-  tmp2 = unique(subset(tmp2, date %in% c(max(data_10thcum$date) + 7, data_10thcum$date)))
+  dummy = min(df_week_10thcum$date) %in% tmp2$date 
+  last.cum.deaths = max(subset(tmp2, date == ifelse(dummy, min(df_week_10thcum$date) , 
+                                                    (min(tmp2$date):(min(tmp2$date)+6))[min(tmp2$date):(min(tmp2$date)+6) %in% df_week_10thcum$date] ) )$cum.death )
+  tmp2 = unique(subset(tmp2, date %in% c(max(df_week_10thcum$date) + 7, df_week_10thcum$date)))
   tmp2[, weekly.deaths := c(diff(cum.death), NA)]
-  tmp2 = unique(subset(tmp2, date %in% data$date))
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
@@ -853,7 +853,7 @@ find_phi_state_age = function(fit, df_week, df_age_continuous, age_state){
 }
 
 
-make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, data_comp, data, df_age_continuous, cum.death.var, outdir){
+make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, data_comp, df_age_continuous, cum.death.var, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -905,17 +905,17 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   pop_data1 = subset(pop_data1, code == Code)
   
   # week index
-  data_10thcum = subset(data, date >= date_10thcum)
+  df_week_10thcum = subset(df_week, date >= date_10thcum)
   data_comp = as.data.table( subset(data_comp, code == Code))
   data_comp[, date := as.Date(date)]
   tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = 'date']
   tmp2 = tmp2[order( date)]
-  dummy = min(data_10thcum$date)  %in% tmp2$date
-  last.cum.deaths = max(subset(tmp2, date == ifelse(dummy, min(data_10thcum$date) , 
-                                                    (min(tmp2$date):(min(tmp2$date)+6))[min(tmp2$date):(min(tmp2$date)+6) %in% data_10thcum$date] ) )$cum.death )
-  tmp2 = unique(subset(tmp2, date %in% c(data_10thcum$date, max(data_10thcum$date)+7)))
+  dummy = min(df_week_10thcum$date)  %in% tmp2$date
+  last.cum.deaths = max(subset(tmp2, date == ifelse(dummy, min(df_week_10thcum$date) , 
+                                                    (min(tmp2$date):(min(tmp2$date)+6))[min(tmp2$date):(min(tmp2$date)+6) %in% df_week_10thcum$date] ) )$cum.death )
+  tmp2 = unique(subset(tmp2, date %in% c(df_week_10thcum$date, max(df_week_10thcum$date)+7)))
   tmp2[, weekly.deaths := c(diff(cum.death),NA)]
-  tmp2 = unique(subset(tmp2, date %in% data$date))
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
@@ -1008,9 +1008,9 @@ make_weekly_death_rate_table = function(fit_cum, fiveagegroups, date_vac, df_wee
   data_comp[, date := as.Date(date)]
   tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = 'date']
   tmp2 = tmp2[order( date)]
-  tmp2 = unique(subset(tmp2, date %in% c(data$date, max(data$date)+7)))
+  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
   tmp2[, weekly.deaths := c(diff(cum.death),NA)]
-  tmp2 = unique(subset(tmp2, date %in% data$date))
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
@@ -1063,7 +1063,7 @@ make_weekly_death_rate_table = function(fit_cum, fiveagegroups, date_vac, df_wee
   tmp1[, age := df_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_age$age)]
 
-  tmp1 = merge(tmp1, empirical, by = c('age_index', 'week_index'))
+  tmp1 = merge(tmp1, empirical, by = c('age_index', 'week_index'), all.x = T)
   
   saveRDS(tmp1, file = paste0(outdir, '-', 'DeathRatioWinter', 'Table_', Code, '.rds'))
   
@@ -1105,9 +1105,9 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, cum.
   data_comp[, date := as.Date(date)]
   tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = 'date']
   tmp2 = tmp2[order( date)]
-  tmp2 = unique(subset(tmp2, date %in% c(data$date, max(data$date)+7)))
+  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
   tmp2[, weekly.deaths := c(diff(cum.death),NA)]
-  tmp2 = unique(subset(tmp2, date %in% data$date))
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
