@@ -9,8 +9,8 @@ library(gridExtra)
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
 location.index = 1
-stan_model = "210429h1"
-JOBID = 10296
+stan_model = "210529c"
+JOBID = 31345
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -95,14 +95,15 @@ make_contribution_ref(fit_cum, date_10thcum, fiveagegroups, data, df_week, df_ag
 make_contribution_ref_adj(fit_cum, date_10thcum, fiveagegroups, df_week, pop_data, outdir.table)
 
 # contirbution over time per age groups
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '0-64', date_10thcum, pop_data, outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-79', date_10thcum, pop_data, outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65-74', date_10thcum, pop_data, outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '75-84', date_10thcum, pop_data, outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '65+', date_10thcum, pop_data, outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '75+', date_10thcum, pop_data, outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '80+', date_10thcum, pop_data, outdir.table)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, '85+', date_10thcum, pop_data, outdir.table)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-64', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-79', date_10thcum, pop_data, data, outdir.table)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75-84', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '80+', date_10thcum, pop_data, data, outdir.table)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '85+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 
 # Plot mortality rate
 mortality_rate_table = make_mortality_rate_table(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, 
@@ -128,7 +129,12 @@ death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuo
 plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
 death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
 plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
-
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table)
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi_reduced', df_age_reporting, outdir.table)
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table, 
+                                          age_groups = c('0-64', '65-74', '75+'), lab = '3agegroups')
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table, 
+                                    age_groups = c('0-74', '75+'), lab = '2agegroups')
 
 # Plot mean age of death over time 
 mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)
