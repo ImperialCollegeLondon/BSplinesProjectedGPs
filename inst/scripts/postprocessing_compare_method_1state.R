@@ -8,9 +8,9 @@ library(ggpubr)
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '~/git/CDC-covid19-agespecific-mortality-data/inst/results/new'
 location.index = 1
-stan_model = c("210529d", '210429h1', '210529c', '210529b')
-JOBID = c(31678, 11762, 31345, 2117)
-model_name = c('GP-GN', 'GP-SE', 'GP-BS-GN', 'GP-BS-SE')
+stan_model = c('210429h1', '210529c', '210529b')
+JOBID = c(11762, 31345, 2117)
+model_name = c('GP-SE', 'GP-BS-GN', 'GP-BS-SE')
 
 # load functions
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
@@ -32,35 +32,35 @@ data$method = 'observation'
 # load comparison to DoH
 tab_doh = list()
 for(i in seq_along(JOBID)){
-  tab = readRDS( paste0(outdir.table[i], '-CumDeathsComp_ScrapedData_AL.rds') )
+  tab = readRDS( paste0(outdir.table[i], '-CumDeathsComp_ScrapedData_FL.rds') )
   scraped_data = tab[[1]]
   tab[[2]]$method = model_name[i]
   tab_doh[[i]] = tab[[2]]
 }
 tab_doh = do.call('rbind', tab_doh)
 
-p = compare_CDCestimation_DoH_age_plot_compmethod(tab_doh, scraped_data, model_name, selected_method = 'GP-SE')
+p = compare_CDCestimation_DoH_age_plot_compmethod(tab_doh, scraped_data, model_name, selected_method = 'GP-BS-SE')
 ggsave(p, file = paste0(outdir.table[1], '-comparison_DoH_CDC_uncertainty_', unique(tab_doh$code), '_commethod.png'), w = 7, h = 9, limitsize = F)
 
 
 # load contribution table continuous
 tab_cc = list()
 for(i in seq_along(JOBID)){
-  tab = readRDS( paste0(outdir.table[i], '-phiTable_AL.rds') )
+  tab = readRDS( paste0(outdir.table[i], '-phiTable_FL.rds') )
   tab$method = model_name[i]
   tab_cc[[i]] = tab
 }
 tab_cc = do.call('rbind', tab_cc)
 tab_d = list()
 for(i in seq_along(JOBID)){
-  tab = readRDS( paste0(outdir.table[i], '-DeathByAgeTable_phi_reduced_AL.rds') )
+  tab = readRDS( paste0(outdir.table[i], '-DeathByAgeTable_phi_FL.rds') )
   tab$method = model_name[i]
   tab_d[[i]] = tab
 }
 tab_d = do.call('rbind', tab_d)
 
 p = plot_contribution_continuous_comparison_method(tab_cc, tab_d, 'GP-BS-SE', model_name)
-ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_AL.png'), w = 10, h = 9)
+ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_FL.png'), w = 10, h = 8)
 
 
 # LOO
@@ -69,9 +69,9 @@ for(i in seq_along(JOBID)){
   LOO[[i]] = readRDS( paste0(outdir.table[i], "-LOO_AL.rds") )
 }
 
-loo_compare(LOO[[1]], LOO[[3]], LOO[[4]])
+loo_compare(LOO[[2]], LOO[[3]])
 
-tmp = loo_compare(LOO[[2]], LOO[[4]])
+tmp = loo_compare(LOO[[1]], LOO[[3]])
 tmp = gsub(" ", "", format( round(tmp, digits = 2), nsmall = 2) )
 saveRDS(tmp, file = paste0(outdir.table[1], "-LOO_comp.rds"))
 
