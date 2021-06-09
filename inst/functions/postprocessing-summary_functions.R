@@ -996,7 +996,7 @@ make_weekly_death_rate_table = function(fit_cum, fiveagegroups, date_vac, df_wee
   
   # ref week
   data_comp = as.data.table( subset(data_comp, code == Code))
-  date_max = subset(data_comp, date >= date_vac)
+  date_max = subset(data_comp, date >= date_vac & date <= max(data$date)-7)
   date_max = date_max[which.max(daily_deaths), date-7]
   cat('Date max is ', as.character(date_max))
   df_week1  = df_week[ date %in% date_max:(date_max + 6)]
