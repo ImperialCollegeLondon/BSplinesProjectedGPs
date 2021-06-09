@@ -31,3 +31,20 @@ clean_vaccination_data = function(file){
   vaccinedata[, date := as.Date(date)]
   return(vaccinedata)
 }
+
+reduce_agebands_scrapedData_GA = function(tmp)
+{
+  old_age = data.table(age = c("0-4","5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", 
+                               "65-69", "70-74", "75-79", "80-84", "85-89", "90+"), 
+                       age_index = c(rep(1:8, each = 2), rep(9, 3)))
+  new_age = data.table(age_index = 1:9, 
+                       age = c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"))
+  
+  tmp = as.data.table(tmp)
+  tmp = merge(tmp, old_age, by = 'age')
+  tmp = tmp[, list(cum.deaths = sum(cum.deaths), 
+                   daily.deaths = sum(daily.deaths)), by= c('code', 'date', 'age_index')]
+  tmp = merge(tmp, new_age, by = 'age_index')
+  tmp = select(tmp, -age_index)
+  return(tmp)
+}

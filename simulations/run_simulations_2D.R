@@ -48,7 +48,7 @@ BSIN_2D_2_1 = run_BSIN_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
 BSIN_2D_3_1 = run_BSIN_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
 
 ##
-n_knots_vec = c(5, 10, 20)
+n_knots_vec = c(10, 30, 40)
 lab = paste0('lengthscale_', lengthscales[2])
 set.seed(24)
 y = generate_2DGP(X, lengthscales[2], sigma = 0.5)
@@ -62,7 +62,7 @@ BSIN_2D_2_2 = run_BSIN_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
 BSIN_2D_3_2 = run_BSIN_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
 
 ##
-n_knots_vec = c(5, 10, 20)
+n_knots_vec = c(10, 30, 40)
 lab = paste0('lengthscale_', lengthscales[3])
 set.seed(23)
 y = generate_2DGP(X, lengthscales[3], sigma= 0.1)
@@ -101,57 +101,126 @@ for(l in lengthscales){
   # l = lengthscales[1]
   tmp1 = subset(tmp, variable == 'y_hat' & lengthscale == l)
   
-  tmp2 = copy(select(tmp1, x_1, x_2, M, method2, n_knots, time, lengthscale))
+  tmp2 = copy(select(tmp1, x_1, x_2, mean, method2, n_knots, time, lengthscale))
   tmp1 = copy(select(tmp1, x_1, x_2, y, time, n_knots, lengthscale))
   tmp1[, time := NA_real_]
   tmp1[, method2 := 'observation']
-  setnames(tmp1, 'y', 'M')
+  setnames(tmp1, 'y', 'mean')
   tmp1 = rbind(unique(tmp1), tmp2)
   
   tmp1[, method2 := factor(method2, levels = c('observation', 'GP-GN', 'GP-SE', 'GP-BS-GN', 'GP-BS-SE'))]
-  tmp1[, n_knots := factor(n_knots, levels = sort(unique(tmp1$n_knots), decreasing = T))]
+  tmp2[, n_knots := factor(n_knots, levels = sort(unique(tmp1$n_knots), decreasing = F))]
   
   tmp2 = subset(tmp1, method2 %in% c('observation',  'GP-GN', 'GP-SE' ))
   p1= ggplot(tmp2,aes(x=x_1,y=x_2)) +
-    geom_raster(aes(fill=M), interpolate = TRUE) +
-    geom_contour(aes(z=M), bins = 12, color = "gray30", 
+    geom_raster(aes(fill=mean), interpolate = TRUE) +
+    geom_contour(aes(z=mean), bins = 12, color = "gray30", 
                  size = 0.5, alpha = 0.5) +
     coord_equal() +
-    scale_x_continuous(expand=c(0,0)) +
+    scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
     scale_y_continuous(expand=c(0,0)) +
-    scale_fill_viridis_c(option = "viridis") +
-    labs(x = expression(x[2]), y = expression(x[1])) + 
+    scale_fill_viridis_c(option = "viridis", limits = range(tmp1$mean)) +
+    # labs(x = expression(x[2]), y = expression(x[1])) + 
+    labs(x = '', y= '') + 
     facet_grid(.~method2) +
+    # facet_wrap(~ method2, nrow = 1, strip.position = "right") +
     theme(legend.position = 'none',
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
-          axis.text.x = element_text(angle=90)) 
+          # axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+          axis.title.x = element_blank(),
+          axis.ticks = element_blank(),
+          axis.text = element_blank(),
+          strip.text =  element_text(size = rel(1.1)),
+          panel.spacing.x = unit(1, "lines")) 
+  
   
   tmp2 = subset(tmp1, !method2 %in% c('observation', 'GP-GN','GP-SE'))
-  p2= ggplot(tmp2,aes(x=x_1,y=x_2)) +
-    geom_raster(aes(fill=M), interpolate = TRUE) +
-    geom_contour(aes(z=M), bins = 12, color = "gray30", 
+  p2 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
+    geom_raster(aes(fill=mean), interpolate = TRUE) +
+    geom_contour(aes(z=mean), bins = 12, color = "gray30", 
                  size = 0.5, alpha = 0.5) +
     coord_equal() +
-    scale_x_continuous(expand=c(0,0)) +
+    scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
     scale_y_continuous(expand=c(0,0)) +
-    scale_fill_viridis_c(option = "viridis") +
-    labs(x = expression(x[2]), y = expression(x[1])) + 
-    facet_grid(n_knots~method2) +
+    scale_fill_viridis_c(option = "viridis", limits = range(tmp1$mean)) +
+    # labs(x = expression(x[2]), y = expression(x[1])) +
+    labs(y= '', x = '') + 
+    facet_grid(method2~n_knots, switch = 'x') +
+    # xlab(expression(decreasing %<->% 'increasing number of knots')) +
     theme(legend.position = 'none',
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
-          axis.text.x = element_text(angle=90)) 
-
-    # p2 = grid.arrange(p2, right = textGrob('Number of knots', vjust = 1.5, rot = 270))
-  p = grid.arrange(grobs = list(p1, p2), heights = c(0.5, 0.95), 
-                   layout_matrix= rbind(c(1,NA), c(2,2)), widths = c(1, 0.1), 
-                   right = textGrob('Number of knots', vjust = 6.5, rot = 270, hjust = -0.3))
+          # axis.text.x = element_text(angle = 45,hjust=1,vjust=1),
+          # strip.text.x = element_text(colour = "white"), 
+          strip.text.x = element_blank(), 
+          strip.text.y =  element_text(size = rel(1.4)),
+          axis.ticks = element_blank(),
+          axis.text = element_blank(),
+          axis.title.x = element_text(size = rel(1.2), vjust = -2.5),
+          panel.spacing.y = unit(3, "lines"))  
   
-  ggsave(p, file = file.path(outdir, paste0('2D_comp_lengthscale_', l, '.png')), w = 5, h = 7)
+  p = grid.arrange(grobs = list(p1, p2), 
+                   heights = c(0.05, 0.6,0.05,1.22, 0.05), 
+                   layout_matrix = rbind(c(NA,NA, NA), 
+                                         c(NA, 1, NA), 
+                                         c(NA,NA, NA),
+                                         c(2,2,2),
+                                         c(NA,NA, NA)), widths = c(0.,1, 0))
+  
+
+  pdf(file = file.path(outdir, paste0('2D_comp_lengthscale_', l, '.pdf')), width = 7.5,height    = 8.5)
+  
+  grid.newpage()
+  grid.draw(arrangeGrob(p))
+  
+  grid.text(expression(decreasing %<->% 'increasing number of knots'), x = c(0.5), y = 0.365)
+  grid.text(expression(decreasing %<->% 'increasing number of knots'), x = c(0.5), y = 0.04)
+  
+  grid.segments(x0 = unit(0.04, "npc"), y0 = unit(0.025, "npc"), x1 = unit(0.98, "npc"), y1 = unit(0.025, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.04, "npc"), y0 = unit(0.025, "npc"), x1 = unit(0.04, "npc"), y1 = unit(0.33, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.04, "npc"), y0 = unit(0.33, "npc"), x1 = unit(0.98, "npc"), y1 = unit(0.33, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.98, "npc"), y0 = unit(0.025, "npc"), x1 = unit(0.98, "npc"), y1 = unit(0.33, "npc"), default.units = "npc")
+  
+  grid.segments(x0 = unit(0.04, "npc"), y0 = unit(0.35, "npc"), x1 = unit(0.04, "npc"), y1 = unit(0.653, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.04, "npc"), y0 = unit(0.35, "npc"), x1 = unit(0.98, "npc"), y1 = unit(0.35, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.04, "npc"), y0 = unit(0.653, "npc"), x1 = unit(0.98, "npc"), y1 = unit(0.653, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.98, "npc"), y0 = unit(0.35, "npc"), x1 = unit(0.98, "npc"), y1 = unit(0.653, "npc"), default.units = "npc")
+  
+  grid.segments(x0 = unit(0.05, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.05, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.05, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.355, "npc"), y1 = unit(0.67, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.355, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.355, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.05, "npc"), y0 = unit(0.97, "npc"), x1 = unit(0.355, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  
+  grid.segments(x0 = unit(0.365, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.365, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.365, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.665, "npc"), y1 = unit(0.67, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.665, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.665, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.365, "npc"), y0 = unit(0.97, "npc"), x1 = unit(0.665, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  
+  grid.segments(x0 = unit(0.98, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.98, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.98, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.674, "npc"), y1 = unit(0.67, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.674, "npc"), y0 = unit(0.67, "npc"), x1 = unit(0.674, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  grid.segments(x0 = unit(0.98, "npc"), y0 = unit(0.97, "npc"), x1 = unit(0.674, "npc"), y1 = unit(0.97, "npc"), default.units = "npc")
+  
+  grid.rect(x = unit(0.06, "npc"), y = unit(0.97, "npc"), width = unit(0.04, "npc"), height = unit(0.04, "npc"), gp = gpar(fill = 'white', col = 'white'))
+  grid.rect(x = unit(0.38, "npc"), y = unit(0.97, "npc"), width = unit(0.04, "npc"), height = unit(0.04, "npc"), gp = gpar(fill = 'white', col = 'white'))
+  grid.rect(x = unit(0.69, "npc"), y = unit(0.97, "npc"), width = unit(0.04, "npc"), height = unit(0.04, "npc"), gp = gpar(fill = 'white', col = 'white'))
+  
+  grid.rect(x = unit(0.05, "npc"), y = unit(0.33, "npc"), width = unit(0.04, "npc"), height = unit(0.02, "npc"), gp = gpar(fill = 'white', col = 'white'))
+  grid.rect(x = unit(0.04, "npc"), y = unit(0.33, "npc"), width = unit(0.02, "npc"), height = unit(0.035, "npc"), gp = gpar(fill = 'white', col = 'white'))
+  grid.rect(x = unit(0.04, "npc"), y = unit(0.653, "npc"), width = unit(0.02, "npc"), height = unit(0.035, "npc"), gp = gpar(fill  = 'white', col = 'white'))
+  grid.rect(x = unit(0.05, "npc"), y = unit(0.653, "npc"), width = unit(0.04, "npc"), height = unit(0.02, "npc"), gp = gpar(fill  = 'white', col = 'white'))
+  
+  grid.text(c("E", 'D', 'C', 'B', 'A'), x = c(0.05, 0.05, 0.684,0.375, 0.06), y = c(0.33, 0.653, 0.97, 0.97, 0.97), 
+            gp=gpar(fontface = 'bold', fontsize = 20))
+  
+  dev.off() 
+
+
+# ggsave(p, file = file.path(outdir, paste0('2D_comp_lengthscale_', l, '.png')), w = 6, h = 6.5)
 }
 
-# time of execution 
+ # time of execution 
 tmp1 = subset(tmp, grepl('GP-SE', method))
 min_GP = unique(tmp1$time)
 time_GP = paste0(round(min_GP / 60), ' minutes')

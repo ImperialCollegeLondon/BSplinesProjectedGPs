@@ -471,7 +471,7 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
 
   saveRDS(tmp1, file = paste0(outdir, '-Contribution_Age_', age_group,'_', Code, '.rds'))
 
-  # return(tmp1)
+  return(tmp1)
 }
 
 
@@ -1128,8 +1128,7 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, cum.
   tmp1[, value := value * weekly.deaths]
   
   # quantiles
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
+  tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), 
               by=c('week_index', 'age_index')]	
   tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
   
@@ -1140,12 +1139,13 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, cum.
   tmp1[, age := factor(age, levels = df_age$age)]
   
   if(!is.null(lab)){
-    saveRDS(tmp1, file = paste0(outdir, '-', 'DeathByAge', 'Table_', lab, '_', Code, '.rds'))
+    file = paste0(outdir, '-', 'DeathByAge', 'Table_', lab, '_', Code, '.rds')
     
   }else{
-    saveRDS(tmp1, file = paste0(outdir, '-', 'DeathByAge', 'Table_', var.phi, '_', Code, '.rds'))
-    
+    file =  paste0(outdir, '-', 'DeathByAge', 'Table_', var.phi, '_', Code, '.rds')
   }
+
+  saveRDS(tmp1, file =file)
 
   return(tmp1)
 }

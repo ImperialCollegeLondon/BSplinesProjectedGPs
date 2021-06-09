@@ -34,46 +34,41 @@ source(file.path(indir, "functions", "postprocessing-utils.R"))
 run_tag = paste0(stan_model, "-", JOBID)
 outdir = file.path(outdir, run_tag, run_tag)
 
-# laod CDC death by age data 
-deathByAge = readRDS( file.path(indir, "data", paste0("CDC-data_2021-06-02.rds")))
-age_max = 105
-create_map_age(age_max)
-fouragegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
-df_age = data.table(age = fouragegroups)
-df_age[, age_index := 1:nrow(df_age)]
-df_age[, age_from := gsub('(.+)-.*', '\\1', age)]
-df_age[, age_to := gsub('.*-(.+)', '\\1', age)]
-df_age[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
-df_age[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
-df_age[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
-df_age[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
-set(df_age, NULL, 'age_from', df_age[,as.numeric(age_from)])
-set(df_age, NULL, 'age_to', df_age[,as.numeric(age_to)])
-set(df_age, NULL, 'age_to_index', df_age[,as.numeric(age_to_index)])
-set(df_age, NULL, 'age_from_index', df_age[,as.numeric(age_from_index)])
-df_age_reporting[, age_state_index := which(df_age$age_from <= age_from & df_age$age_to >= age_to), by = 'age_index']
-
-date_10thcum = subset(deathByAge, !is.na(weekly.deaths))
-date_10thcum = date_10thcum[, list(weekly.deaths = sum(weekly.deaths)), by = c('date', 'code')]
-date_10thcum[, cum.deaths := cumsum(weekly.deaths), by = 'code']
-date_10thcum = date_10thcum[ cum.deaths >=10 , list(min_date = min(date)), by = 'code']
-
-# ref week
-df_week = unique(select(deathByAge, date, code))
-df_week[, month := as.numeric(format(date, '%m'))]
-df_week[grepl('2021', date), month := month + 12]
-df_week = merge(df_week, date_10thcum, by = 'code')
-tmp1 = df_week[date >= min_date, list(min_month = min(month)), by = 'code']
-df_week = merge(df_week, tmp1, by = 'code')
-df_week1= df_week[month >= min_month & month <= min_month + 2, , by = 'code']
-
-deathByAge = merge(deathByAge, df_age_reporting, by = 'age_from')
-deathByAge = merge(deathByAge, df_week1, by = c('date', 'code'))
-deathByAge = deathByAge[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('code', 'age_state_index')]
-tmp1 = deathByAge[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c( 'code')]
-deathByAge = merge(deathByAge, tmp1, by = c('code'))
-deathByAge[, prop_deaths := weekly.deaths / total_deaths]
-deathByAge[, age := fouragegroups[age_state_index]]
+# # laod CDC death by age data 
+# deathByAge = readRDS( file.path(indir, "data", paste0("CDC-data_2021-06-02.rds")))
+# age_max = 105
+# create_map_age(age_max)
+# fouragegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
+# df_age = data.table(age = fouragegroups)
+# df_age[, age_index := 1:nrow(df_age)]
+# df_age[, age_from := gsub('(.+)-.*', '\\1', age)]
+# df_age[, age_to := gsub('.*-(.+)', '\\1', age)]
+# df_age[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+# df_age[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
+# df_age[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
+# df_age[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+# set(df_age, NULL, 'age_from', df_age[,as.numeric(age_from)])
+# set(df_age, NULL, 'age_to', df_age[,as.numeric(age_to)])
+# set(df_age, NULL, 'age_to_index', df_age[,as.numeric(age_to_index)])
+# set(df_age, NULL, 'age_from_index', df_age[,as.numeric(age_from_index)])
+# df_age_reporting[, age_state_index := which(df_age$age_from <= age_from & df_age$age_to >= age_to), by = 'age_index']
+# 
+# # ref week
+# df_week = unique(select(deathByAge, date, code))
+# df_week[, month := as.numeric(format(date, '%m'))]
+# df_week[grepl('2021', date), month := month + 12]
+# df_week = merge(df_week, date_10thcum, by = 'code')
+# tmp1 = df_week[date >= min_date, list(min_month = min(month)), by = 'code']
+# df_week = merge(df_week, tmp1, by = 'code')
+# df_week1= df_week[month >= min_month & month <= min_month + 2, , by = 'code']
+# 
+# deathByAge = merge(deathByAge, df_age_reporting, by = 'age_from')
+# deathByAge = merge(deathByAge, df_week1, by = c('date', 'code'))
+# deathByAge = deathByAge[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('code', 'age_state_index')]
+# tmp1 = deathByAge[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c( 'code')]
+# deathByAge = merge(deathByAge, tmp1, by = c('code'))
+# deathByAge[, prop_deaths := weekly.deaths / total_deaths]
+# deathByAge[, age := fouragegroups[age_state_index]]
 
 
 #load vaccination data
@@ -136,19 +131,12 @@ saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
 
 #
 # trend in contribution
-contribution064 = vector(mode = 'list', length = length(locs))
+contribution074 = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  contribution064[[i]] = readRDS(paste0(outdir, '-Contribution_Age_0-64_', locs[i], '.rds'))
+  contribution074[[i]] = readRDS(paste0(outdir, '-Contribution_Age_0-74_', locs[i], '.rds'))
 }
-contribution064 = do.call('rbind', contribution064)
-contribution064 = merge(contribution064, region_name, by = 'code')
-
-contribution6574 = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  contribution6574[[i]] = readRDS(paste0(outdir, '-Contribution_Age_65-74_', locs[i], '.rds'))
-}
-contribution6574 = do.call('rbind', contribution6574)
-contribution6574 = merge(contribution6574, region_name, by = 'code')
+contribution074 = do.call('rbind', contribution074)
+contribution074 = merge(contribution074, region_name, by = 'code')
 
 contribution75 = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
@@ -157,16 +145,45 @@ for(i in seq_along(locs)){
 contribution75 = do.call('rbind', contribution75)
 contribution75 = merge(contribution75, region_name, by = 'code')
 
-contribution = rbind(contribution75, rbind(contribution064, contribution6574))
+contribution = rbind(contribution75, contribution074)
 
-plot_contribution_all_states(contribution, vaccinedata, outdir)
+death2agegroups = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  death2agegroups[[i]] = readRDS(paste0(outdir, '-DeathByAgeTable_2agegroups_', locs[i], '.rds'))
+}
+death2agegroups = do.call('rbind', death2agegroups)
+death2agegroups = merge(death2agegroups, region_name, by = 'code')
 
-# stats
-contribution_stats = statistics_contribution_all_states(contribution064, contribution6574, contribution75, vaccinedata)
-saveRDS(contribution_stats, file = paste0(outdir, '-contribution_rel_adj_stats.rds'))
+# find states slow, fast, plateau
+beta = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  y = subset(contribution75, code == locs[i] & date >= as.Date('2020-12-01'))$M
+  x = 1:length(y)
+  fit1 = lm(y ~ x)
+  
+  y = subset(contribution75, code == locs[i] & date >= as.Date('2021-05-01'))$M
+  x = 1:length(y)
+  fit2 = lm(y ~ x)
+  
+  beta[[i]] = data.table(code = locs[i], betatot = fit1$coefficients[2],  betalast = fit2$coefficients[2])
+}
+beta = do.call('rbind', beta)
+
+plateau = beta[betalast > 0, code]
+slowd = beta[betatot > summary(beta$betatot)[5], code]
+slowd = slowd[!slowd %in% plateau]
+fastd = beta[betatot < summary(beta$betatot)[2], code]
+
+selected_states = c('CA', 'ID', 'AR')
+stopifnot(selected_states[1] %in% plateau) 
+stopifnot(selected_states[2] %in% slowd) 
+stopifnot(selected_states[3] %in% fastd) 
+
+plot_contribution_magnitude_all_states(contribution, death2agegroups, selected_states, vaccinedata, outdir)
+  
 
 
-# plot contribution over time
+# plot contribution baseline
 contribution_ref = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   contribution_ref[[i]] = readRDS(paste0(outdir, '-contribution_refTable_', locs[i], '.rds'))
@@ -183,11 +200,14 @@ contribution_ref_adj = do.call('rbind', contribution_ref_adj)
 contribution_ref_adj = merge(contribution_ref_adj, region_name, by = 'code')
 contribution_ref_adj = merge(contribution_ref_adj, loc_div, by = 'code')
 
-deathByAge = merge(deathByAge, region_name, by = 'code')
-deathByAge = merge(deathByAge, loc_div, by = 'code')
+# deathByAge = merge(deathByAge, region_name, by = 'code')
+# deathByAge = merge(deathByAge, loc_div, by = 'code')
 
-plot_contribution_ref_all_states(contribution_ref, contribution_ref_adj, deathByAge, outdir)
-  
+contribution_ref = subset(contribution_ref, !code %in% c('AK', 'HI', 'VT'))
+contribution_ref_adj = subset(contribution_ref_adj, !code %in% c('AK', 'HI', 'VT'))
+
+plot_contribution_ref_all_states(contribution_ref, contribution_ref_adj, outdir)
+
 # stats
 contribution_baseline = statistics_contributionref_all_states(contribution_ref_adj)
 saveRDS(contribution_baseline, file = paste0(outdir, '-contribution_ref_adj_stats.rds'))
@@ -195,6 +215,16 @@ saveRDS(contribution_baseline, file = paste0(outdir, '-contribution_ref_adj_stat
 
 
 
+# 
+# plot_contribution_all_states(contribution, vaccinedata, outdir)
+# 
+# # stats
+# contribution_stats = statistics_contribution_all_states(contribution064, contribution6574, contribution75, vaccinedata)
+# saveRDS(contribution_stats, file = paste0(outdir, '-contribution_rel_adj_stats.rds'))
+# 
+# 
+
+# 
 
 
 

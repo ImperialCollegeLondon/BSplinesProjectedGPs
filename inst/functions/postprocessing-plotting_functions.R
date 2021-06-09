@@ -116,10 +116,11 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
   
   dates = unique(tmp1$date)
   tmp2 = subset(tmp1, date %in% dates[seq(1, length(dates), length.out =3)])
+  tmp2[, date_format := format(date, "%d-%b-%y")]
   p1 = ggplot(tmp2, aes(x = age)) + 
     theme_bw() +
     labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
-    facet_wrap(~date, ncol = 1)+ 
+    facet_wrap(~date_format, ncol = 1)+ 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA))
   
@@ -314,9 +315,12 @@ compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.de
   scraped_data[, date := as.Date(date)]
   scraped_data[, CL := NA]
   scraped_data[, CU := NA]
-  ages = unique(scraped_data$age)
   scraped_data = scraped_data[order(code, age, date)]
 
+  # age sorted
+  ages = unique(select(CDC_data, age, age_from))
+  ages = ages[order(age_from)]$age
+  
   # prepare CDC estimations
   CDC_data = select(as.data.table(CDC_data), code, date, age, var.cum.deaths.CDC, CL, CU)
   setnames(CDC_data, var.cum.deaths.CDC, 'cum.deaths')
@@ -329,23 +333,25 @@ compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.de
   tmp2[, age := factor(age, levels = ages)]
   tmp2[, source := factor(source, levels = c('Estimated', 'DoH'))]
   
-  col = viridisLite::viridis(3, option = "B", direction = -1, end = 0.8)
+  col = c('#5CC8D7FF', '#00203FFF')
   
   p = ggplot(tmp2, aes(x = date, y = cum.deaths)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
     geom_line(aes(col = source), size = 1) +
     theme_bw() + 
-    scale_color_manual(values = col[c(1,2)]) + 
-    scale_fill_manual(values = col[c(1,2)]) +
+    scale_color_manual(values = col) + 
+    scale_fill_manual(values = col) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     facet_wrap(~age,  scale = 'free_y', ncol = 1) + 
     theme(legend.position = 'bottom',
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
-          axis.text.x = element_text(angle = 45,hjust=1,vjust=1)) + 
-    labs(y = 'Cumulative COVID-19 deaths', col = '', fill = '', x = '')
+          axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+          axis.title.x = element_blank()) + 
+    labs(y = 'Cumulative COVID-19 deaths', col = '', fill = '')
   ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_uncertainty_', Code, '.png'), w = 3, h = 10, limitsize = F)
   
+  return(p)
 }
 
 plot_covariance_matrix = function(fit_cum, outdir)
@@ -553,6 +559,60 @@ plot_probability_ratio = function(probability_ratio_table, df_week, stan_data, o
   
 }
 
+plot_contribution_magnitude_all_states = function(contribution, death2agegroups, selected_states, outdir, nrow = 1, legend.position = 'bottom')
+{
+  
+  tmp = subset(contribution, code %in% selected_states)
+  tmp2 = subset(death2agegroups, code %in% selected_states)
+  
+  tmp1 = unique(select(tmp, code, loc_label))
+  tmp1[, code := factor(code, levels = selected_states)]
+  tmp1 = tmp1[order(code)]
+  
+  tmp[, loc_label := factor(loc_label, tmp1$loc_label)]
+  tmp2[, loc_label := factor(loc_label, tmp1$loc_label)]
+  
+  p1 = ggplot(tmp, aes(x= date) ) +
+    geom_line(aes(y = M, col = age)) + 
+    geom_point(aes(y = emp, col = age), size = 0.5) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
+    facet_wrap(~loc_label, nrow = 3) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme_bw() + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 45, hjust =1), 
+          panel.grid.major = element_blank(), 
+          axis.title.x = element_blank()) +
+    labs(y = 'Estimated age-specific contribution\nto COVID-19 weekly deaths') + 
+    scale_y_continuous(labels = scales::percent_format()) +
+    scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
+    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)
+  
+  
+  p2 = ggplot(tmp2, aes(x= date) ) +
+    geom_line(aes(y = M, col = age)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
+    facet_wrap(~loc_label, nrow = 3, scale = 'free_y') +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme_bw() + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 45, hjust =1), 
+          panel.grid.major = element_blank(), 
+          axis.title.x = element_blank()) +
+    labs( y = 'Estimated age-specific COVID-19\nweekly deaths', col = 'Age group', fill = 'Age group') + 
+    scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
+    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)
+  
+  
+  p = ggpubr::ggarrange(p2,p1, common.legend = T, legend = legend.position, nrow = nrow)
+  ggsave(p, file = paste0(outdir, '-ContributionMagnitude_panel.png'), w = 7, h = 8)
+  
+  
+  return(p)
+}
+
 plot_death_ratio = function(death_ratio_table, outdir)
 {
   # plot
@@ -610,69 +670,6 @@ plot_mean_age_death = function(mean_age_death, outdir){
     ggsave(file = paste0(outdir, '-MeanAgeDeath.png'), w = 6, h = length(unique(mean_age_death$loc_label)) / 4, limitsize = F)
   }
 }
-
-plot_contribution_comparison_method = function(tab_cd, data, model_name){
-  
-  tmp = copy(data)
-  setnames(tmp, 'prop_deaths', 'M')
-  set(tmp, NULL, 'CL', NA_real_)
-  set(tmp, NULL, 'CU', NA_real_)
-  
-  tmp = rbind(select(tab_cd, date, age, M, method), select(tmp, date, age, M, method))
-  tmp[, method := factor(method, c('observation', model_name))]
-
-  p = ggplot(tmp, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = M )) + 
-    theme_bw() +
-    scale_fill_viridis_c(option = "E") +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    scale_y_discrete(expand = c(0,0)) + 
-    labs(x = '', y = 'Age group',
-         fill = 'Contribution to\nweekly\nCOVID-19\ndeaths') + 
-    facet_grid(~method) + 
-    theme(legend.position = 'left',
-          axis.text.x = element_text(angle = 90), 
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          legend.key = element_blank(), 
-          strip.background = element_rect(colour="white", fill="white")) 
-  
-  return(p)
-}
-
-
-plot_death_comparison_method = function(tab_d, data, model_name){
-  
-  tmp = copy(data)
-  setnames(tmp, 'weekly.deaths', 'M')
-  set(tmp, NULL, 'CL', NA_real_)
-  set(tmp, NULL, 'CU', NA_real_)
-  
-  tmp = rbind(select(tab_d, date, age, M, method), select(tmp, date, age, M, method))
-  tmp[, method := factor(method, c('observation', model_name))]
-  
-  range_wd = sqrt(range(na.omit(data$weekly.deaths)))
-  digits_cut= ifelse(range_wd[2]/100 > 1, 2, 1)
-  digits_cut= ifelse(range_wd[2]/10 > 1, digits_cut, 0)
-  p =  ggplot(tmp, aes(x = date, y = age)) + 
-    geom_raster(aes(fill = M )) + 
-    theme_bw() +
-    scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut) ) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    scale_y_discrete(expand = c(0,0)) + 
-    labs(x = '', y = 'Age group',
-         fill = 'Reported\nCOVID-19\ndeaths') + 
-    facet_grid(~method) + 
-    theme(legend.position = 'left',
-          axis.text.x = element_text(angle = 90), 
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank(), 
-          legend.key = element_blank(), 
-          strip.background = element_rect(colour="white", fill="white")) 
-  
-  return(p)
-}
-
 
 plot_mortality_rate_all_states = function(mortality_rate, outdir)
 {
@@ -808,6 +805,93 @@ plot_contribution_all_states = function(contribution, vaccinedata, outdir){
   
 }
 
+plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, selected_method, model_name, show.method = T){
+  
+  dates = unique(tab_cc$date)
+  dates = dates[seq(3, length(dates)-3, length.out =3)]
+  
+  plot_labels <- format(dates,  "%d-%b-%y")
+  limit_SE = range(subset(tab_cc, method == selected_method)$CL, subset(tab_cc, method == selected_method)$CU)
+  
+  tmp= tab_d[, list(sumM = sum(M)), by = c('date', 'method')]
+  df = data.frame(value = dates, y = max(tmp$sumM) - 100, 
+                  key = as.character(1:length(dates)), 
+                  x_prop = min(as.numeric(tab_cc$age)) +2,
+                  y_prop = limit_SE[2] -0.0005, date=dates)
+  
+  
+  tmp2 = subset(tab_cc, date %in% dates)
+  tmp2[, age_c := as.numeric(age)]
+  tmp2[, method := factor(method,  model_name)]
+  
+  p1 = ggplot(tmp2, aes(x = age_c)) + 
+    geom_line(aes(y = M)) +
+    geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
+    theme_bw() +
+    labs(y = 'Estimated age-specific contribution\nto COVID-19 weekly deaths', x = "Age") + 
+    facet_grid(method~date) +
+    coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
+    theme(panel.border = element_rect(colour = "black", fill = NA), 
+          # legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white"), 
+          panel.grid.major = element_blank(),
+          axis.title.y = element_text(size = rel(1.1)), 
+          plot.margin = unit(c(5.5,5.5,25,5.5), "pt"))  + 
+    geom_point(data = df, aes(x = x_prop, y = y_prop, col = key, shape = key), size =3, stroke = 1.5 ) + 
+    scale_shape_manual(name = "Dates", labels = plot_labels, values = c(21, 22, 23)) + 
+    scale_colour_manual(name = "Dates", labels = plot_labels, values = gg_color_hue(3)) 
+  
+  if(show.method==F){
+    p1 = p1 + theme(strip.text = element_blank())
+  } else{
+    p1 = p1 + theme(strip.text.x =  element_blank(),
+                    strip.text.y =  element_text(size = rel(1)))
+  }
+  
+  tmp3 = as.data.table(tab_d)
+  tmp3[, method := factor(method,  model_name)]
+  tmp3[, age_c := as.numeric(age)]
+  
+  mybreaks <- as.numeric(levels(tmp3$age)[seq(1, length(levels(tmp3$age)), length.out = 4)])
+  
+  p2 = ggplot(tmp3, aes(x = date)) + 
+    theme_bw() +
+    labs(y = 'Estimated age-specific COVID-19\nweekly deaths', x = "", color = '', shape = '', fill = 'Age') + 
+    facet_grid(method~.) +
+    # coord_cartesian(ylim = limit_SE) + 
+    scale_fill_viridis_d(option = 'B', end = 0.95, #breaks = mybreaks,
+    guide = guide_colorsteps(show.limits = TRUE)) +
+    # scale_fill_binned(breaks = c(10, 25, 50)) +
+    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+    geom_segment(data = df, aes(x = value, y = 0, xend = value, yend = y), 
+                 linetype = "dashed", colour = "grey30", alpha = 0.75) +
+    geom_point(data = df, aes(x = value, y = y, group = key, shape = key, col = key), size = 2, stroke = 1.5 ) +
+    scale_shape_manual(name = "", labels = plot_labels, values = c(21, 22, 23)) + 
+    scale_colour_manual(name = "", labels = plot_labels, values = gg_color_hue(3)) + 
+      geom_bar(aes(y = M, fill = age), stat = 'identity', width = 7)  +
+    scale_y_continuous(expand = c(0,0)) +
+    theme(panel.border = element_rect(colour = "black", fill = NA),
+          strip.background = element_rect(colour="white", fill="white"), 
+          panel.grid.major = element_blank(),
+          strip.text = element_blank(),
+          axis.title.y = element_text(size = rel(1.1)),
+          legend.text = element_text(size = rel(1)),
+          legend.title = element_text(size = rel(1.4)),
+          axis.text.x = element_text(angle= 40, hjust =1)
+    ) +
+    guides(col = F, shape = F)
+  #fill = guide_legend(order = 2, ncol=1,byrow=TRUE), 
+           # color = guide_legend(order=1, nrow=1,byrow=TRUE),  shape = guide_legend(order=1, nrow=1,byrow=TRUE))
+  
+  p3 = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age') + theme(legend.key.height = unit(1.5, "cm"))
+  p = ggpubr::ggarrange(p2,p1, common.legend = T, legend.grob = get_legend(p3), legend = 'left',
+                       widths = c(0.4, 0.6))
+  
+  return(p)
+  
+}
+
+
 
 plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_adj, outdir){
   
@@ -845,7 +929,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
           legend.position = 'none')  +
     scale_fill_viridis(option = 'B', trans = 'sqrt') + 
     scale_y_continuous(labels = scales::percent) +
-    labs(x ='', y = paste0('Age-specific ontribution to COVID-19 deaths\nduring the baseline period'))
+    labs(x ='', y = paste0('Age-specific contribution to COVID-19 deaths\nduring the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref_empr.png'), w = 9, h = 6)
   
   
@@ -911,8 +995,8 @@ compare_CDCestimation_DoH_age_plot_compmethod = function(tab_doh, scraped_data, 
   scraped_data[, CU := NA]
   ages = unique(scraped_data$age)
   scraped_data = scraped_data[order(code, age, date)]
-  scraped_data = scraped_data[rep(seq_len(nrow(scraped_data)), length(unique(CDC_data$method))), ]
-  scraped_data[, method := rep(unique(CDC_data$method), each = nrow(scraped_data)/length(unique(CDC_data$method)))]
+  scraped_data = scraped_data[rep(seq_len(nrow(scraped_data)), length(unique(tab_doh$method))), ]
+  scraped_data[, method := rep(unique(tab_doh$method), each = nrow(scraped_data)/length(unique(tab_doh$method)))]
   
   # prepare CDC estimations
   CDC_data = select(as.data.table(tab_doh), code, date, age, M, CL, CU, method)
@@ -927,7 +1011,7 @@ compare_CDCestimation_DoH_age_plot_compmethod = function(tab_doh, scraped_data, 
   tmp2[, source := factor(source, levels = c('Estimated', 'DoH'))]
   tmp2[, method := factor(method, levels = model_name)]
   
-  col = viridisLite::viridis(3, option = "B", direction = -1, end = 0.8)
+  col = c('#5CC8D7FF', '#00203FFF')
   
   df = CDC_data[method == selected_method, list(maxCL = max(CU)), by = 'age']
   
@@ -936,8 +1020,8 @@ compare_CDCestimation_DoH_age_plot_compmethod = function(tab_doh, scraped_data, 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
     geom_line(aes(col = source), size = 1) +
     theme_bw() + 
-    scale_color_manual(values = col[c(1,2)]) + 
-    scale_fill_manual(values = col[c(1,2)]) +
+    scale_color_manual(values = col) + 
+    scale_fill_manual(values = col) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
     facet_grid(age~method,  scale = 'free_y') + 
     theme(legend.position = 'bottom',
@@ -953,11 +1037,15 @@ compare_CDCestimation_DoH_age_plot_compmethod = function(tab_doh, scraped_data, 
       panel_limits = tibble::tribble(
         ~age, ~ymin, ~ymax
         , "0-4" ,    -1,    df$maxCL[1] 
-        , "5-17" ,    -1,    df$maxCL[2] 
-        , "18-24" ,    -1,    df$maxCL[3] 
-        , "25-49" ,    -1,    df$maxCL[4] 
-        , "50-64" ,    -1,    df$maxCL[5] 
-        , "65+" ,    -1,    df$maxCL[6] 
+        , "5-14" ,    -1,    df$maxCL[2] 
+        , "15-24" ,    -1,    df$maxCL[3] 
+        , "25-34" ,    -1,    df$maxCL[4] 
+        , "35-44" ,    -1,    df$maxCL[5] 
+        , "45-54" ,    -1,    df$maxCL[6] 
+        , "55-64" ,    -1,    df$maxCL[7] 
+        , "65-74" ,    -1,    df$maxCL[8] 
+        , "75-84" ,    -1,    df$maxCL[9] 
+        , "85+" ,    -1,    df$maxCL[10] 
       ))
   
   return(p)
@@ -1142,4 +1230,65 @@ compare_CDCestimation_DoH_age_plot_compmethod = function(tab_doh, scraped_data, 
 #     labs(y = 'Age-specific contribution to COVID-19 weekly deaths', col = '', fill = '', x = '')
 #   ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 4, h = 8, limitsize = F)
 #   
+# }
+# 
+# plot_contribution_comparison_method = function(tab_cd, data, model_name){
+#   
+#   tmp = copy(data)
+#   setnames(tmp, 'prop_deaths', 'M')
+#   set(tmp, NULL, 'CL', NA_real_)
+#   set(tmp, NULL, 'CU', NA_real_)
+#   
+#   tmp = rbind(select(tab_cd, date, age, M, method), select(tmp, date, age, M, method))
+#   tmp[, method := factor(method, c('observation', model_name))]
+#   
+#   p = ggplot(tmp, aes(x = date, y = age)) + 
+#     geom_raster(aes(fill = M )) + 
+#     theme_bw() +
+#     scale_fill_viridis_c(option = "E") +
+#     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+#     scale_y_discrete(expand = c(0,0)) + 
+#     labs(x = '', y = 'Age group',
+#          fill = 'Contribution to\nweekly\nCOVID-19\ndeaths') + 
+#     facet_grid(~method) + 
+#     theme(legend.position = 'left',
+#           axis.text.x = element_text(angle = 90), 
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           legend.key = element_blank(), 
+#           strip.background = element_rect(colour="white", fill="white")) 
+#   
+#   return(p)
+# }
+
+# plot_death_comparison_method = function(tab_d, data, model_name){
+#   
+#   tmp = copy(data)
+#   setnames(tmp, 'weekly.deaths', 'M')
+#   set(tmp, NULL, 'CL', NA_real_)
+#   set(tmp, NULL, 'CU', NA_real_)
+#   
+#   tmp = rbind(select(tab_d, date, age, M, method), select(tmp, date, age, M, method))
+#   tmp[, method := factor(method, c('observation', model_name))]
+#   
+#   range_wd = sqrt(range(na.omit(data$weekly.deaths)))
+#   digits_cut= ifelse(range_wd[2]/100 > 1, 2, 1)
+#   digits_cut= ifelse(range_wd[2]/10 > 1, digits_cut, 0)
+#   p =  ggplot(tmp, aes(x = date, y = age)) + 
+#     geom_raster(aes(fill = M )) + 
+#     theme_bw() +
+#     scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut) ) +
+#     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+#     scale_y_discrete(expand = c(0,0)) + 
+#     labs(x = '', y = 'Age group',
+#          fill = 'Reported\nCOVID-19\ndeaths') + 
+#     facet_grid(~method) + 
+#     theme(legend.position = 'left',
+#           axis.text.x = element_text(angle = 90), 
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           legend.key = element_blank(), 
+#           strip.background = element_rect(colour="white", fill="white")) 
+#   
+#   return(p)
 # }
