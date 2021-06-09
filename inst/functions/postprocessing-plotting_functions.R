@@ -811,19 +811,25 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, selecte
   dates = dates[seq(3, length(dates)-3, length.out =3)]
   
   plot_labels <- format(dates,  "%d-%b-%y")
-  limit_SE = range(subset(tab_cc, method == selected_method)$CL, subset(tab_cc, method == selected_method)$CU)
-  
-  tmp= tab_d[, list(sumM = sum(M)), by = c('date', 'method')]
-  df = data.frame(value = dates, y = max(tmp$sumM) - 100, 
-                  key = as.character(1:length(dates)), 
-                  x_prop = min(as.numeric(tab_cc$age)) +2,
-                  y_prop = limit_SE[2] -0.0005, date=dates)
-  
   
   tmp2 = subset(tab_cc, date %in% dates)
   tmp2[, age_c := as.numeric(age)]
   tmp2[, method := factor(method,  model_name)]
   
+  tmp3 = as.data.table(tab_d)
+  tmp3[, method := factor(method,  model_name)]
+  tmp3[, age_c := as.numeric(age)]
+  
+  limit_SE = range(subset(tmp2, method == selected_method)$CL, subset(tmp2, method == selected_method)$CU)
+  
+  tmp= tab_d[, list(sumM = sum(M)), by = c('date', 'method')]
+  
+  df = data.frame(value = dates, y = max(tmp$sumM) - max(tmp$sumM)*0.1, 
+                  key = as.character(1:length(dates)), 
+                  x_prop = 10,
+                  y_prop = limit_SE[2] -limit_SE[2]*0.03, date=dates)
+  
+
   p1 = ggplot(tmp2, aes(x = age_c)) + 
     geom_line(aes(y = M)) +
     geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
@@ -831,6 +837,8 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, selecte
     labs(y = 'Estimated age-specific contribution\nto COVID-19 weekly deaths', x = "Age") + 
     facet_grid(method~date) +
     coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
+    scale_y_continuous(expand = c(0,0)) + 
+    scale_x_continuous(expand = c(0,0)) + 
     theme(panel.border = element_rect(colour = "black", fill = NA), 
           # legend.key = element_blank(), 
           strip.background = element_rect(colour="white", fill="white"), 
@@ -848,9 +856,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, selecte
                     strip.text.y =  element_text(size = rel(1)))
   }
   
-  tmp3 = as.data.table(tab_d)
-  tmp3[, method := factor(method,  model_name)]
-  tmp3[, age_c := as.numeric(age)]
+
   
   mybreaks <- as.numeric(levels(tmp3$age)[seq(1, length(levels(tmp3$age)), length.out = 4)])
   
