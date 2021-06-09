@@ -5,6 +5,7 @@ library(rstan)
 library(data.table)
 library(dplyr)
 library(gridExtra)
+library(cowplot)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
@@ -80,13 +81,13 @@ vaccinedata = clean_vaccination_data(file)
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
 
 # Plot estimate B-splines parameters plane 
-ppp = plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
+plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
 
 
 # Plots continuous age distribution phi
 cat("\nMake continuous age distribution plots \n")
 age_contribution_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'phi', outdir.table)
-pc = plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
+plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
 age_contribution_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 
@@ -96,12 +97,12 @@ make_contribution_ref_adj(fit_cum, date_10thcum, fiveagegroups, df_week, pop_dat
 
 # contirbution over time per age groups
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-64', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+cont1 = find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-79', date_10thcum, pop_data, data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75-84', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+cont2 = find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '80+', date_10thcum, pop_data, data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '85+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 
@@ -130,11 +131,11 @@ plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdi
 death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
 plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
 
-make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table)
+deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi_reduced', df_age_reporting, outdir.table)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table, 
                                           age_groups = c('0-64', '65-74', '75+'), lab = '3agegroups')
-make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table, 
+death1 = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData, 'cumulative_deaths', 'phi', df_age_continuous, outdir.table, 
                                     age_groups = c('0-74', '75+'), lab = '2agegroups')
 
 # Plot mean age of death over time 
@@ -145,6 +146,11 @@ plot_mean_age_death(mean_age_death, outdir.fig)
 # find overall cumulative deaths (by age groups)
 if(nrow(subset(scrapedData, code == Code)) > 0 ){
   
+  scrapedData = subset(scrapedData, code == Code)
+  
+  if(Code == 'GA')
+    scrapedData = reduce_agebands_scrapedData_GA(scrapedData)
+  
   tmp = find_cumulative_deaths_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
   compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = 'M', outdir = outdir.fig)
@@ -152,25 +158,27 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
  }
 
 # make panel figure
-data = select(data, date, age, loc_label, code, weekly.deaths)
-tmp1 = data[, list(total_deaths = sum(na.omit(weekly.deaths))), by = 'date']
-data = merge(data, tmp1, by = 'date')
-data[, prop_deaths := weekly.deaths / total_deaths]
-data$method = 'observation'
+cont = rbind(cont1, cont2)
+cont = merge(cont, unique(select(data,loc_label, code)), by = 'code')
+death1 = merge(death1, unique(select(data,loc_label, code)), by = 'code')
+p1 = plot_contribution_magnitude_all_states(cont, death1, Code, outdir.fig, nrow = 1, legend.position = 'left') 
+age_contribution_continuous_table$method = 'GP-BS-SE'
+deatht$method = 'GP-BS-SE'
+p2=plot_contribution_continuous_comparison_method(age_contribution_continuous_table, deatht, 'GP-BS-SE', 'GP-BS-SE', 
+                                                  show.method = F) 
 
-age_contribution_discrete_table$method = 'GP-BS-SE'
-p1 = plot_contribution_comparison_method(age_contribution_discrete_table, data, model_name = 'GP-BS-SE')
-
-death_discrete_table$method = 'GP-BS-SE'
-p2 = plot_death_comparison_method(death_discrete_table, data, 'GP-BS-SE')
-
-ppp = ppp + theme(legend.position = 'left') + labs(fill = 'B-Splines\nparameters')
-p = grid.arrange(p2, p1, pc[[1]], ppp, layout_matrix = rbind(c(1, 1, 1, 3), 
-                                                         c(2, 2, 2, 3), 
-                                                         c(NA, 4, NA, 3)), widths = c(0.2, 1, 0.2, 0.8), heights = c(1, 1, 0.9))
-ggsave(p, file = paste0(outdir.fig, '-panel_plot_', Code, '.png'), w = 9, h = 9)
+p = grid.arrange(p2, p1)
+ggsave(p, file = paste0(outdir.fig, '-panel_plot_1_', Code, '.png'), w = 9, h = 8)
 
 
+
+
+# data = select(data, date, age, loc_label, code, weekly.deaths)
+# tmp1 = data[, list(total_deaths = sum(na.omit(weekly.deaths))), by = 'date']
+# data = merge(data, tmp1, by = 'date')
+# data[, prop_deaths := weekly.deaths / total_deaths]
+# data$method = 'observation'
+# 
 
 
 

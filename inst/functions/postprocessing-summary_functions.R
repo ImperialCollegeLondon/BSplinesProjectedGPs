@@ -471,7 +471,7 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
 
   saveRDS(tmp1, file = paste0(outdir, '-Contribution_Age_', age_group,'_', Code, '.rds'))
 
-  # return(tmp1)
+  return(tmp1)
 }
 
 
