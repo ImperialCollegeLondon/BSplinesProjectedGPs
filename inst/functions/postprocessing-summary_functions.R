@@ -1070,7 +1070,7 @@ make_weekly_death_rate_table = function(fit_cum, fiveagegroups, date_vac, df_wee
   return(tmp1)
 }
 
-make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, cum.death.var, var.phi, df_age, outdir, age_groups = NULL, lab = NULL){
+make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.phi, df_age, outdir, age_groups = NULL, lab = NULL){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -1103,8 +1103,9 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, cum.
   data_comp = as.data.table(data_comp)
   data_comp = subset(data_comp, code == Code)
   data_comp[, date := as.Date(date)]
-  tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = 'date']
+  tmp2 = data_comp[, list(daily_deaths = sum(daily_deaths)), by = 'date']
   tmp2 = tmp2[order( date)]
+  tmp2[, cum.death := cumsum(daily_deaths)]
   tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
   tmp2[, weekly.deaths := c(diff(cum.death),NA)]
   tmp2 = unique(subset(tmp2, date %in% df_week$date))

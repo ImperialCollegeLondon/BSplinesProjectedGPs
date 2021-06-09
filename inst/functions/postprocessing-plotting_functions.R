@@ -824,7 +824,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, selecte
   
   tmp= tab_d[, list(sumM = sum(M)), by = c('date', 'method')]
   
-  df = data.frame(value = dates, y = max(tmp$sumM) - max(tmp$sumM)*0.1, 
+  df = data.frame(value = dates, y = max(tmp$sumM) - max(tmp$sumM)*0.05, 
                   key = as.character(1:length(dates)), 
                   x_prop = 10,
                   y_prop = limit_SE[2] -limit_SE[2]*0.03, date=dates)
