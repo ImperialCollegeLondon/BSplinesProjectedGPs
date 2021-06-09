@@ -981,7 +981,7 @@ plot_death_ratio_winter = function(death_ratio_winter, vaccinedata, outdir){
     scale_color_viridis_d(option = 'B', begin = 0.2, end = 0.8)+ 
     scale_fill_viridis_d(option = 'B', begin = 0.2, end = 0.8) + 
     guides(linetype = guide_legend(order=2), color = guide_legend(order=1), fill = guide_legend(order=1)) 
-  ggsave(paste0(outdir, 'DeathsRatioWinter_', Code, '.png'), w = 6, h = 5)
+  ggsave(paste0(outdir, '-DeathsRatioWinter_', Code, '.png'), w = 6, h = 5)
          
          
 }
