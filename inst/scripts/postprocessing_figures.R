@@ -137,7 +137,7 @@ plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strat
 deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
-                                          age_groups = c('0-64', '65-74', '75+'), lab = '3agegroups')
+                                          age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups')
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                     age_groups = c('0-74', '75+'), lab = '2agegroups')
 
@@ -164,7 +164,6 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
 
 age_contribution_continuous_table$method = 'GP-BS-SE'
 deatht$method = 'GP-BS-SE'
-
 p2=plot_contribution_continuous_comparison_method(copy(age_contribution_continuous_table), copy(deatht), copy(data), 
                                                   'GP-BS-SE', 'GP-BS-SE', 
                                                   show.method = F, 
