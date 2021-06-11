@@ -1125,7 +1125,13 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
       empirical = merge(data, df_age_reporting, by = 'age_from')
       empirical = merge(empirical, df_week, by = 'date')
     }
-    select(empirical, weekly.deaths, week_index, age_index)
+    setnames(empirical, 'weekly.deaths', 'emp')
+    tmp_emp = empirical[, list(total_deaths = sum(na.omit(emp))), by = 'week_index']
+    empirical = merge(empirical, tmp_emp, by = c('week_index'))
+    empirical[, prop_deaths := emp / total_deaths]
+    empirical = merge(empirical, tmp2, by = c('week_index'))
+    empirical[, emp_adj := weekly.deaths * prop_deaths]
+    empirical = select(empirical, emp, emp_adj, week_index, age_index)
   }
   
   
