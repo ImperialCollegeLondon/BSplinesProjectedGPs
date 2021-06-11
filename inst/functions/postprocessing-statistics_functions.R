@@ -74,7 +74,10 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
 }
 
 
-find_regime_state = function(contribution75, locs){
+find_regime_state = function(contribution75){
+  
+  locs = unique(contribution75$code)
+  
   # find states slow, fast, plateau
   beta = vector(mode = 'list', length = length(locs))
   for(i in seq_along(locs)){
@@ -101,6 +104,8 @@ find_regime_state = function(contribution75, locs){
   contribution_stats[['slowd']] = paste0(paste0(slowd$loc_label[-nrow(slowd)], collapse = ', '), ' and ', slowd$loc_label[nrow(slowd)])
   contribution_stats[['fastd']] = paste0(paste0(fastd$loc_label[-nrow(fastd)], collapse = ', '), ' and ', fastd$loc_label[nrow(fastd)])
   contribution_stats[['date']] = format(as.Date('2021-05-01'),  '%B %d, %Y')
+  
+  saveRDS(contribution_stat, file = paste0(outdir, '-contribution_ref_adj_stats.rds'))
   
   return(contribution_stats)
 }
