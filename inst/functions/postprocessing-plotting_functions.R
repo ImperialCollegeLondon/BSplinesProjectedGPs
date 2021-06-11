@@ -751,7 +751,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, s
     p1 = p1 + theme(strip.text.x =  element_blank(),
                     strip.text.y =  element_text(size = rel(1.2)))
   }
-  p1 = ggarrange(p1, labels = 'C', font.label = list(size = 20, face = 'bold'))
+  p1 = ggarrange(p1, labels = 'C', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
 
   mybreaks <- as.numeric(levels(tmp3$age)[seq(1, length(levels(tmp3$age)), length.out = 4)])
   
@@ -785,7 +785,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, s
     guides(col = F, shape = F)
   pl = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age') + theme(legend.key.height = unit(1, "cm"))
   p2 = ggpubr::ggarrange(p2,common.legend = T, legend.grob = get_legend(pl), legend = 'right',
-                         labels = 'B', font.label = list(size = 20, face = 'bold'), label.x = 0.05)
+                         labels = 'B', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
 
   data[, age := factor(age, levels = rev(levels(data$age)))]
   p3 = ggplot(data, aes(x = date)) + 
