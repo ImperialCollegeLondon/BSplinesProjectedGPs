@@ -74,7 +74,7 @@ fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # vaccination data 
 file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
-vaccinedata = clean_vaccination_data(file)
+vaccinedata = clean_vaccination_data_age(file)
 
 
 # Plot estimated CAR covariance matrix
@@ -109,7 +109,7 @@ find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_repo
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '85+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 
 # Plot mortality rate
-mortality_rate_table = make_mortality_rate_table(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, 
+mortality_rate_table = make_mortality_rate_table(fit_cum, fiveagegroups, date_10thcum, df_week, pop_data, 
                                                  JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, outdir.fig)
 

@@ -15,7 +15,7 @@ create_map_age = function(age_max){
   
 }
 
-clean_vaccination_data = function(file){
+clean_vaccination_data_age = function(file){
   vaccinedata = as.data.table(read.csv(file))
   vaccinedata = subset(vaccinedata, Demographic.Group %in% c("Ages_65-74_yrs", "Ages_75+_yrs"), 
                        select = c('Date', 'Demographic.Group', 'People.with.at.least.one.dose', 'People.who.are.fully.vaccinated', 'Census'))
@@ -48,3 +48,19 @@ reduce_agebands_scrapedData_GA = function(tmp)
   tmp = select(tmp, -age_index)
   return(tmp)
 }
+
+
+clean_vaccination_data_state = function(file_vac){
+  tmp = as.data.table( read.csv(file) )
+  tmp = select(tmp, date, location, people_vaccinated_per_hundred, people_fully_vaccinated_per_hundred)
+  setnames(tmp, c('location', 'people_vaccinated_per_hundred', 'people_fully_vaccinated_per_hundred'), 
+           c('loc_label', 'prop_vaccinated_1dosep', 'prop_vaccinated_fully'))
+  tmp[, date := as.Date(date)]
+  tmp[, prop_vaccinated_1dosep := as.numeric(prop_vaccinated_1dosep / 100)]
+  tmp[, prop_vaccinated_fully := as.numeric(prop_vaccinated_fully / 100)]
+  
+  tmp[loc_lable == "New York State", loc_label="New York"]
+  return(tmp)
+}
+
+
