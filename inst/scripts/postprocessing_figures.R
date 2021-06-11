@@ -5,6 +5,7 @@ library(rstan)
 library(data.table)
 library(dplyr)
 library(gridExtra)
+library(ggpubr)
 library(cowplot)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
@@ -97,14 +98,14 @@ make_contribution_ref_adj(fit_cum, date_10thcum, fiveagegroups, df_week, pop_dat
 
 # contirbution over time per age groups
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-64', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-cont1 = find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-54', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '55-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-79', date_10thcum, pop_data, data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75-84', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-cont2 = find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '75+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '80+', date_10thcum, pop_data, data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '85+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 
@@ -137,7 +138,7 @@ deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', 
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                           age_groups = c('0-64', '65-74', '75+'), lab = '3agegroups')
-death1 = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                     age_groups = c('0-74', '75+'), lab = '2agegroups')
 
 # Plot mean age of death over time 
@@ -160,17 +161,16 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
  }
 
 # make panel figure
-cont = rbind(cont1, cont2)
-cont = merge(cont, unique(select(data,loc_label, code)), by = 'code')
-death1 = merge(death1, unique(select(data,loc_label, code)), by = 'code')
-p1 = plot_contribution_magnitude_all_states(cont, death1, Code, outdir.fig, nrow = 1, legend.position = 'left') 
+
 age_contribution_continuous_table$method = 'GP-BS-SE'
 deatht$method = 'GP-BS-SE'
-p2=plot_contribution_continuous_comparison_method(age_contribution_continuous_table, deatht, 'GP-BS-SE', 'GP-BS-SE', 
-                                                  show.method = F) 
 
-p = grid.arrange(p2, p1)
-ggsave(p, file = paste0(outdir.fig, '-panel_plot_1_', Code, '.png'), w = 9, h = 8)
+p2=plot_contribution_continuous_comparison_method(copy(age_contribution_continuous_table), copy(deatht), copy(data), 
+                                                  'GP-BS-SE', 'GP-BS-SE', 
+                                                  show.method = F, 
+                                                  heights = c(1,1)) 
+
+ggsave(p2, file = paste0(outdir.fig, '-panel_plot_1_', Code, '.png'), w = 9, h = 7)
 
 
 

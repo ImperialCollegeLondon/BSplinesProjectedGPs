@@ -51,6 +51,7 @@ reduce_agebands_scrapedData_GA = function(tmp)
 
 
 clean_vaccination_data_state = function(file_vac){
+  
   tmp = as.data.table( read.csv(file) )
   tmp = select(tmp, date, location, people_vaccinated_per_hundred, people_fully_vaccinated_per_hundred)
   setnames(tmp, c('location', 'people_vaccinated_per_hundred', 'people_fully_vaccinated_per_hundred'), 
@@ -59,7 +60,29 @@ clean_vaccination_data_state = function(file_vac){
   tmp[, prop_vaccinated_1dosep := as.numeric(prop_vaccinated_1dosep / 100)]
   tmp[, prop_vaccinated_fully := as.numeric(prop_vaccinated_fully / 100)]
   
-  tmp[loc_lable == "New York State", loc_label="New York"]
+  # by week
+  tmp[, dayofweek := format(date, '%A')]
+  tmp = subset(tmp, dayofweek == 'Friday')
+  tmp[, date := date - 6]
+  tmp = select(tmp, -dayofweek)
+  
+  # remove first day NA
+  tmp1 = tmp[,list(firstday = min(date)), by = 'loc_label']
+  tmp = merge(tmp, tmp1, by = 'loc_label')
+  tmp = tmp[!(date == firstday & is.na(prop_vaccinated_1dosep))]
+  
+  # fill NA with previous value
+  tmp[, prop_vaccinated_1dosep := prop_vaccinated_1dosep[1], .(cumsum(!is.na(prop_vaccinated_1dosep)))]
+  tmp[, prop_vaccinated_fully := prop_vaccinated_fully[1], .(cumsum(!is.na(prop_vaccinated_fully)))]
+  
+  # set as NA decreasing sequence
+  tmp[, firstorderdifference := c(NA,diff(prop_vaccinated_1dosep)), by = 'loc_label']
+  tmp[, firstorderdifference2 := c(NA,diff(prop_vaccinated_fully)), by = 'loc_label']
+  
+  tmp = tmp[firstorderdifference >= 0]
+  
+  tmp[loc_label == "New York State", loc_label:="New York"]
+  
   return(tmp)
 }
 

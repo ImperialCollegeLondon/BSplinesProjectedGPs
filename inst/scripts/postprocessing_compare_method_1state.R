@@ -10,7 +10,7 @@ outdir = '~/git/CDC-covid19-agespecific-mortality-data/inst/results/new'
 location.index = 1
 stan_model = c('210429h1', '210529c', '210529b')
 JOBID = c(11762, 31345, 2117)
-model_name = c('GP-SE', 'GP-BS-GN', 'GP-BS-SE')
+model_name = c('Standard GP', 'Standard B-splines', 'Low rank GP projected\nby regularised B-splines')
 
 # load functions
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
@@ -22,7 +22,7 @@ run_tag = paste0(stan_model, "-", JOBID)
 outdir.table = file.path(outdir, run_tag,  run_tag)
 
 # load data
-data = readRDS( paste0(outdir.table[1], '-predictive_checks_table_AL.rds') )
+data = readRDS( paste0(outdir.table[1], '-predictive_checks_table_FL.rds') )
 data = select(data, date, age, loc_label, code, weekly.deaths)
 tmp1 = data[, list(total_deaths = sum(na.omit(weekly.deaths))), by = 'date']
 data = merge(data, tmp1, by = 'date')
@@ -39,7 +39,8 @@ for(i in seq_along(JOBID)){
 }
 tab_doh = do.call('rbind', tab_doh)
 
-p = compare_CDCestimation_DoH_age_plot_compmethod(tab_doh, scraped_data, model_name, selected_method = 'GP-BS-SE')
+p = compare_CDCestimation_DoH_age_plot_compmethod(tab_doh, scraped_data, model_name, 
+                                                  selected_method = 'Low rank GP projected\nby regularised B-splines')
 ggsave(p, file = paste0(outdir.table[1], '-comparison_DoH_CDC_uncertainty_', unique(tab_doh$code), '_commethod.png'), w = 7, h = 9, limitsize = F)
 
 
@@ -59,14 +60,15 @@ for(i in seq_along(JOBID)){
 }
 tab_d = do.call('rbind', tab_d)
 
-p = plot_contribution_continuous_comparison_method(tab_cc, tab_d, 'GP-BS-SE', model_name)
-ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_FL.png'), w = 10, h = 8)
+p = plot_contribution_continuous_comparison_method(tab_cc, tab_d, data, 
+                                                   'Low rank GP projected\nby regularised B-splines', model_name)
+ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_FL.png'), w = 9, h = 10)
 
 
 # LOO
 LOO = list()
 for(i in seq_along(JOBID)){
-  LOO[[i]] = readRDS( paste0(outdir.table[i], "-LOO_AL.rds") )
+  LOO[[i]] = readRDS( paste0(outdir.table[i], "-LOO_FL.rds") )
 }
 
 loo_compare(LOO[[2]], LOO[[3]])

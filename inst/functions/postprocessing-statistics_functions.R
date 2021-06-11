@@ -73,3 +73,34 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
   return(contribution_baseline)
 }
 
+
+find_regime_state = function(contribution75, locs){
+  # find states slow, fast, plateau
+  beta = vector(mode = 'list', length = length(locs))
+  for(i in seq_along(locs)){
+    y = subset(contribution75, code == locs[i] & date >= as.Date('2020-12-01') & date < as.Date('2021-05-01'))$M
+    x = 1:length(y)
+    fit1 = lm(y ~ x)
+    
+    y = subset(contribution75, code == locs[i] & date >= as.Date('2021-05-01'))$M
+    x = 1:length(y)
+    fit2 = lm(y ~ x)
+    
+    beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
+                           betatot = fit1$coefficients[2],  betalast = fit2$coefficients[2])
+  }
+  beta = do.call('rbind', beta)
+  beta =  subset(beta, !code %in% c('HI', 'VT', 'AK'))
+  
+  plateau = beta[betalast > 0, list(code = code, loc_label = loc_label)]
+  slowd = beta[betatot > summary(beta$betatot)[5],  list(code = code, loc_label = loc_label)]
+  fastd = beta[betatot < summary(beta$betatot)[2],  list(code = code, loc_label = loc_label)]
+  
+  contribution_stats = statistics_contribution_all_states(contribution75)
+  contribution_stats[['plateau']] = paste0(paste0(plateau$loc_label[-nrow(plateau)], collapse = ', '), ' and ', plateau$loc_label[nrow(plateau)])
+  contribution_stats[['slowd']] = paste0(paste0(slowd$loc_label[-nrow(slowd)], collapse = ', '), ' and ', slowd$loc_label[nrow(slowd)])
+  contribution_stats[['fastd']] = paste0(paste0(fastd$loc_label[-nrow(fastd)], collapse = ', '), ' and ', fastd$loc_label[nrow(fastd)])
+  contribution_stats[['date']] = format(as.Date('2021-05-01'),  '%B %d, %Y')
+  
+  return(contribution_stats)
+}
