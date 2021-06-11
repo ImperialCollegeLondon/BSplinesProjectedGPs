@@ -135,11 +135,11 @@ death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting,
 plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
 
 deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table)
-make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table)
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
-                                          age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups')
+                                          age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
-                                    age_groups = c('0-74', '75+'), lab = '2agegroups')
+                                    age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T)
 
 # Plot mean age of death over time 
 mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)

@@ -676,6 +676,30 @@ plot_contribution_all_states = function(contribution, vaccinedata_state, outdir)
   
 }
 
+plot_mortality_all_states = function(death2agegroups, outdir)
+{
+  ggplot(death2agegroups, aes(x= date) ) +
+    geom_line(aes(y = M, col = age)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
+    facet_wrap(~loc_label, scale = 'free_y', ncol = 6) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme_bw() + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 45, hjust =1), 
+          panel.grid.major = element_blank(), 
+          axis.title.x = element_blank(), 
+          axis.title.y = element_text(size = rel(1.2)), 
+          legend.title = element_text(size = rel(1.1)), 
+          strip.text = element_text(size = rel(1.1)), 
+          legend.position = 'bottom') +
+    labs( y = 'Estimated age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group') + 
+    scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
+    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)
+  
+  ggsave(paste0(outdir, paste0('-Mortality_allStates.png')), w = 9, h = 12)
+}
+
 plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, selected_method, model_name, show.method = T, heights= c(0.4,0.6)){
   
   dates = unique(tab_cc$date)

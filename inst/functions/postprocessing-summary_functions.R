@@ -1070,7 +1070,7 @@ make_weekly_death_rate_table = function(fit_cum, fiveagegroups, date_vac, df_wee
   return(tmp1)
 }
 
-make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.phi, df_age, outdir, age_groups = NULL, lab = NULL){
+make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.phi, df_age, outdir, age_groups = NULL, lab = NULL, withempirical = F){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -1113,6 +1113,22 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
   
+  if(withempirical){
+    
+    if(!is.null(age_groups)){
+      df_age_reporting[, age_state_index := which(df_age$age_from <= age_from & df_age$age_to >= age_to), by = 'age_index']
+      empirical = merge(data, df_age_reporting, by = 'age_from')
+      empirical = merge(empirical, df_week, by = 'date')
+      empirical = empirical[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c( 'age_state_index', 'week_index')]
+      setnames(empirical, 'age_state_index', 'age_index')
+    } else{
+      empirical = merge(data, df_age_reporting, by = 'age_from')
+      empirical = merge(empirical, df_week, by = 'date')
+    }
+    select(empirical, weekly.deaths, week_index, age_index)
+  }
+  
+  
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[[var.phi]]) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
@@ -1138,6 +1154,11 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1[, age := df_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_age$age)]
+  
+  if(withempirical){
+    tmp1 = merge(tmp1, empirical, by = c('week_index', 'age_index'), all.x = T)
+  }
+  
   
   if(!is.null(lab)){
     file = paste0(outdir, '-', 'DeathByAge', 'Table_', lab, '_', Code, '.rds')
