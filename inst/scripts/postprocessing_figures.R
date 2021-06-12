@@ -10,7 +10,7 @@ library(cowplot)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
-location.index = 32
+location.index = 12
 stan_model = "210529b"
 JOBID = 2117
 
@@ -135,7 +135,7 @@ death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting,
 plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
 
 deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table)
-make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table, withempirical = T)
+tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                           age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
