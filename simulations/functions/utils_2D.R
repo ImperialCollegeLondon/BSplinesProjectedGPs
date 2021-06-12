@@ -29,9 +29,15 @@ run_BSGP_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
                    BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
                    IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS)
   
-  fit <- rstan::sampling(model_BSGP,data=stan_data,iter=1000,warmup=200,chains=3, 
-                              control = list(max_treedepth = 15, adapt_delta = 0.99))
-  saveRDS(fit, file.path(outdir, paste0('2D_BS-GP_', lab, '_nknots_', n_knots, '.rds')))
+  file = file.path(outdir, paste0('2D_BS-GP_', lab, '_nknots_', n_knots, '.rds'))
+  
+  if(!file.exists(file)){
+    fit <- rstan::sampling(model_BSGP,data=stan_data,iter=1000,warmup=200,chains=3, 
+                           control = list(max_treedepth = 15, adapt_delta = 0.99))
+    saveRDS(fit, file)
+  }else{
+    fit = readRDS(file)
+  }
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -148,9 +154,15 @@ run_BSIN_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
                    num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
                    BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS)
   
-  fit <- rstan::sampling(model_BSIN,data=stan_data,iter=1000,warmup=200,chains=3, 
-                         control = list(max_treedepth = 15, adapt_delta = 0.99))
-  saveRDS(fit, file.path(outdir, paste0('2D_BS-IN_', lab, '_nknots_', n_knots, '.rds')))
+  file = file.path(outdir, paste0('2D_BS-IN_', lab, '_nknots_', n_knots, '.rds'))
+  
+  if(!file.exists(file)){
+    fit <- rstan::sampling(model_BSIN,data=stan_data,iter=1000,warmup=200,chains=3, 
+                           control = list(max_treedepth = 15, adapt_delta = 0.99))
+    saveRDS(fit, file)
+  } else{
+    fit = readRDS(file)
+  }
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -238,9 +250,15 @@ run_GP_2D = function(x_1, x_2, y, lab, outdir){
   stan_data = list(n = length(x_1), m = length(x_2), x_1 = x_1, x_2 = x_2, 
                    y = matrix(y, nrow = length(x_1), ncol = length(x_2), byrow = F))
   
-  fit <- rstan::sampling(model_GP,data=stan_data,iter=1000,warmup=200,chains=3, 
-                         control = list(max_treedepth = 15, adapt_delta = 0.99))
-  saveRDS(fit, file.path(outdir, paste0('2D_GP_', lab, '.rds')))
+  file = file.path(outdir, paste0('2D_GP_', lab, '.rds'))
+  
+  if(!file.exists(file)){
+    fit <- rstan::sampling(model_GP,data=stan_data,iter=1000,warmup=200,chains=3, 
+                           control = list(max_treedepth = 15, adapt_delta = 0.99))
+    saveRDS(fit, file)
+  } else{
+    fit = readRDS(file)
+  }
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
