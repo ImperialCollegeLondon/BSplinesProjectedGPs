@@ -8,6 +8,7 @@ library(grid)
 
 indir = "~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
+model = 'BS-GP-I'
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -20,10 +21,12 @@ test = read.csv(file.path(indir, 'predictions', 'data', 'prediction.csv'))
 source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
 
 # compile stan models
-model_GPBSSE = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-BS-SE_2D.stan') )
+if(model == 'BS-GP-SE')
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-BS-SE_2D.stan') )
+if(model == 'BS-GP-I')
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-BS-I_2D.stan') )
 
-# training = subset(training, y > 4 & x > 34)
-# test = subset(test, y > 4 & x > 34)
+
 ps <- c(0.5, 0.025, 0.975)
 p_labs = c('M', 'CL', 'CU', 'mean')
 
@@ -78,9 +81,9 @@ stan_data = list(n = n, m = m, N = nrow(training),
                  num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
                  BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
                  IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS)
-fit <- rstan::sampling(model_GPBSSE,data=stan_data,iter=1000,warmup=200,chains=3, 
+fit <- rstan::sampling(model_stan,data=stan_data,iter=1000,warmup=200,chains=3, 
                        control = list(max_treedepth = 15, adapt_delta = 0.99))
-saveRDS(fit, file.path(outdir, paste0('2D_BS-GP_nknots_', n_knots_x, '.rds')))
+saveRDS(fit, file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds')))
 
 
 samples = extract(fit)
@@ -93,7 +96,10 @@ tmp1 = tmp1[, list(q = c(quantile(value, probs = ps, na.rm = T), mean(value)),
 tmp1 = dcast.data.table(tmp1, x_index + y_index ~ q_label, value.var = 'q')
 tmp2 = merge(tmp1, test, by = c('x_index', 'y_index'))
 tmp2[, MSE := (mean- obs)^2]
-print(mean(tmp2$MSE))
+
+cat('MSE is ', mean(tmp2$MSE), '\n')
+cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
+
 
 tmp1 = merge(tmp1, x_grid, by = 'x_index')
 tmp1 = merge(tmp1, y_grid, by = 'y_index')
@@ -133,4 +139,4 @@ p3 = ggplot(training,aes(x=x,y=y)) +
   ggtitle('Training data') 
 
 p = ggpubr::ggarrange(p2,p3,p0,nrow =1,common.legend = T,  legend = 'bottom')
-ggsave(p, file= file.path(outdir, 'prediction.png'), w = 11, h = 7)
+ggsave(p, file= file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.png')), w = 11, h = 7)

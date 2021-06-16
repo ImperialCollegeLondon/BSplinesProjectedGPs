@@ -1,18 +1,3 @@
-statistics_contribution_all_states = function(contribution75){
-  
-  tmp75  = subset(contribution75, !code %in% c('HI', 'VT', 'AK'))
-
-  # longest time
-  date_d = tmp75[M_rel_adj > 1 & date > "2020-12-01" , list(min_date = max(date)), by = 'loc_label']
-  date_d = merge(date_d, tmp75, by = 'loc_label')
-  date_d = date_d[M_rel_adj < 1 & date >= min_date, list(min_date = min(date)), by = 'loc_label']
-  datemin = date_d[min_date == min(min_date),list(loc_label = loc_label, date = format(min_date,  '%B %d, %Y'))]
-  datemax = date_d[min_date == max(min_date),list(loc_label = loc_label, date = format(min_date,  '%B %d, %Y'))]
-  
-  contribution_stats = list(date_d = date_d, datemin = datemin, datemax = datemax)
-  return(contribution_stats)
-}
-
 
 
 statistics_contributionref_all_states = function(contribution_ref_adj){
@@ -74,18 +59,25 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
 }
 
 
-find_regime_state = function(contribution75){
+find_regime_state = function(contribution75, vaccinedata_state, outdir){
   
   locs = unique(contribution75$code)
+  
+  date_break= as.Date('2021-05-01')
+  date_before_vaccine = as.Date('2020-10-31')
+  
+  contribution_stats = list()
+  contribution_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
+  contribution_stats[['date_break']] = format(date_break,  '%B %d, %Y')
   
   # find states slow, fast, plateau
   beta = vector(mode = 'list', length = length(locs))
   for(i in seq_along(locs)){
-    y = subset(contribution75, code == locs[i] & date >= as.Date('2020-12-01') & date < as.Date('2021-05-01'))$M
+    y = subset(contribution75, code == locs[i] & date >= date_before_vaccine & date < date_break)$M
     x = 1:length(y)
     fit1 = lm(y ~ x)
     
-    y = subset(contribution75, code == locs[i] & date >= as.Date('2021-05-01'))$M
+    y = subset(contribution75, code == locs[i] & date >= date_break)$M
     x = 1:length(y)
     fit2 = lm(y ~ x)
     
@@ -95,17 +87,35 @@ find_regime_state = function(contribution75){
   beta = do.call('rbind', beta)
   beta =  subset(beta, !code %in% c('HI', 'VT', 'AK'))
   
-  plateau = beta[betalast > 0, list(code = code, loc_label = loc_label)]
-  slowd = beta[betatot > summary(beta$betatot)[5],  list(code = code, loc_label = loc_label)]
-  fastd = beta[betatot < summary(beta$betatot)[2],  list(code = code, loc_label = loc_label)]
+  plateau = beta[betalast > 0, loc_label]
+  beta = beta[order(betatot, decreasing = T)]
+  slowd = beta[betatot > summary(beta$betatot)[5],  loc_label][1:5]
+  beta = beta[order(betatot)]
+  fastd = beta[betatot < summary(beta$betatot)[2],  loc_label][1:5]
   
-  contribution_stats = statistics_contribution_all_states(contribution75)
-  contribution_stats[['plateau']] = paste0(paste0(plateau$loc_label[-nrow(plateau)], collapse = ', '), ' and ', plateau$loc_label[nrow(plateau)])
-  contribution_stats[['slowd']] = paste0(paste0(slowd$loc_label[-nrow(slowd)], collapse = ', '), ' and ', slowd$loc_label[nrow(slowd)])
-  contribution_stats[['fastd']] = paste0(paste0(fastd$loc_label[-nrow(fastd)], collapse = ', '), ' and ', fastd$loc_label[nrow(fastd)])
-  contribution_stats[['date']] = format(as.Date('2021-05-01'),  '%B %d, %Y')
+  contribution_stats[['plateau']] = paste0(paste0(plateau[-length(plateau)], collapse = ', '), ' and ', plateau[length(plateau)])
+  contribution_stats[['slowd']] = paste0(paste0(slowd[-length(slowd)], collapse = ', '), ' and ', slowd[length(slowd)])
+  contribution_stats[['fastd']] = paste0(paste0(fastd[-length(fastd)], collapse = ', '), ' and ', fastd[length(fastd)])
   
-  saveRDS(contribution_stat, file = paste0(outdir, '-contribution_ref_adj_stats.rds'))
+  con_bv = contribution75[date == date_before_vaccine, list(paste0(round(mean(M)*100, 2), '\\%'), 
+                                                   paste0(round(mean(CL)*100, 2), '\\%'),
+                                                   paste0(round(mean(CU)*100, 2), '\\%'))]
+  
+  con_a = contribution75[date == date_break, list(paste0(round(mean(M)*100, 2), '\\%'), 
+                                                   paste0(round(mean(CL)*100, 2), '\\%'),
+                                                   paste0(round(mean(CU)*100, 2), '\\%'))]
+  contribution_stats[['con_bv']] = con_bv
+  contribution_stats[['con_a']] = con_a
+  
+  tmp = merge(vaccinedata_state, contribution75, by = c('date', 'loc_label'))
+  tmp = tmp[date <= date_break]
+  fit = lm(M ~ prop_vaccinated_1dosep, data = tmp)
+  coefficients = fit$coefficients
+  
+  contribution_stats[['date_vacs']] = format(min(tmp$date),  '%B %d, %Y')
+  contribution_stats[['beta']] = -round(coefficients, digits =2)
+  
+  saveRDS(contribution_stats, file = paste0(outdir, '-contribution_vaccination_stats.rds'))
   
   return(contribution_stats)
 }

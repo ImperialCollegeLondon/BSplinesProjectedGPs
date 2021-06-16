@@ -36,18 +36,10 @@ outdir = file.path(outdir, run_tag, run_tag)
 
 #load vaccination data
 file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
-vaccinedata = as.data.table(read.csv(file))
-vaccinedata = subset(vaccinedata, Demographic.Group %in% c("Ages_65-74_yrs", "Ages_75+_yrs"), 
-                     select = c('Date', 'Demographic.Group', 'People.with.at.least.one.dose', 'People.who.are.fully.vaccinated', 'Census'))
-setnames(vaccinedata, 1:4, c('date', 'age', 'count_vaccinated_1dosep', 'count_vaccinated_fully'))
-vaccinedata[, age := gsub('Ages_(.+)_yrs', '\\1', age)]
-tmp = vaccinedata[, list(count_vaccinated_1dosep= sum(count_vaccinated_1dosep), 
-                         count_vaccinated_fully = sum(count_vaccinated_fully), 
-                         Census = sum(Census)), by = c('date')]
-tmp[, age := '65+']
-vaccinedata = rbind(vaccinedata, tmp)
-vaccinedata[, prop_vaccinated_1dosep := count_vaccinated_1dosep / Census]
-vaccinedata[, prop_vaccinated_fully := count_vaccinated_fully / Census]
+vaccinedata_age = clean_vaccination_data_age(file)
+
+file = file.path(indir, 'data', 'us_state_vaccinations_210611.csv')
+vaccinedata_state = clean_vaccination_data_state(file)
 
 # create loc division map
 loc_div = data.table(code = c(c("CT", "ME", "MA", "NH", "RI", "VT"), c("NJ", "NY", "PA", "NYC"), c("IL", "IN", "MI", "OH", "WI"), c("IA", "KS", "MN", "MO", "NE", "ND", "SD"),
@@ -57,7 +49,6 @@ loc_div = data.table(code = c(c("CT", "ME", "MA", "NH", "RI", "VT"), c("NJ", "NY
                                   rep("South\nAtlantic", 9), rep("South\nCentral", 8), rep("Mountain", 8), rep("Pacific", 5)))
 
 #
-
 # find locs
 files = list.files(path = dirname(outdir))
 files = files[grepl('ProbabilityRatioTable', files)]
@@ -71,6 +62,8 @@ for(i in seq_along(locs)){
 region_name = do.call('rbind', region_name)
 region_name = unique(select(region_name, code, loc_label))
 
+
+
 #
 # plot contribution over time
 mortality_rate = vector(mode = 'list', length = length(locs))
@@ -83,24 +76,39 @@ mortality_rate = subset(mortality_rate, date == max(mortality_rate$date))
 plot_mortality_rate_all_states(mortality_rate, outdir)
 
 max_date = format(unique(mortality_rate$date), '%B %d, %Y')
-dold2p = mortality_rate[age == '80+' & M > 0.02, loc_label]
+dold2p = mortality_rate[age == '85+' & M > 0.025, loc_label]
 dold2p_n = paste0(paste0(dold2p[-length(dold2p)], collapse = ', '), ' and ', dold2p[length(dold2p)])
-dold3p = mortality_rate[age == '80+' & M > 0.03, loc_label]
-dold3p_n = paste0(paste0(dold3p[-length(dold3p)], collapse = ', '), ' and ', dold3p[length(dold3p)])
+state_max = mortality_rate[age == '85+',]
+state_max = state_max[order(M, decreasing = T)]
+state_max = state_max[,loc_label][1:5]
+state_max = paste0(paste0(state_max[-length(state_max)], collapse = ', '), ' and ', state_max[length(state_max)])
 
-mortality_stats = list(max_date = max_date, nstates2p = length(dold2p), nstates3p = length(dold3p),
-     dold3p_n = dold3p_n, dold2p_n = dold2p_n)
+d5574 = mortality_rate[age == '55-74',paste0(round((median(M)*100),2),'\\%')]
+d7584 = mortality_rate[age == '75-84',paste0(round((median(M)*100),0),'\\%')]
+
+mortality_stats = list(max_date = max_date, nstates2p = length(dold2p), dold2p_n,
+                       state_max, d5574, d7584)
 saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
+
 
 
 #
 # trend in contribution
-contribution074 = vector(mode = 'list', length = length(locs))
+contribution054 = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  contribution074[[i]] = readRDS(paste0(outdir, '-Contribution_Age_0-74_', locs[i], '.rds'))
+  contribution054[[i]] = readRDS(paste0(outdir, '-Contribution_Age_0-54_', locs[i], '.rds'))
 }
-contribution074 = do.call('rbind', contribution074)
-contribution074 = merge(contribution074, region_name, by = 'code')
+contribution054 = do.call('rbind', contribution054)
+contribution054 = merge(contribution054, region_name, by = 'code')
+contribution054 = subset(contribution054, !code %in% c('HI', 'VT', 'AK'))
+
+contribution5574 = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  contribution5574[[i]] = readRDS(paste0(outdir, '-Contribution_Age_55-74_', locs[i], '.rds'))
+}
+contribution5574 = do.call('rbind', contribution5574)
+contribution5574 = merge(contribution5574, region_name, by = 'code')
+contribution5574 = subset(contribution5574, !code %in% c('HI', 'VT', 'AK'))
 
 contribution75 = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
@@ -108,57 +116,22 @@ for(i in seq_along(locs)){
 }
 contribution75 = do.call('rbind', contribution75)
 contribution75 = merge(contribution75, region_name, by = 'code')
+contribution75 = subset(contribution75, !code %in% c('HI', 'VT', 'AK'))
 
-contribution = rbind(contribution75, contribution074)
+contribution = rbind(contribution75, rbind(contribution5574, contribution054))
+plot_contribution_all_states(contribution, vaccinedata_state, outdir)
+find_regime_state(contribution75, vaccinedata_state, outdir)
 
-death2agegroups = vector(mode = 'list', length = length(locs))
+#
+# Plot magnitude of mortality
+death = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  death2agegroups[[i]] = readRDS(paste0(outdir, '-DeathByAgeTable_2agegroups_', locs[i], '.rds'))
+  death[[i]] = readRDS(paste0(outdir, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
-death2agegroups = do.call('rbind', death2agegroups)
-death2agegroups = merge(death2agegroups, region_name, by = 'code')
-
-# find states slow, fast, plateau
-beta = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  y = subset(contribution75, code == locs[i] & date >= as.Date('2020-12-01') & date < as.Date('2021-05-01'))$M
-  x = 1:length(y)
-  fit1 = lm(y ~ x)
-  
-  y = subset(contribution75, code == locs[i] & date >= as.Date('2021-05-01'))$M
-  x = 1:length(y)
-  fit2 = lm(y ~ x)
-  
-  beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
-                         betatot = fit1$coefficients[2],  betalast = fit2$coefficients[2])
-}
-beta = do.call('rbind', beta)
-beta =  subset(beta, !code %in% c('HI', 'VT', 'AK'))
-
-plateau = beta[betalast > 0, list(code = code, loc_label = loc_label)]
-slowd = beta[betatot > summary(beta$betatot)[5],  list(code = code, loc_label = loc_label)]
-fastd = beta[betatot < summary(beta$betatot)[2],  list(code = code, loc_label = loc_label)]
-
-contribution_stats = statistics_contribution_all_states(contribution75)
-contribution_stats[['plateau']] = paste0(paste0(plateau$loc_label[-nrow(plateau)], collapse = ', '), ' and ', plateau$loc_label[nrow(plateau)])
-contribution_stats[['slowd']] = paste0(paste0(slowd$loc_label[-nrow(slowd)], collapse = ', '), ' and ', slowd$loc_label[nrow(slowd)])
-contribution_stats[['fastd']] = paste0(paste0(fastd$loc_label[-nrow(fastd)], collapse = ', '), ' and ', fastd$loc_label[nrow(fastd)])
-contribution_stats[['date']] = format(as.Date('2021-05-01'),  '%B %d, %Y')
-
-saveRDS(contribution_stats, file = paste0(outdir, '-contribution_rel_adj_stats.rds'))
-
-
-selected_states = c('CA', 'ID', 'AR')
-stopifnot(selected_states[1] %in% plateau$code) 
-stopifnot(selected_states[2] %in% slowd$code) 
-stopifnot(selected_states[3] %in% fastd$code) 
-
-contribution75 =  subset(contribution75, !code %in% c('HI', 'VT', 'AK'))
-death2agegroups =  subset(death2agegroups, !code %in% c('HI', 'VT', 'AK'))
-
-
-plot_contribution_magnitude_all_states(contribution, death2agegroups, selected_states, outdir)
-  
+death = do.call('rbind', death)
+death = merge(death, region_name, by = 'code')
+death =  subset(death, !code %in% c('HI', 'VT', 'AK'))
+plot_mortality_all_states(death, data, outdir)
 
 
 #
@@ -189,16 +162,6 @@ contribution_baseline = statistics_contributionref_all_states(contribution_ref_a
 saveRDS(contribution_baseline, file = paste0(outdir, '-contribution_ref_adj_stats.rds'))
 
 
-
-
-# 
-# plot_contribution_all_states(contribution, vaccinedata, outdir)
-# 
-# # stats
-
-# 
-
-# 
 
 
 
