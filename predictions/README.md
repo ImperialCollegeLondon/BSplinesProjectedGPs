@@ -23,6 +23,7 @@ Please note the correspondence between the model ID and the the model
 |-----------|------------------------------------------------------|
 | BS-GP-I   | Standard B-splines |
 | BS-GP-SE      | Gaussian Process projected by regularized B-splines  |
+
 For example, if you want to use standard B-splines, please specify, 
 ```bash
 model = "BS-GP-I"
