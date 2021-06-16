@@ -5,9 +5,6 @@
 | functions      | Functions needed to run the scripts   |
 
 
-## System Requirements
-- [R](https://www.r-project.org/) version >= 3.6.1
-
 
 ## Instruction 
 
