@@ -1,6 +1,6 @@
 args = list(STAN_MODEL="210429a1",
-            CWD="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/",
-            INDIR="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/",
+            CWD="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/",
+            INDIR="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/",
             locations = 1:50, 
             nchains = 8,
             JOBID = round(runif(1,1,10000)))
