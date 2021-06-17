@@ -1164,6 +1164,8 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   if(withempirical){
     tmp1 = merge(tmp1, empirical, by = c('week_index', 'age_index'), all.x = T)
   }
+  tmp1 = merge(tmp1, tmp2, by = 'week_index', all.x = T)
+  setnames(tmp1, 'weekly.deaths', 'emp_JHU')
   
   
   if(!is.null(lab)){

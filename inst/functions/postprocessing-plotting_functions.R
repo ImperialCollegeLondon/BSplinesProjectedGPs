@@ -735,7 +735,8 @@ plot_mortality_all_states = function(death, data, outdir)
   
 }
 
-plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, selected_method, model_name, show.method = T, heights= c(0.4,0.6)){
+plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, 
+                                                          selected_method, model_name, show.method = T, heights= c(0.4,0.6)){
   
   dates = unique(tab_cc$date)
   dates = dates[seq(3, length(dates)-3, length.out =3)]
@@ -788,12 +789,13 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, s
   }
   p1 = ggarrange(p1, labels = 'C', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
 
-  mybreaks <- as.numeric(levels(tmp3$age)[seq(1, length(levels(tmp3$age)), length.out = 4)])
-  
+
   tmp3 = subset(tmp3, method == selected_method)
   tmp3[, age := factor(age, levels = rev(levels(tmp3$age)))]
+  tmp3[, dummy := 'JHU\noverall\nweekly\ndeaths']
   p2 = ggplot(tmp3, aes(x = date)) + 
     theme_bw() +
+    geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy), direction =  "vh") + 
     labs(y = 'Posterior median of the age-specific\nCOVID-19 weekly deaths', x = "", color = '', shape = '', fill = 'Age') + 
     facet_grid(method~.) +
     # coord_cartesian(ylim = limit_SE) + 
@@ -806,7 +808,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, s
     geom_point(data = df, aes(x = value, y = y, group = key, shape = key, col = key), size = 2, stroke = 1.5 ) +
     scale_shape_manual(name = "", labels = plot_labels, values = c(21, 22, 23)) + 
     scale_colour_manual(name = "", labels = plot_labels, values = gg_color_hue(3)) + 
-      geom_bar(aes(y = M, fill = age), stat = 'identity', width = 7)  +
+    geom_bar(aes(y = M, fill = age), stat = 'identity', width = 7)  +
     scale_y_continuous(expand = c(0,0)) +
     theme(panel.border = element_rect(colour = "black", fill = NA),
           strip.background = element_rect(colour="white", fill="white"), 
@@ -818,7 +820,8 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, s
           axis.text.x = element_text(angle= 40, hjust =1)
     ) +
     guides(col = F, shape = F)
-  pl = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age') + theme(legend.key.height = unit(1, "cm"))
+  pl = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy), direction =  "vh") + 
+    geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age', linetype = '')  + theme_bw() + theme(legend.key.height = unit(1, "cm"),legend.spacing.y = unit(0.05, 'cm'))
   p2 = ggpubr::ggarrange(p2,common.legend = T, legend.grob = get_legend(pl), legend = 'right',
                          labels = 'B', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
 
@@ -836,7 +839,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, s
           panel.grid.major = element_blank(),
           strip.text = element_blank(),
           axis.title.y = element_text(size = rel(1.1)),
-          legend.text = element_text(size = rel(0.9)),
+          legend.text = element_text(size = rel(0.8)),
           legend.title = element_text(size = rel(1)),
           axis.text.x = element_text(angle= 40, hjust =1)
     ) 
