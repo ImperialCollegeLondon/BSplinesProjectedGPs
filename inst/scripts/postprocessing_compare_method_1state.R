@@ -6,11 +6,13 @@ library(loo)
 library(ggpubr)
 
 indir = "~/git/covid19Vaccination/inst" # path to the repo
-outdir = '~/git/covid19Vaccination/inst/results/new'
+outdir = '~/git/covid19Vaccination/inst/results'
 location.index = 1
 stan_model = c('210429h1', '210529c', '210529b')
 JOBID = c(11762, 31345, 2117)
-model_name = c('Standard GP', 'Standard B-splines', 'Low rank GP projected\nby regularised B-splines')
+model_name = c('Standard GP', 'Standard B-splines', 'Regularised B-splines\nprojected GP')
+
+
 
 # load functions
 source(file.path(indir, "functions", "postprocessing-plotting_functions.R"))
@@ -40,7 +42,7 @@ for(i in seq_along(JOBID)){
 tab_doh = do.call('rbind', tab_doh)
 
 p = compare_CDCestimation_DoH_age_plot_compmethod(tab_doh, scraped_data, model_name, 
-                                                  selected_method = 'Low rank GP projected\nby regularised B-splines')
+                                                  selected_method = 'Regularised B-splines\nprojected GP')
 ggsave(p, file = paste0(outdir.table[1], '-comparison_DoH_CDC_uncertainty_', unique(tab_doh$code), '_commethod.png'), w = 7, h = 9, limitsize = F)
 
 
@@ -61,7 +63,7 @@ for(i in seq_along(JOBID)){
 tab_d = do.call('rbind', tab_d)
 
 p = plot_contribution_continuous_comparison_method(tab_cc, tab_d, data, 
-                                                   'Low rank GP projected\nby regularised B-splines', model_name)
+                                                   'Regularised B-splines\nprojected GP', model_name)
 ggsave(p, file= paste0(outdir.table[1], '-phi_short_compmethod_FL.png'), w = 9, h = 10)
 
 

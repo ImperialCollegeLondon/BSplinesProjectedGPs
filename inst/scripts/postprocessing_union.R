@@ -5,7 +5,7 @@ library(tidyverse)
 library(viridis)
 
 indir = "~/git/covid19Vaccination/inst/" # path to the repo
-outdir = file.path(indir, "results", 'new')
+outdir = file.path(indir, "results")
 stan_model = "210529b"
 JOBID = 2117
 
