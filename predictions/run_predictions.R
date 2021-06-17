@@ -81,9 +81,15 @@ stan_data = list(n = n, m = m, N = nrow(training),
                  num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
                  BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
                  IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS)
-fit <- rstan::sampling(model_stan,data=stan_data,iter=1000,warmup=200,chains=3, 
-                       control = list(max_treedepth = 15, adapt_delta = 0.99))
-saveRDS(fit, file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds')))
+
+file= file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds'))
+if(!file.exists(file)){
+  fit <- rstan::sampling(model_stan,data=stan_data,iter=1000,warmup=200,chains=3, 
+                         control = list(max_treedepth = 15, adapt_delta = 0.99))
+  saveRDS(fit, file)
+} else{
+  fit <- readRDS(file)
+}
 
 
 samples = extract(fit)
@@ -94,10 +100,11 @@ tmp1 = tmp1[, list(q = c(quantile(value, probs = ps, na.rm = T), mean(value)),
                    q_label = p_labs),
             by = c('x_index', 'y_index')]
 tmp1 = dcast.data.table(tmp1, x_index + y_index ~ q_label, value.var = 'q')
-tmp2 = merge(tmp1, test, by = c('x_index', 'y_index'))
-tmp2[, MSE := (mean- obs)^2]
 
-cat('MSE is ', mean(tmp2$MSE), '\n')
+tmp2 = merge(tmp1, anti_join(test, training), by = c('x_index', 'y_index'))
+tmp2[, SE := (mean - obs)^2]
+
+cat('MSE is ', mean(tmp2$SE), '\n')
 cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
 
 
