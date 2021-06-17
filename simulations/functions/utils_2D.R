@@ -5,13 +5,17 @@ rbf_D <- function(X,l=1, eps = sqrt(.Machine$double.eps) ){
   Sigma <- exp(-D/l)^2 + diag(eps, nrow(X))
 }
 
-generate_2DGP = function(X, l, sigma){
+generate_2DGP = function(X, l){
   Sigma <- rbf_D(X,l=l)
-  y <- MASS::mvrnorm(1,rep(0,dim(Sigma)[1]), Sigma) + rnorm(dim(Sigma)[1], 0, sigma)
+  y <- MASS::mvrnorm(1,rep(0,dim(Sigma)[1]), Sigma) 
   return(y)
 }
 
-run_BSGP_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
+add_noise_2D = function(y, sigma){
+  return(y + rnorm(length(y), 0, sigma))
+}
+
+run_BSGP_2D = function(x_1, x_2, y, y_mean, lab, n_knots, spline_degree, outdir, overwrite = F){
   
   knots_rows = x_1[seq(1, length(x_1), length.out = n_knots)]
   num_basis_rows = length(knots_rows) + spline_degree - 1
@@ -31,7 +35,7 @@ run_BSGP_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
   
   file = file.path(outdir, paste0('2D_BS-GP_', lab, '_nknots_', n_knots, '.rds'))
   
-  if(!file.exists(file)){
+  if(!file.exists(file) | overwrite){
     fit <- rstan::sampling(model_BSGP,data=stan_data,iter=1000,warmup=200,chains=3, 
                            control = list(max_treedepth = 15, adapt_delta = 0.99))
     saveRDS(fit, file)
@@ -61,7 +65,9 @@ run_BSGP_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
   
   tmp = rbind(tmp, tmp1)
   
-  tmp1 = data.table(y=y, expand.grid(x_1=x_1,x_2 = x_2), expand.grid(rows_idx = 1:length(x_1), column_idx = 1:length(x_2)))
+  tmp1 = data.table(y=y, 
+                    y_mean = y_mean,
+                    expand.grid(x_1=x_1,x_2 = x_2), expand.grid(rows_idx = 1:length(x_1), column_idx = 1:length(x_2)))
   tmp = merge(tmp, tmp1, by = c('rows_idx', 'column_idx'))
   
   tmp[, method := paste0('BS-GP-SE\n#knots = ', n_knots)]
@@ -137,7 +143,7 @@ run_BSCAR_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
   return(list(tmp, fit))
 }
 
-run_BSIN_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
+run_BSIN_2D = function(x_1, x_2, y, y_mean, lab, n_knots, spline_degree, outdir, overwrite = F){
   
   knots_rows = x_1[seq(1, length(x_1), length.out = n_knots)]
   num_basis_rows = length(knots_rows) + spline_degree - 1
@@ -156,7 +162,7 @@ run_BSIN_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
   
   file = file.path(outdir, paste0('2D_BS-IN_', lab, '_nknots_', n_knots, '.rds'))
   
-  if(!file.exists(file)){
+  if(!file.exists(file) | overwrite){
     fit <- rstan::sampling(model_BSIN,data=stan_data,iter=1000,warmup=200,chains=3, 
                            control = list(max_treedepth = 15, adapt_delta = 0.99))
     saveRDS(fit, file)
@@ -186,7 +192,8 @@ run_BSIN_2D = function(x_1, x_2, y, lab, n_knots, spline_degree, outdir){
   
   tmp = rbind(tmp, tmp1)
   
-  tmp1 = data.table(y=y, expand.grid(x_1=x_1,x_2 = x_2), expand.grid(rows_idx = 1:length(x_1), column_idx = 1:length(x_2)))
+  tmp1 = data.table(y=y, y_mean = y_mean,
+                    expand.grid(x_1=x_1,x_2 = x_2), expand.grid(rows_idx = 1:length(x_1), column_idx = 1:length(x_2)))
   tmp = merge(tmp, tmp1, by = c('rows_idx', 'column_idx'))
   
   tmp[, method := paste0('BS-GP-IN\n#knots = ', n_knots)]
@@ -245,14 +252,14 @@ run_GP_I_2D = function(x_1, x_2, y, lab, outdir){
   return(list(tmp, fit))
 }
 
-run_GP_2D = function(x_1, x_2, y, lab, outdir){
+run_GP_2D = function(x_1, x_2, y, y_mean, lab, outdir, overwrite = F){
   
   stan_data = list(n = length(x_1), m = length(x_2), x_1 = x_1, x_2 = x_2, 
                    y = matrix(y, nrow = length(x_1), ncol = length(x_2), byrow = F))
   
   file = file.path(outdir, paste0('2D_GP_', lab, '.rds'))
   
-  if(!file.exists(file)){
+  if(!file.exists(file) | overwrite){
     fit <- rstan::sampling(model_GP,data=stan_data,iter=1000,warmup=200,chains=3, 
                            control = list(max_treedepth = 15, adapt_delta = 0.99))
     saveRDS(fit, file)
@@ -282,7 +289,9 @@ run_GP_2D = function(x_1, x_2, y, lab, outdir){
   
   tmp = rbind(tmp, tmp1)
   
-  tmp1 = data.table(y=y, expand.grid(x_1=x_1,x_2 = x_2), expand.grid(rows_idx = 1:length(x_1), column_idx = 1:length(x_2)))
+  tmp1 = data.table(y=y, 
+                    y_mean = y_mean,
+                    expand.grid(x_1=x_1,x_2 = x_2), expand.grid(rows_idx = 1:length(x_1), column_idx = 1:length(x_2)))
   tmp = merge(tmp, tmp1, by = c('rows_idx', 'column_idx'))
   
   tmp[, method := paste0('GP-SE')]

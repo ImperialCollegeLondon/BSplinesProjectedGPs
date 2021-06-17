@@ -26,7 +26,6 @@ source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
 n <- 50
 x <- seq(0,1,length=n)
 X <- expand.grid(x, x)
-sigma = 0.01
 lengthscales = c(0.01, 0.1, 1)
 
 # spline parameters 
@@ -36,40 +35,43 @@ spline_degree = 3
 n_knots_vec = c(10, 30, 40)
 lab = paste0('lengthscale_', lengthscales[1])
 set.seed(23)
-y = generate_2DGP(X, lengthscales[1], sigma = 0.5)
-GP_2D_1 = run_GP_2D(x, x, y, lab, outdir)
-BSGP_2D_1_1 = run_BSGP_2D(x, x, y, lab, n_knots_vec[1], spline_degree, outdir)
-BSGP_2D_2_1 = run_BSGP_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
-BSGP_2D_3_1 = run_BSGP_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
-BSIN_2D_1_1 = run_BSIN_2D(x, x, y, lab, n_knots_vec[1], spline_degree, outdir)
-BSIN_2D_2_1 = run_BSIN_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
-BSIN_2D_3_1 = run_BSIN_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
+y_mean = generate_2DGP(X, lengthscales[1])
+y = add_noise_2D(y_mean, sigma = 0.5)
+GP_2D_1 = run_GP_2D(x, x, y, y_mean, lab, outdir, overwrite = T)
+BSGP_2D_1_1 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[1], spline_degree, outdir, overwrite = T)
+BSGP_2D_2_1 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[2], spline_degree, outdir, overwrite = T)
+BSGP_2D_3_1 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[3], spline_degree, outdir, overwrite = T)
+BSIN_2D_1_1 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[1], spline_degree, outdir, overwrite = T)
+BSIN_2D_2_1 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[2], spline_degree, outdir, overwrite = T)
+BSIN_2D_3_1 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[3], spline_degree, outdir, overwrite = T)
 
 ##
 n_knots_vec = c(10, 30, 40)
 lab = paste0('lengthscale_', lengthscales[2])
 set.seed(24)
-y = generate_2DGP(X, lengthscales[2], sigma = 0.5)
-GP_2D_2 = run_GP_2D(x, x, y, lab, outdir)
-BSGP_2D_1_2 = run_BSGP_2D(x, x, y, lab, n_knots_vec[1], spline_degree, outdir)
-BSGP_2D_2_2 = run_BSGP_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
-BSGP_2D_3_2 = run_BSGP_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
-BSIN_2D_1_2 = run_BSIN_2D(x, x, y, lab, n_knots_vec[1], spline_degree, outdir)
-BSIN_2D_2_2 = run_BSIN_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
-BSIN_2D_3_2 = run_BSIN_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
+y_mean = generate_2DGP(X, lengthscales[2])
+y = add_noise_2D(y_mean, sigma = 0.5)
+GP_2D_2 = run_GP_2D(x, x, y, y_mean, lab, outdir, overwrite = T)
+BSGP_2D_1_2 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[1], spline_degree, outdir, overwrite = T)
+BSGP_2D_2_2 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[2], spline_degree, outdir, overwrite = T)
+BSGP_2D_3_2 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[3], spline_degree, outdir, overwrite = T)
+BSIN_2D_1_2 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[1], spline_degree, outdir, overwrite = T)
+BSIN_2D_2_2 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[2], spline_degree, outdir, overwrite = T)
+BSIN_2D_3_2 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[3], spline_degree, outdir, overwrite = T)
 
 ##
 n_knots_vec = c(10, 30, 40)
 lab = paste0('lengthscale_', lengthscales[3])
 set.seed(23)
-y = generate_2DGP(X, lengthscales[3], sigma= 0.1)
-GP_2D_3 = run_GP_2D(x, x, y, lab, outdir)
-BSGP_2D_1_3 = run_BSGP_2D(x, x, y, lab, n_knots_vec[1], spline_degree, outdir)
-BSGP_2D_2_3 = run_BSGP_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
-BSGP_2D_3_3 = run_BSGP_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
-BSIN_2D_1_3 = run_BSIN_2D(x, x, y, lab, n_knots_vec[1], spline_degree, outdir)
-BSIN_2D_2_3 = run_BSIN_2D(x, x, y, lab, n_knots_vec[2], spline_degree, outdir)
-BSIN_2D_3_3 = run_BSIN_2D(x, x, y, lab, n_knots_vec[3], spline_degree, outdir)
+y_mean = generate_2DGP(X, lengthscales[3])
+y = add_noise_2D(y_mean, sigma= 0.1)
+GP_2D_3 = run_GP_2D(x, x, y, y_mean, lab, outdir, overwrite = T)
+BSGP_2D_1_3 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[1], spline_degree, outdir, overwrite = T)
+BSGP_2D_2_3 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[2], spline_degree, outdir, overwrite = T)
+BSGP_2D_3_3 = run_BSGP_2D(x, x, y, y_mean, lab, n_knots_vec[3], spline_degree, outdir, overwrite = T)
+BSIN_2D_1_3 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[1], spline_degree, outdir, overwrite = T)
+BSIN_2D_2_3 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[2], spline_degree, outdir, overwrite = T)
+BSIN_2D_3_3 = run_BSIN_2D(x, x, y, y_mean, lab, n_knots_vec[3], spline_degree, outdir, overwrite = T)
 
 
 # plot results
@@ -97,31 +99,29 @@ for(l in lengthscales){
   # l = lengthscales[1]
   tmp1 = subset(tmp, variable == 'y_hat' & lengthscale == l)
   
-  tmp2 = copy(select(tmp1, x_1, x_2, mean, method2, n_knots, time, lengthscale))
-  tmp1 = copy(select(tmp1, x_1, x_2, y, time, n_knots, lengthscale))
-  tmp1[, time := NA_real_]
-  tmp1[, method2 := 'Observations']
-  setnames(tmp1, 'y', 'mean')
-  tmp1 = rbind(unique(tmp1), tmp2)
+  # tmp2 = copy(select(tmp1, x_1, x_2, mean, method2, n_knots, time, lengthscale))
+  # tmp1 = copy(select(tmp1, x_1, x_2, y, y_mean, time, n_knots, lengthscale))
+  # tmp1[, time := NA_real_]
+  # tmp1[, method2 := 'Observations']
+  # setnames(tmp1, 'y', 'mean')
+  # tmp1 = rbind(unique(tmp1), tmp2)
   
-  tmp1[, method2 := factor(method2, levels = c('Observations','Standard 2D GP', 
+  tmp1[, method2 := factor(method2, levels = c('Standard 2D GP', 
                                                'Standard B-splines 2D surface', 
                                                'Low-rank 2D GP'))]
   tmp1[, n_knots := factor(n_knots, levels = sort(unique(tmp1$n_knots), decreasing = F))]
   tmp1[, n_knots2:=paste0(n_knots, ' knots')]
   
-  tmp2 = subset(tmp1, method2 %in% c('Observations'))
-  p0 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
-    geom_raster(aes(fill=mean), interpolate = TRUE) +
-    geom_contour(aes(z=mean), bins = 12, color = "gray30", 
+  p0 = ggplot(unique(tmp1),aes(x=x_1,y=x_2)) +
+    geom_raster(aes(fill=y_mean), interpolate = TRUE) +
+    geom_contour(aes(z=y_mean), bins = 12, color = "gray30", 
                  size = 0.5, alpha = 0.5) +
     scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
     scale_y_continuous(expand=c(0,0)) +
-    scale_fill_viridis_c(option = "viridis", limits = range(tmp1$mean)) +
+    scale_fill_viridis_c(option = "viridis", limits = range(c(tmp1$mean, tmp1$y, tmp1$y_mean))) +
     # labs(x = expression(x[2]), y = expression(x[1])) + 
-    labs(x = '', y= '') + 
-    facet_wrap(.~method2, scale = 'free_y') +
-    ggtitle('Observations') + 
+    labs(x = '') + 
+    ggtitle('Mean of the simulated\nobservations') + 
     # facet_wrap(~ method2, nrow = 1, strip.position = "right") +
     theme(legend.position = 'none',
           strip.background = element_blank(),
@@ -132,8 +132,34 @@ for(l in lengthscales){
           # axis.text = element_blank(),
           strip.text =  element_blank(),
           panel.spacing.x = unit(1, "lines"), 
-          plot.title = element_text(size = rel(1.1), hjust = 0.5)) 
+          axis.title.y = element_blank(),
+          plot.title = element_text(size = rel(1), hjust = 0.5)) 
   p0 = ggpubr::ggarrange(p0, labels = 'A', font.label = list(size = 18))
+  
+  p02 = ggplot(unique(tmp1),aes(x=x_1,y=x_2)) +
+    geom_raster(aes(fill=y), interpolate = TRUE) +
+    geom_contour(aes(z=y), bins = 12, color = "gray30", 
+                 size = 0.5, alpha = 0.5) +
+    scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
+    scale_y_continuous(expand=c(0,0)) +
+    scale_fill_viridis_c(option = "viridis", limits = range(c(tmp1$mean, tmp1$y, tmp1$y_mean))) +
+    # labs(x = expression(x[2]), y = expression(x[1])) + 
+    labs(x = '', y= '') + 
+    ggtitle('Simulated\nobservations') + 
+    # facet_wrap(~ method2, nrow = 1, strip.position = "right") +
+    theme(legend.position = 'none',
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          # axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          # axis.ticks = element_blank(),
+          # axis.text = element_blank(),
+          strip.text =  element_blank(),
+          panel.spacing.x = unit(1, "lines"), 
+          plot.title = element_text(size = rel(1), hjust = 0.5)) 
+  p02 = ggpubr::ggarrange(p02, labels = 'B', font.label = list(size = 18))
   
   tmp2 = subset(tmp1, method2 %in% c('Standard 2D GP'))
   p1 =ggplot(tmp2,aes(x=x_1,y=x_2)) +
@@ -142,7 +168,7 @@ for(l in lengthscales){
                  size = 0.5, alpha = 0.5) +
     scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
     scale_y_continuous(expand=c(0,0)) +
-    scale_fill_viridis_c(option = "viridis", limits = range(tmp1$mean)) +
+    scale_fill_viridis_c(option = "viridis", limits = range(c(tmp1$mean, tmp1$y, tmp1$y_mean))) +
     # labs(x = expression(x[2]), y = expression(x[1])) + 
     labs(x = '', y= '') + 
     facet_wrap(.~method2, scale = 'free_y') +
@@ -153,12 +179,14 @@ for(l in lengthscales){
           panel.border = element_rect(colour = "black", fill = NA),
           # axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
           axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
           # axis.ticks = element_blank(),
           # axis.text = element_blank(),
           strip.text =  element_blank(),
           panel.spacing.x = unit(1, "lines"), 
-          plot.title = element_text(size = rel(1.1), hjust = 0.5)) 
-  p1 = ggpubr::ggarrange(p1, labels = 'B', font.label = list(size = 18))
+          plot.title = element_text(size = rel(1), hjust = 0.5)) 
+  p1 = ggpubr::ggarrange(p1, labels = 'C', font.label = list(size = 18), vjust = 0.65)
   
   tmp2 = subset(tmp1, method2 == c('Standard B-splines 2D surface'))
   p2 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
@@ -168,7 +196,7 @@ for(l in lengthscales){
     coord_equal() +
     scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
     scale_y_continuous(expand=c(0,0)) +
-    scale_fill_viridis_c(option = "viridis", limits = range(tmp1$mean)) +
+    scale_fill_viridis_c(option = "viridis", limits = range(c(tmp1$mean, tmp1$y, tmp1$y_mean))) +
     # labs(x = expression(x[2]), y = expression(x[1])) +
     labs(y= '') + 
     # xlab(expression(decreasing %<->% 'increasing number of knots')) + 
@@ -187,7 +215,7 @@ for(l in lengthscales){
           axis.title.x = element_blank(),
           panel.spacing.y = unit(3, "lines"), 
           plot.title =element_text(hjust = 0.5,size=rel(1.1)))  
-  p2 = ggpubr::ggarrange(p2, labels = 'C', font.label = list(size = 18))
+  p2 = ggpubr::ggarrange(p2, labels = 'D', font.label = list(size = 18))
   
   tmp2 = subset(tmp1, method2 == c('Low-rank 2D GP'))
   p3 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
@@ -197,11 +225,11 @@ for(l in lengthscales){
     coord_equal() +
     scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
     scale_y_continuous(expand=c(0,0)) +
-    scale_fill_viridis_c(option = "viridis", limits = range(tmp1$mean)) +
+    scale_fill_viridis_c(option = "viridis", limits = range(c(tmp1$mean, tmp1$y_mean, tmp1$y))) +
     # labs(x = expression(x[2]), y = expression(x[1])) +
     labs(y= '') + 
     # xlab(expression(decreasing %<->% 'increasing number of knots')) + 
-    ggtitle('Low-rank 2D GP projected by regularised B-splines') + 
+    ggtitle('Regularised B-splines projected 2D GP') + 
     facet_grid(method2~n_knots2) +
     # xlab(expression(decreasing %<->% 'increasing number of knots')) +
     theme(legend.position = 'none',
@@ -216,18 +244,19 @@ for(l in lengthscales){
           axis.title.x = element_blank(),
           panel.spacing.y = unit(3, "lines"), 
           plot.title =element_text(hjust = 0.5,size=rel(1.1)))
-  p3 = ggpubr::ggarrange(p3, labels = 'D', font.label = list(size = 18))
+  p3 = ggpubr::ggarrange(p3, labels = 'E', font.label = list(size = 18))
   
-  p = grid.arrange(p0,p1, p2, p3, nrow = 5, 
-                   layout_matrix = (rbind(c(NA,1,2,NA), 
-                                                            c(NA, NA, NA, NA),
-                                                         c(3,3,3,3),
-                                                         c(NA, NA, NA,NA),
-                                                         c(4,4,4,4))), widths = c(0.15, 0.4, 0.4, 0.15), 
-               heights = c(0.9,0.1,1,0.1, 1))
+  p = grid.arrange(p0,p02,p1, p2, p3,
+                   layout_matrix = rbind(c(NA,1,2,NA,NA), 
+                     c(NA,1,2,3,NA), 
+                                         c(NA, NA, NA, NA,NA),
+                                         c(4, 4, 4, 4, 4),
+                                         c(NA, NA, NA,NA,NA),
+                                         c(5, 5, 5, 5, 5)), widths = c(0.05, 0.45, 0.4, 0.4, 0), 
+               heights = c(0.06, 0.9,0.1,1,0.1, 1))
   
   
-  ggsave(p, file = file.path(outdir, paste0('2D_comp_lengthscale_', l, '.png')), w = 8, h = 10)
+  ggsave(p, file = file.path(outdir, paste0('2D_comp_lengthscale_', l, '.png')), w = 6, h = 8)
 }
 
 # time of execution 
@@ -236,12 +265,14 @@ for(i in seq_along(lengthscales)){
   
   l = lengthscales[i]
   tmp1 = subset(tmp, variable == 'y_hat' & lengthscale == l)
-  
   tmp1 = tmp1[, list(time = unique(time)), by = c('method', 'n_knots')]
-  tmp1 = tmp1[, timed := paste0(round((tmp1$time - min(tmp1$time)) / 60), ' minutes') ]
-  tmp1 = tmp1[, timep := paste0(gsub(" ", "", format(round( ((tmp1$time - min(tmp1$time)) / min(tmp1$time)), digits = 2), nsmall =2)), '\\%') ]
-
-  time_all[[i]] = tmp1[,c(4,5)]
+  timeGP = tmp1[method == 'Standard 2D GP', time]
+  
+  tmp1 = tmp1[, timed := paste0(round((tmp1$time - timeGP) / 60), ' minutes') ]
+  tmp1 = tmp1[, timep := paste0(gsub(" ", "", format(round( (((tmp1$time - timeGP) / timeGP) )* 100, digits = 2), nsmall =2)), '\\%') ]
+  tmp1 = tmp1[,timec := paste0(round((tmp1$time) / 60), ' minutes') ]
+  
+  time_all[[i]] = tmp1[,c(4,5,6)]
 }
 
 # GP vs GP-BS-SE
@@ -261,6 +292,8 @@ time_GPSE[[3]] = paste0(round(min_GPSE_3/ 60), ' minutes')
 avg_red = paste0(round(mean((1-c(min_GPSE_1/min_GP[1], min_GPSE_2/min_GP[2], min_GPSE_3/min_GP[3] ))* 100), digits = 2) , '\\%')
 
 saveRDS(list(time_GP, time_GPSE, avg_red, time_all), file = file.path(outdir, paste0('time_execution.rds')))
+
+
 
 
 # compare loo
