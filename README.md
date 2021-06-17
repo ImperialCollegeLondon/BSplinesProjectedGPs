@@ -21,7 +21,6 @@ XXX
 ## Installation 
 A ```yml``` file is provided and can be used to build a conda virtual environment containing all R dependencies. Create the environment using:
 ```bash
-$ cd CDC-covid19-agespecific-mortality-data
 $ conda env create -f covid19Vaccination.yml
 ```
 Then activate the environment for use:
