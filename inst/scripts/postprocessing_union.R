@@ -4,7 +4,7 @@ library(dplyr)
 library(tidyverse)
 library(viridis)
 
-indir = "~/git/CDC-covid19-agespecific-mortality-data/inst/" # path to the repo
+indir = "~/git/covid19Vaccination/inst/" # path to the repo
 outdir = file.path(indir, "results", 'new')
 stan_model = "210529b"
 JOBID = 2117

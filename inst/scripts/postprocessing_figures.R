@@ -8,8 +8,8 @@ library(gridExtra)
 library(ggpubr)
 library(cowplot)
 
-indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
-outdir = '/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/'
+indir = "~/git/covid19Vaccination/inst" # path to the repo
+outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
 location.index = 12
 stan_model = "210529b"
 JOBID = 2117

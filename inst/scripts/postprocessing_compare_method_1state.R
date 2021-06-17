@@ -5,8 +5,8 @@ library(gridExtra)
 library(loo)
 library(ggpubr)
 
-indir = "~/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
-outdir = '~/git/CDC-covid19-agespecific-mortality-data/inst/results/new'
+indir = "~/git/covid19Vaccination/inst" # path to the repo
+outdir = '~/git/covid19Vaccination/inst/results/new'
 location.index = 1
 stan_model = c('210429h1', '210529c', '210529b')
 JOBID = c(11762, 31345, 2117)

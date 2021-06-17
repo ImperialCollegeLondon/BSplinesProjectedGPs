@@ -8,7 +8,7 @@ library(dplyr)
 library(loo)
 library(grid)
 
-indir ="~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
+indir ="~/git/covid19Vaccination" # path to the repo
 outdir = file.path(indir, 'simulations', 'results')
 
 model_GP = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'GP-SE_2D.stan') )

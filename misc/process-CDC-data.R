@@ -2,7 +2,7 @@ library(rstan)
 library(data.table)
 library(dplyr)
 
-indir = "~/git/CDC-covid19-agespecific-mortality-data" # path to the repo
+indir = "~/git/covid19Vaccination" # path to the repo
 outdir = file.path(indir, 'inst', "data")
 
 # load functions

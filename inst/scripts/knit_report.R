@@ -1,7 +1,7 @@
 library(rstan)
 library(data.table)
 
-indir = "/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst" # path to the repo
+indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path(indir, "results")
 stan_model = "210505b1"
 JOBID = 2967

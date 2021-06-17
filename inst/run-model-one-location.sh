@@ -2,8 +2,8 @@
 
 JOBID=$$
 STAN_MODEL="210429h2"
-CWD="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/results/"
-INDIR="/rds/general/user/mm3218/home/git/CDC-covid19-agespecific-mortality-data/inst/"
+CWD="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/"
+INDIR="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/"
 LOCATION_INDEX=1
   
 cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF

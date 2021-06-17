@@ -1,0 +1,1 @@
+load("/Users/melodiemonod/git/CDC-covid19-agespecific-mortality-data/inst/data/jhu_death_data_padded.rds")
