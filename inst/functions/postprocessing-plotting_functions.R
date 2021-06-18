@@ -636,6 +636,7 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
             legend.position = 'none', 
             panel.grid.major= element_blank()) + 
       scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
+      coord_cartesian(ylim = c(0,NA)) +
       labs(x ='', y = paste0('Predicted COVID-19 attributable mortality rates\namong individuals ', age, ' as of ', format(unique(tmp$date), '%b %Y')))
     ggsave(paste0(outdir, paste0('-MortalityRate_', age, '.png')), w = 8, h = 5)
   }
@@ -825,7 +826,8 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
     ) +
     guides(col = F, shape = F)
   pl = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy), direction =  "vh") + 
-    geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age', linetype = '')  + theme_bw() + theme(legend.key.height = unit(1, "cm"),legend.spacing.y = unit(0.05, 'cm'))
+    geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age', linetype = '')  + theme_bw() + 
+    theme(legend.key.height = unit(0.8, "cm"),legend.spacing.y = unit(0.0, 'cm')) + guides(linetype = guide_legend(order=1), color = guide_colorbar(order=2))
   p2 = ggpubr::ggarrange(p2,common.legend = T, legend.grob = get_legend(pl), legend = 'right',
                          labels = 'B', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
 

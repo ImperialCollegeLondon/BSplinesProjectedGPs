@@ -10,7 +10,7 @@ library(cowplot)
 
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 12
+location.index = 50
 stan_model = "210529b"
 JOBID = 2117
 
