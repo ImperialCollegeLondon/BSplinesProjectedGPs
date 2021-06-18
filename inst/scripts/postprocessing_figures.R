@@ -10,7 +10,7 @@ library(cowplot)
 
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 12
+location.index = 50
 stan_model = "210529b"
 JOBID = 2117
 
@@ -50,6 +50,10 @@ path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
 pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
 setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
 
+# vaccination data 
+file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
+vaccinedata = clean_vaccination_data_age(file)
+
 # code
 locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
 Code = locations[location.index,]$code
@@ -72,10 +76,6 @@ date_10thcum = date_10thcum[ cum.deaths >=10, min(date)]
 cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
 fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
-
-# vaccination data 
-file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
-vaccinedata = clean_vaccination_data_age(file)
 
 
 # Plot estimated CAR covariance matrix

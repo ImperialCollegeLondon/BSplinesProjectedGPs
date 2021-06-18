@@ -636,6 +636,7 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
             legend.position = 'none', 
             panel.grid.major= element_blank()) + 
       scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
+      coord_cartesian(ylim = c(0,NA)) +
       labs(x ='', y = paste0('Predicted COVID-19 attributable mortality rates\namong individuals ', age, ' as of ', format(unique(tmp$date), '%b %Y')))
     ggsave(paste0(outdir, paste0('-MortalityRate_', age, '.png')), w = 8, h = 5)
   }
@@ -683,7 +684,7 @@ plot_mortality_all_states = function(death, data, outdir)
   mid = round(ncodes/ 2)
   
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp, emp_adj), id.vars = c('loc_label', 'code', 'date', 'age')) )
-  df[, variable2 := ifelse(variable == 'emp', 'raw', 'adjusted for under-reporting')]
+  df[, variable2 := ifelse(variable == 'emp', 'raw', 'adjusted for reporting delays')]
   
   tmp = subset(death, code %in% codes[1:mid])
   df1 =subset(df, code %in% codes[1:mid])
@@ -701,12 +702,14 @@ plot_mortality_all_states = function(death, data, outdir)
           axis.title.x = element_blank(), 
           axis.title.y = element_text(size = rel(1.2)), 
           legend.title = element_text(size = rel(1.1)), 
+          legend.text = element_text(size = rel(1.1)), 
           strip.text = element_text(size = rel(1.1)), 
           legend.position = 'bottom') +
     labs( y = 'Estimated age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group', shape = 'Empirical data') + 
     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
-    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)  +
-    scale_shape_manual(values = c(21, 23))
+    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8) +
+    scale_shape_manual(values = c(21, 24)) + 
+    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1)))
   ggsave(paste0(outdir, paste0('-Mortality_allStates_1.png')), w = 9, h = 12)
   
   tmp = subset(death, code %in% codes[(mid+1):ncodes])
@@ -730,7 +733,8 @@ plot_mortality_all_states = function(death, data, outdir)
     labs( y = 'Estimated age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group', shape = 'Empirical data') + 
     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
     scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)  +
-    scale_shape_manual(values = c(21, 23))
+    scale_shape_manual(values = c(21, 24)) + 
+    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1)))
   ggsave(paste0(outdir, paste0('-Mortality_allStates_2.png')), w = 9, h = 12)
   
 }
@@ -787,7 +791,8 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
     p1 = p1 + theme(strip.text.x =  element_blank(),
                     strip.text.y =  element_text(size = rel(1.2)))
   }
-  p1 = ggarrange(p1, labels = 'C', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
+  p1 = ggarrange(p1, labels = 'C', font.label = list(size = 20, face = 'bold'), label.x = 0.04, 
+                 vjust = 1)
 
 
   tmp3 = subset(tmp3, method == selected_method)
@@ -821,7 +826,8 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
     ) +
     guides(col = F, shape = F)
   pl = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy), direction =  "vh") + 
-    geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age', linetype = '')  + theme_bw() + theme(legend.key.height = unit(1, "cm"),legend.spacing.y = unit(0.05, 'cm'))
+    geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age', linetype = '')  + theme_bw() + 
+    theme(legend.key.height = unit(0.8, "cm"),legend.spacing.y = unit(0.0, 'cm')) + guides(linetype = guide_legend(order=1), color = guide_colorbar(order=2))
   p2 = ggpubr::ggarrange(p2,common.legend = T, legend.grob = get_legend(pl), legend = 'right',
                          labels = 'B', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
 

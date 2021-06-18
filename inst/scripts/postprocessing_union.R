@@ -5,7 +5,7 @@ library(tidyverse)
 library(viridis)
 
 indir = "~/git/covid19Vaccination/inst/" # path to the repo
-outdir = file.path(indir, "results", 'new')
+outdir = file.path(indir, "results")
 stan_model = "210529b"
 JOBID = 2117
 
@@ -48,6 +48,9 @@ loc_div = data.table(code = c(c("CT", "ME", "MA", "NH", "RI", "VT"), c("NJ", "NY
                      division = c(rep("New\nEngland", 6), rep("Middle\nAtlantic", 4), rep("East North\nCentral", 5), rep("West North\nCentral", 7), 
                                   rep("South\nAtlantic", 9), rep("South\nCentral", 8), rep("Mountain", 8), rep("Pacific", 5)))
 
+# states with too few deaths
+rm_states = c('HI', 'VT', 'AK', 'WY')
+
 #
 # find locs
 files = list.files(path = dirname(outdir))
@@ -65,13 +68,14 @@ region_name = unique(select(region_name, code, loc_label))
 
 
 #
-# plot contribution over time
+# plot mortality rate over time
 mortality_rate = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   mortality_rate[[i]] = readRDS(paste0(outdir, '-MortalityRateTable_', locs[i], '.rds'))
 }
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = merge(mortality_rate, region_name, by = 'code')
+mortality_rate = subset(mortality_rate, !code %in% rm_states)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date))
 plot_mortality_rate_all_states(mortality_rate, outdir)
 
@@ -100,7 +104,7 @@ for(i in seq_along(locs)){
 }
 contribution054 = do.call('rbind', contribution054)
 contribution054 = merge(contribution054, region_name, by = 'code')
-contribution054 = subset(contribution054, !code %in% c('HI', 'VT', 'AK'))
+contribution054 = subset(contribution054, !code %in% rm_states)
 
 contribution5574 = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
@@ -108,7 +112,7 @@ for(i in seq_along(locs)){
 }
 contribution5574 = do.call('rbind', contribution5574)
 contribution5574 = merge(contribution5574, region_name, by = 'code')
-contribution5574 = subset(contribution5574, !code %in% c('HI', 'VT', 'AK'))
+contribution5574 = subset(contribution5574, !code %in% rm_states)
 
 contribution75 = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
@@ -116,7 +120,7 @@ for(i in seq_along(locs)){
 }
 contribution75 = do.call('rbind', contribution75)
 contribution75 = merge(contribution75, region_name, by = 'code')
-contribution75 = subset(contribution75, !code %in% c('HI', 'VT', 'AK'))
+contribution75 = subset(contribution75, !code %in% rm_states)
 
 contribution = rbind(contribution75, rbind(contribution5574, contribution054))
 plot_contribution_all_states(contribution, vaccinedata_state, outdir)
@@ -130,7 +134,7 @@ for(i in seq_along(locs)){
 }
 death = do.call('rbind', death)
 death = merge(death, region_name, by = 'code')
-death =  subset(death, !code %in% c('HI', 'VT', 'AK'))
+death =  subset(death, !code %in% rm_states)
 plot_mortality_all_states(death, data, outdir)
 
 
@@ -143,6 +147,7 @@ for(i in seq_along(locs)){
 contribution_ref = do.call('rbind', contribution_ref)
 contribution_ref = merge(contribution_ref, region_name, by = 'code')
 contribution_ref = merge(contribution_ref, loc_div, by = 'code')
+contribution_ref = subset(contribution_ref, !code %in% rm_states)
 
 contribution_ref_adj = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
@@ -151,9 +156,7 @@ for(i in seq_along(locs)){
 contribution_ref_adj = do.call('rbind', contribution_ref_adj)
 contribution_ref_adj = merge(contribution_ref_adj, region_name, by = 'code')
 contribution_ref_adj = merge(contribution_ref_adj, loc_div, by = 'code')
-
-contribution_ref = subset(contribution_ref, !code %in% c('AK', 'HI', 'VT'))
-contribution_ref_adj = subset(contribution_ref_adj, !code %in% c('AK', 'HI', 'VT'))
+contribution_ref_adj = subset(contribution_ref_adj, !code %in% rm_states)
 
 plot_contribution_ref_all_states(contribution_ref, contribution_ref_adj, outdir)
 

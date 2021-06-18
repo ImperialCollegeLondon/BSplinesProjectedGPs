@@ -4,24 +4,23 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
   
   tmp = copy( subset(contribution_ref_adj, !code %in% c('HI', 'VT', 'AK')))
   tmp = tmp[order(M, decreasing = T)]
-  
   statemax80 = tmp[age == '85+', list(loc_label = loc_label, 
                                       paste0(round(M*100, 2), '\\%'), 
-                                      paste0(round(mean(CL)*100, 2), '\\%'),
-                                      paste0(round(mean(CU)*100, 2), '\\%'))][1,]
+                                      paste0(round(CL*100, 2), '\\%'),
+                                      paste0(round(CU*100, 2), '\\%'))][1,]
   statemax5574 = tmp[age == '55-74', list(loc_label = loc_label, 
                                           paste0(round(M*100, 2), '\\%'), 
-                                          paste0(round(mean(CL)*100, 2), '\\%'),
-                                          paste0(round(mean(CU)*100, 2), '\\%'))][1,]
+                                          paste0(round(CL*100, 2), '\\%'),
+                                          paste0(round(CU*100, 2), '\\%'))][1,]
   tmp = tmp[order(M, decreasing = F)]
   statemin80 = tmp[age == '85+',list(loc_label = loc_label, 
                                      paste0(round(M*100, 2), '\\%'), 
-                                     paste0(round(mean(CL)*100, 2), '\\%'),
-                                     paste0(round(mean(CU)*100, 2), '\\%'))][1]
+                                     paste0(round(CL*100, 2), '\\%'),
+                                     paste0(round(CU*100, 2), '\\%'))][1]
   statemin5574 = tmp[age == '55-74', list(loc_label = loc_label, 
                                           paste0(round(M*100, 2), '\\%'), 
-                                          paste0(round(mean(CL)*100, 2), '\\%'),
-                                          paste0(round(mean(CU)*100, 2), '\\%'))][1,]
+                                          paste0(round(CL*100, 2), '\\%'),
+                                          paste0(round(CU*100, 2), '\\%'))][1,]
   
   average80 = tmp[age == '85+',list(paste0(round(mean(M)*100, 2), '\\%'), 
                                     paste0(round(mean(CL)*100, 2), '\\%'),
@@ -63,8 +62,10 @@ find_regime_state = function(contribution75, vaccinedata_state, outdir){
   
   locs = unique(contribution75$code)
   
+  tmp = merge(vaccinedata_state, contribution75, by = c('date', 'loc_label'))
+  
   date_break= as.Date('2021-05-01')
-  date_before_vaccine = as.Date('2020-10-31')
+  date_before_vaccine = min(tmp$date)
   
   contribution_stats = list()
   contribution_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
@@ -107,10 +108,10 @@ find_regime_state = function(contribution75, vaccinedata_state, outdir){
   contribution_stats[['con_bv']] = con_bv
   contribution_stats[['con_a']] = con_a
   
-  tmp = merge(vaccinedata_state, contribution75, by = c('date', 'loc_label'))
   tmp = tmp[date <= date_break]
   fit = lm(M ~ prop_vaccinated_1dosep, data = tmp)
   coefficients = fit$coefficients
+  coefficients = c(coefficients, rev(confint(fit, 'prop_vaccinated_1dosep', level=0.95)))
   
   contribution_stats[['date_vacs']] = format(min(tmp$date),  '%B %d, %Y')
   contribution_stats[['beta']] = -round(coefficients, digits =2)
