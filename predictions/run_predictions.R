@@ -8,7 +8,7 @@ library(grid)
 
 indir = "~/git/covid19Vaccination" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
-model = 'BS-GP-I'
+model = 'BS-GP-SE'
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -31,11 +31,17 @@ ps <- c(0.5, 0.025, 0.975)
 p_labs = c('M', 'CL', 'CU', 'mean')
 
 # tune 
-n_knots_x = 100
-n_knots_y = 100
+n_knots_x = 125
+n_knots_y = 125
 spline_degree = 3
 
-# run GP-BS-SE
+
+
+#
+#
+### Preparing stan data ### 
+#
+#
 
 # find knots
 x = unique(sort(c(training$x, test$x)))
@@ -75,6 +81,13 @@ test[, y_index := which(y < y_grid$y[-1] &  y >= y_grid$y[-nrow(y_grid)]), by = 
 value.coordinates_test = select(test, x_index, y_index)
 
 
+
+#
+#
+### Sampling ### 
+#
+#
+
 stan_data = list(n = n, m = m, N = nrow(training),
                  y = training$obs, 
                  coordinates = value.coordinates,
@@ -92,6 +105,13 @@ if(!file.exists(file)){
 }
 
 
+
+#
+#
+### Post processing ### 
+#
+#
+
 samples = extract(fit)
 
 tmp1 = as.data.table( reshape2::melt(samples$y_hat))
@@ -107,19 +127,20 @@ tmp2[, SE := (mean - obs)^2]
 cat('MSE is ', mean(tmp2$SE), '\n')
 cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
 
-
 tmp1 = merge(tmp1, x_grid, by = 'x_index')
 tmp1 = merge(tmp1, y_grid, by = 'y_index')
-
 tmpp = merge(tmp1, select(test, x_index, y_index), by = c('x_index', 'y_index'))
+tmpp[, timeE := max(apply(get_elapsed_time(fit), 1, sum))/60/60]
+tmpp[, MSE := mean(tmp2$SE)]
 
+saveRDS(tmpp, file= file.path(outdir, paste0('posterior_2D_', model, '_nknots_', n_knots_x, '.rds')))
 
 p0 = ggplot(tmpp, aes(x=x,y=y)) +
   geom_raster(aes(fill=M)) +
   scale_x_continuous(expand=c(0,0)) +
   scale_y_continuous(expand=c(0,0)) +
   scale_fill_gradient2(low = 'green3', high = 'lightpink', mid = 'khaki1', 
-                       limits = range(training$obs)) + 
+                       limits = range(test$obs)) + 
   theme_bw() + 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   labs(fill = '') +
@@ -129,7 +150,8 @@ p2 = ggplot(test,aes(x=x,y=y)) +
   geom_raster(aes(fill=obs)) +
   scale_x_continuous(expand=c(0,0)) +
   scale_y_continuous(expand=c(0,0)) +
-  scale_fill_gradient2(low = 'green3', high = 'lightpink', mid = 'khaki1') + 
+  scale_fill_gradient2(low = 'green3', high = 'lightpink', mid = 'khaki1', 
+                       limits = range(test$obs)) + 
   theme_bw() + 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   labs(fill = '')+
@@ -139,7 +161,8 @@ p3 = ggplot(training,aes(x=x,y=y)) +
   geom_point(aes(col=obs), size = 2) +
   scale_x_continuous(expand=c(0,0)) +
   scale_y_continuous(expand=c(0,0)) +
-  scale_color_gradient2(low = 'green3', high = 'lightpink', mid = 'khaki1') + 
+  scale_color_gradient2(low = 'green3', high = 'lightpink', mid = 'khaki1', 
+                        limits = range(test$obs)) + 
   theme_bw() + 
   labs(col = '')+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
