@@ -154,11 +154,22 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
   if(Code == 'GA')
     scrapedData = reduce_agebands_scrapedData_GA(scrapedData)
   
-  tmp = find_cumulative_deaths_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
+  tmp = find_cumulative_deaths_prop_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
   compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
-                                          var.cum.deaths.CDC = 'M', outdir = outdir.fig)
+                                          var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
+  compare_CDCestimation_DoH_age_prop_plot(tmp, outdir)
+  
+  tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
+                                            age_groups = unique(scrapedData$age), lab = 'DoH', cumulative = T)
+  compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
+                                     var.cum.deaths.CDC = c('M', 'CL', 'CU'), outdir = outdir.fig)
 
  }
+
+
+tmp1 = find_contribution_multiple_age_groups(fit_cum, df_week, df_age_continuous, unique(scrapedData$age), 'DoH', outdir.table)
+tmp1 = posterior_predictive_check_scrapedData(tmp1, scrapedData, outdir.table)
+compare_CDCestimation_DoH_age_prop_plot(tmp1, scrapedData, 'M', df_week, outdir, overall = F)
 
 # make panel figure
 
