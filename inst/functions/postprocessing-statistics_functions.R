@@ -58,7 +58,7 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
 }
 
 
-find_regime_state = function(contribution75, vaccinedata_state, outdir){
+find_regime_state = function(contribution75, vaccinedata_state, rm_states, outdir){
   
   locs = unique(contribution75$code)
   
@@ -86,7 +86,7 @@ find_regime_state = function(contribution75, vaccinedata_state, outdir){
                            betatot = fit1$coefficients[2],  betalast = fit2$coefficients[2])
   }
   beta = do.call('rbind', beta)
-  beta =  subset(beta, !code %in% c('HI', 'VT', 'AK'))
+  beta =  subset(beta, !code %in% rm_states)
   
   plateau = beta[betalast > 0, loc_label]
   beta = beta[order(betatot, decreasing = T)]
@@ -119,4 +119,52 @@ find_regime_state = function(contribution75, vaccinedata_state, outdir){
   saveRDS(contribution_stats, file = paste0(outdir, '-contribution_vaccination_stats.rds'))
   
   return(contribution_stats)
+}
+
+find_statistics_weekly_deaths = function(death, vaccinedata_state, outdir)
+{
+  
+  locs = unique(death$code)
+  
+  date_before_vaccine = min(vaccinedata_state$date)
+  
+  death_stats = list()
+  death_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
+  death_stats[['date_break']] = format(date_break,  '%B %d, %Y')
+  
+  death_75 = subset(death, age== '75+')
+  death_074 = subset(death, age== '0-74')
+  
+  # find states slow, fast, plateau
+  beta = vector(mode = 'list', length = length(locs))
+  for(i in seq_along(locs)){
+    y = subset(death_75, code == locs[i] & date >= date_before_vaccine)$M
+    x = 1:length(y)
+    fit1 = lm(y ~ x)
+    
+    y = subset(death_074, code == locs[i] & date >= date_before_vaccine)$M
+    x = 1:length(y)
+    fit2 = lm(y ~ x)
+    
+    beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
+                           beta75 = fit1$coefficients[2],  beta074 = fit2$coefficients[2])
+  }
+  beta = do.call('rbind', beta)
+  beta =  subset(beta, !code %in% c('HI', 'VT', 'AK', 'WY'))
+  
+  # how many states there was a decline in deaths since vaccination rollout 
+  all = beta[,sum(beta75 < 0)] == nrow(beta)
+  stopifnot(all == T)
+  
+  #  in how many states was this decline faster in 75+ compared to 0-74?
+  f755574 = beta[,sum(beta75 < beta074)] == nrow(beta)
+  stopifnot(f755574 == T)
+  
+  # how many states was there a decline in deaths among 75+ while deaths increased in 0-74?
+  m755574 = beta[beta75 <0 & beta074> 0]
+  
+  death_stats[['m755574']] = m755574
+  death_stats[['lm755574']] = nrow(m755574)
+  
+  saveRDS(death_stats, file = paste0(outdir, '-absolutedeaths.rds'))
 }
