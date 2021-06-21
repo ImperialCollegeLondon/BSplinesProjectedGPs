@@ -821,8 +821,13 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
   
   # tmp1
-  tmp1 = as.data.table( reshape2::melt(fit_samples['phi']) )
+  tmp1 = as.data.table( reshape2::melt(fit_samples['deaths_predict']) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  
+  # find proportion with overdispersion noise
+  tmpt = tmp1[, list(deaths_predict_t = sum(value)), by = c('week_index', 'iterations')]
+  tmp1 = merge(tmp1, tmpt, by = c('week_index', 'iterations'))
+  tmp1[, value := value / deaths_predict_t]
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
