@@ -1179,13 +1179,13 @@ compare_CDCestimation_DoH_age_prop_plot = function(tmp, outdir)
     theme_bw() +
     scale_color_manual(values = col) +
     scale_fill_manual(values = col) +
-    facet_wrap(~age,  scale = 'free', ncol = 2) +
+    facet_wrap(~age,  scale = 'free', ncol = 1) +
     theme(legend.position = 'bottom',
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text.x = element_text(angle = 90)) +
     labs(y = 'Age-specific contribution to COVID-19 weekly deaths', col = '', fill = '', x = '')
-  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 4, h = 8, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 3, h = 10, limitsize = F)
 
 }
 # 

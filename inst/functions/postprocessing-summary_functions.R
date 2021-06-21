@@ -850,7 +850,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   tmp4 = dcast(tmp4, week_index + age_index ~ q_label, value.var = "q")
   setnames(tmp4, p_labs, paste0(p_labs, '_prop'))
   
-  tmp5 = tmp1[, list( 	q= quantile(value_abs, prob=ps, na.rm = T),
+  tmp5 = tmp1[, list(  q= quantile(value_abs, prob=ps, na.rm = T),
                        q_label=p_labs), 
               by=c('week_index', 'age_index')]	
   tmp5 = dcast(tmp5, week_index + age_index ~ q_label, value.var = "q")
@@ -877,7 +877,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   tmp1[, cum.death.inside.CI := (cum.deaths  <= CU_abs_cum & cum.deaths  >= CL_abs_cum)] 
   
   tmp1[, code := Code]
-  tmp1[, age := factor(age, levels = c(df_age_state[order(age_from)]$age))]
+  tmp1[, age := factor(age, levels = as.character(df_age_state[order(age_from)]$age))]
   
   saveRDS(list(data_comp, tmp1), file = paste0(outdir, '-CumDeathsComp_', 'ScrapedData', '_', Code, '.rds'))
   
