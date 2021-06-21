@@ -1185,9 +1185,41 @@ compare_CDCestimation_DoH_age_prop_plot = function(tmp, outdir)
           panel.border = element_rect(colour = "black", fill = NA),
           axis.text.x = element_text(angle = 90)) +
     labs(y = 'Age-specific contribution to COVID-19 weekly deaths', col = '', fill = '', x = '')
-  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 3, h = 10, limitsize = F)
+  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 5, h = 12, limitsize = F)
 
 }
+
+compare_CDCestimation_DoH_age_weekly_plot = function(tmp, outdir)
+{
+  tmp1 = select(tmp, date, age, weekly.deaths)
+  tmp1[, CL_abs_weekly := NA]
+  tmp1[, CU_abs_weekly := NA]
+  tmp1[, source := 'DoH']
+  
+  tmp2 = select(tmp, date, age, CL_abs_weekly,  CU_abs_weekly,  M_abs_weekly)
+  setnames(tmp2, 'M_abs_weekly', 'weekly.deaths')
+  tmp2[, source := 'estimated']
+  
+  tmp1 = rbind(tmp1, tmp2)
+  
+  col = c('#5CC8D7FF', '#00203FFF')
+  
+  p = ggplot(tmp1, aes(x = date, y = weekly.deaths)) +
+    geom_ribbon(aes(ymin = CL_abs_weekly, ymax = CU_abs_weekly, fill = source), alpha = 0.5) +
+    geom_line(aes(col = source), size = 0.5) +
+    theme_bw() +
+    scale_color_manual(values = col) +
+    scale_fill_manual(values = col) +
+    facet_wrap(~age,  scale = 'free', ncol = 1) +
+    theme(legend.position = 'bottom',
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text.x = element_text(angle = 90)) +
+    labs(y = 'Age-specific COVID-19 weekly deaths', col = '', fill = '', x = '')
+  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_weekly_', Code, '.png'), w = 5, h = 12, limitsize = F)
+  
+}
+
 # 
 # plot_contribution_comparison_method = function(tab_cd, data, model_name){
 #   

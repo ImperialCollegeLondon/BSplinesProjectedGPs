@@ -158,6 +158,7 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
   compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
                                           var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
   compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
+  compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
   
   tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                             age_groups = unique(scrapedData$age), lab = 'DoH', cumulative = T)
