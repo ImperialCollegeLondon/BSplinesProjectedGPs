@@ -1241,9 +1241,9 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   
   if(!is.null(reduction)){
     tmp3 = tmp1[week_index %in% df_week[date %in%reduction, week_index]]
-    tmp3 = as.data.table( reshape2::dcast(tmp3, age_index + iterations ~ week_index, value.var = 'weekly.deaths') )
+    tmp3 = as.data.table( reshape2::dcast(tmp3, age_index + iterations ~ week_index, value.var = 'value') )
     setnames(tmp3, 3:4, c('week1', 'week2'))
-    tmp3[, value := week2 / week1 ]
+    tmp3[, value := week2 / week1, by = c('iterations', 'age_index')]
     tmp3 = tmp3[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c( 'age_index')]	
     tmp3 = dcast(tmp3, age_index ~ q_label, value.var = "q")
     tmp3[, code := Code]
