@@ -1175,7 +1175,7 @@ compare_CDCestimation_DoH_age_prop_plot = function(tmp, outdir)
   
   p = ggplot(tmp1, aes(x = date, y = prop.weekly.deaths)) +
     geom_ribbon(aes(ymin = CL_prop, ymax = CU_prop, fill = source), alpha = 0.5) +
-    geom_line(aes(col = source), size = 1) +
+    geom_line(aes(col = source), size = 0.5) +
     theme_bw() +
     scale_color_manual(values = col) +
     scale_fill_manual(values = col) +
