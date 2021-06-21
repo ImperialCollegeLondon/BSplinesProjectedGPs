@@ -877,6 +877,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   tmp4[, date := as.Date(date)]
   tmp1 = merge(tmp1, tmp4, by = c('date', 'age'))
   
+  tmp1[weekly.deaths_total == 0, prop.weekly.deaths := 0]
   tmp1[, prop.death.inside.CI := (prop.weekly.deaths <= CU_prop & prop.weekly.deaths >= CL_prop)]
   tmp1[, weekly.death.inside.CI := ( weekly.deaths <= CU_abs_weekly & weekly.deaths  >= CL_abs_weekly)] 
   tmp1[, cum.death.inside.CI := (cum.deaths  <= CU_abs_cum & cum.deaths  >= CL_abs_cum)] 
@@ -1155,7 +1156,8 @@ make_weekly_death_rate_table = function(fit_cum, fiveagegroups, date_vac, df_wee
   return(tmp1)
 }
 
-make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.phi, df_age, outdir, age_groups = NULL, lab = NULL, withempirical = F, cumulative = F){
+make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.phi, df_age, outdir, age_groups = NULL, 
+                                               lab = NULL, withempirical = F, cumulative = F, reduction = NULL){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -1237,6 +1239,18 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   tmp1 = merge(tmp1, tmp2, by = 'week_index')
   tmp1[, value := value * weekly.deaths]
   
+  if(!is.null(reduction)){
+    tmp3 = tmp1[week_index %in% df_week[date %in%reduction, week_index]]
+    tmp3 = as.data.table( reshape2::dcast(tmp3, age_index + iterations ~ week_index, value.var = 'weekly.deaths') )
+    setnames(tmp3, 3:4, c('week1', 'week2'))
+    tmp3[, value := week2 / week1 ]
+    tmp3 = tmp3[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c( 'age_index')]	
+    tmp3 = dcast(tmp3, age_index ~ q_label, value.var = "q")
+    tmp3[, code := Code]
+    tmp3[, age := df_age$age[age_index]]
+    tmp3[, age := factor(age, levels = df_age$age)]
+  }
+  
   if(cumulative){
     tmp1[, value := cumsum(value), by = c('age_index', 'iterations')]
   }
@@ -1273,6 +1287,10 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
 
   saveRDS(tmp1, file =file)
 
+  if(!is.null(reduction)){
+    saveRDS(tmp3, file= paste0(outdir, '-', 'DeathByAge', 'prop_Table_', var.phi, '_', Code, '.rds'))
+  }
+  
   return(tmp1)
 }
 
