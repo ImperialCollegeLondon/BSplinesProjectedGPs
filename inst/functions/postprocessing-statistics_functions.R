@@ -121,50 +121,99 @@ find_regime_state = function(contribution75, vaccinedata_state, rm_states, outdi
   return(contribution_stats)
 }
 
-find_statistics_weekly_deaths = function(death, vaccinedata_state, outdir)
+find_statistics_weekly_deaths = function(death, propdeath, deathpost, vaccinedata_state, outdir)
 {
   
-  locs = unique(death$code)
+  locs = unique(propdeath$code)
   
   date_before_vaccine = min(vaccinedata_state$date)
+  date_end = max(death$date)
   
-  death_stats = list()
-  death_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
-  death_stats[['date_break']] = format(date_break,  '%B %d, %Y')
+  death_75 = subset(deathpost, age== '75+')
+  death_074 = subset(deathpost, age== '0-74')
   
-  death_75 = subset(death, age== '75+')
-  death_074 = subset(death, age== '0-74')
+  propdeath75 = subset(propdeath, age== '75+')
+  propdeath074 = subset(propdeath, age== '0-74')
+
+  # in the united states
+  b75 = format(round(death_75[, list(M = M_week1, CL = CL_week1, CU = CU_week1)]), big.mark=",") 
+  a75 = format(round(death_75[, list(M = M_week2, CL = CL_week2, CU = CU_week2)]), big.mark=",") 
+  p75 = paste0(format(round((1 - death_75[, list(M = M, CL = CL, CU = CU)])*100, 2), nsmall = 2), '\\%')
   
-  # find states slow, fast, plateau
-  beta = vector(mode = 'list', length = length(locs))
-  for(i in seq_along(locs)){
-    y = subset(death_75, code == locs[i] & date >= date_before_vaccine)$M
-    x = 1:length(y)
-    fit1 = lm(y ~ x)
-    
-    y = subset(death_074, code == locs[i] & date >= date_before_vaccine)$M
-    x = 1:length(y)
-    fit2 = lm(y ~ x)
-    
-    beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
-                           beta75 = fit1$coefficients[2],  beta074 = fit2$coefficients[2])
-  }
-  beta = do.call('rbind', beta)
-  beta =  subset(beta, !code %in% c('HI', 'VT', 'AK', 'WY'))
+  b074 = format(round(death_074[, list(M = M_week1, CL = CL_week1, CU = CU_week1)]), big.mark=",") 
+  a074 = format(round(death_074[, list(M = M_week2, CL = CL_week2, CU = CU_week2)]), big.mark=",") 
+  p074 = paste0(format(round((1 - death_074[, list(M = M, CL = CL, CU = CU)])*100, 2), nsmall = 2), '\\%')
+
+  # empirical 
+  subset(death, date ==  date_end & age == '75+')
+  emp = subset(death,date %in% c(date_before_vaccine, date_end))[, list(emp = sum(na.omit(emp))), by = c('date', 'age')]
+  emp = as.data.table( reshape2::dcast(emp, age~ date, value.var = 'emp') )
+  setnames(emp, 2:3, c('week1', 'week2'))
+  emp[, prop := paste0(format(round((1 - (week2 / week1))*100, 2), nsmall = 2), '\\%')]
+  emp[, week1 := format(week1, big.mark=",") ]
+  emp[, week2 := format(week2, big.mark=",") ]
   
-  # how many states there was a decline in deaths since vaccination rollout 
-  all = beta[,sum(beta75 < 0)] == nrow(beta)
-  stopifnot(all == T)
+  # state fastest
+  sf75 = propdeath75[order(M, decreasing = T), list(loc_label = loc_label, 
+                                                    M = paste0(format(round((1 - M)*100, 2), nsmall = 2), '\\%'), 
+                                                    CL = paste0(format(round((1-CL)*100, 2), nsmall = 2), '\\%'),
+                                                    CU = paste0(format(round((1-CU)*100, 2), nsmall = 2), '\\%')), by = 'loc_label'][1:3]
+  sl75 = propdeath75[order(M, decreasing = F), list(loc_label = loc_label, 
+                                                    M = paste0(format(round((1-M)*100, 2), nsmall = 2), '\\%'), 
+                                                    CL = paste0(format(round((1-CL)*100, 2), nsmall = 2), '\\%'),
+                                                    CU = paste0(format(round((1-CU)*100, 2), nsmall = 2), '\\%')), by = 'loc_label'][1:3]
   
-  #  in how many states was this decline faster in 75+ compared to 0-74?
-  f755574 = beta[,sum(beta75 < beta074)] == nrow(beta)
-  stopifnot(f755574 == T)
+  # state slowest
+  sf074 = propdeath074[order(M, decreasing = T), list(loc_label = loc_label, 
+                                                      M = gsub(" ", '', paste0(format(round( (1 - M)*100, 2), nsmall = 2), '\\%')), 
+                                                      CL = gsub(" ", '',paste0(format(round((1-CL)*100, 2), nsmall = 2), '\\%')),
+                                                      CU = gsub(" ", '',paste0(format(round((1-CU)*100, 2), nsmall = 2), '\\%'))), by = 'loc_label'][1:3]
+  sl074 = propdeath074[order(M, decreasing = F), list(loc_label = loc_label, 
+                                                      M = gsub(" ", '',paste0(format(round((1 - M)*100, 2), nsmall = 2), '\\%')), 
+                                                      CL = gsub(" ", '',paste0(format(round((1-CL)*100, 2), nsmall = 2), '\\%')),
+                                                      CU = gsub(" ", '',paste0(format(round((1-CU)*100, 2), nsmall = 2), '\\%'))), by = 'loc_label'][1:3]
   
-  # how many states was there a decline in deaths among 75+ while deaths increased in 0-74?
-  m755574 = beta[beta75 <0 & beta074> 0]
   
-  death_stats[['m755574']] = m755574
-  death_stats[['lm755574']] = nrow(m755574)
+  death_stats = list(date_before= format(date_before_vaccine,  '%B %d, %Y'),
+                     date_end = format(date_end,  '%B %d, %Y'), 
+                     length = as.numeric( (date_end - date_before_vaccine) / 7 - 1 ), 
+                     us75 = list(b75, a75, p75), us074 = list(b074, a074, p074), 
+                     s75 = list(sf75, sl75), s074 = list(sf074, sl074), emp = emp)
   
   saveRDS(death_stats, file = paste0(outdir, '-absolutedeaths.rds'))
+  
+  return(death_stats)
 }
+
+
+# 
+# # find states slow, fast, plateau
+# beta = vector(mode = 'list', length = length(locs))
+# for(i in seq_along(locs)){
+#   y = subset(death_75, code == locs[i] & date >= date_before_vaccine)$M
+#   x = 1:length(y)
+#   fit1 = lm(y ~ x)
+#   
+#   y = subset(death_074, code == locs[i] & date >= date_before_vaccine)$M
+#   x = 1:length(y)
+#   fit2 = lm(y ~ x)
+#   
+#   beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
+#                          beta75 = fit1$coefficients[2],  beta074 = fit2$coefficients[2])
+# }
+# beta = do.call('rbind', beta)
+# beta =  subset(beta, !code %in% c('HI', 'VT', 'AK', 'WY'))
+# 
+# # how many states there was a decline in deaths since vaccination rollout 
+# all = beta[,sum(beta75 < 0)] == nrow(beta)
+# stopifnot(all == T)
+# 
+# #  in how many states was this decline faster in 75+ compared to 0-74?
+# f755574 = beta[,sum(beta75 < beta074)] == nrow(beta)
+# stopifnot(f755574 == T)
+# 
+# # how many states was there a decline in deaths among 75+ while deaths increased in 0-74?
+# m755574 = beta[beta75 <0 & beta074> 0]
+# 
+# death_stats[['m755574']] = m755574
+# death_stats[['lm755574']] = nrow(m755574)
