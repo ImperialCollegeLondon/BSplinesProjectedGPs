@@ -139,10 +139,14 @@ plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strat
 deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table)
 tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
-                                          age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T)
+                                          age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
+                                    reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
+                                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', 
+                                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                                      age_groups = c('0-74', '75+'), lab = '2agegroups', 
                                                      reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))

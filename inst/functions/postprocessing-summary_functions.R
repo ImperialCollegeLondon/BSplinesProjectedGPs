@@ -1289,7 +1289,14 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   saveRDS(tmp1, file =file)
 
   if(!is.null(reduction)){
-    saveRDS(tmp3, file= paste0(outdir, '-', 'DeathByAge', 'prop_Table_', var.phi, '_', Code, '.rds'))
+    if(!is.null(lab)){
+      file = paste0(outdir, '-', 'DeathByAge', 'prop_Table_', lab, '_', Code, '.rds')
+      
+    }else{
+      file =  paste0(outdir, '-', 'DeathByAge', 'prop_Table_', var.phi, '_', Code, '.rds')
+    }
+    
+    saveRDS(tmp3, file= file)
   }
   
   return(tmp1)
@@ -1385,7 +1392,14 @@ make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week
   saveRDS(tmp1, file =file)
   
   if(!is.null(reduction)){
-    saveRDS(tmp3, file= paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'prop_Table_', var.phi, '_', Code, '.rds'))
+    if(!is.null(lab)){
+      file = paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'prop_Table_', lab, '_', Code, '.rds')
+      
+    }else{
+      file =  paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'prop_Table_', var.phi, '_', Code, '.rds')
+    }
+    
+    saveRDS(tmp3, file= file)
   }
   
   return(tmp1)
