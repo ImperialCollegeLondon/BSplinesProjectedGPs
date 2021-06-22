@@ -1,6 +1,8 @@
 library(data.table)
 library(dplyr)
 
+indir ="~/git/covid19Vaccination/inst" # path to the repo
+
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-06-02.rds"))
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
 
@@ -19,9 +21,8 @@ tmp = tmp[!is.na(daily_deaths)]
 tmp = merge(tmp, unique(select(deathByAge, code, loc_label)), by = 'loc_label')
 tmp = select(tmp, -loc_label)
 
-tmp = subset(tmp, date <= max(deathByAge$date))
+tmp = subset(tmp, date <= max(deathByAge$date) + 7)
 
-indir ="~/git/covid19Vaccination/inst" # path to the repo
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-06-22.rds"))
 saveRDS(tmp, path.to.JHU.data) 
 
