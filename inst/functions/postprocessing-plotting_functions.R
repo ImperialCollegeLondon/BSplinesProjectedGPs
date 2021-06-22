@@ -841,11 +841,12 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
   data[, age := factor(age, levels = rev(levels(data$age)))]
   p3 = ggplot(data, aes(x = date)) + 
     theme_bw() +
-    labs(y = 'Data age-specific COVID-19\nweekly deaths', x = "", color = '', shape = '', fill = 'Original\nAge\nGroup') + 
+    labs(y = 'Data age-specific COVID-19\nweekly deaths', x = "", color = '', shape = '', fill = 'Original\nAge\nGroup', linetype = '') + 
     # coord_cartesian(ylim = limit_SE) + 
     scale_fill_viridis_d(option = 'A', end = 0.95, direction = -1) +
     scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
     geom_bar(aes(y = weekly.deaths, fill = age), stat = 'identity', width = 7)  +
+    geom_step(data = tmp3, aes(x = date+ 3.5,y = emp_JHU), direction =  "vh") + 
     scale_y_continuous(expand = c(0,0)) +
     theme(panel.border = element_rect(colour = "black", fill = NA),
           strip.background = element_rect(colour="white", fill="white"), 
@@ -854,8 +855,9 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
           axis.title.y = element_text(size = rel(1.1)),
           legend.text = element_text(size = rel(0.8)),
           legend.title = element_text(size = rel(1)),
-          axis.text.x = element_text(angle= 40, hjust =1)
-    ) 
+          # legend.key.height = unit(0.6, "cm"),
+          axis.text.x = element_text(angle= 40, hjust =1)) + 
+    guides(linetype = guide_legend(order=1), color = guide_legend(order=2))
   p3 = ggarrange(p3, labels = 'A', font.label = list(size = 20, face = 'bold'))
   # p = ggpubr::ggarrange(p2,p1, common.legend = T, legend.grob = get_legend(p3), legend = 'left', widths = c(0.4, 0.6))
               
