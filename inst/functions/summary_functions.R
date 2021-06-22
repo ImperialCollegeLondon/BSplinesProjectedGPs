@@ -83,6 +83,7 @@ clean_vaccination_data_state = function(file_vac){
   
   tmp[loc_label == "New York State", loc_label:="New York"]
   
+  tmp = subset(tmp, loc_label != 'United States')
   return(tmp)
 }
 

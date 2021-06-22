@@ -79,6 +79,9 @@ cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
 fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
+# find min vacc > 0.1
+vaccinedata_state = merge(vaccinedata_state, unique(select(data, code, loc_label)), by = 'loc_label')
+min_vacc_date = vaccinedata_state[code == Code & prop_vaccinated_1dosep > 0.1, min(date)]
 
 # Plot estimated CAR covariance matrix
 plot_covariance_matrix(fit_cum, outdir = outdir.fig)
@@ -140,16 +143,16 @@ deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', 
 tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                           age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
-                                    reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                    reduction = c(min_vacc_date, max(df_week$date)))
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
-                                    reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                    reduction = c(min_vacc_date, max(df_week$date)))
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                                      age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', 
-                                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                                     reduction = c(min_vacc_date, max(df_week$date)))
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                                      age_groups = c('0-74', '75+'), lab = '2agegroups', 
-                                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                                     reduction = c(min_vacc_date, max(df_week$date)))
 # Plot mean age of death over time 
 mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)
 plot_mean_age_death(mean_age_death, outdir.fig)
