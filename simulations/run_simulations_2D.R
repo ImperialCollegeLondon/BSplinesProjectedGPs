@@ -200,7 +200,7 @@ for(l in lengthscales){
     # labs(x = expression(x[2]), y = expression(x[1])) +
     labs(y= '') + 
     # xlab(expression(decreasing %<->% 'increasing number of knots')) + 
-    ggtitle('Standard B-splines 2D surface') + 
+    ggtitle('Standard B-splines surface') + 
     facet_grid(method2~n_knots2) +
     # xlab(expression(decreasing %<->% 'increasing number of knots')) +
     theme(legend.position = 'none',

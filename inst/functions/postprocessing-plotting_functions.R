@@ -680,17 +680,17 @@ plot_contribution_all_states = function(contribution, vaccinedata_state, outdir)
   
 }
 
-plot_mortality_all_states = function(death, data, outdir)
+plot_mortality_all_states = function(death, data, vaccinedata_state, outdir)
 {
   codes = unique(death$code)
   ncodes = length(codes)
   mid = round(ncodes/ 2)
   
-  df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp, emp_adj), id.vars = c('loc_label', 'code', 'date', 'age')) )
-  df[, variable2 := ifelse(variable == 'emp', 'raw data', 'data adjusted for\nreporting delays')]
-  df[, variable2 := factor(variable2, levels = c('raw data', 'data adjusted for\nreporting delays'))]
-  
-  death[, dummy := 'Posterior median']
+  df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
+  df[, variable2 := 'CDC data']
+
+  vaccination_start = data.table(date = vaccinedata_state[,min(date)])
+  death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   
   tmp = subset(death, code %in% codes[1:mid])
   df1 =subset(df, code %in% codes[1:mid])
@@ -700,6 +700,7 @@ plot_mortality_all_states = function(death, data, outdir)
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     facet_wrap(~loc_label, scale = 'free_y', ncol = 4) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    geom_vline(data = vaccination_start, aes(xintercept = date), linetype = 2, col = 'grey50') +
     theme_bw() + 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
@@ -714,8 +715,9 @@ plot_mortality_all_states = function(death, data, outdir)
     labs( y = 'Age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group', shape = '', linetype = '') + 
     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
     scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8) +
-    scale_shape_manual(values = c(21, 24)) + 
-    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1)))
+    scale_shape_manual(values = 21) + 
+    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1), order = 1), linetype =  guide_legend(order=2),
+           fill = guide_legend(order=3), col = guide_legend(order =3))
   ggsave(paste0(outdir, paste0('-Mortality_allStates_1.png')), w = 9, h = 12)
   
   tmp = subset(death, code %in% codes[(mid+1):ncodes])
@@ -726,6 +728,7 @@ plot_mortality_all_states = function(death, data, outdir)
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     facet_wrap(~loc_label, scale = 'free_y', ncol = 4) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    geom_vline(data = vaccination_start, aes(xintercept = date), linetype = 2, col = 'grey50') +
     theme_bw() + 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
@@ -740,8 +743,9 @@ plot_mortality_all_states = function(death, data, outdir)
     labs( y = 'Age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group', shape = '', linetype = '') + 
     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
     scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)  +
-    scale_shape_manual(values = c(21, 24)) + 
-    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1)))
+    scale_shape_manual(values = 21) + 
+    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1), order = 1), linetype =  guide_legend(order=2),
+           fill = guide_legend(order=3), col = guide_legend(order =3))
   ggsave(paste0(outdir, paste0('-Mortality_allStates_2.png')), w = 9, h = 12)
   
 }
