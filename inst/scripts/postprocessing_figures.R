@@ -50,11 +50,15 @@ path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
 pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
 setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
 
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-06-22.rds"))
+JHUData = readRDS(path.to.JHU.data)
+
 # vaccination data 
 file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
 vaccinedata = clean_vaccination_data_age(file)
 file = file.path(indir, 'data', 'us_state_vaccinations_210611.csv')
 vaccinedata_state = clean_vaccination_data_state(file)
+
 
 # code
 locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
