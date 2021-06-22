@@ -10,7 +10,7 @@ library(cowplot)
 
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 50
+location.index = 47
 stan_model = "210529b"
 JOBID = 2117
 
@@ -53,6 +53,8 @@ setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'
 # vaccination data 
 file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
 vaccinedata = clean_vaccination_data_age(file)
+file = file.path(indir, 'data', 'us_state_vaccinations_210611.csv')
+vaccinedata_state = clean_vaccination_data_state(file)
 
 # code
 locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
@@ -139,8 +141,11 @@ tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi_reduc
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
                                           age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
-                                    age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T)
-
+                                    age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
+                                    reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
+                                                     age_groups = c('0-74', '75+'), lab = '2agegroups', 
+                                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
 # Plot mean age of death over time 
 mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)
 plot_mean_age_death(mean_age_death, outdir.fig)
