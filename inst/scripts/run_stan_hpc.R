@@ -39,7 +39,7 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 
 # path to CDC and JHU data
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-06-02.rds"))
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_death_data_padded_2021-06-02.rds"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-06-22.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 
 # load functions
