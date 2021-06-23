@@ -268,9 +268,9 @@ for(i in seq_along(lengthscales)){
   tmp1 = tmp1[, list(time = unique(time)), by = c('method', 'n_knots')]
   timeGP = tmp1[method == 'Standard 2D GP', time]
   
-  tmp1 = tmp1[, timed := paste0(round((tmp1$time - timeGP) / 60), ' minutes') ]
+  tmp1 = tmp1[, timed := paste0(round((tmp1$time - timeGP) / 60)) ]
   tmp1 = tmp1[, timep := paste0(gsub(" ", "", format(round( (((tmp1$time - timeGP) / timeGP) )* 100, digits = 2), nsmall =2)), '\\%') ]
-  tmp1 = tmp1[,timec := paste0(round((tmp1$time) / 60), ' minutes') ]
+  tmp1 = tmp1[,timec := paste0(round((tmp1$time) / 60)) ]
   
   time_all[[i]] = tmp1[,c(4,5,6)]
 }

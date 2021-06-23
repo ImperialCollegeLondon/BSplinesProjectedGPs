@@ -43,8 +43,6 @@ for(i in args$locations){
   
   cmds[[i]] = paste0(cmds[[i]], 'cp -R --no-preserve=mode,ownership "$PWD"/* $CWD\n')
   
-  tmp = paste0('Rscript ', args$INDIR,'/scripts/postprocessing_union.R -indir ',args$INDIR, ' -outdir $CWD -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
-  cmds[[i]] = paste0(cmds[[i]], tmp, '\n')
   tmp = paste0('Rscript ', args$INDIR,'/scripts/knit_report.R -indir ',args$INDIR, ' -outdir $CWD -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
   cmds[[i]] = paste0(cmds[[i]], tmp, '\n')
   
