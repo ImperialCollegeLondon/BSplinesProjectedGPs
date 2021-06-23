@@ -695,7 +695,7 @@ plot_mortality_all_states = function(death, data, min_vaccine_date, outdir)
   tmp = subset(death, code %in% codes[1:mid])
   df1 =subset(df, code %in% codes[1:mid])
   ggplot(tmp, aes(x= date) ) +
-    geom_line(aes(y = M, col = age, linetype = dummy)) + 
+    geom_line(aes(y = M, col = age)) + 
     geom_point(data = df1, aes(y = value, shape= variable2, fill = age), size = 1, col = 'grey70', stroke = 0.1) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     facet_wrap(~loc_label, scale = 'free_y', ncol = 4) +
@@ -712,18 +712,18 @@ plot_mortality_all_states = function(death, data, min_vaccine_date, outdir)
           legend.text = element_text(size = rel(1.1)), 
           strip.text = element_text(size = rel(1.1)), 
           legend.position = 'bottom') +
-    labs( y = 'Age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group', shape = '', linetype = '') + 
+    labs( y = 'Predicted age-specific COVID-19 attributable weekly deaths', col = 'Age group', fill = 'Age group', shape = '') + 
     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
     scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8) +
     scale_shape_manual(values = 21) + 
-    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1), order = 1), linetype =  guide_legend(order=2),
-           fill = guide_legend(order=3), col = guide_legend(order =3))
+    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1), order = 1), 
+           fill = guide_legend(order=2), col = guide_legend(order =2))
   ggsave(paste0(outdir, paste0('-Mortality_allStates_1.png')), w = 9, h = 12)
   
   tmp = subset(death, code %in% codes[(mid+1):ncodes])
   df1 =subset(df, code %in% codes[(mid+1):ncodes])
   ggplot(tmp, aes(x= date) ) +
-    geom_line(aes(y = M, col = age, linetype = dummy)) + 
+    geom_line(aes(y = M, col = age)) + 
     geom_point(data = df1, aes(y = value, shape= variable2, fill = age), size = 1, col = 'grey70', stroke = 0.1) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     facet_wrap(~loc_label, scale = 'free_y', ncol = 4) +
@@ -740,12 +740,12 @@ plot_mortality_all_states = function(death, data, min_vaccine_date, outdir)
           legend.text = element_text(size = rel(1.1)), 
           strip.text = element_text(size = rel(1.1)), 
           legend.position = 'bottom') +
-    labs( y = 'Age-specific COVID-19 weekly deaths', col = 'Age group', fill = 'Age group', shape = '', linetype = '') + 
+    labs( y = 'Predicted age-specific COVID-19 attributable weekly deaths', col = 'Age group', fill = 'Age group', shape = '') + 
     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
     scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8)  +
     scale_shape_manual(values = 21) + 
-    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1), order = 1), linetype =  guide_legend(order=2),
-           fill = guide_legend(order=3), col = guide_legend(order =3))
+    guides(shape = guide_legend(override.aes = list(size=1, stroke = 1), order = 1), 
+           fill = guide_legend(order=2), col = guide_legend(order =2))
   ggsave(paste0(outdir, paste0('-Mortality_allStates_2.png')), w = 9, h = 12)
   
 }
@@ -763,7 +763,6 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
   tmp2[, method := factor(method,  model_name)]
   
   tmp3 = as.data.table(tab_d)
-  tmp3[, method := factor(method,  model_name)]
   tmp3[, age_c := as.numeric(age)]
   
   limit_SE = range(subset(tmp2, method == selected_method)$CL, subset(tmp2, method == selected_method)$CU)
@@ -806,13 +805,12 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
                  vjust = 1)
 
 
-  tmp3 = subset(tmp3, method == selected_method)
   tmp3[, age := factor(age, levels = rev(levels(tmp3$age)))]
   tmp3[, dummy := 'JHU\noverall\nweekly\ndeaths']
   p2 = ggplot(tmp3, aes(x = date)) + 
     theme_bw() +
     geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy), direction =  "vh") + 
-    labs(y = 'Posterior median of the age-specific\nCOVID-19 weekly deaths', x = "", color = '', shape = '', fill = 'Age') + 
+    labs(y = 'Posterior mean of the age-specific\nCOVID-19 weekly deaths', x = "", color = '', shape = '', fill = 'Age') + 
     facet_grid(method~.) +
     # coord_cartesian(ylim = limit_SE) + 
     scale_fill_viridis_d(option = 'B',  direction = -1,

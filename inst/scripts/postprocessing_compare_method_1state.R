@@ -77,13 +77,8 @@ for(i in seq_along(JOBID)){
   tab_cc[[i]] = tab
 }
 tab_cc = do.call('rbind', tab_cc)
-tab_d = list()
-for(i in seq_along(JOBID)){
-  tab = readRDS( paste0(outdir.table[i], '-DeathByAgeTable_phi_FL.rds') )
-  tab$method = model_name[i]
-  tab_d[[i]] = tab
-}
-tab_d = do.call('rbind', tab_d)
+tab_d = readRDS( paste0(outdir.table[3], '-DeathByAgeTable_alpha_FL.rds') )
+tab_d$method = 'Regularised B-splines\nprojected 2D GP'
 
 p = plot_contribution_continuous_comparison_method(tab_cc, tab_d, data, 
                                                    'Regularised B-splines\nprojected 2D GP', model_name)
