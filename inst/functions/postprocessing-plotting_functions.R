@@ -680,7 +680,7 @@ plot_contribution_all_states = function(contribution, vaccinedata_state, outdir)
   
 }
 
-plot_mortality_all_states = function(death, data, vaccinedata_state, outdir)
+plot_mortality_all_states = function(death, data, min_vaccine_date, outdir)
 {
   codes = unique(death$code)
   ncodes = length(codes)
@@ -689,7 +689,7 @@ plot_mortality_all_states = function(death, data, vaccinedata_state, outdir)
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
   df[, variable2 := 'CDC data']
 
-  vaccination_start = data.table(date = vaccinedata_state[,min(date)])
+  vaccination_start = data.table(date = min_vaccine_date)
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   
   tmp = subset(death, code %in% codes[1:mid])
@@ -768,7 +768,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
   
   limit_SE = range(subset(tmp2, method == selected_method)$CL, subset(tmp2, method == selected_method)$CU)
   
-  tmp= tab_d[, list(sumM = sum(M)), by = c('date', 'method')]
+  tmp= tab_d[, list(sumM = sum(mean)), by = c('date', 'method')]
   
   df = data.frame(value = dates, y = max(tmp$sumM) - max(tmp$sumM)*0.05, 
                   key = as.character(1:length(dates)), 
@@ -824,7 +824,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
     geom_point(data = df, aes(x = value, y = y, group = key, shape = key, col = key), size = 2, stroke = 1.5 ) +
     scale_shape_manual(name = "", labels = plot_labels, values = c(21, 22, 23)) + 
     scale_colour_manual(name = "", labels = plot_labels, values = gg_color_hue(3)) + 
-    geom_bar(aes(y = M, fill = age), stat = 'identity', width = 7)  +
+    geom_bar(aes(y = mean, fill = age), stat = 'identity', width = 7)  +
     scale_y_continuous(expand = c(0,0)) +
     theme(panel.border = element_rect(colour = "black", fill = NA),
           strip.background = element_rect(colour="white", fill="white"), 
