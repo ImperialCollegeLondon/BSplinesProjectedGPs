@@ -11,7 +11,7 @@ library(extraDistr)
 
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 1
+location.index = 4
 stan_model = "210529b"
 JOBID = 2117
 
@@ -118,7 +118,7 @@ find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_repo
 
 
 # Plot mortality rate
-mortality_rate_table = make_mortality_rate_table(fit_cum, fiveagegroups, date_10thcum, df_week, pop_data, 
+mortality_rate_table = make_mortality_rate_table(fit_cum, fiveagegroups, date_10thcum, df_week, pop_data,
                                                  JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, outdir.fig)
 
@@ -126,33 +126,33 @@ plot_mortality_rate(mortality_rate_table, outdir.fig)
 # Plot imputed weekly data 
 deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
 tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
-make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table, 
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                           age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
-make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table, 
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
-make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table, 
-                                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', 
+make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+                                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups',
                                                      reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
-make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table, 
-                                                     age_groups = c('0-74', '75+'), lab = '2agegroups', 
+make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+                                                     age_groups = c('0-74', '75+'), lab = '2agegroups',
                                                      reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
-# Plot mean age of death over time 
+# Plot mean age of death over time
 mean_age_death = find_mean_age_death(fit_cum, df_week, outdir.table)
 plot_mean_age_death(mean_age_death, outdir.fig)
 
 
 # find overall cumulative deaths (by age groups)
 if(nrow(subset(scrapedData, code == Code)) > 0 ){
-  
+
   scrapedData = subset(scrapedData, code == Code)
-  
+
   if(Code == 'GA')
     scrapedData = reduce_agebands_scrapedData_GA(scrapedData)
-  
+
   tmp = find_cumulative_deaths_prop_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
-  compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
+  compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
                                           var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
   compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
   compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
