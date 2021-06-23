@@ -950,6 +950,7 @@ find_phi_state_age = function(fit, df_week, df_age_continuous, age_state){
   return(tmp1)
 }
 
+ 
 make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_week, pop_data, data_comp, df_age_continuous, cum.death.var, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -1016,6 +1017,7 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths <0, weekly.deaths := 0]
   
   # adjust dfweek for cum
   df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
@@ -1048,9 +1050,7 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   tmp1[, value := value / pop]
   
   # quantiles
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
-              by=c('week_index', 'age_index')]	
+  tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('week_index', 'age_index')]	
   tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
   
   tmp1[, code := Code]
@@ -1210,6 +1210,7 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths<0, weekly.deaths := 0]
   
   if(withempirical){
     
@@ -1346,6 +1347,7 @@ make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week
   tmp2 = merge(tmp2, df_week, by = 'date')
   tmp2 = select(tmp2, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths <0, weekly.deaths := 0]
   
   # adjust dfweek for cum
   df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
