@@ -121,7 +121,7 @@ find_regime_state = function(contribution75, vaccinedata_state, rm_states, outdi
   return(contribution_stats)
 }
 
-find_statistics_weekly_deaths = function(death, propdeath, deathpost, vaccinedata_state, outdir)
+find_statistics_weekly_deaths = function(death, propdeath, deathpost, deathpost2, vaccinedata_state, outdir)
 {
   
   locs = unique(propdeath$code)
@@ -131,6 +131,8 @@ find_statistics_weekly_deaths = function(death, propdeath, deathpost, vaccinedat
   
   death_75 = subset(deathpost, age== '75+')
   death_074 = subset(deathpost, age== '0-74')
+  death_054 = subset(deathpost2, age == '0-54')
+  death_5574 = subset(deathpost2, age == '55-74')
   
   propdeath75 = subset(propdeath, age== '75+')
   propdeath074 = subset(propdeath, age== '0-74')
@@ -144,6 +146,15 @@ find_statistics_weekly_deaths = function(death, propdeath, deathpost, vaccinedat
   a074 = format(round(death_074[, list(M = M_week2, CL = CL_week2, CU = CU_week2)]), big.mark=",") 
   p074 = paste0(format(round((1 - death_074[, list(M = M, CL = CL, CU = CU)])*100, 2), nsmall = 2), '\\%')
 
+  b054 = format(round(death_054[, list(M = M_week1, CL = CL_week1, CU = CU_week1)]), big.mark=",") 
+  a054 = format(round(death_054[, list(M = M_week2, CL = CL_week2, CU = CU_week2)]), big.mark=",") 
+  p054 = paste0(format(round((1 - death_054[, list(M = M, CL = CL, CU = CU)])*100, 2), nsmall = 2), '\\%')
+  
+  b5574 = format(round(death_5574[, list(M = M_week1, CL = CL_week1, CU = CU_week1)]), big.mark=",") 
+  a5574 = format(round(death_5574[, list(M = M_week2, CL = CL_week2, CU = CU_week2)]), big.mark=",") 
+  p5574 = paste0(format(round((1 - death_5574[, list(M = M, CL = CL, CU = CU)])*100, 2), nsmall = 2), '\\%')
+  
+  
   # empirical 
   subset(death, date ==  date_end & age == '75+')
   emp = subset(death,date %in% c(date_before_vaccine, date_end))[, list(emp = sum(na.omit(emp))), by = c('date', 'age')]
@@ -178,33 +189,39 @@ find_statistics_weekly_deaths = function(death, propdeath, deathpost, vaccinedat
                      date_end = format(date_end,  '%B %d, %Y'), 
                      length = as.numeric( (date_end - date_before_vaccine) / 7 - 1 ), 
                      us75 = list(b75, a75, p75), us074 = list(b074, a074, p074), 
-                     s75 = list(sf75, sl75), s074 = list(sf074, sl074), emp = emp)
-  
+                     s75 = list(sf75, sl75), s074 = list(sf074, sl074), emp = emp,
+                     u054 = list(b054, a054, p054), u5574 = list(b5574, a5574, p5574))
+
   saveRDS(death_stats, file = paste0(outdir, '-absolutedeaths.rds'))
   
   return(death_stats)
 }
 
 
+# death_75 = subset(death2, age== '75+' & date %in% c(as.Date('2021-034-06"'), '2021-05-15'))
 # 
+# death_75 = subset(death2, age== '75+' & date %in% c(as.Date('2021-04-24"'), '2021-05-15'))
+# 
+# death_75 = as.data.table( reshape2::dcast(death_75, code~ date, value.var = 'M') )
+# setnames(death_75, 2:3, c('week1', 'week2'))
+# tmp = death_75[, list(d = week2- week1, r = week2/week1), by = 'code']
+# tmp[r > 1]$code
+# subset(death2, code == 'MI' & date > as.Date('2021-03-06"'))
+# unique(death2$date)
 # # find states slow, fast, plateau
 # beta = vector(mode = 'list', length = length(locs))
 # for(i in seq_along(locs)){
-#   y = subset(death_75, code == locs[i] & date >= date_before_vaccine)$M
+#   y = subset(death_75, code == locs[i] & date >= as.Date('2020-01-01'))$M
 #   x = 1:length(y)
 #   fit1 = lm(y ~ x)
-#   
-#   y = subset(death_074, code == locs[i] & date >= date_before_vaccine)$M
-#   x = 1:length(y)
-#   fit2 = lm(y ~ x)
-#   
+# 
 #   beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
 #                          beta75 = fit1$coefficients[2],  beta074 = fit2$coefficients[2])
 # }
 # beta = do.call('rbind', beta)
 # beta =  subset(beta, !code %in% c('HI', 'VT', 'AK', 'WY'))
 # 
-# # how many states there was a decline in deaths since vaccination rollout 
+# # how many states there was a decline in deaths since vaccination rollout
 # all = beta[,sum(beta75 < 0)] == nrow(beta)
 # stopifnot(all == T)
 # 

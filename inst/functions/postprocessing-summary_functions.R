@@ -820,7 +820,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   # adjust dfweek for cum
   df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
   
-  # tmp1
+  # find pi noisy
   tmp1 = as.data.table( reshape2::melt(fit_samples['deaths_predict']) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
   
@@ -834,19 +834,30 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
   setnames(tmp1, 'age_state_index', 'age_index')
   
-  # add cumsum from weeks before 10th date
-  tmp4 = subset(tmp1, week_index %in% df_week1$week_index)
-  tmp4 = tmp4[, list(value_ref = mean(value)), by = c('age_index', 'iterations')]
-  tmp4[, value_ref := value_ref * last.cum.deaths]
+  # predict weekly deaths
+  tmp5 = as.data.table( reshape2::melt(fit_samples['alpha']) )
+  setnames(tmp5, c('Var2', 'Var3'), c('age_index','week_index'))
+  tmp5 = merge(tmp5, df_age_continuous, 'age_index')
+  tmp5 = tmp5[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
+  setnames(tmp5, 'age_state_index', 'age_index')
   
-  # multiply by the weekly death
-  tmp1 = merge(tmp1, tmp3, by = 'week_index')
-  tmp1[, value_abs := value * weekly.deaths_total]
+  # add cumsum from weeks before 10th date
+  tmp4 = subset(tmp5, week_index %in% df_week1$week_index)
+  tmp4 = tmp4[, list(value_ref = mean(value)), by = c('age_index', 'iterations')]
+  tmp4[, value_ref := rdirmnom(1, last.cum.deaths, value_ref), by = c('iterations')]
+  
+  # predict  weekly deaths
+  tmp5 = merge(tmp5, tmp3, by = 'week_index')
+  tmp5[, value_abs := rdirmnom(1, weekly.deaths_total, value), by = c('iterations', 'week_index')]
   
   # find cumulative death
-  tmp1 = merge(tmp1, tmp4, by = c('age_index', 'iterations'))
-  tmp1[, value_abs_cum := cumsum(value_abs), by = c('iterations', 'age_index')]
-  tmp1[, value_abs_cum := value_abs_cum + value_ref]
+  tmp5 = merge(tmp5, tmp4, by = c('age_index', 'iterations'))
+  tmp5[, value_abs_cum := cumsum(value_abs), by = c('iterations', 'age_index')]
+  tmp5[, value_abs_cum := value_abs_cum + value_ref]
+  
+  #merge
+  tmp5 = select(tmp5, -value)
+  tmp1 = merge(tmp1, tmp5, by = c('iterations', 'age_index', 'week_index'))
   
   # take quantiles
   tmp4 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
@@ -1010,7 +1021,7 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
   
   # tmp1
-  tmp1 = as.data.table( reshape2::melt(fit_samples['phi']) )
+  tmp1 = as.data.table( reshape2::melt(fit_samples['alpha']) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
   
   # sum by state age group
@@ -1021,11 +1032,11 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   # add cumsum from weeks before 10th date
   tmp3 = subset(tmp1, week_index %in% df_week1$week_index)
   tmp3 = tmp3[, list(value_ref = mean(value)), by = c('age_index', 'iterations')]
-  tmp3[, value_ref := value_ref * last.cum.deaths]
+  tmp3[, value_ref := rdirmnom(1, last.cum.deaths, value_ref), by =  c('iterations')]
   
   # multiply by the weekly death
   tmp1 = merge(tmp1, tmp2, by = 'week_index')
-  tmp1[, value := value * weekly.deaths]
+  tmp1[, value := rdirmnom(1, weekly.deaths, value), by =  c('iterations', 'week_index')]
   
   # find cumulative death
   tmp1 = merge(tmp1, tmp3, by = c('age_index', 'iterations'))
@@ -1156,8 +1167,8 @@ make_weekly_death_rate_table = function(fit_cum, fiveagegroups, date_vac, df_wee
   return(tmp1)
 }
 
-make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.phi, df_age, outdir, age_groups = NULL, 
-                                               lab = NULL, withempirical = F, cumulative = F, reduction = NULL){
+make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.alpha, df_age, outdir, age_groups = NULL, 
+                                               lab = NULL, withempirical = F, reduction = NULL){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -1221,11 +1232,8 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
     empirical = select(empirical, emp, emp_adj, week_index, age_index)
   }
   
-  # adjust dfweek for cum
-  df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
-  
   # tmp1
-  tmp1 = as.data.table( reshape2::melt(fit_samples[[var.phi]]) )
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var.alpha]]) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
   
   # sum by state age group
@@ -1235,9 +1243,9 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
     setnames(tmp1, 'age_state_index', 'age_index')
   }
   
-  # multiply by the weekly death
+  # prediction weekly deaths
   tmp1 = merge(tmp1, tmp2, by = 'week_index')
-  tmp1[, value := value * weekly.deaths]
+  tmp1[, value := rdirmnom(1, weekly.deaths, value), by = c('week_index', 'iterations')]
   
   if(!is.null(reduction)){
     tmp3 = tmp1[week_index %in% df_week[date %in%reduction, week_index]]
@@ -1252,29 +1260,21 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
     tmp3[, age := factor(age, levels = df_age$age)]
   }
   
-  if(cumulative){
-    tmp1[, value := cumsum(value), by = c('age_index', 'iterations')]
-  }
-  
   # quantiles
-  tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), 
+  tmp1 = tmp1[, list(q= c(quantile(value, prob=ps, na.rm = T), mean(value)), q_label=c(p_labs, 'mean')), 
               by=c('week_index', 'age_index')]	
   tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
   
   tmp1[, code := Code]
-  
-  if(cumulative){
-    tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
-  }else{
-    tmp1 = merge(tmp1, df_week, by = 'week_index')
-  }
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
 
   tmp1[, age := df_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_age$age)]
   
-  if(withempirical & !cumulative){
+  if(withempirical){
     tmp1 = merge(tmp1, empirical, by = c('week_index', 'age_index'), all.x = T)
   }
+  
   tmp1 = merge(tmp1, tmp2, by = 'week_index', all.x = T)
   setnames(tmp1, 'weekly.deaths', 'emp_JHU')
   
@@ -1283,7 +1283,7 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
     file = paste0(outdir, '-', 'DeathByAge', 'Table_', lab, '_', Code, '.rds')
     
   }else{
-    file =  paste0(outdir, '-', 'DeathByAge', 'Table_', var.phi, '_', Code, '.rds')
+    file =  paste0(outdir, '-', 'DeathByAge', 'Table_', var.alpha, '_', Code, '.rds')
   }
 
   saveRDS(tmp1, file =file)
@@ -1293,7 +1293,7 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
       file = paste0(outdir, '-', 'DeathByAge', 'prop_Table_', lab, '_', Code, '.rds')
       
     }else{
-      file =  paste0(outdir, '-', 'DeathByAge', 'prop_Table_', var.phi, '_', Code, '.rds')
+      file =  paste0(outdir, '-', 'DeathByAge', 'prop_Table_', var.alpha, '_', Code, '.rds')
     }
     
     saveRDS(tmp3, file= file)
@@ -1303,7 +1303,7 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
 }
 
 
-make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week, data_comp, var.phi, df_age, outdir, age_groups = NULL, 
+make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week, data_comp, var.alpha, df_age, outdir, age_groups = NULL, 
                                                lab = NULL,reduction = NULL){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -1351,7 +1351,7 @@ make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week
   df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
   
   # tmp1
-  tmp1 = as.data.table( reshape2::melt(fit_samples[[var.phi]]) )
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var.alpha]]) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
   
   # sum by state age group
@@ -1361,9 +1361,9 @@ make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week
     setnames(tmp1, 'age_state_index', 'age_index')
   }
   
-  # multiply by the weekly death
+  # predict weekly death
   tmp1 = merge(tmp1, tmp2, by = 'week_index')
-  tmp1[, value := value * weekly.deaths]
+  tmp1[, value := rdirmnom(1, weekly.deaths, value), by = c('week_index', 'iterations')]
   
   if(!is.null(reduction)){
     tmp3 = tmp1[week_index %in% df_week[date %in%reduction, week_index]]
@@ -1386,7 +1386,7 @@ make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week
     file = paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'Table_', lab, '_', Code, '.rds')
     
   }else{
-    file =  paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'Table_', var.phi, '_', Code, '.rds')
+    file =  paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'Table_', var.alpha, '_', Code, '.rds')
   }
   
   saveRDS(tmp1, file =file)
@@ -1396,7 +1396,7 @@ make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week
       file = paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'prop_Table_', lab, '_', Code, '.rds')
       
     }else{
-      file =  paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'prop_Table_', var.phi, '_', Code, '.rds')
+      file =  paste0(outdir, '-', 'PosteriorsamplesDeathByAge', 'prop_Table_', var.alpha, '_', Code, '.rds')
     }
     
     saveRDS(tmp3, file= file)
