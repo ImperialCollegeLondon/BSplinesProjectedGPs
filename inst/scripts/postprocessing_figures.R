@@ -167,41 +167,8 @@ p2=plot_contribution_continuous_comparison_method(copy(age_contribution_continuo
                                                   'GP-BS-SE', 'GP-BS-SE', 
                                                   show.method = F, 
                                                   heights = c(1,1)) 
+ggsave(p2, file = paste0(outdir.fig, '-panel_plot_1_', Code, '.png'), w = 9, h = 7)
 
-
-# data = select(data, date, age, loc_label, code, weekly.deaths)
-# tmp1 = data[, list(total_deaths = sum(na.omit(weekly.deaths))), by = 'date']
-# data = merge(data, tmp1, by = 'date')
-# data[, prop_deaths := weekly.deaths / total_deaths]
-# data$method = 'observation'
-# 
-
-
-# death ratio relative to baseline 
-# death_ratio_winter = make_weekly_death_rate_table(fit_cum, c('0-74', '75+'), as.Date('2020-12-21'), df_week, 
-#                                                   JHUData, data, df_age_continuous, 'cumulative_deaths' , outdir.table)
-# plot_death_ratio_winter(death_ratio_winter, vaccinedata, outdir.fig)
-
-
-# # Plot deaths ratio of deaths over time
-# death_ratio_table = make_death_ratio_table(fit_cum, df_week, df_age_reporting, data, outdir.table)
-# plot_death_ratio(death_ratio_table, outdir.fig)
-
-
-# # Plot probability ratio of deaths over time
-# probability_ratio_table = make_probability_ratio_table(fit_cum, df_week, df_age_reporting, data, stan_data, outdir.table)
-# plot_probability_ratio(probability_ratio_table, df_week, stan_data, outdir.fig)
-
-
-# death_continuous_table = make_var_by_age_table(fit_cum, df_week, df_age_continuous, 'deaths_predict', outdir.table)
-# plot_imputed_deaths_by_age(death_continuous_table, 'deaths_predict', data, outdir.fig)
-# death_discrete_table = make_var_by_age_table(fit_cum, df_week, df_age_reporting, 'deaths_predict_state_age_strata', outdir.table)
-# plot_imputed_deaths_by_age(death_discrete_table, 'deaths_predict_state_age_strata', data, outdir.fig, discrete = T)
-
-# tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'phi', df_age_continuous, outdir.table, 
-#                                           age_groups = unique(scrapedData$age), lab = 'DoH', cumulative = T)
-# compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData, 
-#                                    var.cum.deaths.CDC = c('M', 'CL', 'CU'), outdir = outdir.fig)
 
 cat("\n End postprocessing_figures.R \n")
 
