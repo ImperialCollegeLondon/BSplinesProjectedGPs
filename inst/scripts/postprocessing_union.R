@@ -142,13 +142,13 @@ for(i in seq_along(locs)){
   death2[[i]] = readRDS(paste0(outdir, '-DeathByAgeTable_2agegroups_', locs[i], '.rds'))
   deathpost2[[i]] = readRDS(paste0(outdir, '-PosteriorsamplesDeathByAgeprop_Table_2agegroups_', locs[i], '.rds'))
   deathpost3[[i]] = readRDS(paste0(outdir, '-PosteriorsamplesDeathByAgeprop_Table_3agegroups_', locs[i], '.rds'))
-  propdeath[[i]] = readRDS(paste0(outdir, '-DeathByAgeprop_Table_phi_', locs[i], '.rds'))
+  propdeath[[i]] = readRDS(paste0(outdir, '-DeathByAgeprop_Table_2agegroups_', locs[i], '.rds'))
   
 }
 death3 = do.call('rbind', death3)
 death3 = merge(death3, region_name, by = 'code')
 death3 =  subset(death3, !code %in% rm_states)
-plot_mortality_all_states(death3, data, vaccinedata_state, outdir)
+plot_mortality_all_states(death3, data, vaccinedata_state[,min(date)], outdir)
 
 deathpost2 = do.call('rbind', deathpost2)
 deathpost2 = summary_death_all_states(deathpost2, rm_states)
@@ -164,7 +164,8 @@ propdeath = do.call('rbind', propdeath)
 propdeath = merge(propdeath, region_name, by = 'code')
 propdeath =  subset(propdeath, !code %in% rm_states)
 
-tmp = find_statistics_weekly_deaths(death2, propdeath, deathpost2, vaccinedata_state, outdir)
+tmp = find_statistics_weekly_deaths(death2, propdeath, deathpost2, deathpost3, vaccinedata_state, outdir)
+
 
 
 #
