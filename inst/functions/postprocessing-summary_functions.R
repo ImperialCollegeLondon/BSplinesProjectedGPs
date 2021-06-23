@@ -820,7 +820,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   # adjust dfweek for cum
   df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
   
-  # tmp1
+  # find pi noisy
   tmp1 = as.data.table( reshape2::melt(fit_samples['deaths_predict']) )
   setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
   
@@ -834,19 +834,30 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
   setnames(tmp1, 'age_state_index', 'age_index')
   
-  # add cumsum from weeks before 10th date
-  tmp4 = subset(tmp1, week_index %in% df_week1$week_index)
-  tmp4 = tmp4[, list(value_ref = mean(value)), by = c('age_index', 'iterations')]
-  tmp4[, value_ref := value_ref * last.cum.deaths]
+  # predict weekly deaths
+  tmp5 = as.data.table( reshape2::melt(fit_samples['alpha']) )
+  setnames(tmp5, c('Var2', 'Var3'), c('age_index','week_index'))
+  tmp5 = merge(tmp5, df_age_continuous, 'age_index')
+  tmp5 = tmp5[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
+  setnames(tmp5, 'age_state_index', 'age_index')
   
-  # multiply by the weekly death
-  tmp1 = merge(tmp1, tmp3, by = 'week_index')
-  tmp1[, value_abs := value * weekly.deaths_total]
+  # add cumsum from weeks before 10th date
+  tmp4 = subset(tmp5, week_index %in% df_week1$week_index)
+  tmp4 = tmp4[, list(value_ref = mean(value)), by = c('age_index', 'iterations')]
+  tmp4[, value_ref := rdirmnom(1, last.cum.deaths, value_ref), by = c('iterations')]
+  
+  # predict  weekly deaths
+  tmp5 = merge(tmp5, tmp3, by = 'week_index')
+  tmp5[, value_abs := rdirmnom(1, weekly.deaths_total, value), by = c('iterations', 'week_index')]
   
   # find cumulative death
-  tmp1 = merge(tmp1, tmp4, by = c('age_index', 'iterations'))
-  tmp1[, value_abs_cum := cumsum(value_abs), by = c('iterations', 'age_index')]
-  tmp1[, value_abs_cum := value_abs_cum + value_ref]
+  tmp5 = merge(tmp5, tmp4, by = c('age_index', 'iterations'))
+  tmp5[, value_abs_cum := cumsum(value_abs), by = c('iterations', 'age_index')]
+  tmp5[, value_abs_cum := value_abs_cum + value_ref]
+  
+  #merge
+  tmp5 = select(tmp5, -value)
+  tmp1 = merge(tmp1, tmp5, by = c('iterations', 'age_index', 'week_index'))
   
   # take quantiles
   tmp4 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
