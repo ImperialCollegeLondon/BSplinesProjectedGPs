@@ -558,7 +558,138 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
   
   tmp = subset(contribution_ref, age == '85+')
   tmp = tmp[order(M)]
+  
   contribution_ref[, loc_label := factor(loc_label, unique(tmp$loc_label))]
+  contribution_ref_adj[, loc_label := factor(loc_label, unique(tmp$loc_label))]
+  
+  uscensus = sort(unique(contribution_ref$division))
+  contribution_ref[, dummy := ifelse(division %in% uscensus[c(1,8,2,6)], 1, 2)]
+  contribution_ref_adj[, dummy := ifelse(division %in% uscensus[c(1,8,2,6)], 1, 2)]
+  
+  limits_ref = range(c(0, contribution_ref$CU))
+  limits_ref_adj = range(c(0, contribution_ref$CU))
+  
+  for(a in unique(contribution_ref$age)){
+    
+    tmp = subset(contribution_ref, age == a)
+    tmp = tmp[order(M)]
+    tmp[, loc_label := factor(loc_label, levels = tmp$loc_label)]
+    limits = c(0, max(tmp$CU) + max(tmp$CU) * 0.01)
+    p1 = ggplot(subset(tmp, dummy == 1), aes(x = loc_label, y = M)) + 
+      geom_bar(aes(fill = M), stat = 'identity') +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      facet_wrap(~division, scale = 'free_x', nrow = 1) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"), 
+            legend.position = 'none', axis.title = element_blank())  +
+      scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
+      scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
+    p1 = adjust_facet_size(p1)
+    
+    p2 = ggplot(subset(tmp, dummy == 2), aes(x = loc_label, y = M)) + 
+      geom_bar(aes(fill = M), stat = 'identity') +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      facet_wrap(~division, scale = 'free_x', nrow = 1) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"), 
+            legend.position = 'none', axis.title = element_blank())  +
+      scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
+      scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
+    p2 = adjust_facet_size(p2)
+    
+    p = gridExtra::grid.arrange(p1, p2, nrow = 2, 
+                                left=   textGrob(paste0('Age-specific contribution from individuals aged ', a, '\nto COVID-19 deaths during the baseline period'), gp = gpar(fontsize = 10), rot = 90))
+    ggsave(p, file = paste0(outdir, '-Contribution_ref_',a,'.png'), w = 6, h = 5)
+    
+    
+    tmp = subset(contribution_ref, age == a)
+    tmp = tmp[order(M)]
+    tmp[, loc_label := factor(loc_label, levels = tmp$loc_label)]
+    limits = c(0, max(tmp$CU) + max(tmp$CU) * 0.01)
+    p1 = ggplot(subset(tmp, dummy == 1), aes(x = loc_label, y = M)) + 
+      geom_bar(aes(fill = M), stat = 'identity') +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      geom_point(aes(y = emp_est), col = 'tomato1', size = 0.6) + 
+      facet_wrap(~division, scale = 'free_x', nrow = 1) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"), 
+            legend.position = 'none', axis.title = element_blank())  +
+      scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
+      scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
+    p1 = adjust_facet_size(p1)
+    
+    p2 = ggplot(subset(tmp, dummy == 2), aes(x = loc_label, y = M)) + 
+      geom_bar(aes(fill = M), stat = 'identity') +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      geom_point(aes(y = emp_est), col = 'tomato1', size = 0.6) + 
+      facet_wrap(~division, scale = 'free_x', nrow = 1) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"), 
+            legend.position = 'none', axis.title = element_blank())  +
+      scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
+      scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
+    p2 = adjust_facet_size(p2)
+    
+    p = gridExtra::grid.arrange(p1, p2, nrow = 2, 
+                                left= textGrob(paste0('Age-specific contribution from individuals aged ', a, '\nto COVID-19 deaths during the baseline period'), gp = gpar(fontsize = 10), rot = 90))
+    ggsave(p, file = paste0(outdir, '-Contribution_ref_empr_',a,'.png'), w = 6, h = 5)
+    
+    
+    tmp = subset(contribution_ref_adj, age == a)
+    tmp = tmp[order(M)]
+    tmp[, loc_label := factor(loc_label, levels = tmp$loc_label)]
+    limits = c(0, max(tmp$CU) + max(tmp$CU) * 0.01)
+    p1 = ggplot(subset(tmp, dummy == 1), aes(x = loc_label, y = M)) + 
+      geom_bar(aes(fill = M), stat = 'identity') +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      facet_wrap(~division, scale = 'free_x', nrow = 1) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"), 
+            legend.position = 'none', axis.title = element_blank())  +
+      scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref_adj) + 
+      scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
+    p1 = adjust_facet_size(p1)
+    
+    p2 = ggplot(subset(tmp, dummy == 2), aes(x = loc_label, y = M)) + 
+      geom_bar(aes(fill = M), stat = 'identity') +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      facet_wrap(~division, scale = 'free_x', nrow = 1) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle= 45, hjust = 1), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"), 
+            legend.position = 'none', axis.title = element_blank())  +
+      scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref_adj) + 
+      scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
+    p2 = adjust_facet_size(p2)
+    
+    p = gridExtra::grid.arrange(p1, p2, nrow = 2, 
+                                left= textGrob(paste0('Contribution from individuals aged ', a, ' to COVID-19 deaths in\nage-standardised populations during the baseline period'), gp = gpar(fontsize = 10), rot = 90))
+    ggsave(p, file = paste0(outdir, '-Contribution_ref_adj_',a,'.png'), w = 6, h = 5)
+    
+  }
   
   ggplot(contribution_ref, aes(x = loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat = 'identity') +
@@ -610,7 +741,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
     scale_y_continuous(labels = scales::percent) + 
     labs(x ='', y = paste0('Age-specific contribution to COVID-19 deaths in\nage-standardised populations during the baseline period'))
   ggsave(paste0(outdir, '-Contribution_ref_adj.png'), w = 9, h = 6)
-
+  
 }
 
 

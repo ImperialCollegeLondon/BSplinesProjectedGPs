@@ -3,6 +3,7 @@ library(data.table)
 library(dplyr)
 library(tidyverse)
 library(viridis)
+library(grid)
 
 indir = "~/git/covid19Vaccination/inst/" # path to the repo
 outdir = file.path(indir, "results")
