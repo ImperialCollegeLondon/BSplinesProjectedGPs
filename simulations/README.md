@@ -17,7 +17,7 @@ outdir = "resultsdirectory"
 
 
 ### Usage
-To run the simulates, from the command line use
+To run the simulations, from the command line use
 ```bash
 $ Rscript run_simulations_2D.R
 ``` 
