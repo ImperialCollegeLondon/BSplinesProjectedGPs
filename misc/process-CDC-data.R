@@ -28,12 +28,13 @@ deathByAge_AllSexes = find_weekly_deaths(deathByAge_AllSexes, rm.COVID.19.Deaths
 deathByAge_AllSexes = select(deathByAge_AllSexes, -c(date_idx, min_date_idx, max_date_idx))
 deathByAge_res = incorporate_AllSexes_information(deathByAge, deathByAge_AllSexes)
 
+# rm boudaries is weekly deaths is not NA
 deathByAge_res[!is.na(weekly.deaths), min.sum.weekly.deaths := NA]
 deathByAge_res[!is.na(weekly.deaths), max.sum.weekly.deaths := NA]
 deathByAge_res[!is.na(weekly.deaths), sum.weekly.deaths := NA]
 
-# last change, we see that all the weekly deaths are 0 on 2020-07-04 --> repeated update
-# em 2020-07-04 and 2020-07-11 are not obtainable
+# all weekly deaths are 0 on 2020-06-27 --> repeated update
+# 2020-07-04 and 2020-06-27 are missing
 all(na.omit(subset(deathByAge_res, date == "2020-06-27")$weekly.deaths == 0))
 deathByAge_res = subset(deathByAge_res, !date %in% c(as.Date("2020-07-04"), as.Date("2020-06-27")))
 
