@@ -69,7 +69,7 @@ region_name = unique(select(region_name, code, loc_label))
 
 
 #
-# plot mortality rate over time
+# mortality rate over time
 mortality_rate = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   mortality_rate[[i]] = readRDS(paste0(outdir, '-MortalityRateTable_', locs[i], '.rds'))
@@ -102,7 +102,7 @@ saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
 
 
 #
-# trend in contribution
+# contribution over time
 contribution054 = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   contribution054[[i]] = readRDS(paste0(outdir, '-Contribution_Age_0-54_', locs[i], '.rds'))
@@ -131,8 +131,9 @@ contribution = rbind(contribution75, rbind(contribution5574, contribution054))
 plot_contribution_all_states(contribution, vaccinedata_state, outdir)
 find_regime_state(contribution75, vaccinedata_state, rm_states,  outdir)
 
+
 #
-# Plot magnitude of mortality
+# Plot weekly deaths over time
 death3 = vector(mode = 'list', length = length(locs))
 death2 = vector(mode = 'list', length = length(locs))
 deathpost2 = vector(mode = 'list', length = length(locs))
@@ -166,7 +167,6 @@ propdeath = merge(propdeath, region_name, by = 'code')
 propdeath =  subset(propdeath, !code %in% rm_states)
 
 tmp = find_statistics_weekly_deaths(death2, propdeath, deathpost2, deathpost3, vaccinedata_state, outdir)
-
 
 
 #
