@@ -362,4 +362,21 @@ plot_basis_functions = function()
   ggsave(file = '~/Box\ Sync/2021/CDC/basis_functions.png', w = 6, h = 5)
 }
 
+plot_vaccine_data = function(vaccine_data, outdir){
+  vaccine_data[age < 12, age.group := '0-11']
+  vaccine_data[age >= 12 & age < 18, age.group := '12-17']
+  vaccine_data[age >= 18 & age < 65, age.group := '18-64']
+  vaccine_data[age >= 65, age.group := '65+']
+  tmp = unique(select(vaccine_data, loc_label, date, prop, age.group))
+  
+  vaccine_data[is.na(age.group)]
+  ggplot(tmp, aes(date, prop)) +
+    geom_line(aes(col = age.group)) + 
+    facet_wrap(~loc_label) + 
+    theme_bw()+ 
+    labs(x = '', y = 'Proportion of vaccinated', col = 'Age group') + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white")) 
+  ggsave(paste0(outdir, '_vaccine_data.png'), w = 9, h = 8)
+}
 
