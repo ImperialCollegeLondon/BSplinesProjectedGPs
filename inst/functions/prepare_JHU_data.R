@@ -3,7 +3,7 @@ library(dplyr)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-06-02.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-08-03.rds"))
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
 
 tmp = read.csv(url('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv'))
@@ -23,6 +23,6 @@ tmp = select(tmp, -loc_label)
 
 tmp = subset(tmp, date <= max(deathByAge$date) + 7)
 
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-06-22.rds"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-08-03.rds"))
 saveRDS(tmp, path.to.JHU.data) 
 
