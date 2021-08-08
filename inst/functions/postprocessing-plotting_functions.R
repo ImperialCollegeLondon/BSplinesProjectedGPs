@@ -588,7 +588,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
             legend.position = 'none', axis.title = element_blank())  +
       scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
       scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
-    p1 = adjust_facet_size(p1)
+    # p1 = adjust_facet_size(p1)
     
     p2 = ggplot(subset(tmp, dummy == 2), aes(x = loc_label, y = M)) + 
       geom_bar(aes(fill = M), stat = 'identity') +
@@ -603,7 +603,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
             legend.position = 'none', axis.title = element_blank())  +
       scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
       scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
-    p2 = adjust_facet_size(p2)
+    # p2 = adjust_facet_size(p2)
     
     p = gridExtra::grid.arrange(p1, p2, nrow = 2, 
                                 left=   textGrob(paste0('Age-specific contribution from individuals aged ', a, '\nto COVID-19 deaths during the baseline period'), gp = gpar(fontsize = 10), rot = 90))
@@ -628,7 +628,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
             legend.position = 'none', axis.title = element_blank())  +
       scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
       scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
-    p1 = adjust_facet_size(p1)
+    # p1 = adjust_facet_size(p1)
     
     p2 = ggplot(subset(tmp, dummy == 2), aes(x = loc_label, y = M)) + 
       geom_bar(aes(fill = M), stat = 'identity') +
@@ -644,7 +644,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
             legend.position = 'none', axis.title = element_blank())  +
       scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref) + 
       scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
-    p2 = adjust_facet_size(p2)
+    # p2 = adjust_facet_size(p2)
     
     p = gridExtra::grid.arrange(p1, p2, nrow = 2, 
                                 left= textGrob(paste0('Age-specific contribution from individuals aged ', a, '\nto COVID-19 deaths during the baseline period'), gp = gpar(fontsize = 10), rot = 90))
@@ -668,7 +668,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
             legend.position = 'none', axis.title = element_blank())  +
       scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref_adj) + 
       scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
-    p1 = adjust_facet_size(p1)
+    # p1 = adjust_facet_size(p1)
     
     p2 = ggplot(subset(tmp, dummy == 2), aes(x = loc_label, y = M)) + 
       geom_bar(aes(fill = M), stat = 'identity') +
@@ -683,7 +683,7 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
             legend.position = 'none', axis.title = element_blank())  +
       scale_fill_viridis(option = 'E', trans = 'sqrt', limits = limits_ref_adj) + 
       scale_y_continuous(labels = scales::percent, limits = limits, expand = c(0,0)) 
-    p2 = adjust_facet_size(p2)
+    # p2 = adjust_facet_size(p2)
     
     p = gridExtra::grid.arrange(p1, p2, nrow = 2, 
                                 left= textGrob(paste0('Contribution from individuals aged ', a, ' to COVID-19 deaths in\nage-standardised populations during the baseline period'), gp = gpar(fontsize = 10), rot = 90))

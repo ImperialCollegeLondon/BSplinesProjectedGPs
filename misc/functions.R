@@ -54,7 +54,7 @@ prepare_CDC_data = function(last.week,age_max,sex,indir, check_increasing_cumula
   tmp = select(tmp, -End.Week)
 
   # check that all the weeks are recorded
-  real_dates = seq.Date(as.Date("2020-05-02"), as.Date("2021-04-24"), by = 'week')
+  real_dates = seq.Date(min(tmp$date), max(tmp$date), by = 'week')
   stopifnot( length( real_dates[!real_dates %in% unique(tmp$date)] ) == 0)
   
   # boundaries if deaths is missing

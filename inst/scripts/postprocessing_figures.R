@@ -8,6 +8,7 @@ library(gridExtra)
 library(ggpubr)
 library(cowplot)
 library(extraDistr)
+library(bayesplot)
 
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
@@ -51,9 +52,6 @@ path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
 pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
 setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
 
-# temporary
-path.to.JHU.data2 = file.path(indir, "data", paste0("jhu_data_2021-06-22.rds"))
-
 # vaccination data 
 file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
 vaccinedata = clean_vaccination_data_age(file)
@@ -68,9 +66,6 @@ Code = locations[location.index,]$code
 load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
 outdir.fig = outdir.fig.post
 outdir.fit = outdir.fit.post
-
-# temporary
-JHUData = readRDS(path.to.JHU.data2)
 
 # load fit cumulative deaths
 cat("Load fits \n")
@@ -155,6 +150,11 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
   compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
 
  }
+
+
+# plot vaccine effects
+p <- mcmc_areas(fit_cum, regex_pars = 'gamma')
+ggsave(p, file = paste0(outdir.fig, '_vaccine_effects.png'), h = 5, w = 6)
 
 # make panel figure
 

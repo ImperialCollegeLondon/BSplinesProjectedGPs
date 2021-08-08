@@ -8,7 +8,7 @@ library(grid)
 indir = "~/git/covid19Vaccination/inst/" # path to the repo
 outdir = file.path(indir, "results")
 stan_model = "210529b"
-JOBID = 2117
+JOBID = 8849
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -55,8 +55,8 @@ rm_states = c('HI', 'VT', 'AK', 'WY')
 #
 # find locs
 files = list.files(path = dirname(outdir))
-files = files[grepl('ProbabilityRatioTable', files)]
-locs = unique(gsub(paste0(run_tag, '-ProbabilityRatioTable_(.+).rds'), "\\1", files))
+files = files[grepl('predictive_checks_table', files)]
+locs = unique(gsub(paste0(run_tag, '-predictive_checks_table_(.+).rds'), "\\1", files))
 
 # find region name
 region_name = vector(mode = 'list', length = length(locs))
