@@ -21,9 +21,9 @@ test = read.csv(file.path(indir, 'predictions', 'data', 'prediction.csv'))
 source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
 
 # compile stan models
-if(model == 'BS-GP-SE')
+if(model == 'BS-GP-SE') # regularised B-splines projected GP
   model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-BS-SE_2D.stan') )
-if(model == 'BS-GP-I')
+if(model == 'BS-GP-I') # standard B-splines
   model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-BS-I_2D.stan') )
 
 
