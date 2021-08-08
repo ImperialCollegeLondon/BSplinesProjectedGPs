@@ -1,5 +1,4 @@
 
-
 statistics_contributionref_all_states = function(contribution_ref_adj){
   
   tmp = copy( subset(contribution_ref_adj, !code %in% c('HI', 'VT', 'AK')))
@@ -56,7 +55,6 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
   
   return(contribution_baseline)
 }
-
 
 find_regime_state = function(contribution75, vaccinedata_state, rm_states, outdir){
   
@@ -184,53 +182,35 @@ find_statistics_weekly_deaths = function(death, propdeath, deathpost, deathpost2
                                                       CL = gsub(" ", '',paste0(format(round((1-CL)*100, 2), nsmall = 2), '\\%')),
                                                       CU = gsub(" ", '',paste0(format(round((1-CU)*100, 2), nsmall = 2), '\\%'))), by = 'loc_label'][1:3]
   
+  # increase in death
+  unique(death2$date)
+  datemarch = as.Date('2021-02-27')
+  dateapril = as.Date('2021-03-27')
+  
+  death_75 = subset(death2, age== '75+' & date %in% c(datemarch, '2021-05-15'))
+  death_75 = as.data.table( reshape2::dcast(death_75, loc_label~ date, value.var = 'M') )
+  setnames(death_75, 2:3, c('week1', 'week2'))
+  tmp = death_75[, list(d = week2- week1, r = week2/week1), by = 'loc_label']
+  imarch = tmp[r > 1 & d > 20]$loc_label
+  
+  death_75 = subset(death2, age== '75+' & date %in% c(dateapril, '2021-05-15'))
+  death_75 = as.data.table( reshape2::dcast(death_75, loc_label~ date, value.var = 'M') )
+  setnames(death_75, 2:3, c('week1', 'week2'))
+  tmp = death_75[, list(d = week2- week1, r = week2/week1), by = 'loc_label']
+  iapril = tmp[r > 1 & d > 5]$loc_label
+  iapril = iapril[!iapril %in% imarch]
+  iapril = paste0(paste0(iapril[-length(iapril)], collapse = ', '), ' and ', iapril[length(iapril)])
   
   death_stats = list(date_before= format(date_before_vaccine,  '%B %d, %Y'),
                      date_end = format(date_end,  '%B %d, %Y'), 
                      length = as.numeric( (date_end - date_before_vaccine) / 7 - 1 ), 
                      us75 = list(b75, a75, p75), us074 = list(b074, a074, p074), 
                      s75 = list(sf75, sl75), s074 = list(sf074, sl074), emp = emp,
-                     u054 = list(b054, a054, p054), u5574 = list(b5574, a5574, p5574))
+                     u054 = list(b054, a054, p054), u5574 = list(b5574, a5574, p5574),
+                     id = list(imarch, format(datemarch, '%B %d, %Y'), iapril, format(dateapril, '%B %d, %Y') ))
 
   saveRDS(death_stats, file = paste0(outdir, '-absolutedeaths.rds'))
   
   return(death_stats)
 }
 
-
-# death_75 = subset(death2, age== '75+' & date %in% c(as.Date('2021-034-06"'), '2021-05-15'))
-# 
-# death_75 = subset(death2, age== '75+' & date %in% c(as.Date('2021-04-24"'), '2021-05-15'))
-# 
-# death_75 = as.data.table( reshape2::dcast(death_75, code~ date, value.var = 'M') )
-# setnames(death_75, 2:3, c('week1', 'week2'))
-# tmp = death_75[, list(d = week2- week1, r = week2/week1), by = 'code']
-# tmp[r > 1]$code
-# subset(death2, code == 'MI' & date > as.Date('2021-03-06"'))
-# unique(death2$date)
-# # find states slow, fast, plateau
-# beta = vector(mode = 'list', length = length(locs))
-# for(i in seq_along(locs)){
-#   y = subset(death_75, code == locs[i] & date >= as.Date('2020-01-01'))$M
-#   x = 1:length(y)
-#   fit1 = lm(y ~ x)
-# 
-#   beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
-#                          beta75 = fit1$coefficients[2],  beta074 = fit2$coefficients[2])
-# }
-# beta = do.call('rbind', beta)
-# beta =  subset(beta, !code %in% c('HI', 'VT', 'AK', 'WY'))
-# 
-# # how many states there was a decline in deaths since vaccination rollout
-# all = beta[,sum(beta75 < 0)] == nrow(beta)
-# stopifnot(all == T)
-# 
-# #  in how many states was this decline faster in 75+ compared to 0-74?
-# f755574 = beta[,sum(beta75 < beta074)] == nrow(beta)
-# stopifnot(f755574 == T)
-# 
-# # how many states was there a decline in deaths among 75+ while deaths increased in 0-74?
-# m755574 = beta[beta75 <0 & beta074> 0]
-# 
-# death_stats[['m755574']] = m755574
-# death_stats[['lm755574']] = nrow(m755574)

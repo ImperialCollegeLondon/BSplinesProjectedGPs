@@ -1,0 +1,1 @@
+The age-specific deaths data across the US states in ```data/``` have been reported by the CDC [here](https://data.cdc.gov/NCHS/Provisional-COVID-19-Death-Counts-by-Sex-Age-and-S/9bhg-hcku), and continuously extracted and made publicly available [here](https://github.com/rearc-data/covid-19-death-counts-sex-age-state)

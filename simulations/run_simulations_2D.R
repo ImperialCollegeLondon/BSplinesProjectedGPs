@@ -11,9 +11,13 @@ library(grid)
 indir ="~/git/covid19Vaccination" # path to the repo
 outdir = file.path(indir, 'simulations', 'results')
 
+# standard GP
 model_GP = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'GP-SE_2D.stan') )
-model_BSGP = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'BS-GP-SE_2D.stan') )
+# standard B-splines
 model_BSIN = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'BS-GP-I_2D.stan') )
+# regularised B-splines projected GP
+model_BSGP = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'BS-GP-SE_2D.stan') )
+
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -268,14 +272,14 @@ for(i in seq_along(lengthscales)){
   tmp1 = tmp1[, list(time = unique(time)), by = c('method', 'n_knots')]
   timeGP = tmp1[method == 'Standard 2D GP', time]
   
-  tmp1 = tmp1[, timed := paste0(round((tmp1$time - timeGP) / 60), ' minutes') ]
+  tmp1 = tmp1[, timed := paste0(round((tmp1$time - timeGP) / 60)) ]
   tmp1 = tmp1[, timep := paste0(gsub(" ", "", format(round( (((tmp1$time - timeGP) / timeGP) )* 100, digits = 2), nsmall =2)), '\\%') ]
-  tmp1 = tmp1[,timec := paste0(round((tmp1$time) / 60), ' minutes') ]
+  tmp1 = tmp1[,timec := paste0(round((tmp1$time) / 60)) ]
   
   time_all[[i]] = tmp1[,c(4,5,6)]
 }
 
-# GP vs GP-BS-SE
+# extract statistics for the paper
 tmp1 = subset(tmp, grepl('Standard 2D GP', method))
 min_GP = unique(tmp1$time)
 time_GP = paste0(round(min_GP / 60), ' minutes')
@@ -312,6 +316,8 @@ com3 = loo_compare(loo(extract(GP_2D_3[[2]])$log_lik),
             loo(extract(BSGP_2D_1_3[[2]])$log_lik), loo(extract(BSGP_2D_2_3[[2]])$log_lik), loo(extract(BSGP_2D_3_3[[2]])$log_lik), 
             loo(extract(BSIN_2D_1_3[[2]])$log_lik), loo(extract(BSIN_2D_2_3[[2]])$log_lik), loo(extract(BSIN_2D_3_3[[2]])$log_lik))
 
+
+# extract statistics for the paper
 com11  = as.data.table(com1) 
 com11$model = rownames(com1)
 com11[, model_index := as.numeric(gsub('model(.+)', '\\1', model))]
