@@ -162,6 +162,8 @@ model {
   rho_gp1 ~ inv_gamma(5, 5);
   rho_gp2 ~ inv_gamma(5, 5);
   
+  sd_gamma ~ cauchy(0,1);
+  gamma0 ~ normal(0,1);
   gamma ~ normal(gamma0,sd_gamma);
 
   for(i in 1:num_basis_rows){
