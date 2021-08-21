@@ -422,25 +422,27 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
   
   tmp = subset(vaccine_data, code == Code)
   
-  # keep date in df_week and replace NA with 0
-  tmp1 = expand.grid(date = df_week$date, age = unique(tmp$age ))
+  # keep date in df_week - 2weeks and replace NA with 0
+  delay = 7 * 2
+  tmp1 = data.table( expand.grid(date_delay = df_week$date, age = unique(tmp$age )) )
+  tmp1[, date := date_delay - delay]
   tmp1 = merge(tmp, tmp1, all.y = T, by = c('date', 'age'))
   tmp1[is.na(prop), prop := 0]
-  tmp1 = tmp1[order(date, age)]
-  tmp1 = reshape2::dcast(tmp1, age ~ date, value.var = 'prop')[,-1]
+  tmp1 = tmp1[order(date_delay, age)]
+  tmp1 = reshape2::dcast(tmp1, age ~ date_delay, value.var = 'prop')[,-1]
   
   # find population count
   tmp = unique(select(tmp, age, pop))
   tmp = tmp[order(age)]
   
   # define age groups for vaccination coefficients
-  df_agegroups_vac <<- data.table(age.group = c('12-17', '18-64', '65-105'))
+  df_agegroups_vac <<- data.table(age.group = c('18-64', '65-105'))
   df_agegroups_vac[, index := 1:nrow(df_agegroups_vac)]
   df_agegroups_vac = df_agegroups_vac[, age.min := gsub('(.+)\\-(.*)', '\\1', age.group), by = 'age.group']
   df_agegroups_vac = df_agegroups_vac[, age.max := gsub(paste0(age.min, '\\-(.+)'), '\\1', age.group), by = 'age.min']
   df_agegroups_vac = df_agegroups_vac[, list(age = age.min:age.max), by = c('age.group', 'index')]
   
-  max_age_not_vaccinated = 11
+  max_age_not_vaccinated = 17
     
   stan_data[['pop']] = tmp$pop
   stan_data[['prop_vaccinated']] = tmp1

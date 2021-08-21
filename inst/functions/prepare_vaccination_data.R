@@ -28,7 +28,11 @@ data[, age.group := gsub('Series_Complete_(.+)Plus(.*)', '\\1', variable)]
 data[, variable := ifelse(grepl('Pct', variable), 'prop', 'abs')]
 data = as.data.table( reshape2::dcast(data, date + code + age.group ~ variable, value.var = 'value') )
 
-# pop
+# ensure that the series is strictly increasing
+data = data[order(code, age.group, date)]
+data[, abs := cummax(abs), by = c('code', 'age.group')]
+
+# find unique population size (change over time in the raw data)
 tmp = subset(data, date == max(date))
 tmp[, pop := abs / (prop / 100)]
 tmp[, pop2 := abs(c(diff((pop)), pop[length(pop)])), by = c('date', 'code')]
@@ -36,9 +40,10 @@ tmp[, pop2 := abs(c(diff((pop)), pop[length(pop)])), by = c('date', 'code')]
 # before this date, 12+ was not reported
 date.min.12p = data[age.group == '12' & abs == 0, max(date)]
 
-# find prop for in between groups
-data[, abs := abs(c(diff((abs)), abs[length(abs)])), by = c('date', 'code')]
+# find absolute by age group (from 12+, 18+, 65+, to 12-17, 18-64, 65+)
+data[, abs := abs( c( diff(abs), abs[length(abs)] ) ), by = c('date', 'code')]
 
+# find proportion
 data = merge(select(data, -prop), 
              subset(tmp, select = c('code', 'age.group', 'pop')), by = c('code', 'age.group'))
 data[, prop := abs / pop]
@@ -85,11 +90,12 @@ data = merge(data, pop_data, by = c('code', 'age'))
 # find name of location 
 data = merge(data, locname_data, by = 'code')
 
+# sanity checks
 stopifnot(all(data$prop <= 1 & data$prop >= 0))
 stopifnot(all(!is.na(data)))
 nrow(data) == length(unique(data$date)) * length(unique(data$code)) * length(unique(data$age))
 
 # save
-saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-08-08.rds")))
+saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-08-21.rds")))
 
         
