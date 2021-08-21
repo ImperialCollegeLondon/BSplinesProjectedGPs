@@ -13,6 +13,12 @@ create_map_age = function(age_max){
   df_age_reporting[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
   df_age_reporting[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
   
+  # create map vaccination age 
+  df_age_vaccination <<- data.table(age = c('0-11', '12-17', '18-64', '65+'), 
+                                  age_from = c(0, 12, 18, 65), 
+                                  age_to = c(11, 17, 64 ,105))
+  df_age_vaccination[, age_index := 1:nrow(df_age_vaccination)]
+  
 }
 
 clean_vaccination_data_age = function(file){

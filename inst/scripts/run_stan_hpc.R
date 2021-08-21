@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210808a"
+stan_model = "210808b"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -41,7 +41,7 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-08-03.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-08-03.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-08-08.rds"))
+path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-08-21.rds"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
@@ -83,9 +83,9 @@ Code = locations[location.index,]$code
 cat("Location ", as.character(loc_name), "\n")
 
 # plot data 
-if(1){
+if(0){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  plot_vaccine_data(vaccine_data = vaccine_data, outdir = outdir.fig)
+  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                     JHU_data = JHUData, 
                                     scrapedData = scrapedData,
@@ -106,7 +106,7 @@ if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
   cat("\n Using 1D splines \n")
   stan_data = add_1D_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210529b|210529c|210808a', stan_model)){
+if(grepl('210529b|210529c|210808', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 4)
 }
@@ -126,7 +126,7 @@ if(grepl('210429f|210429g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$num_basis, m = stan_data$W)
 }
-if(grepl('210808a', stan_model)){
+if(grepl('210808', stan_model)){
   cat("\n With vaccine effects \n")
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data = vaccine_data)
 }
