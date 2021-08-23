@@ -153,8 +153,9 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
 
 
 # plot vaccine effects
-p <- mcmc_areas(fit_cum, regex_pars = 'gamma')
-ggsave(p, file = paste0(outdir.fig, '_vaccine_effects.png'), h = 5, w = 6)
+p <- mcmc_areas(fit_cum, regex_pars = 'gamma', prob = 0.5,
+                prob_outer = 0.95)
+ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
 
 # make panel figure
 

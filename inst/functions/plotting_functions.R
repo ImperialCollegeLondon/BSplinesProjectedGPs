@@ -376,7 +376,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, outdir){
     labs(x = '', y = 'Proportion of vaccinated', col = 'Age group') + 
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(paste0(outdir, '_proportion_vaccine_age_code.png'), w = 9, h = 8)
+  ggsave(paste0(outdir, '-proportion_vaccine_age_code.png'), w = 9, h = 8)
   
   
   df_age_close_vaccination = copy(df_age_reporting)
@@ -403,7 +403,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, outdir){
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) +
     labs(x = 'Proportion of vaccinated', y = 'Contribution to weekly death 2 weeks later' )
-  ggsave(paste0(outdir, '_proportion_vaccine_contribution_deaths.png'), w = 6, h = 5)
+  ggsave(paste0(outdir, '-proportion_vaccine_contribution_deaths.png'), w = 6, h = 5)
   
   ggplot(tmp, aes(x = prop, y = weekly.deaths, col = date)) +
     geom_smooth(method = 'lm', col = 'black', size = 1) + 
@@ -415,7 +415,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, outdir){
     theme_bw() + 
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(paste0(outdir, '_proportion_vaccine_abs_deaths.png'), w = 6, h = 5)
+  ggsave(paste0(outdir, '-proportion_vaccine_abs_deaths.png'), w = 6, h = 5)
   
 }
 
