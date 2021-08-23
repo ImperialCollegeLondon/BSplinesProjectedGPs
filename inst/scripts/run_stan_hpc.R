@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210808b"
+stan_model = "210808g"
 JOBID = round(runif(1,1,1000))
 
 if(0)
