@@ -159,9 +159,9 @@ ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
 weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                            age_groups = df_age_vaccination$age, lab = 'vacagegroups', withempirical = T,
                                            reduction = NULL)
-weeklyf <- find_contribution_age_groups_vaccination(fit, df_week, df_age_continuous, df_age_reporting, 
+weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                 deathByAge, df_age_vaccination$age, 'f', outdir.table)
-weeklyphi <- find_contribution_age_groups_vaccination(fit, df_week, df_age_continuous, df_age_reporting, 
+weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                     deathByAge, df_age_vaccination$age, 'phi', outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 
