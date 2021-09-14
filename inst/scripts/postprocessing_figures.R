@@ -149,16 +149,24 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
   compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
   compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
 
- }
+}
 
 
 # plot vaccine effects
-p <- mcmc_areas(fit_cum, regex_pars = 'gamma', prob = 0.5,
-                prob_outer = 0.95)
+p <- mcmc_areas(fit_cum, regex_pars = 'gamma', prob = 0.5, prob_outer = 0.95)
 ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
 
-# make panel figure
+weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+                                           age_groups = df_age_vaccination$age, lab = 'vacagegroups', withempirical = T,
+                                           reduction = NULL)
+weeklyf <- find_contribution_age_groups_vaccination(fit, df_week, df_age_continuous, df_age_reporting, 
+                                                deathByAge, df_age_vaccination$age, 'f', outdir.table)
+weeklyphi <- find_contribution_age_groups_vaccination(fit, df_week, df_age_continuous, df_age_reporting, 
+                                                    deathByAge, df_age_vaccination$age, 'phi', outdir.table)
+plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 
+
+# make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'
 deatht$method = 'GP-BS-SE'
 p2=plot_contribution_continuous_comparison_method(copy(age_contribution_continuous_table), copy(deatht), copy(data), 
