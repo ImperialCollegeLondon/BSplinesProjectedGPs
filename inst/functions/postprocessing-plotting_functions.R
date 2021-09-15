@@ -808,6 +808,7 @@ compare_CDCestimation_DoH_age_weekly_plot = function(tmp, outdir)
 }
 
 plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir){
+  
   vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
   tmp <- unique(select(vaccine_data, code, date, prop, age_index))
   
@@ -823,23 +824,22 @@ plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, out
     geom_point(aes(y = emp), col = 'red') + 
     facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
     labs(x = 'Proportion of vaccinated', y = 'Weekly deaths 2 weeks later') + 
-    scale_y_log10() + 
     theme_bw() + 
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-weekly_deaths_vaccination_effects_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
+  ggsave(p, file = paste0(outdir, "-vaccination_effects_weekly_deaths_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
   
   
   tmp1 <- merge(tmp, weeklyf, by = c('code', 'date', 'age_index'))
   p <- ggplot(tmp1, aes(x = date, col = prop)) + 
     geom_point(aes(y = M, col = prop)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU, col = prop)) + 
-    facet_wrap(~age, nrow = nrow(df_age_vaccination), scale = 'free') + 
+    facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
     labs(col = 'Proportion of\nvaccinated', y = 'f 2 weeks later', x = '')+ 
     theme_bw() + 
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-f_vaccination_effects_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
+  ggsave(p, file = paste0(outdir, "-vaccination_effects_f_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
   
   tmp1 <- merge(tmp, weeklyphi, by = c('code', 'date', 'age_index'))
   p <- ggplot(tmp1, aes(x = date, col = prop)) + 
@@ -851,18 +851,18 @@ plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, out
     theme_bw() + 
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-contribution_vaccination_effects_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
+  ggsave(p, file = paste0(outdir, "-vaccination_effects_contribution_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
   
   p <- ggplot(tmp1, aes(x = prop)) + 
     geom_point(aes(y = M)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU)) + 
     geom_point(aes(y = prop_deaths), col = 'red') + 
-    facet_wrap(~age, nrow = nrow(df_age_vaccination), scale = 'free_y') + 
+    facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
     labs(x = 'Proportion of vaccinated', y = 'Contribution to weekly deaths 2 weeks later')+ 
     theme_bw() + 
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-contribution2_vaccination_effects_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
+  ggsave(p, file = paste0(outdir, "-vaccination_effects_contribution2_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
   
 }
 
