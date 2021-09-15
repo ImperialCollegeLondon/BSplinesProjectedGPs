@@ -821,7 +821,7 @@ plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, out
   p <- ggplot(tmp1, aes(x = prop)) + 
     geom_point(aes(y = M)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU)) + 
-    geom_point(aes(y = emp), col = 'red') + 
+    # geom_point(aes(y = emp), col = 'red') + 
     facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
     labs(x = 'Proportion of vaccinated', y = 'Weekly deaths 2 weeks later') + 
     theme_bw() + 
