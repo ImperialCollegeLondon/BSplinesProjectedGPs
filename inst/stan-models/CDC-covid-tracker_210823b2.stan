@@ -107,7 +107,6 @@ parameters {
   real<lower=0> rho_gp1; 
   real<lower=0> rho_gp2;
   vector[C] gamma;
-  real gamma0;
   real<lower=0> sd_gamma;
 }
 

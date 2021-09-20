@@ -162,6 +162,57 @@ make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   return(tmp1)
 }
 
+make_var_by_varying_age_table = function(fit, df_week, df_age_continuous, age_groups, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) return()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  # df age
+  df_age_state = data.table(age = age_groups)
+  df_age_state[, age_index := 1:nrow(df_age_state)]
+  df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
+  df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
+  df_age_state[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+  df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
+  df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
+  df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age_state, NULL, 'age_from', df_age_state[,as.numeric(age_from)])
+  set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
+  set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
+  set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
+  df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
+  df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
+  
+  # tmp1
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  
+  # sum by state age group
+  tmp1 = merge(tmp1, df_age_continuous, 'age_index')
+  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'iterations', 'age_state_index')]
+  
+  
+  # take quantiles
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('week_index', 'age_state_index')]	
+  tmp1 = dcast(tmp1, week_index + age_state_index ~ q_label, value.var = "q")
+  setnames(tmp1, 'age_state_index', 'age_index')
+  
+  tmp1[, code := Code]
+  
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
+  tmp1 = merge(tmp1, data.table(age_index = 1:length(age_groups), age = age_groups), by = 'age_index')
+  
+  return(tmp1)
+}
+
+
 make_contribution_ref = function(fit, data_10thdeaths, fiveagegroups, data, df_week, df_age_continuous, outdir){
   
   df_week1 = subset(df_week, date >= data_10thdeaths)
@@ -1195,6 +1246,65 @@ make_weekly_death_rate_other_source_posteriorsamples = function(fit_cum, df_week
   
   return(tmp1)
 }
+
+find_vaccine_effects <- function(fit, df_week, df_age_continuous, age_groups, var, suffix_var, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) return()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  # df age
+  df_age_state = data.table(age = age_groups)
+  df_age_state[, age_index := 1:nrow(df_age_state)]
+  df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
+  df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
+  df_age_state[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+  df_age_state[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
+  df_age_state[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
+  df_age_state[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age_state, NULL, 'age_from', df_age_state[,as.numeric(age_from)])
+  set(df_age_state, NULL, 'age_to', df_age_state[,as.numeric(age_to)])
+  set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
+  set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
+  df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
+  df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
+  
+  # tmp1
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[paste0(var, suffix_var[1])]]) )
+  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[paste0(var,  suffix_var[2])]]) )
+  setnames(tmp2, c('Var2', 'Var3', 'value'), c('age_index','week_index', 'value_wo_vaccine'))
+  tmp1 = merge(tmp1, tmp2, by = c('iterations', 'age_index','week_index'))
+  
+  # sum by state age group
+  tmp1 = merge(tmp1, df_age_continuous, 'age_index')
+  tmp1 = tmp1[, list(value = sum(value), 
+                     value_wo_vaccine = sum(value_wo_vaccine)), by = c('week_index', 'iterations', 'age_state_index')]
+  tmp1 = tmp1[, value := value / value_wo_vaccine]
+  
+  # take quantiles
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('week_index', 'age_state_index')]	
+  tmp1 = dcast(tmp1, week_index + age_state_index ~ q_label, value.var = "q")
+  setnames(tmp1, 'age_state_index', 'age_index')
+  
+  tmp1[, code := Code]
+  
+  tmp1 = merge(tmp1, df_week, by = 'week_index')
+  tmp1 = merge(tmp1, data.table(age_index = 1:length(age_groups), age = age_groups), by = 'age_index')
+  
+  file =  paste0(outdir, '-', 'VaccineEffects', '_', Code, '.rds')
+  saveRDS(tmp1, file)
+  
+  return(tmp1)
+  
+}
+
 
 summary_death_all_states = function(death2, rm_states){
   

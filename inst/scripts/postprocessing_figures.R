@@ -157,6 +157,23 @@ names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', name
 p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
 ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
 
+if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
+  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 
+                                         'phi', c('', '_wo_vaccine'), outdir.table)
+  phi = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'phi', outdir.table)
+  phi_wo_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'phi_wo_vaccine', outdir.table)
+  plot_vaccine_effects(vaccine_effects, phi, phi_wo_vaccine, 'phi', outdir.fig)
+}
+
+if(any(grepl('f_w_vaccine', names(fit_cum)))){
+  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 
+                                         'f', c('_w_vaccine', ''), outdir.table)
+  f = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'f', outdir.table)
+  f_w_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'f_w_vaccine', outdir.table)
+  plot_vaccine_effects(vaccine_effects, f_w_vaccine, f, 'f', outdir.fig)
+}
+
+
 weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                            age_groups = df_age_vaccination$age, lab = 'vacagegroups', withempirical = T,
                                            reduction = NULL)
@@ -165,7 +182,6 @@ weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_con
 weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                     deathByAge, df_age_vaccination$age, 'phi', outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
-
 
 # make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'

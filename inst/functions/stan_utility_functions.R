@@ -436,7 +436,7 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
   tmp = tmp[order(age)]
   
   # define age groups for vaccination coefficients
-  df_agegroups_vac <<- data.table(age.group = c('18-64', '65-105'))
+  df_agegroups_vac <<- data.table(age.group = c('18-34', '35-64', '65-105'))
   df_agegroups_vac[, index := 1:nrow(df_agegroups_vac)]
   df_agegroups_vac = df_agegroups_vac[, age.min := gsub('(.+)\\-(.*)', '\\1', age.group), by = 'age.group']
   df_agegroups_vac = df_agegroups_vac[, age.max := gsub(paste0(age.min, '\\-(.+)'), '\\1', age.group), by = 'age.min']

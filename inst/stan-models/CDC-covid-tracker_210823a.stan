@@ -199,9 +199,15 @@ generated quantities {
   int deaths_predict_state_age_strata[B,W];
   matrix[A,W] probability_ratio;
   matrix[B,W] probability_ratio_age_strata;
+  matrix[A,W] phi_wo_vaccine;
+  matrix[A,W] f_w_vaccine;
 
   for(w in 1:W){
 
+    // phi without vaccine
+    phi_wo_vaccine[:,w] = softmax( f[:,w] ) ; 
+    f_w_vaccine[:,w]  = f[:,w] + log(rep_vector(1, A) + susceptible[:,w]);
+    
     // phi ratio
     probability_ratio[:,w] = phi[:,w] ./ (phi[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
     probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
