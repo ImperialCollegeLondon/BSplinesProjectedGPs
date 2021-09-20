@@ -50,10 +50,6 @@ data{
   int age_from_state_age_strata[B]; // age from of age band b
   int age_to_state_age_strata[B];// age to of age band b
   vector[A] pop; // population count
-  matrix[A, W] prop_vaccinated; // proportion of vaccinated
-  int C; // number of vaccination coefficient
-  int max_age_not_vaccinated; // the max age of non-vaccinated people 
-  int<lower=1,upper=C> map_A_to_C[A-max_age_not_vaccinated];
   
   // missing death count
   int<lower=0> N_missing; // number of missing series 
@@ -106,9 +102,6 @@ parameters {
   real<lower=0> alpha_gp2;
   real<lower=0> rho_gp1; 
   real<lower=0> rho_gp2;
-  vector[C] gamma_re;
-  real gamma0;
-  real<lower=0> sd_gamma;
 }
 
 transformed parameters {
@@ -126,13 +119,11 @@ transformed parameters {
                                                      rho_gp1,  rho_gp2,
                                                      z1); 
   matrix[A, W] f = (BASIS_ROWS') * beta * BASIS_COLUMNS;
-  vector[C] gamma = gamma0 + gamma_re; 
-  matrix[A, W] susceptible = rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma[map_A_to_C]), W) .*  prop_vaccinated;
 
   for(w in 1:W)
   {
     
-    phi[:,w] = softmax( f[:,w] .* (rep_vector(1, A) + susceptible[:,w])); 
+    phi[:,w] = softmax( f[:,w] ) ;
     
     alpha[:,w] = phi[:,w] * lambda[w] / nu ;
     
@@ -161,10 +152,6 @@ model {
   
   rho_gp1 ~ inv_gamma(5, 5);
   rho_gp2 ~ inv_gamma(5, 5);
-  
-  sd_gamma ~ cauchy(0,1);
-  gamma0 ~ normal(0,1);
-  gamma_re ~ normal(0,sd_gamma);
 
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
@@ -199,15 +186,9 @@ generated quantities {
   int deaths_predict_state_age_strata[B,W];
   matrix[A,W] probability_ratio;
   matrix[B,W] probability_ratio_age_strata;
-  matrix[A,W] phi_wo_vaccine;
-  matrix[A,W] f_w_vaccine;
-  
+
   for(w in 1:W){
 
-    // phi without vaccine
-    phi_wo_vaccine[:,w] = softmax( f[:,w] ) ; 
-    f_w_vaccine[:,w]  = f[:,w] .* (rep_vector(1, A) + susceptible[:,w]);
-    
     // phi ratio
     probability_ratio[:,w] = phi[:,w] ./ (phi[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
     probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
@@ -241,18 +222,5 @@ generated quantities {
   }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

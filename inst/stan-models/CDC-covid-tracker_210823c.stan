@@ -132,7 +132,7 @@ transformed parameters {
   for(w in 1:W)
   {
     
-    phi[:,w] = softmax( f[:,w] .* (rep_vector(1, A) + susceptible[:,w])); 
+    phi[:,w] = softmax( f[:,w] ) .* (rep_vector(1, A) + susceptible[:,w]); 
     
     alpha[:,w] = phi[:,w] * lambda[w] / nu ;
     
@@ -200,14 +200,13 @@ generated quantities {
   matrix[A,W] probability_ratio;
   matrix[B,W] probability_ratio_age_strata;
   matrix[A,W] phi_wo_vaccine;
-  matrix[A,W] f_w_vaccine;
   
   for(w in 1:W){
-
+    
     // phi without vaccine
     phi_wo_vaccine[:,w] = softmax( f[:,w] ) ; 
-    f_w_vaccine[:,w]  = f[:,w] .* (rep_vector(1, A) + susceptible[:,w]);
-    
+
+
     // phi ratio
     probability_ratio[:,w] = phi[:,w] ./ (phi[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
     probability_ratio_age_strata[:,w] = phi_reduced[:,w] ./ (phi_reduced[:,w_ref_index] * rep_vector(1.0 / W_ref_index, W_ref_index));
@@ -241,6 +240,8 @@ generated quantities {
   }
 
 }
+
+
 
 
 

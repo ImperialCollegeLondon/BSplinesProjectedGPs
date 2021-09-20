@@ -866,3 +866,37 @@ plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, out
   
 }
 
+plot_vaccine_effects <- function(vaccine_effects, phi, phi_wo_vaccine, lab, outdir){
+  
+  p <- ggplot(vaccine_effects, aes(x = date)) + 
+    geom_line(aes(y = M, col = age)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) +
+    theme_bw() +
+    labs(y = "Vaccine effects \n (% reduction contribution to weekly deaths from vaccination)", x = "", col = 'Age groups', fill = 'Age groups') + 
+    scale_color_viridis_d(option = 'A', end = 0.9)+ 
+    scale_fill_viridis_d(option = 'A', end = 0.9)
+  ggsave(p, file = paste0(outdir, "-vaccine_effects_perc_contribution_", lab, '_', Code,".png") , w= 6, h = 5, limitsize = FALSE)
+  
+  tmp <- reshape2::melt(phi, id.vars = c('age_index', 'week_index', 'code', 'date', 'age'))
+  setnames(tmp, c('value', 'variable'), c('with vaccination', 'stat'))
+  tmp1 <- reshape2::melt(phi_wo_vaccine, id.vars = c('age_index', 'week_index', 'code', 'date', 'age'))
+  setnames(tmp1, c('value', 'variable'), c('without vaccination', 'stat'))
+  tmp <- merge(tmp, tmp1, by = c('age_index', 'week_index', 'code', 'date', 'age', 'stat'))
+  tmp <- reshape2::melt(tmp, id.vars = c('age_index', 'week_index', 'code', 'date', 'age', 'stat'))
+  tmp <- reshape2::dcast(tmp, date + age + variable ~ stat, value.var = 'value')
+  
+  p <- ggplot(tmp, aes(x = date)) + 
+    geom_line(aes(y = M, col = variable)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = variable), alpha = 0.5) +
+    facet_wrap(~age, nrow = length(unique(tmp$age))) + 
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 70, hjust = 1),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'bottom') + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    labs(y = "Estimated contribution to COVID-19 weekly deaths Vaccine effects", x = "", col = '', fill = '') 
+  ggsave(p, file = paste0(outdir, "-vaccine_effects_compcont_", lab, '_', Code,".png") , w= 5, h = 7, limitsize = FALSE)
+  
+}
+
