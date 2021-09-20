@@ -8,7 +8,7 @@ library(grid)
 
 indir = "~/git/covid19Vaccination" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
-model = 'BS-GP-SE'
+model = 'P-SPLINES'
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -17,18 +17,21 @@ rstan_options(auto_write = TRUE)
 training = read.csv(file.path(indir, 'predictions', 'data', 'training.csv'))
 test = read.csv(file.path(indir, 'predictions', 'data', 'prediction.csv'))
 
+if(0) { # for dvp
+  training = subset(training, x > 40 & y > 0)
+  test = subset(test, x > 40 & y > 0)
+}
+
 # load functions
 source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
 
 # compile stan models
-if(model == 'BS-GP-SE') # regularised B-splines projected GP
-  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-BS-SE_2D.stan') )
-if(model == 'BS-GP-I') # standard B-splines
-  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-BS-I_2D.stan') )
-
-
-ps <- c(0.5, 0.025, 0.975)
-p_labs = c('M', 'CL', 'CU', 'mean')
+if(model == 'GP-B-SPLINES') # regularised B-splines projected GP
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-B-SPLINES_2D_incomplete.stan') )
+if(model == 'B-SPLINES') # standard B-splines
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'B-SPLINES_2D_incomplete.stan') )
+if(model == 'P-SPLINES') # Bayesian P-splines
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'P-SPLINES_2D_incomplete.stan') )
 
 # tune 
 n_knots_x = 125
@@ -36,12 +39,12 @@ n_knots_y = 125
 spline_degree = 3
 
 
-
 #
 #
 ### Preparing stan data ### 
 #
 #
+
 
 # find knots
 x = unique(sort(c(training$x, test$x)))
@@ -62,23 +65,27 @@ num_basis_columns = length(knots_columns) + spline_degree - 1
 IDX_BASIS_COLUMNS = 1:num_basis_columns
 BASIS_COLUMNS = bsplines(y_grid$y_index, knots_columns, spline_degree)
 
-# find coordinates with observation
+# find index coordinates
+test = as.data.table(test)
+test[, x_index := which(x < x_grid$x[-1] &  x >= x_grid$x[-nrow(x_grid)]), by = 'x']
+test[, y_index := which(y < y_grid$y[-1] &  y >= y_grid$y[-nrow(y_grid)]), by = 'y']
+training = as.data.table(training)
+training[, x_index := which(x < x_grid$x[-1] &  x >= x_grid$x[-nrow(x_grid)]), by = 'x']
+training[, y_index := which(y < y_grid$y[-1] &  y >= y_grid$y[-nrow(y_grid)]), by = 'y']
+
+# find all coordinates
 grid = as.data.table( expand.grid(x_index = x_grid$x_index, 
                                   y_index = y_grid$y_index) )
 grid = merge(grid, x_grid, by = 'x_index')
 grid = merge(grid, y_grid, by = 'y_index')
 
-# training coordinates
-training = as.data.table(training)
-training[, x_index := which(x < x_grid$x[-1] &  x >= x_grid$x[-nrow(x_grid)]), by = 'x']
-training[, y_index := which(y < y_grid$y[-1] &  y >= y_grid$y[-nrow(y_grid)]), by = 'y']
+# find coordinates with training observations
 value.coordinates = select(training, x_index, y_index)
 
-# test coordinates
-test = as.data.table(test)
-test[, x_index := which(x < x_grid$x[-1] &  x >= x_grid$x[-nrow(x_grid)]), by = 'x']
-test[, y_index := which(y < y_grid$y[-1] &  y >= y_grid$y[-nrow(y_grid)]), by = 'y']
-value.coordinates_test = select(test, x_index, y_index)
+# adjacent matrix for p-splines
+A = find_adjacency_matrix(num_basis_rows, num_basis_columns)
+Adj_n = sum(A) / 2
+K = num_basis_rows*num_basis_columns
 
 
 
@@ -93,7 +100,8 @@ stan_data = list(n = n, m = m, N = nrow(training),
                  coordinates = value.coordinates,
                  num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
                  BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
-                 IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS)
+                 IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS,
+                 Adj = A, Adj_n = Adj_n, K = K)
 
 file= file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds'))
 if(!file.exists(file)){
@@ -105,14 +113,20 @@ if(!file.exists(file)){
 }
 
 
-
 #
 #
 ### Post processing ### 
 #
 #
 
+cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
+
+ps <- c(0.5, 0.025, 0.975)
+p_labs = c('M', 'CL', 'CU', 'mean')
+
 samples = extract(fit)
+
+# predict on test coordinates
 
 tmp1 = as.data.table( reshape2::melt(samples$y_hat))
 setnames(tmp1, 2:3, c('x_index', 'y_index'))
@@ -125,7 +139,6 @@ tmp2 = merge(tmp1, anti_join(test, training), by = c('x_index', 'y_index'))
 tmp2[, SE := (mean - obs)^2]
 
 cat('MSE is ', mean(tmp2$SE), '\n')
-cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
 
 tmp1 = merge(tmp1, x_grid, by = 'x_index')
 tmp1 = merge(tmp1, y_grid, by = 'y_index')
@@ -133,8 +146,10 @@ tmpp = merge(tmp1, select(test, x_index, y_index), by = c('x_index', 'y_index'))
 tmpp[, timeE := max(apply(get_elapsed_time(fit), 1, sum))/60/60]
 tmpp[, MSE := mean(tmp2$SE)]
 
+# save
 saveRDS(tmpp, file= file.path(outdir, paste0('posterior_2D_', model, '_nknots_', n_knots_x, '.rds')))
 
+# plot
 p0 = ggplot(tmpp, aes(x=x,y=y)) +
   geom_raster(aes(fill=M)) +
   scale_x_continuous(expand=c(0,0)) +
