@@ -436,13 +436,14 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
   tmp = tmp[order(age)]
   
   # define age groups for vaccination coefficients
-  df_agegroups_vac <<- data.table(age.group = c('18-34', '35-64', '65-105'))
+  df_agegroups_vac <<- data.table(age.group = c('12-17', '18-34', '35-64', '65-105'))
+  # df_agegroups_vac <<- data.table(age.group = c('18-64', '65-105'))
   df_agegroups_vac[, index := 1:nrow(df_agegroups_vac)]
   df_agegroups_vac = df_agegroups_vac[, age.min := gsub('(.+)\\-(.*)', '\\1', age.group), by = 'age.group']
   df_agegroups_vac = df_agegroups_vac[, age.max := gsub(paste0(age.min, '\\-(.+)'), '\\1', age.group), by = 'age.min']
   df_agegroups_vac = df_agegroups_vac[, list(age = age.min:age.max), by = c('age.group', 'index')]
   
-  max_age_not_vaccinated = 17
+  max_age_not_vaccinated = 11
     
   stan_data[['pop']] = tmp$pop
   stan_data[['prop_vaccinated']] = tmp1
@@ -452,49 +453,7 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
 
   return(stan_data)
 }
-# 
-# add_adjacency_matrix_stan_data = function(stan_data, n, m){
-# 
-#   N = n * m
-#   A = matrix(nrow = N, ncol = N, 0)
-# 
-#   for(i in 1:n){
-# 
-#     for(j in 1:m){
-# 
-#       #cat('\n Processing ', i, j)
-#       idx_row = m*(i-1) + j
-# 
-#       if(i - 1 > 0){
-#         idx_col = m*(i-2) + j
-#         A[idx_row,idx_col] = 1
-#       }
-# 
-#       if(i + 1 <= n){
-#         idx_col = m*i + j
-#         A[idx_row,idx_col] = 1
-#       }
-# 
-#       if(j - 1 > 0){
-#         idx_col = m*(i-1) + j - 1
-#         A[idx_row,idx_col] = 1
-#       }
-# 
-#       if(j + 1 <= m){
-#         idx_col = m*(i-1) + j +1
-#         A[idx_row,idx_col] = 1
-#       }
-# 
-#     }
-#   }
-# 
-#   stan_data$N = N
-#   stan_data$Adj = A
-#   stan_data$Adj_n = sum(A) / 2
-# 
-#   return(stan_data)
-# }
-# 
+
 insert.at <- function(a, pos, ...){
   dots <- list(...)
   stopifnot(length(dots)==length(pos))

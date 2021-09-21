@@ -871,7 +871,8 @@ plot_vaccine_effects2 <- function(vaccine_effects, phi, phi_wo_vaccine, lab, out
   isunscaled = any(phi$M < 0 | phi$M > 1)
   isunscaled = ifelse(isunscaled, 'unscaled ', '')
     
-  tmp1 <- subset(vaccine_effects, age_index %in% rev(unique(sort(vaccine_effects$age_index)))[1:3])
+  # tmp1 <- subset(vaccine_effects, age_index %in% rev(unique(sort(vaccine_effects$age_index)))[1:3])
+  tmp1 <- subset(vaccine_effects, !age_index %in% unique(sort(vaccine_effects$age_index))[1])
   tmp1 <- subset(tmp1, date >= as.Date('2021-01-01'))
   p <- ggplot(tmp1, aes(x = date)) + 
     geom_line(aes(y = M - 1, col = age)) + 
@@ -885,25 +886,13 @@ plot_vaccine_effects2 <- function(vaccine_effects, phi, phi_wo_vaccine, lab, out
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
   ggsave(p, file = paste0(outdir, "-vaccine_effects_perc_contribution_", lab, '_', Code,".png") , w= 6, h = 5, limitsize = FALSE)
   
-  tmp1[, variable := 'Vaccine effect']
-  p <- ggplot(tmp1, aes(x = date)) + 
-    geom_line(aes(y = M - 1, col = age)) + 
-    geom_ribbon(aes(ymin = -Inf, ymax = 0, alpha = variable)) +
-    theme_bw() +
-    labs(y = paste0("Change ", isunscaled, "contribution to weekly deaths"), 
-         x = "", col = 'Age groups', fill = 'Age groups', alpha = '') + 
-    scale_color_viridis_d(option = 'C', end = 0.9)+ 
-    scale_fill_viridis_d(option = 'C', end = 0.9) + 
-    scale_y_continuous(labels = scales::percent) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
-  ggsave(p, file = paste0(outdir, "-vaccine_effects_perc_contribution2_", lab, '_', Code,".png") , w= 6, h = 5, limitsize = FALSE)
-  
   tmp <- reshape2::melt(phi, id.vars = c('age_index', 'week_index', 'code', 'date', 'age'))
   setnames(tmp, c('value', 'variable'), c('with vaccination', 'stat'))
   tmp1 <- reshape2::melt(phi_wo_vaccine, id.vars = c('age_index', 'week_index', 'code', 'date', 'age'))
   setnames(tmp1, c('value', 'variable'), c('without vaccination', 'stat'))
   tmp <- merge(tmp, tmp1, by = c('age_index', 'week_index', 'code', 'date', 'age', 'stat'))
   tmp <- reshape2::melt(tmp, id.vars = c('age_index', 'week_index', 'code', 'date', 'age', 'stat'))
+  tmp <- subset(tmp, !age_index %in% unique(sort(tmp$age_index))[1])
   tmp <- reshape2::dcast(tmp, date + age + variable ~ stat, value.var = 'value')
   
   p <- ggplot(tmp, aes(x = date)) + 
