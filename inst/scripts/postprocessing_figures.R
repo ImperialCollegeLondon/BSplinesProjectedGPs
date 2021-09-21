@@ -122,7 +122,7 @@ plot_mortality_rate(mortality_rate_table, outdir.fig)
 deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
 tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                          age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
+                                    age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
@@ -137,18 +137,18 @@ make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData, 
 
 # fcompare to DoH data
 if(nrow(subset(scrapedData, code == Code)) > 0 ){
-
+  
   scrapedData = subset(scrapedData, code == Code)
-
+  
   if(Code == 'GA')
     scrapedData = reduce_agebands_scrapedData_GA(scrapedData)
-
+  
   tmp = find_cumulative_deaths_prop_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
   compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
-                                          var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
+                                     var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
   compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
   compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
-
+  
 }
 
 
@@ -157,31 +157,64 @@ names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', name
 p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
 ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
 
+df_age_vac_effects = copy(df_age_continuous)
+df_age_vac_effects[, age_index := c(rep(0, stan_data$max_age_not_vaccinated ), stan_data$map_A_to_C)]
+df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max(age), 
+                                               age = paste0(min(age), '-', max(age))), by = 'age_index']
+df_age_vac_effects[age_to == max(df_age_continuous$age), age := paste0(age_from, '+')]
+
 if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
-  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 
+  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'phi', c('', '_wo_vaccine'), outdir.table)
-  phi = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'phi', outdir.table)
-  phi_wo_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'phi_wo_vaccine', outdir.table)
-  plot_vaccine_effects(vaccine_effects, phi, phi_wo_vaccine, 'phi', outdir.fig)
+  phi = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi', outdir.table)
+  phi_wo_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi_wo_vaccine', outdir.table)
+  plot_vaccine_effects2(vaccine_effects, phi, phi_wo_vaccine, 'phi', outdir.fig)
 }
 
 if(any(grepl('f_w_vaccine', names(fit_cum)))){
-  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 
+  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'f', c('_w_vaccine', ''), outdir.table)
-  f = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'f', outdir.table)
-  f_w_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vaccination$age, 'f_w_vaccine', outdir.table)
-  plot_vaccine_effects(vaccine_effects, f_w_vaccine, f, 'f', outdir.fig)
+  f = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f', outdir.table)
+  f_w_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f_w_vaccine', outdir.table)
+  plot_vaccine_effects2(vaccine_effects, f_w_vaccine, f, 'f', outdir.fig)
 }
 
 
 weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                           age_groups = df_age_vaccination$age, lab = 'vacagegroups', withempirical = T,
-                                           reduction = NULL)
+                                                age_groups = df_age_vac_effects$age, lab = 'vacagegroups', withempirical = T,
+                                                reduction = NULL)
 weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
-                                                deathByAge, df_age_vaccination$age, 'f', outdir.table)
+                                                    deathByAge, df_age_vac_effects$age, 'f', outdir.table)
 weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
-                                                    deathByAge, df_age_vaccination$age, 'phi', outdir.table)
+                                                      deathByAge, df_age_vac_effects$age, 'phi', outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
+
+vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
+tmp <- unique(select(vaccine_data, code, date, prop, age_index))
+tmp <- merge(tmp, df_age_vaccination, by = 'age_index')
+
+tmp1 <- reshape2::dcast(tmp, code + date ~ age, value.var = 'prop')
+tmp1 <- merge(vaccine_effects, tmp1, by = c('code', 'date'))
+tmp1 <- subset(tmp1,  `18-64` != 0)
+ggplot(tmp1, aes(x = `18-64`, y = `65+`)) + 
+  geom_point(aes(col = M), size = 2) + 
+  facet_wrap(~age, ncol = 4) + 
+  labs(x = 'Proportion of vaccinated 18-64', y = 'Proportion of vaccinated 65+',
+       col = paste0("Vaccine effect \n(% estimate change ", isunscaled, "\ncontribution to\nweekly deaths)")) +
+  scale_color_gradient2(mid = 'burlywood1', low = 'darkblue', midpoint = 1) + 
+  theme_bw() + 
+  scale_x_continuous(limits = range(c(0, tmp1[, '65+'])))+ 
+  scale_y_continuous(limits = range(c(0, tmp1[, '65+'])))
+
+setnames(tmp, c('age_index', 'age'), paste0(c('age_index', 'age'), '_vac'))
+tmp1 <- merge(vaccine_effects, tmp, by = c('code', 'date'))
+ggplot(tmp1, aes(x = prop)) + 
+  geom_line(aes(y = M)) + 
+  geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) + 
+  facet_grid(age_vac~age) + 
+  labs(x = 'Proportion of vaccinated', 
+       y = paste0("Vaccine effect \n(% estimate change ", isunscaled, "contribution to weekly deaths)")) +
+  theme_bw() 
 
 # make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'
@@ -194,5 +227,6 @@ ggsave(p2, file = paste0(outdir.fig, '-panel_plot_1_', Code, '.png'), w = 9, h =
 
 
 cat("\n End postprocessing_figures.R \n")
+
 
 
