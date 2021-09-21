@@ -866,16 +866,37 @@ plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, out
   
 }
 
-plot_vaccine_effects <- function(vaccine_effects, phi, phi_wo_vaccine, lab, outdir){
+plot_vaccine_effects2 <- function(vaccine_effects, phi, phi_wo_vaccine, lab, outdir){
   
-  p <- ggplot(vaccine_effects, aes(x = date)) + 
-    geom_line(aes(y = M, col = age)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) +
+  isunscaled = any(phi$M < 0 | phi$M > 1)
+  isunscaled = ifelse(isunscaled, 'unscaled ', '')
+    
+  tmp1 <- subset(vaccine_effects, age_index %in% rev(unique(sort(vaccine_effects$age_index)))[1:3])
+  tmp1 <- subset(tmp1, date >= as.Date('2021-01-01'))
+  p <- ggplot(tmp1, aes(x = date)) + 
+    geom_line(aes(y = M - 1, col = age)) + 
+    geom_ribbon(aes(ymin = CL - 1, ymax = CU - 1, fill = age), alpha = 0.25) +
     theme_bw() +
-    labs(y = "Vaccine effects \n (% reduction contribution to weekly deaths from vaccination)", x = "", col = 'Age groups', fill = 'Age groups') + 
-    scale_color_viridis_d(option = 'A', end = 0.9)+ 
-    scale_fill_viridis_d(option = 'A', end = 0.9)
+    labs(y = paste0("Vaccine effect \n (% change ", isunscaled, "contribution to weekly deaths)"), 
+         x = "", col = 'Age groups', fill = 'Age groups') + 
+    scale_color_viridis_d(option = 'C', end = 0.9)+ 
+    scale_fill_viridis_d(option = 'C', end = 0.9) + 
+    scale_y_continuous(labels = scales::percent) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
   ggsave(p, file = paste0(outdir, "-vaccine_effects_perc_contribution_", lab, '_', Code,".png") , w= 6, h = 5, limitsize = FALSE)
+  
+  tmp1[, variable := 'Vaccine effect']
+  p <- ggplot(tmp1, aes(x = date)) + 
+    geom_line(aes(y = M - 1, col = age)) + 
+    geom_ribbon(aes(ymin = -Inf, ymax = 0, alpha = variable)) +
+    theme_bw() +
+    labs(y = paste0("Change ", isunscaled, "contribution to weekly deaths"), 
+         x = "", col = 'Age groups', fill = 'Age groups', alpha = '') + 
+    scale_color_viridis_d(option = 'C', end = 0.9)+ 
+    scale_fill_viridis_d(option = 'C', end = 0.9) + 
+    scale_y_continuous(labels = scales::percent) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
+  ggsave(p, file = paste0(outdir, "-vaccine_effects_perc_contribution2_", lab, '_', Code,".png") , w= 6, h = 5, limitsize = FALSE)
   
   tmp <- reshape2::melt(phi, id.vars = c('age_index', 'week_index', 'code', 'date', 'age'))
   setnames(tmp, c('value', 'variable'), c('with vaccination', 'stat'))
@@ -895,7 +916,7 @@ plot_vaccine_effects <- function(vaccine_effects, phi, phi_wo_vaccine, lab, outd
           panel.border = element_rect(colour = "black", fill = NA), 
           legend.position = 'bottom') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    labs(y = "Estimated contribution to COVID-19 weekly deaths Vaccine effects", x = "", col = '', fill = '') 
+    labs(y = paste0("Estimated ", isunscaled, "contribution to COVID-19 weekly deaths"), x = "", col = '', fill = '') 
   ggsave(p, file = paste0(outdir, "-vaccine_effects_compcont_", lab, '_', Code,".png") , w= 5, h = 7, limitsize = FALSE)
   
 }
