@@ -1284,7 +1284,7 @@ find_vaccine_effects <- function(fit, df_week, df_age_continuous, age_groups, va
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
   tmp1 = tmp1[, list(value = sum(value), 
                      value_wo_vaccine = sum(value_wo_vaccine)), by = c('week_index', 'iterations', 'age_state_index')]
-  tmp1 = tmp1[, value := value / value_wo_vaccine, by = c('week_index', 'iterations', 'age_state_index')]
+  tmp1 = tmp1[, value := value - value_wo_vaccine, by = c('week_index', 'iterations', 'age_state_index')]
   
   # take quantiles
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),

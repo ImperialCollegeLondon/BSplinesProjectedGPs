@@ -875,8 +875,8 @@ plot_vaccine_effects2 <- function(vaccine_effects, phi, phi_wo_vaccine, lab, out
   tmp1 <- subset(vaccine_effects, !age_index %in% unique(sort(vaccine_effects$age_index))[1])
   tmp1 <- subset(tmp1, date >= as.Date('2021-01-01'))
   p <- ggplot(tmp1, aes(x = date)) + 
-    geom_line(aes(y = M - 1, col = age)) + 
-    geom_ribbon(aes(ymin = CL - 1, ymax = CU - 1, fill = age), alpha = 0.25) +
+    geom_line(aes(y = M , col = age)) + 
+    geom_ribbon(aes(ymin = CL , ymax = CU , fill = age), alpha = 0.25) +
     theme_bw() +
     labs(y = paste0("Vaccine effect \n (% change ", isunscaled, "contribution to weekly deaths)"), 
          x = "", col = 'Age groups', fill = 'Age groups') + 
