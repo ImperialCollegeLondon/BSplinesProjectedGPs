@@ -65,6 +65,10 @@ data{
   int min_count_censored[N_missing]; // range of the censored data if it ends after the period
   int max_count_censored[N_missing]; // range of the censored data if it ends after the period
   
+  // extrapolation
+  int M;
+  row_vector[M] extra_prop_vaccinated;
+  
   //splines
   int num_basis_rows;
   int num_basis_columns;
@@ -201,6 +205,11 @@ generated quantities {
   matrix[B,W] probability_ratio_age_strata;
   matrix[A,W] phi_wo_vaccine;
   matrix[A,W] f_w_vaccine;
+  matrix[A,M] f_w_vaccine_extra;
+  matrix[A,M] extrapolate_susceptible = rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma[map_A_to_C]), M) .* rep_matrix(extra_prop_vaccinated, A);
+  
+  for(m in 1:M)
+    f_w_vaccine_extra[:,m]  = f[:,W] .* (rep_vector(1, A) + extrapolate_susceptible[:,m]);
   
   for(w in 1:W){
 

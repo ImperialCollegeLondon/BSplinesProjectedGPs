@@ -384,7 +384,7 @@ add_nodes_stan_data = function(stan_data)
 add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
 {
 
-  tmp1 = data.table(weekly_deaths = stan_data$sum_deaths + 5*(stan_data$B - stan_data$N_idx_non_missing))
+  tmp1 = data.table(weekly_deaths = stan_data$sum_deaths)
   set(tmp1, NULL, 'diff_sum_deaths', c(NA, tmp1[, diff(weekly_deaths)]))
   tmp1[, rel_diff := ifelse(weekly_deaths, diff_sum_deaths / weekly_deaths, weekly_deaths)]
   tmp1[, diff_sum_deaths_abs := abs(diff_sum_deaths)]
@@ -450,6 +450,14 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
   stan_data[['C']] = length(unique(df_agegroups_vac$index))
   stan_data[['map_A_to_C']] = df_agegroups_vac$index
   stan_data[['max_age_not_vaccinated']] = length(0:max_age_not_vaccinated)
+
+  return(stan_data)
+}
+
+add_vaccine_prop_extrapolate <- function(stan_data){
+  
+  stan_data[['extra_prop_vaccinated']] = seq(0, 1, 0.05)
+  stan_data[['M']] = length(stan_data[['extra_prop_vaccinated']])
 
   return(stan_data)
 }
