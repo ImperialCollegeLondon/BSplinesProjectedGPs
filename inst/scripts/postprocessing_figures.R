@@ -179,6 +179,29 @@ if(any(grepl('f_w_vaccine', names(fit_cum)))){
   plot_vaccine_effects2(vaccine_effects, f_w_vaccine, f, 'f', outdir.fig)
 }
 
+if(any(grepl('f_w_vaccine_extra', names(fit_cum)))){
+  prop_tab = data.table(prop = stan_data$extra_prop_vaccinated, prop_index = 1:length(stan_data$extra_prop_vaccinated))
+  vaccine_effects_extrapolated <- find_vaccine_effects_unscaled_extrapolated(fit_cum, prop_tab, df_age_continuous, 
+                                                                             df_age_vac_effects$age, 'f', c('_w_vaccine_extra', ''), outdir)
+  tmp = subset(vaccine_effects_extrapolated, age_index != min(age_index))
+  ggplot(tmp, aes(x = prop, y = M)) +
+    geom_line(aes(col = age), size = 1) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) +
+    labs(x = 'Proportion of vaccinated', 
+         y = paste0("Vaccine effect\n(% estimate change unscaled contribution to weekly deaths)")) +
+    # scale_color_gradient2(mid = 'burlywood1', low = 'darkblue', midpoint = 1) +
+    # scale_fill_gradient2(mid = 'burlywood1', low = 'darkblue', midpoint = 1) +
+    scale_color_viridis_d(option = 'A', end = 0.9) + 
+    scale_fill_viridis_d(option = 'A',end = 0.9) + 
+    theme_bw() +
+    scale_x_continuous(expand = c(0,0), labels = scales::percent_format()) +
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
+    theme(legend.position = 'bottom', 
+          legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white"))
+  ggsave(paste0(outdir.fig, paste0('-vaccine_effects_extrapolation.png')), w = 5, h = 5)
+  
+}
 
 weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                                 age_groups = df_age_vac_effects$age, lab = 'vacagegroups', withempirical = T,
@@ -189,32 +212,6 @@ weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_c
                                                       deathByAge, df_age_vac_effects$age, 'phi', outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 
-vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
-tmp <- unique(select(vaccine_data, code, date, prop, age_index))
-tmp <- merge(tmp, df_age_vaccination, by = 'age_index')
-# 
-# tmp1 <- reshape2::dcast(tmp, code + date ~ age, value.var = 'prop')
-# tmp1 <- merge(vaccine_effects, tmp1, by = c('code', 'date'))
-# tmp1 <- subset(tmp1,  `18-64` != 0)
-# ggplot(tmp1, aes(x = `18-64`, y = `65+`)) + 
-#   geom_point(aes(col = M), size = 2) + 
-#   facet_wrap(~age, ncol = 4) + 
-#   labs(x = 'Proportion of vaccinated 18-64', y = 'Proportion of vaccinated 65+',
-#        col = paste0("Vaccine effect \n(% estimate change ", isunscaled, "\ncontribution to\nweekly deaths)")) +
-#   scale_color_gradient2(mid = 'burlywood1', low = 'darkblue', midpoint = 1) + 
-#   theme_bw() + 
-#   scale_x_continuous(limits = range(c(0, tmp1[, '65+'])))+ 
-#   scale_y_continuous(limits = range(c(0, tmp1[, '65+'])))
-# 
-# setnames(tmp, c('age_index', 'age'), paste0(c('age_index', 'age'), '_vac'))
-# tmp1 <- merge(vaccine_effects, tmp, by = c('code', 'date'))
-# ggplot(tmp1, aes(x = prop)) + 
-#   geom_line(aes(y = M)) + 
-#   geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) + 
-#   facet_grid(age_vac~age) + 
-#   labs(x = 'Proportion of vaccinated', 
-#        y = paste0("Vaccine effect \n(% estimate change ", isunscaled, "contribution to weekly deaths)")) +
-#   theme_bw() 
 
 # make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'

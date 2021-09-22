@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210823a"
+stan_model = "210823b"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -129,6 +129,10 @@ if(grepl('210429f|210429g', stan_model)){
 if(grepl('210808|210823', stan_model)){
   cat("\n With vaccine effects \n")
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data = vaccine_data)
+}
+if(grepl('210823b', stan_model)){
+  cat("\n With vaccine effects extrapolated \n")
+  stan_data = add_vaccine_prop_extrapolate(stan_data)
 }
 if(1){
   cat("\n With Gamma prior for lambda \n")
