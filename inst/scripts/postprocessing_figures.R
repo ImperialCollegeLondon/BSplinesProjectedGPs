@@ -81,6 +81,14 @@ cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
 fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
+# age group vaccination
+
+df_age_vac_effects = copy(df_age_continuous)
+df_age_vac_effects[, age_index := c(rep(0, stan_data$max_age_not_vaccinated ), stan_data$map_A_to_C)]
+df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max(age), 
+                                               age = paste0(min(age), '-', max(age))), by = 'age_index']
+df_age_vac_effects[age_to == max(df_age_continuous$age), age := paste0(age_from, '+')]
+
 
 # Plot estimate B-splines parameters plane 
 plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
@@ -157,25 +165,19 @@ names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', name
 p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
 ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
 
-df_age_vac_effects = copy(df_age_continuous)
-df_age_vac_effects[, age_index := c(rep(0, stan_data$max_age_not_vaccinated ), stan_data$map_A_to_C)]
-df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max(age), 
-                                               age = paste0(min(age), '-', max(age))), by = 'age_index']
-df_age_vac_effects[age_to == max(df_age_continuous$age), age := paste0(age_from, '+')]
-
 if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
   vaccine_effects = find_vaccine_effects_scaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'phi', c('', '_wo_vaccine'), outdir.table)
-  phi = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi', outdir.table)
-  phi_wo_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi_wo_vaccine', outdir.table)
+  phi = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi', 'sum', outdir.table)
+  phi_wo_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi_wo_vaccine', 'sum',outdir.table)
   plot_vaccine_effects2(vaccine_effects, phi, phi_wo_vaccine, 'phi', outdir.fig)
 }
 
 if(any(grepl('f_w_vaccine', names(fit_cum)))){
   vaccine_effects = find_vaccine_effects_unscaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'f', c('_w_vaccine', ''), outdir.table)
-  f = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f', outdir.table)
-  f_w_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f_w_vaccine', outdir.table)
+  f = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f', 'mean', outdir.table)
+  f_w_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f_w_vaccine', 'mean', outdir.table)
   plot_vaccine_effects2(vaccine_effects, f_w_vaccine, f, 'f', outdir.fig)
 }
 

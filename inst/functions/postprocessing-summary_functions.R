@@ -162,7 +162,7 @@ make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   return(tmp1)
 }
 
-make_var_by_varying_age_table = function(fit, df_week, df_age_continuous, age_groups, var_name, outdir){
+make_var_by_varying_age_table = function(fit, df_week, df_age_continuous, age_groups, var_name, operation, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -194,8 +194,10 @@ make_var_by_varying_age_table = function(fit, df_week, df_age_continuous, age_gr
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'iterations', 'age_state_index')]
-  
+  if(operation == 'sum')
+    tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'iterations', 'age_state_index')]
+  if(operation == 'mean')
+    tmp1 = tmp1[, list(value = mean(value)), by = c('week_index', 'iterations', 'age_state_index')]
   
   # take quantiles
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
@@ -1284,7 +1286,7 @@ find_vaccine_effects_scaled <- function(fit, df_week, df_age_continuous, age_gro
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
   tmp1 = tmp1[, list(value = sum(value), 
                      value_wo_vaccine = sum(value_wo_vaccine)), by = c('week_index', 'iterations', 'age_state_index')]
-  tmp1 = tmp1[, value2 := value - value_wo_vaccine, by = c('week_index', 'iterations', 'age_state_index')]
+  tmp1 = tmp1[, value := value - value_wo_vaccine, by = c('week_index', 'iterations', 'age_state_index')]
 
   # take quantiles
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
