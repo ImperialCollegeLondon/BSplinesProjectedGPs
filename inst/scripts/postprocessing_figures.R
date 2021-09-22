@@ -12,9 +12,9 @@ library(bayesplot)
 
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 4
-stan_model = "210529b"
-JOBID = 2117
+location.index = 9
+stan_model = "210823b"
+JOBID = 18012
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -164,7 +164,7 @@ df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max
 df_age_vac_effects[age_to == max(df_age_continuous$age), age := paste0(age_from, '+')]
 
 if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
-  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
+  vaccine_effects = find_vaccine_effects_scaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'phi', c('', '_wo_vaccine'), outdir.table)
   phi = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi', outdir.table)
   phi_wo_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi_wo_vaccine', outdir.table)
@@ -172,7 +172,7 @@ if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
 }
 
 if(any(grepl('f_w_vaccine', names(fit_cum)))){
-  vaccine_effects = find_vaccine_effects(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
+  vaccine_effects = find_vaccine_effects_unscaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'f', c('_w_vaccine', ''), outdir.table)
   f = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f', outdir.table)
   f_w_vaccine = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f_w_vaccine', outdir.table)
@@ -192,29 +192,29 @@ plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
 tmp <- unique(select(vaccine_data, code, date, prop, age_index))
 tmp <- merge(tmp, df_age_vaccination, by = 'age_index')
-
-tmp1 <- reshape2::dcast(tmp, code + date ~ age, value.var = 'prop')
-tmp1 <- merge(vaccine_effects, tmp1, by = c('code', 'date'))
-tmp1 <- subset(tmp1,  `18-64` != 0)
-ggplot(tmp1, aes(x = `18-64`, y = `65+`)) + 
-  geom_point(aes(col = M), size = 2) + 
-  facet_wrap(~age, ncol = 4) + 
-  labs(x = 'Proportion of vaccinated 18-64', y = 'Proportion of vaccinated 65+',
-       col = paste0("Vaccine effect \n(% estimate change ", isunscaled, "\ncontribution to\nweekly deaths)")) +
-  scale_color_gradient2(mid = 'burlywood1', low = 'darkblue', midpoint = 1) + 
-  theme_bw() + 
-  scale_x_continuous(limits = range(c(0, tmp1[, '65+'])))+ 
-  scale_y_continuous(limits = range(c(0, tmp1[, '65+'])))
-
-setnames(tmp, c('age_index', 'age'), paste0(c('age_index', 'age'), '_vac'))
-tmp1 <- merge(vaccine_effects, tmp, by = c('code', 'date'))
-ggplot(tmp1, aes(x = prop)) + 
-  geom_line(aes(y = M)) + 
-  geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) + 
-  facet_grid(age_vac~age) + 
-  labs(x = 'Proportion of vaccinated', 
-       y = paste0("Vaccine effect \n(% estimate change ", isunscaled, "contribution to weekly deaths)")) +
-  theme_bw() 
+# 
+# tmp1 <- reshape2::dcast(tmp, code + date ~ age, value.var = 'prop')
+# tmp1 <- merge(vaccine_effects, tmp1, by = c('code', 'date'))
+# tmp1 <- subset(tmp1,  `18-64` != 0)
+# ggplot(tmp1, aes(x = `18-64`, y = `65+`)) + 
+#   geom_point(aes(col = M), size = 2) + 
+#   facet_wrap(~age, ncol = 4) + 
+#   labs(x = 'Proportion of vaccinated 18-64', y = 'Proportion of vaccinated 65+',
+#        col = paste0("Vaccine effect \n(% estimate change ", isunscaled, "\ncontribution to\nweekly deaths)")) +
+#   scale_color_gradient2(mid = 'burlywood1', low = 'darkblue', midpoint = 1) + 
+#   theme_bw() + 
+#   scale_x_continuous(limits = range(c(0, tmp1[, '65+'])))+ 
+#   scale_y_continuous(limits = range(c(0, tmp1[, '65+'])))
+# 
+# setnames(tmp, c('age_index', 'age'), paste0(c('age_index', 'age'), '_vac'))
+# tmp1 <- merge(vaccine_effects, tmp, by = c('code', 'date'))
+# ggplot(tmp1, aes(x = prop)) + 
+#   geom_line(aes(y = M)) + 
+#   geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) + 
+#   facet_grid(age_vac~age) + 
+#   labs(x = 'Proportion of vaccinated', 
+#        y = paste0("Vaccine effect \n(% estimate change ", isunscaled, "contribution to weekly deaths)")) +
+#   theme_bw() 
 
 # make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'
