@@ -395,7 +395,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, outdir){
   tmp = subset(tmp, code %in% selected_code )
   
   ggplot(tmp, aes(x = prop, y = prop_deaths, col = date)) + 
-    geom_smooth(method = 'lm', col = 'black', size = 1) + 
+    geom_smooth( col = 'black', size = 0.5) + 
     geom_point() + 
     facet_grid(age~loc_label) + 
     scale_color_viridis_c(trans = "date") + 
@@ -406,11 +406,11 @@ plot_vaccine_data = function(deathByAge, vaccine_data, outdir){
   ggsave(paste0(outdir, '-proportion_vaccine_contribution_deaths.png'), w = 6, h = 5)
   
   ggplot(tmp, aes(x = prop, y = weekly.deaths, col = date)) +
-    geom_smooth(method = 'lm', col = 'black', size = 1) + 
+    geom_smooth(col = 'black', size = 0.5) + 
     geom_point() + 
     facet_grid(age~loc_label) + 
     labs(x = 'Proportion of vaccinated', y = 'Weekly deaths 2 weeks later' ) +
-    scale_y_log10() + 
+    # scale_y_log10() + 
     scale_color_viridis_c(trans = "date") + 
     theme_bw() + 
     theme(legend.key = element_blank(), 
