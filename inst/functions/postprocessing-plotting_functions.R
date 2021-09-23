@@ -814,14 +814,12 @@ plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, out
   
   delay = 7*2
   weeklydv[, date := date + delay]
-  weeklyf[, date := date + delay]
   weeklyphi[, date := date + delay]
   
   tmp1 <- merge(tmp, weeklydv, by = c('code', 'date', 'age_index'))
   p <- ggplot(tmp1, aes(x = prop)) + 
     geom_point(aes(y = M)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU)) + 
-    # geom_point(aes(y = emp), col = 'red') + 
     facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
     labs(x = 'Proportion of vaccinated', y = 'Weekly deaths 2 weeks later') + 
     theme_bw() + 
@@ -829,11 +827,9 @@ plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, out
           strip.background = element_rect(colour="black", fill="white")) 
   ggsave(p, file = paste0(outdir, "-vaccination_effects_weekly_deaths_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
   
-  
-  tmp1 <- merge(tmp, weeklyf, by = c('code', 'date', 'age_index'))
-  p <- ggplot(tmp1, aes(x = date, col = prop)) + 
-    geom_point(aes(y = M, col = prop)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU, col = prop)) + 
+  p <- ggplot(weeklyf, aes(x = date)) + 
+    geom_point(aes(y = M)) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU)) + 
     facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
     labs(col = 'Proportion of\nvaccinated', y = 'f 2 weeks later', x = '')+ 
     theme_bw() + 

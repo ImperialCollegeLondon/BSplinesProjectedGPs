@@ -530,7 +530,7 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
 }
 
 
-find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continuous, df_age_reporting, deathByAge, age_groups, var, outdir){
+find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continuous, df_age_reporting, deathByAge, age_groups, age_indices, var, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -558,7 +558,7 @@ find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continu
   
   # empirical
   df_age_close_vaccination = copy(df_age_reporting)
-  df_age_close_vaccination[, age_index :=  c(1, 1, 1, 2, 3, 4, 4, 4, 5, 5, 5)]
+  df_age_close_vaccination[, age_index := age_indices]
   emp = merge(deathByAge, df_age_close_vaccination, by = c('age_from', 'age_to', 'age'))
   emp = emp[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('code', 'date', 'loc_label', 'age_index')]
   tmp2 = emp[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c('date', 'code')]
