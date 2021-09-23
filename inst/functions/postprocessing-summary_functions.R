@@ -1350,7 +1350,7 @@ find_vaccine_effects_unscaled <- function(fit, df_week, df_age_continuous, age_g
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = mean(value)), by = c('week_index', 'iterations', 'age_state_index')]
+  tmp1 = tmp1[, list(value = median(value)), by = c('week_index', 'iterations', 'age_state_index')]
 
   # take quantiles
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
