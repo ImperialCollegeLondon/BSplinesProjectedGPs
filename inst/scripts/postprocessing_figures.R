@@ -13,8 +13,8 @@ library(bayesplot)
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
 location.index = 9
-stan_model = "210823b"
-JOBID = 18012
+stan_model = "210922a"
+JOBID = 18961
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -208,11 +208,11 @@ weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alp
                                                 age_groups = df_age_vaccination$age, lab = 'vacagegroups', withempirical = T,
                                                 reduction = NULL)
 weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
-                                                    deathByAge, df_age_vac_effects$age, 
-                                                    c(1, 1, 1, 2, 3, 4, 4, 4, 5, 5, 5), 'f', outdir.table)
+                                                    deathByAge, df_age_reporting$age, 
+                                                    c(1, 1, 1, 2, 3, 4, 4, 4, 5, 5, 5), 'f',F, outdir.table)
 weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                       deathByAge, df_age_vaccination$age,
-                                                      c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'phi', outdir.table)
+                                                      c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'phi',T, outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 
 

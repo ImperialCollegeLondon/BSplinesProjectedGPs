@@ -530,7 +530,8 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
 }
 
 
-find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continuous, df_age_reporting, deathByAge, age_groups, age_indices, var, outdir){
+find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continuous, df_age_reporting, deathByAge, 
+                                                    age_groups, age_indices, var, empirical, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -557,13 +558,16 @@ find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continu
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
   # empirical
-  df_age_close_vaccination = copy(df_age_reporting)
-  df_age_close_vaccination[, age_index := age_indices]
-  emp = merge(deathByAge, df_age_close_vaccination, by = c('age_from', 'age_to', 'age'))
-  emp = emp[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('code', 'date', 'loc_label', 'age_index')]
-  tmp2 = emp[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c('date', 'code')]
-  emp = merge(emp, tmp2, by = c('date', 'code'))
-  emp[, prop_deaths := weekly.deaths / total_deaths]
+  if(empirical){
+    df_age_close_vaccination = copy(df_age_reporting)
+    df_age_close_vaccination[, age_index := age_indices]
+    emp = merge(deathByAge, df_age_close_vaccination, by = c('age_from', 'age_to', 'age'))
+    emp = emp[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('code', 'date', 'loc_label', 'age_index')]
+    tmp2 = emp[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c('date', 'code')]
+    emp = merge(emp, tmp2, by = c('date', 'code'))
+    emp[, prop_deaths := weekly.deaths / total_deaths]
+    
+  }
 
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[[var]]) )
@@ -584,7 +588,8 @@ find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continu
   tmp1[, code := Code]
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
-  tmp1 = merge(tmp1, emp, by = c('date', 'age_index', 'code'))
+  if(empirical)
+    tmp1 = merge(tmp1, emp, by = c('date', 'age_index', 'code'))
   tmp1 = merge(tmp1, data.table(age_index = 1:length(age_groups), age = age_groups), by = 'age_index')
   
   return(tmp1)
