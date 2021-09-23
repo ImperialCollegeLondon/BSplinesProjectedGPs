@@ -112,6 +112,9 @@ parameters {
   vector[C] gamma_re;
   real gamma0;
   real<lower=0> sd_gamma;
+  vector[C] gamma_re2;
+  real gamma02;
+  real<lower=0> sd_gamma2;
 }
 
 transformed parameters {
@@ -130,7 +133,9 @@ transformed parameters {
                                                      z1); 
   matrix[A, W] f = (BASIS_ROWS') * beta * BASIS_COLUMNS;
   vector[C] gamma = gamma0 + gamma_re; 
-  matrix[A, W] susceptible = rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma[map_A_to_C]), W) .*  prop_vaccinated;
+  vector[C] gamma2 = gamma02 + gamma_re2; 
+  matrix[A, W] susceptible = rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma[map_A_to_C]), W) .*  prop_vaccinated + 
+                               rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma2[map_A_to_C]), W) .* square(prop_vaccinated);
 
   for(w in 1:W)
   {
@@ -165,10 +170,14 @@ model {
   rho_gp1 ~ inv_gamma(5, 5);
   rho_gp2 ~ inv_gamma(5, 5);
   
-  sd_gamma ~ cauchy(0,1);
+  sd_gamma ~ exponential(1);
   gamma0 ~ normal(0,1);
   gamma_re ~ normal(0,sd_gamma);
 
+  sd_gamma2 ~ exponential(1);
+  gamma02 ~ normal(0,1);
+  gamma_re2 ~ normal(0,sd_gamma);
+  
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
       z1[i,j] ~ normal(0,1);
@@ -205,8 +214,8 @@ generated quantities {
   matrix[A,W] phi_wo_vaccine;
   matrix[A,W] f_w_vaccine;
   matrix[A,M] f_w_vaccine_extra;
-  matrix[A,M] extrapolate_susceptible = rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma[map_A_to_C]), M) .* rep_matrix(extra_prop_vaccinated, A);
-  
+  matrix[A,M] extrapolate_susceptible = rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma[map_A_to_C]), M) .* rep_matrix(extra_prop_vaccinated, A) + 
+                                        rep_matrix(append_row(rep_vector(0, max_age_not_vaccinated), gamma[map_A_to_C]), M) .* rep_matrix(square(extra_prop_vaccinated), A); 
   for(m in 1:M)
     f_w_vaccine_extra[:,m]  = f[:,W] + fabs(f[:,W]) .* extrapolate_susceptible[:,m] ;
   

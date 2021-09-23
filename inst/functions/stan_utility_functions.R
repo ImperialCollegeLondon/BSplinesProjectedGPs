@@ -418,7 +418,7 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
   return(stan_data)
 }
 
-add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
+add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, age.groups.vaccination){
   
   tmp = subset(vaccine_data, code == Code)
   
@@ -436,7 +436,7 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
   tmp = tmp[order(age)]
   
   # define age groups for vaccination coefficients
-  df_agegroups_vac <<- data.table(age.group = c('12-17', '18-34', '35-64', '65-105'))
+  df_agegroups_vac <<- data.table(age.group = age.groups.vaccination)
   # df_agegroups_vac <<- data.table(age.group = c('18-64', '65-105'))
   df_agegroups_vac[, index := 1:nrow(df_agegroups_vac)]
   df_agegroups_vac = df_agegroups_vac[, age.min := gsub('(.+)\\-(.*)', '\\1', age.group), by = 'age.group']
@@ -445,7 +445,6 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data){
   
   max_age_not_vaccinated = 11
     
-  stan_data[['pop']] = tmp$pop
   stan_data[['prop_vaccinated']] = tmp1
   stan_data[['C']] = length(unique(df_agegroups_vac$index))
   stan_data[['map_A_to_C']] = df_agegroups_vac$index
