@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 1
-stan_model = "210922c"
+stan_model = "210923b"
 JOBID = round(runif(1,1,1000))
 
 if(0)
@@ -106,7 +106,7 @@ if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
   cat("\n Using 1D splines \n")
   stan_data = add_1D_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210529b|210529c|210808|210823|210922', stan_model)){
+if(grepl('210529b|210529c|210808|210823|210922|210923', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 4)
 }
@@ -126,14 +126,18 @@ if(grepl('210429f|210429g', stan_model)){
   cat("\n With RW2 prior on splines parameters \n")
   stan_data = add_diff_matrix(stan_data, n = stan_data$num_basis, m = stan_data$W)
 }
-if(grepl('210808|210823|210922', stan_model)){
+if(grepl('210808|210823|210922|210923', stan_model)){
   cat("\n With vaccine effects \n")
   # stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-54', '55-74', '75-105'))
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-34', '35-64', '65-105'))
 }
-if(grepl('210823b|210922', stan_model)){
+if(grepl('210823b|210922|210923b|210923c', stan_model)){
   cat("\n With vaccine effects extrapolated \n")
   stan_data = add_vaccine_prop_extrapolate(stan_data)
+}
+if(grepl('210923', stan_model)){
+  cat("\n With vaccine effects extrapolated \n")
+  stan_data = add_vaccine_date(stan_data)
 }
 if(1){
   cat("\n With Gamma prior for lambda \n")

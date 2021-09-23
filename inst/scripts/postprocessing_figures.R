@@ -160,7 +160,7 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
 
 
 # plot vaccine effects
-names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', names(fit_cum))]
+names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', names(fit_cum)) & !grepl('gamma0', names(fit_cum))]
 p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
 ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
 
