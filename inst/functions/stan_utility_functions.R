@@ -461,6 +461,23 @@ add_vaccine_prop_extrapolate <- function(stan_data){
   return(stan_data)
 }
 
+add_vaccine_date <- function(stan_data){
+  vaccine_start = vector(mode = 'integer', length = stan_data[['A']] )
+  
+  for(a in 1:stan_data[['A']] ){
+    if(all(stan_data[['prop_vaccinated']][a,] == 0)){
+      vaccine_start[a] = stan_data[['W']] 
+    } else{
+      vaccine_start[a] = min(which(stan_data[['prop_vaccinated']][a,] != 0))
+    }
+    
+  }
+
+  stan_data[['w_vaccination_start']] = vaccine_start
+  
+  return(stan_data)
+}
+
 insert.at <- function(a, pos, ...){
   dots <- list(...)
   stopifnot(length(dots)==length(pos))
