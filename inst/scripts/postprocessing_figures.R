@@ -82,7 +82,6 @@ fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # age group vaccination
-
 df_age_vac_effects = copy(df_age_continuous)
 df_age_vac_effects[, age_index := c(rep(0, stan_data$max_age_not_vaccinated ), stan_data$map_A_to_C)]
 df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max(age), 
@@ -206,12 +205,14 @@ if(any(grepl('f_w_vaccine_extra', names(fit_cum)))){
 }
 
 weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                                age_groups = df_age_vac_effects$age, lab = 'vacagegroups', withempirical = T,
+                                                age_groups = df_age_vaccination$age, lab = 'vacagegroups', withempirical = T,
                                                 reduction = NULL)
 weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
-                                                    deathByAge, df_age_vac_effects$age, 'f', outdir.table)
+                                                    deathByAge, df_age_vac_effects$age, 
+                                                    c(1, 1, 1, 2, 3, 4, 4, 4, 5, 5, 5), 'f', outdir.table)
 weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
-                                                      deathByAge, df_age_vac_effects$age, 'phi', outdir.table)
+                                                      deathByAge, df_age_vaccination$age,
+                                                      c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'phi', outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 
 
