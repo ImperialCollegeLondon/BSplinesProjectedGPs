@@ -148,7 +148,7 @@ transformed parameters {
   for(w in 1:W)
   {
     
-    phi[:,w] = softmax( f[:,w] ); 
+    phi[:,w] = softmax( f_w_vaccine[:,w] ); 
     
     alpha[:,w] = phi[:,w] * lambda[w] / nu ;
     
