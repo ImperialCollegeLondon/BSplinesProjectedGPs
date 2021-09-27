@@ -1346,14 +1346,16 @@ find_vaccine_effects_unscaled <- function(fit, df_week, df_age_continuous, age_g
   tmp1 = merge(tmp1, tmp2, by = c('iterations', 'age_index','week_index'))
   
   # find reduction 
-  tmp1 = tmp1[, value := value / value_wo_vaccine, by = c('week_index', 'iterations', 'age_index')]
+  tmp1[, value1 := (value - value_wo_vaccine) / abs(value_wo_vaccine), by = c('week_index', 'iterations', 'age_index')]
+  tmp1[value < 0 & !(value < 0 & value_wo_vaccine < 0), value1 := - (value_wo_vaccine - value) / (value_wo_vaccine), by = c('week_index', 'iterations', 'age_index')]
+  tmp1[value_wo_vaccine < 0 & !(value < 0 & value_wo_vaccine < 0), value1 := (value_wo_vaccine - value) / (value_wo_vaccine), by = c('week_index', 'iterations', 'age_index')]
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = median(value)), by = c('week_index', 'iterations', 'age_state_index')]
+  tmp1 = tmp1[, list(value1 = median(value1)), by = c('week_index', 'iterations', 'age_state_index')]
 
   # take quantiles
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+  tmp1 = tmp1[, list( 	q= quantile(value1, prob=ps, na.rm = T),
                        q_label=p_labs), 
               by=c('week_index', 'age_state_index')]	
   tmp1 = dcast(tmp1, week_index + age_state_index ~ q_label, value.var = "q")
