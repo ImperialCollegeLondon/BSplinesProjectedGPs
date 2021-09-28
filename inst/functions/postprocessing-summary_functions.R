@@ -1305,7 +1305,7 @@ find_vaccine_effects_scaled <- function(fit, df_week, df_age_continuous, age_gro
   tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1 = merge(tmp1, data.table(age_index = 1:length(age_groups), age = age_groups), by = 'age_index')
   
-  file =  paste0(outdir, '-', 'VaccineEffects', '_', Code, '.rds')
+  file =  paste0(outdir, '-', 'VaccineEffects_', var, '_', Code, '.rds')
   saveRDS(tmp1, file)
   
   return(tmp1)
