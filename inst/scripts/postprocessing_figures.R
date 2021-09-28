@@ -13,8 +13,8 @@ library(bayesplot)
 indir = "~/git/covid19Vaccination/inst" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
 location.index = 9
-stan_model = "210922a"
-JOBID = 18961
+stan_model = "210923b"
+JOBID = 10754
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -162,7 +162,7 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
 # plot vaccine effects
 names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', names(fit_cum)) & !grepl('gamma0', names(fit_cum))]
 p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
-ggsave(p, file = paste0(outdir.fig, '-vaccine_effects.png'), h = 5, w = 6)
+ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_', Code, '.png'), h = 5, w = 6)
 
 if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
   vaccine_effects = find_vaccine_effects_scaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
@@ -200,7 +200,7 @@ if(any(grepl('f_w_vaccine_extra', names(fit_cum)))){
     theme(legend.position = 'bottom', 
           legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white"))
-  ggsave(paste0(outdir.fig, paste0('-vaccine_effects_extrapolation.png')), w = 5, h = 5)
+  ggsave(paste0(outdir.fig, paste0('-vaccine_effects_extrapolation_', Code, '.png')), w = 5, h = 5)
   
 }
 
@@ -209,7 +209,7 @@ weeklydv <- make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alp
                                                 reduction = NULL)
 weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                     deathByAge, df_age_reporting$age, 
-                                                    c(1, 1, 1, 2, 3, 4, 4, 4, 5, 5, 5), 'f',F, outdir.table)
+                                                    c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'f',F, outdir.table)
 weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                       deathByAge, df_age_vaccination$age,
                                                       c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'phi',T, outdir.table)
