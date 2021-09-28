@@ -57,6 +57,11 @@ data[age.group == '12', age.group := '12-17']
 data[age.group == '18', age.group := '18-64']
 data[age.group == '65', age.group := '65+']
 
+# take rolling average
+ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
+data[, prop := ma(prop, 14), by = c('code', 'age.group')]
+data = data[!is.na(prop)]
+
 # add young age group
 tmp = unique(select(data, date, code))
 tmp[, age.group := '0-11']
@@ -96,6 +101,6 @@ stopifnot(all(!is.na(data)))
 nrow(data) == length(unique(data$date)) * length(unique(data$code)) * length(unique(data$age))
 
 # save
-saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-08-21.rds")))
+saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-09-28.rds")))
 
         

@@ -41,7 +41,7 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-08-03.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-08-03.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-08-21.rds"))
+path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-09-28.rds"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
@@ -83,7 +83,7 @@ Code = locations[location.index,]$code
 cat("Location ", as.character(loc_name), "\n")
 
 # plot data 
-if(0){
+if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
@@ -129,7 +129,7 @@ if(grepl('210429f|210429g', stan_model)){
 if(grepl('210808|210823|210922|210923', stan_model)){
   cat("\n With vaccine effects \n")
   # stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-54', '55-74', '75-105'))
-  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-34', '35-64', '65-105'))
+  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-64', '65-105'))
 }
 if(grepl('210823b|210922|210923b|210923c', stan_model)){
   cat("\n With vaccine effects extrapolated \n")
