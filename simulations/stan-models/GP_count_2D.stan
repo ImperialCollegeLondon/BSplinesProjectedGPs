@@ -1,3 +1,5 @@
+
+
 functions {
     matrix kron_mvprod(matrix A, matrix B, matrix V) 
     {
@@ -36,7 +38,9 @@ data {
   int<lower=1> m;
   real x_1[n];
   real x_2[m];
-  matrix[n,m] y;
+  int<lower=1> N;
+  int coordinates[N,2];
+  int y[N];
 }
 
 transformed data {
@@ -47,45 +51,46 @@ parameters {
   real<lower=0> rho_2;
   real<lower=0> alpha_gp;
   matrix[n,m] eta;
-  real<lower=0> sigma;
+  real<lower=0> nu;
 }
 transformed parameters {
-  matrix[n,m] f = gp(n, m, x_1, x_2,
+  matrix[n,m] f = exp(gp(n, m, x_1, x_2,
                               delta,
                               alpha_gp, 
                               rho_1,  rho_2,
-                              eta);
+                              eta));
+  matrix[n,m] alpha = f / nu;
+  real<lower=0> theta = (1 / nu);
 }
 
 model {
+  nu ~ exponential(1);
+    
   rho_1 ~ inv_gamma(5, 5);
   rho_2 ~ inv_gamma(5, 5);
   alpha_gp ~ cauchy(0,1);
-  sigma ~ cauchy(0,1);
   
   for(i in 1:n){
     for(j in 1:m){
         eta[i,j] ~ std_normal();
-        y[i,j] ~ normal(f[i,j], sigma);
     }
+  }
+  
+  for(k in 1:N){
+      y[k] ~ neg_binomial(alpha[coordinates[k,1],coordinates[k,2]], theta);
   }
 
   
 }
 
 generated quantities {
-  matrix[n,m] y_hat;
-  real log_lik[n*m];
+ real log_lik[N];
   
-  {
-    int counter = 1;
-    for(i in 1:n){
-      for(j in 1:m){
-      y_hat[i,j] = normal_rng(f[i,j], sigma);
-      log_lik[counter] = normal_lpdf(y[i,j] | f[i,j], sigma);
-      counter = counter + 1;
-      }
-    }
-  }
+  for(k in 1:N)
+    log_lik[k] = neg_binomial_lpmf(y[k] | alpha[coordinates[k,1],coordinates[k,2]], theta);
+
 }
+
+
+
 
