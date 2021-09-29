@@ -443,9 +443,9 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, age.groups.v
   df_agegroups_vac = df_agegroups_vac[, age.max := gsub(paste0(age.min, '\\-(.+)'), '\\1', age.group), by = 'age.min']
   df_agegroups_vac = df_agegroups_vac[, list(age = age.min:age.max), by = c('age.group', 'index')]
   
-  max_age_not_vaccinated = 11
+  max_age_not_vaccinated = 17
     
-  stan_data[['prop_vaccinated']] = tmp1
+  stan_data[['prop_vaccinated']] = tmp1*100
   stan_data[['C']] = length(unique(df_agegroups_vac$index))
   stan_data[['map_A_to_C']] = df_agegroups_vac$index
   stan_data[['max_age_not_vaccinated']] = length(0:max_age_not_vaccinated)
