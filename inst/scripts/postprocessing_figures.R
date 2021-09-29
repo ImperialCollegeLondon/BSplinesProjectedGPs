@@ -164,6 +164,13 @@ names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', name
 p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
 ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_', Code, '.png'), h = 5, w = 6)
 
+
+if(any(grepl('delta', names(fit_cum)))){
+  p <- mcmc_areas(fit_cum, regex_pars = 'delta', prob = 0.5, prob_outer = 0.95)
+  ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_others_', Code, '.png'), h = 5, w = 6)
+  
+}
+
 if( any(grepl('phi_wo_vaccine', names(fit_cum))) ){
   vaccine_effects = find_vaccine_effects_scaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'phi', c('', '_wo_vaccine'), outdir.table)
