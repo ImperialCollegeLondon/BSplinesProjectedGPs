@@ -164,7 +164,7 @@ names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', name
 p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
 ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_', Code, '.png'), h = 5, w = 6)
 
-if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
+if( any(grepl('phi_wo_vaccine', names(fit_cum))) ){
   vaccine_effects = find_vaccine_effects_scaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'phi', c('', '_wo_vaccine'), outdir.table)
   phi = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'phi', 'sum', outdir.table)
@@ -172,7 +172,7 @@ if(any(grepl('phi_wo_vaccine', names(fit_cum)))){
   plot_vaccine_effects2(vaccine_effects, phi, phi_wo_vaccine, 'phi', outdir.fig)
 }
 
-if(any(grepl('f_w_vaccine', names(fit_cum)))){
+if( any(grepl('f_w_vaccine', names(fit_cum))) ){
   vaccine_effects = find_vaccine_effects_unscaled(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 
                                          'f', c('_w_vaccine', ''), outdir.table)
   f = make_var_by_varying_age_table(fit_cum, df_week, df_age_continuous, df_age_vac_effects$age, 'f', 'mean', outdir.table)
@@ -180,7 +180,7 @@ if(any(grepl('f_w_vaccine', names(fit_cum)))){
   plot_vaccine_effects2(vaccine_effects, f_w_vaccine, f, 'f', outdir.fig)
 }
 
-if(any(grepl('f_w_vaccine_extra', names(fit_cum)))){
+if( any(grepl('f_w_vaccine_extra', names(fit_cum))) ){
   prop_tab = data.table(prop = stan_data$extra_prop_vaccinated, prop_index = 1:length(stan_data$extra_prop_vaccinated))
   vaccine_effects_extrapolated <- find_vaccine_effects_unscaled_extrapolated(fit_cum, prop_tab, df_age_continuous, 
                                                                              df_age_vac_effects$age, 'f', c('_w_vaccine_extra', ''), outdir)
@@ -212,7 +212,7 @@ weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_con
                                                     c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'f',F, outdir.table)
 weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                       deathByAge, df_age_vaccination$age,
-                                                      c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'phi',T, outdir.table)
+                                                      c(1, 1, 1, 1, 2,2,2,2, 3,3,3), 'phi',T, outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 
 

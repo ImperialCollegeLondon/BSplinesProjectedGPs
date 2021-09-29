@@ -129,7 +129,7 @@ if(grepl('210429f|210429g', stan_model)){
 if(grepl('210808|210823|210922|210923', stan_model)){
   cat("\n With vaccine effects \n")
   # stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-54', '55-74', '75-105'))
-  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-64', '65-105'))
+  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('18-64', '65-105'))
 }
 if(grepl('210823b|210922|210923b|210923c|210923d', stan_model)){
   cat("\n With vaccine effects extrapolated \n")
