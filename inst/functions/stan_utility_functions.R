@@ -432,8 +432,8 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, age.groups.v
   tmp1 = reshape2::dcast(tmp1, age ~ date_delay, value.var = 'prop')[,-1]
   
   # find population count
-  tmp = unique(select(tmp, age, pop))
-  tmp = tmp[order(age)]
+  # tmp = unique(select(tmp, age, pop))
+  # tmp = tmp[order(age)]
   
   # define age groups for vaccination coefficients
   df_agegroups_vac <<- data.table(age.group = age.groups.vaccination)
@@ -453,6 +453,69 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, age.groups.v
   return(stan_data)
 }
 
+add_vaccine_prop_other = function(stan_data, df_week, Code, vaccine_data, age.groups.vaccination){
+  
+  tmp = subset(vaccine_data, code == Code)
+  
+  if( stan_data[['C']] != 2){
+    stop('only 2 age groups for this model')
+  }
+  
+  if(!all(age.groups.vaccination == c('18-64', '65-105'))){
+    stop('use age groups', c('18-64', '65-105'))
+  }
+  
+  delay = 7 * 2
+  
+  df_age_continuous[, age_vac_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age_index']
+  tmp2 = merge(df_age_continuous, tmp, by = 'age')
+  tmp2 = unique(select(tmp2, age_vac_index, date, prop))
+  tmp2[age_vac_index == 3, age_vac_index := 5]
+  tmp2[age_vac_index == 4, age_vac_index := 3]
+  tmp2[age_vac_index == 5, age_vac_index := 4]
+  
+  tmp2 = merge(df_age_continuous, tmp2, by = 'age_vac_index', allow.cartesian=TRUE)
+  
+  tmp3 = data.table( expand.grid(date_delay = df_week$date, age = unique(tmp$age )) )
+  tmp3[, date := date_delay - delay]
+  tmp2 = merge(tmp2, tmp3, all.y = T, by = c('date', 'age'))
+  tmp2[is.na(prop), prop := 0]
+  tmp2 = tmp2[order(date_delay, age)]
+  tmp2 = reshape2::dcast(tmp2, age ~ date_delay, value.var = 'prop')[,-1]
+  
+  stan_data[['prop_vaccinated_other']] = tmp2*100
+  
+  return(stan_data)
+}
+
+add_piecewisegamma = function(stan_data){
+
+  if( stan_data[['C']] != 2){
+    stop('only 2 age groups for this model')
+  }
+  
+  delta_length = 20
+  piecewise_index = data.table(start = seq(0, 100-delta_length, delta_length), stop = seq(delta_length, 100, delta_length))
+  piecewise_index[, index:= 1:nrow(piecewise_index)]
+  
+  df = vector(mode = 'list', length = stan_data[['A']])
+  for(a in 1:stan_data[['A']]){
+    tmp <- data.table( prop = as.vector(unlist(stan_data[['prop_vaccinated']][a, ])))
+    tmp[, index := which(piecewise_index$start <= prop & piecewise_index$stop > prop), by = 'prop']
+    tmp[, age := a]
+    tmp[, date := colnames(stan_data[['prop_vaccinated']])]
+    tmp[, c := c(rep(0, stan_data[['max_age_not_vaccinated']]), stan_data[['map_A_to_C']])[a]]
+    df[[a+1]] = tmp
+  }
+  df = do.call('rbind', df)
+  
+  stan_data[['index_prop']] = reshape2::dcast(df, age ~ date, value.var = 'index')[,-1]
+  stan_data[['I']] = max(stan_data[['index_prop']])
+  stan_data[['I_age']]= df[, list(max(index)), by = 'c']$V1[-1]
+  
+  return(stan_data)
+}
+  
 add_vaccine_prop_extrapolate <- function(stan_data){
   
   stan_data[['extra_prop_vaccinated']] = seq(0, 1, 0.05)
