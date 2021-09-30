@@ -329,40 +329,56 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
   }
 }
 
-plot_contribution_all_states = function(contribution, vaccinedata_state, outdir){
-
-  vaccinedata_state = subset(vaccinedata_state, loc_label %in% unique(contribution$loc_label) & date <= max(contribution$date))
-  vaccinedata_state[, dummy := '']
+plot_contribution_all_states <- function(contribution, vaccinedata, outdir){
   
-  tmp = contribution[!is.na(emp)]
+  tmp = subset(vaccinedata, date %in% unique(vaccinationeffect$date))
+  tmp1 = subset(vaccinationeffect, date == max(tmp$date))
   
-  ggplot(tmp, aes(x= date) ) +
-    geom_line(aes(y = M, col = age)) + 
-    geom_point(aes(y = emp, col = age), size = 0.5) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
-    facet_wrap(~loc_label, ncol = 6) +
-    geom_line(data = vaccinedata_state, aes(y  = prop_vaccinated_1dosep, linetype = dummy), col = 'grey20', size = 0.9) + 
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-    theme_bw() + 
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          axis.text.x = element_text(angle = 45, hjust =1), 
-          panel.grid.major = element_blank(), 
-          axis.title.x = element_blank(), 
-          axis.title.y = element_text(size = rel(1.2)), 
-          legend.title = element_text(size = rel(1.1)), 
-          strip.text = element_text(size = rel(1.1)), 
-          legend.position = 'bottom') +
-    labs(y = 'Estimated age-specific contribution to COVID-19 weekly deaths', fill = 'Age groups', col = 'Age groups', 
-         linetype = 'Proportion of the state population\nvaccinated with at least one dose') + 
-    scale_y_continuous(labels = scales::percent_format()) +
-    scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
-    scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8) + 
-    scale_linetype_manual(values = 1)
-  ggsave(paste0(outdir, paste0('-Contribution_Vaccination_allStates.png')), w = 9, h = 12)
+  ggplot(tmp1, aes(y = loc_label)) + 
+    geom_vline(xintercept = 0, linetype = 'dashed', col = 'grey50') +
+    geom_errorbarh(aes(xmin = CL, xmax = CU, group =  as.factor(age)), 
+                   position = position_dodge(width = 0.5), height = 0.2) +
+    geom_point(aes(x = M, col = as.factor(age)), position = position_dodge(width = 0.5)) 
+      
   
   
 }
+
+
+# plot_contribution_all_states = function(contribution, vaccinedata_state, outdir){
+# 
+#   vaccinedata_state = subset(vaccinedata_state, loc_label %in% unique(contribution$loc_label) & date <= max(contribution$date))
+#   vaccinedata_state[, dummy := '']
+#   
+#   tmp = contribution[!is.na(emp)]
+#   
+#   ggplot(tmp, aes(x= date) ) +
+#     geom_line(aes(y = M, col = age)) + 
+#     geom_point(aes(y = emp, col = age), size = 0.5) + 
+#     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
+#     facet_wrap(~loc_label, ncol = 6) +
+#     geom_line(data = vaccinedata_state, aes(y  = prop_vaccinated_1dosep, linetype = dummy), col = 'grey20', size = 0.9) + 
+#     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+#     theme_bw() + 
+#     theme(strip.background = element_blank(),
+#           panel.border = element_rect(colour = "black", fill = NA), 
+#           axis.text.x = element_text(angle = 45, hjust =1), 
+#           panel.grid.major = element_blank(), 
+#           axis.title.x = element_blank(), 
+#           axis.title.y = element_text(size = rel(1.2)), 
+#           legend.title = element_text(size = rel(1.1)), 
+#           strip.text = element_text(size = rel(1.1)), 
+#           legend.position = 'bottom') +
+#     labs(y = 'Estimated age-specific contribution to COVID-19 weekly deaths', fill = 'Age groups', col = 'Age groups', 
+#          linetype = 'Proportion of the state population\nvaccinated with at least one dose') + 
+#     scale_y_continuous(labels = scales::percent_format()) +
+#     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
+#     scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8) + 
+#     scale_linetype_manual(values = 1)
+#   ggsave(paste0(outdir, paste0('-Contribution_Vaccination_allStates.png')), w = 9, h = 12)
+#   
+#   
+# }
 
 plot_mortality_all_states = function(death, data, min_vaccine_date, outdir)
 {

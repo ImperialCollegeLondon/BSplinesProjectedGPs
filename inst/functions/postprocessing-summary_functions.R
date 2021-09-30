@@ -1345,6 +1345,15 @@ find_vaccine_effects_unscaled <- function(fit, df_week, df_age_continuous, age_g
   setnames(tmp2, c('Var2', 'Var3', 'value'), c('age_index','week_index', 'value_wo_vaccine'))
   tmp1 = merge(tmp1, tmp2, by = c('iterations', 'age_index','week_index'))
   
+  # temporary fix 
+  if(stan_model == '210923b'){
+    df = data.table(vac_start = stan_data$w_vaccination_start, age_index = 1:length(stan_data$w_vaccination_start))
+    tmp1 = merge(tmp1, df, by = c('age_index'))
+    tmp2 = tmp1[, list(value_before_vac = value[week_index == vac_start - 1]), by = c('age_index', 'iterations')]
+    tmp1 = merge(tmp1, tmp2, by = c('age_index', 'iterations'))
+    tmp1[vac_start < max(df_week$week_index) & vac_start >= week_index, value := value_before_vac, by = c('age_index', 'iterations', 'week_index')]
+  }
+  
   # find reduction 
   tmp1[, value1 := (value - value_wo_vaccine) / abs(value_wo_vaccine), by = c('week_index', 'iterations', 'age_index')]
   tmp1[value < 0 & !(value < 0 & value_wo_vaccine < 0), value1 := - (value_wo_vaccine - value) / (value_wo_vaccine), by = c('week_index', 'iterations', 'age_index')]

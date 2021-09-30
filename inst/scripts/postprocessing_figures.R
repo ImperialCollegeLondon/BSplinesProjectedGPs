@@ -46,18 +46,6 @@ outdir.data = file.path(outdir, run_tag, "data")
 outdir.fig.post = file.path(outdir, run_tag, "figure", run_tag)
 outdir.table = file.path(outdir, run_tag, "table", run_tag)
 
-# temporary
-# path to population count 
-path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
-pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
-setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
-
-# vaccination data 
-file  = file.path(indir, 'data', 'demographic_trends_of_people_receiving_covid19_vaccinations_in_the_united_states_210520.csv')
-vaccinedata = clean_vaccination_data_age(file)
-file = file.path(indir, 'data', 'us_state_vaccinations_210611.csv')
-vaccinedata_state = clean_vaccination_data_state(file)
-
 # code
 locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
 Code = locations[location.index,]$code
@@ -130,16 +118,16 @@ deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha'
 tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
-                                    reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                    reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
-                                    reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                    reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                                      age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups',
-                                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                                     reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                                      age_groups = c('0-74', '75+'), lab = '2agegroups',
-                                                     reduction = c(min(vaccinedata_state[date %in% df_week$date, date]), max(df_week$date)))
+                                                     reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
 
 
 # fcompare to DoH data
@@ -161,9 +149,10 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
 
 # plot vaccine effects
 names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', names(fit_cum)) & !grepl('gamma0', names(fit_cum))]
-p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
-ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_', Code, '.png'), h = 5, w = 6)
-
+if(length(names) != 0){
+  p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
+  ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_', Code, '.png'), h = 5, w = 6)
+}
 
 if(any(grepl('delta', names(fit_cum)))){
   p <- mcmc_areas(fit_cum, regex_pars = 'delta', prob = 0.5, prob_outer = 0.95)
