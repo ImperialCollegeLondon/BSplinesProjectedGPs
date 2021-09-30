@@ -37,11 +37,12 @@ options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
-# path to CDC and JHU data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-08-03.rds"))
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-08-03.rds"))
+# path to data
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-29.rds"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-09-30.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-09-28.rds"))
+path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-09-30.rds"))
+path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
@@ -59,9 +60,6 @@ if(!dir.exists( dirname(outdir.fig)) ) dir.create( dirname(outdir.fig), recursiv
 
 cat("\n outfile.dir is ", file.path(outdir, run_tag), '\n')
 
-# max age considered
-age_max = 105
-  
 # load CDC data
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
 
@@ -72,7 +70,13 @@ scrapedData = read.csv(path_to_scraped_data)
 # load vaccine data
 vaccine_data = readRDS(path_to_vaccine_data)
 
+# load population count 
+pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
+setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
+
+
 # Create age maps
+age_max = 105
 create_map_age(age_max)
 
 # find locations 
@@ -85,7 +89,7 @@ cat("Location ", as.character(loc_name), "\n")
 # plot data 
 if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, outdir = outdir.fig)
+  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                     JHU_data = JHUData, 
                                     scrapedData = scrapedData,
