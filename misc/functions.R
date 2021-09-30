@@ -707,9 +707,6 @@ incorporate_AllSexes_boundary_information = function(tmp)
       stopifnot( length(unique(tmp3$min.sum.weekly.deaths[.idx_missing])) <= 2)
       stopifnot( length(unique(tmp3$max.sum.weekly.deaths[.idx_missing])) <= 2)
       
-      stopifnot(tmp3[.idx_missing]$min.sum.weekly.deaths[1] >= tmp3[.idx_missing]$min.sum.weekly.deaths[length(.idx_missing)])
-      stopifnot(tmp3[.idx_missing]$max.sum.weekly.deaths[1] >= tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)])
-      
       # check that the boundaries of weekly death sum are unique
       # it is possible that they are greater in the Male and Female merged data set 
       # so we can use the All sexes to find tighter boundaries
@@ -718,6 +715,13 @@ incorporate_AllSexes_boundary_information = function(tmp)
       
       if(tmp3[.idx_missing]$max.sum.weekly.deaths[1] > tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)])
         tmp3[.idx_missing]$max.sum.weekly.deaths =  tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)]
+      
+      if(tmp3[.idx_missing]$min.sum.weekly.deaths[1] < tmp3[.idx_missing]$min.sum.weekly.deaths[length(.idx_missing)])
+        tmp3[.idx_missing]$min.sum.weekly.deaths = tmp3[.idx_missing]$min.sum.weekly.deaths[length(.idx_missing)]
+      
+      if(tmp3[.idx_missing]$max.sum.weekly.deaths[1] < tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)])
+        tmp3[.idx_missing]$max.sum.weekly.deaths =  tmp3[.idx_missing]$max.sum.weekly.deaths[length(.idx_missing)]
+      
       
       if(max(.idx_missing) == nrow(tmp3) & min(.idx_missing) != 1){
         tmp3[.idx_missing]$min.sum.weekly.deaths = 1
