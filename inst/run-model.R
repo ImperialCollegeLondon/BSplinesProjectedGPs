@@ -6,7 +6,7 @@ args = list(STAN_MODEL="210429a1",
             JOBID = round(runif(1,1,10000)))
 
 
-make.PBS.header <- function(hpc.walltime=47, hpc.select=1, hpc.nproc=1, hpc.mem= "6gb", hpc.load= "module load anaconda3/personal", hpc.q="pqcovid19c", hpc.array=1, hpc.log = NULL )
+make.PBS.header <- function(hpc.walltime=47, hpc.select=1, hpc.nproc=1, hpc.mem= "6gb", hpc.load= "module load anaconda3/personal", hpc.array=1, hpc.log = NULL )
 {	
   pbshead <- "#!/bin/sh"
   tmp <- paste("#PBS -l walltime=", hpc.walltime, ":59:00", sep = "")
@@ -18,10 +18,6 @@ make.PBS.header <- function(hpc.walltime=47, hpc.select=1, hpc.nproc=1, hpc.mem=
   {
     pbshead	<- paste(pbshead, "\n#PBS -J 1-", hpc.array, sep='')
   }				
-  if(!is.na(hpc.q))
-  {
-    pbshead <- paste(pbshead, paste("#PBS -q", hpc.q), sep = "\n")
-  }		
   if(!is.null(hpc.log)){
     pbshead <- paste(pbshead, paste("#PBS -o", hpc.log), sep = "\n")
   }
@@ -31,7 +27,7 @@ make.PBS.header <- function(hpc.walltime=47, hpc.select=1, hpc.nproc=1, hpc.mem=
 }
 
 
-pbshead = make.PBS.header(hpc.walltime = 30, hpc.nproc = args$nchains, hpc.mem = '100gb', 
+pbshead = make.PBS.header(hpc.walltime = 30, hpc.nproc = args$nchains, hpc.mem = '96gb', 
                           hpc.array = length(args$locations), hpc.log = file.path(args$CWD, paste0(args$STAN_MODEL, '-', args$JOBID, '/')) )
 
 
