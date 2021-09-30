@@ -1,7 +1,7 @@
-args = list(STAN_MODEL="210429a1",
+args = list(STAN_MODEL="210529b",
             CWD="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/",
             INDIR="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/",
-            locations = 1:50, 
+            locations = c(5, 9, 32, 43), 
             nchains = 8,
             JOBID = round(runif(1,1,10000)))
 
@@ -27,7 +27,7 @@ make.PBS.header <- function(hpc.walltime=47, hpc.select=1, hpc.nproc=1, hpc.mem=
 }
 
 
-pbshead = make.PBS.header(hpc.walltime = 30, hpc.nproc = args$nchains, hpc.mem = '96gb', 
+pbshead = make.PBS.header(hpc.walltime = 30, hpc.nproc = args$nchains, hpc.mem = '50gb', 
                           hpc.array = length(args$locations), hpc.log = file.path(args$CWD, paste0(args$STAN_MODEL, '-', args$JOBID, '/')) )
 
 
