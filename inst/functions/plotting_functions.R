@@ -362,7 +362,7 @@ plot_basis_functions = function()
   ggsave(file = '~/Box\ Sync/2021/CDC/basis_functions.png', w = 6, h = 5)
 }
 
-plot_vaccine_data = function(deathByAge, vaccine_data, outdir){
+plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
   
   tmp = merge(vaccine_data, select(df_age_continuous, -age_index), by = 'age')
   tmp[, age_index := which(df_age_vaccination$age_from <= age_from & df_age_vaccination$age_to >= age_to), by = c('age_from', 'age_to')]
