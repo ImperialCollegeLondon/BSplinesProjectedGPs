@@ -593,7 +593,7 @@ find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continu
   tmp1 = merge(tmp1, data.table(age_index = 1:length(age_groups), age = age_groups), by = 'age_index')
   
   # save
-  saveRDS(tmp1, file = paste0(outdir, '-posterior_table_', var, '_' Code, '.rds'))
+  saveRDS(tmp1, file = paste0(outdir, '-posterior_table_', var, '_', Code, '.rds'))
   
   return(tmp1)
 }
