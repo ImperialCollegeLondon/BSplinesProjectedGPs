@@ -155,6 +155,7 @@ if(1){
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
 
+print("A = 12, W = 4")
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
