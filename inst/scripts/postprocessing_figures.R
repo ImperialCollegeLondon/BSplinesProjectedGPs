@@ -132,6 +132,9 @@ make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData, 
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                                      age_groups = c('0-74', '75+'), lab = '2agegroups',
                                                      reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
+make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+                                                     age_groups = unique(vaccine_data$age), lab = 'vacagegroups',
+                                                     reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
 
 
 # fcompare to DoH data
