@@ -70,11 +70,14 @@ fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # age group vaccination
-df_age_vac_effects = copy(df_age_continuous)
-df_age_vac_effects[, age_index := c(rep(0, stan_data$max_age_not_vaccinated ), stan_data$map_A_to_C)]
-df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max(age), 
-                                               age = paste0(min(age), '-', max(age))), by = 'age_index']
-df_age_vac_effects[age_to == max(df_age_continuous$age), age := paste0(age_from, '+')]
+if(!is.null(stan_data$max_age_not_vaccinated )){
+  df_age_vac_effects = copy(df_age_continuous)
+  df_age_vac_effects[, age_index := c(rep(0, stan_data$max_age_not_vaccinated ), stan_data$map_A_to_C)]
+  df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max(age), 
+                                                 age = paste0(min(age), '-', max(age))), by = 'age_index']
+  df_age_vac_effects[age_to == max(df_age_continuous$age), age := paste0(age_from, '+')]
+  
+}
 
 
 # Plot estimate B-splines parameters plane 
@@ -97,6 +100,7 @@ make_contribution_ref_adj(fit_cum, date_10thcum, fiveagegroups, df_week, pop_dat
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-64', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '0-54', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '20-64', date_10thcum, pop_data, data, outdir.table, with_empirical = F)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '55-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-79', date_10thcum, pop_data, data, outdir.table)
 find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_reporting, '65-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
@@ -208,7 +212,7 @@ weeklyf <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_con
                                                     c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'f',F, outdir.table)
 weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_continuous, df_age_reporting, 
                                                       deathByAge, df_age_vaccination$age,
-                                                      c(1, 1, 1, 1, 2,2,2,2, 3,3,3), 'phi',T, outdir.table)
+                                                      c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'phi',T, outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
 
 

@@ -390,7 +390,7 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   if(grepl('\\+', age_group))
   {
     age_groups = c(paste0('0-', as.numeric(gsub('(.+)\\+', '\\1', age_group))-1), age_group)
-  } else if(grepl('0', age_group))
+  } else if(gsub('(.+)0-.*', '\\1', age_group) == age_group)
   {
     age_groups = c(age_group, paste0(as.numeric(gsub('.*-(.+)', '\\1', age_group))+1, '+'))
   } else{
