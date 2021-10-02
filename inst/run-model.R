@@ -35,8 +35,9 @@ pbshead = paste0(pbshead, '\n mkdir ', args$CWD, '/', args$STAN_MODEL,'-', args$
 
 # PBS array
 cmds = vector(mode = 'list', length = length(args$locations))
-for(i in args$locations){
+for(i in 1:length(args$locations)){
   
+  k = args$locations[i]
   # arguments
   
   cmds[[i]] = paste0('PWD=$(pwd)/temporary\n')
@@ -56,13 +57,13 @@ for(i in args$locations){
   cmds[[i]] = paste0(cmds[[i]], 'mkdir $PWD/$STAN_MODEL-$JOBID/table\n')
   
   cmds[[i]] = paste0(cmds[[i]], 'echo "-- running model --"\n')
-  tmp = paste0('Rscript ', args$INDIR,'/scripts/run_stan_hpc.R -indir ',args$INDIR, ' -outdir $PWD -location.index ', i, ' -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
+  tmp = paste0('Rscript ', args$INDIR,'/scripts/run_stan_hpc.R -indir ',args$INDIR, ' -outdir $PWD -location.index ', k, ' -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
   cmds[[i]] = paste0(cmds[[i]], tmp, '\n')
   
   cmds[[i]] = paste0(cmds[[i]], 'echo "-- postprocessing --"\n')
-  tmp = paste0('Rscript ', args$INDIR,'/scripts/postprocessing_assess_mixing.R -indir ',args$INDIR, ' -outdir $PWD -location.index ', i, ' -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
+  tmp = paste0('Rscript ', args$INDIR,'/scripts/postprocessing_assess_mixing.R -indir ',args$INDIR, ' -outdir $PWD -location.index ', k, ' -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
   cmds[[i]] = paste0(cmds[[i]], tmp, '\n')
-  tmp = paste0('Rscript ', args$INDIR,'/scripts/postprocessing_figures.R -indir ',args$INDIR, ' -outdir $PWD -location.index ', i, ' -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
+  tmp = paste0('Rscript ', args$INDIR,'/scripts/postprocessing_figures.R -indir ',args$INDIR, ' -outdir $PWD -location.index ', k, ' -stan_model ',args$STAN_MODEL, ' -JOBID $JOBID')
   cmds[[i]] = paste0(cmds[[i]], tmp, '\n')
   
   cmds[[i]] = paste0(cmds[[i]], 'cp -R --no-preserve=mode,ownership "$PWD"/* $CWD\n')
@@ -73,7 +74,7 @@ for(i in args$locations){
 
 
 #	make array job
-for(i in args$locations)
+for(i in 1:length(args$locations))
 {
   cmds[[i]] <- paste0(i,')\n',cmds[[i]],';;\n')
 }
