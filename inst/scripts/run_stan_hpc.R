@@ -6,9 +6,9 @@ library(doParallel)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-location.index = 1
-stan_model = "210930"
-JOBID = round(runif(1,1,1000))
+location.index = 5
+stan_model = "210529b"
+JOBID = 3541
 
 if(0)
 {
@@ -91,12 +91,12 @@ if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
-                                    JHU_data = JHUData, 
+                                    JHUdata = JHUData, 
                                     scrapedData = scrapedData,
                                     var.weekly.deaths.CDC = 'weekly.deaths', 
                                     outdir = outdir.fig,
                                     Code = Code)
- }
+}
 
 # reference date
 ref_date = as.Date('2020-12-05')
