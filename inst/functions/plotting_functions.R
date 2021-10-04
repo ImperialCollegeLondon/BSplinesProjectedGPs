@@ -1,4 +1,4 @@
-compare_CDC_JHU_DoH_error_plot = function(CDC_data, JHU_data, scrapedData, var.weekly.deaths.CDC, outdir, Code = NULL)
+compare_CDC_JHU_DoH_error_plot = function(CDC_data, JHUData, scrapedData, var.weekly.deaths.CDC, outdir, Code = NULL)
 {
   # find errors 
   CDCdata = CDC_data[, list(cumulative_deaths.CDC = sum(na.omit( get(var.weekly.deaths.CDC) ))), by = c('code', 'date')]

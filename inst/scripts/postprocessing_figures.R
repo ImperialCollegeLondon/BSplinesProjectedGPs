@@ -10,11 +10,11 @@ library(cowplot)
 library(extraDistr)
 library(bayesplot)
 
-indir = "~/git/covid19Vaccination/inst" # path to the repo
+indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 9
-stan_model = "210923b"
-JOBID = 10754
+location.index = 5
+stan_model = "210529b"
+JOBID = 29051
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -133,8 +133,7 @@ make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData, 
                                                      age_groups = c('0-74', '75+'), lab = '2agegroups',
                                                      reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                                     age_groups = unique(vaccine_data$age), lab = 'vacagegroups',
-                                                     reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
+                                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups')
 
 
 # fcompare to DoH data
@@ -217,6 +216,7 @@ weeklyphi <- find_contribution_age_groups_vaccination(fit_cum, df_week, df_age_c
                                                       deathByAge, df_age_vaccination$age,
                                                       c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4), 'phi',T, outdir.table)
 plot_vaccine_effects(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir.fig)
+saveRDS(vaccine_data, paste0(outdir.table, '-', 'vaccine_data', '.rds'))
 
 
 # make panel figure
