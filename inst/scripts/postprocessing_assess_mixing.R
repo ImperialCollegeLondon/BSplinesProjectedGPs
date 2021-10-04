@@ -84,6 +84,8 @@ plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_', Code, '.png'), h = 5, w = 6)
 
+p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
+ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_', Code, '.png'), h = 5, w = 6)
 
 cat("\n End postprocessing_assess_mixing.R \n")
 
