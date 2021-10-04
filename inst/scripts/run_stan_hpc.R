@@ -91,7 +91,7 @@ if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
-                                    JHUdata = JHUData, 
+                                 JHUData = JHUData, 
                                     scrapedData = scrapedData,
                                     var.weekly.deaths.CDC = 'weekly.deaths', 
                                     outdir = outdir.fig,
