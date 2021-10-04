@@ -80,6 +80,9 @@ plot_sum_missing_deaths(tmp1, outdir.fig)
 tmp1 = find_sum_nonr_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict', outdir.table)
 plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
+# trace plots
+p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
+ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_', Code, '.png'), h = 5, w = 6)
 
 
 cat("\n End postprocessing_assess_mixing.R \n")
