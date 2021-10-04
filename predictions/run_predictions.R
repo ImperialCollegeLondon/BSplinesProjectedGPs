@@ -27,11 +27,11 @@ source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
 
 # compile stan models
 if(model == 'GP-B-SPLINES') # regularised B-splines projected GP
-  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-B-SPLINES_2D_incomplete.stan') )
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'GP-B-SPLINES_2D.stan') )
 if(model == 'B-SPLINES') # standard B-splines
-  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'B-SPLINES_2D_incomplete.stan') )
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'B-SPLINES_2D.stan') )
 if(model == 'P-SPLINES') # Bayesian P-splines
-  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'P-SPLINES_2D_incomplete.stan') )
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'P-SPLINES_2D.stan') )
 
 # tune 
 n_knots_x = 125

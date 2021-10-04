@@ -1,7 +1,3 @@
-/**
-Same as simulations/B-splines_2D for incomplete training grid
-*/
-
 functions {
     matrix kron_mvprod(matrix A, matrix B, matrix V) 
     {
@@ -44,10 +40,6 @@ data {
   int num_basis_columns;
   matrix[num_basis_rows, n] BASIS_ROWS; 
   matrix[num_basis_columns, m] BASIS_COLUMNS; 
-  
-  // GP
-  real IDX_BASIS_ROWS[num_basis_rows];
-  real IDX_BASIS_COLUMNS[num_basis_columns];
 }
 
 transformed data {
