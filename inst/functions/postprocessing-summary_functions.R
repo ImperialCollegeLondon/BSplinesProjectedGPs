@@ -390,17 +390,16 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   if(grepl('\\+', age_group))
   {
     age_groups = c(paste0('0-', as.numeric(gsub('(.+)\\+', '\\1', age_group))-1), age_group)
-  } else if(gsub('(.+)0-.*', '\\1', age_group) == age_group)
+  } else if( grepl('0-.*',age_group) & gsub('(.+)0-.*', '\\1', age_group) == age_group )
   {
+    
     age_groups = c(age_group, paste0(as.numeric(gsub('.*-(.+)', '\\1', age_group))+1, '+'))
   } else{
     age_groups = c(paste0('0-', as.numeric(gsub('(.+)-.*', '\\1', age_group))-1), age_group,
                    paste0(as.numeric(gsub('.*-(.+)', '\\1', age_group))+1, '+'))
     
   }
-   
 
-  
   df_age_state = data.table(age = age_groups)
   df_age_state[, age_index := 1:nrow(df_age_state)]
   df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
@@ -1313,6 +1312,65 @@ find_vaccine_effects_scaled <- function(fit, df_week, df_age_continuous, age_gro
   
   return(tmp1)
   
+}
+
+find_vaccine_effects <- function(weekly_deaths, vaccine_data, start_resurgence, pick_resurgence)
+{
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  df_age_vaccination = unique(select(weekly_deaths, age_index, age))
+  df_age_vaccination[, age_from := gsub('(.+)-.*', '\\1', age)]
+  df_age_vaccination[, age_to := gsub('.*-(.+)', '\\1', age)]
+  df_age_vaccination[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+  df_age_vaccination[grepl('\\+', age_to), age_to := max(vaccine_data$age)]
+  set(df_age_vaccination, NULL, 'age_from', df_age_vaccination[,as.numeric(age_from)])
+  set(df_age_vaccination, NULL, 'age_to', df_age_vaccination[,as.numeric(age_to)])
+  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
+  
+  tmp = vaccine_data[, list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
+  tmp[, age_index := paste0('prop_', age_index)]
+  tmp = reshape2::dcast(tmp, code + date + loc_label ~ age_index, value.var = 'prop')
+  tmp = subset(tmp, date == start_resurgence)
+  
+  tmp1 = vaccine_data[, list(pop = sum(pop)), by = c('code', 'loc_label', 'age_index')]
+  tmp2 = tmp1[, list(pop_avg = mean(pop)), by = c('age_index')]
+  tmp1 = merge(tmp1, tmp2, by = c('age_index'))
+  
+  tmp2 = subset(weekly_deaths, date %in% c(pick_resurgence, start_resurgence))
+  tmp2 = merge(tmp2, tmp1, by = c('code', 'loc_label', 'age_index'))
+  tmp2[, weekly_deaths_adj := value / pop * pop_avg]
+  tmp2[, date2 := ifelse(date == pick_resurgence, 'date_end', 'date_start')]
+  tmp2 = data.table(reshape2::dcast(tmp2, code + age_index + age + iterations ~ date2, value.var = 'weekly_deaths_adj'))
+  tmp2[, diff := date_end - date_start]
+  
+  tmp = merge(tmp2, tmp, by = c('code'))
+  tmp[, intercept := lm(diff ~ prop_3 + prop_4, data = subset(tmp, iterations == 1))$coefficient[1]]
+  tmp[, vac_effect_3 := lm(diff ~ prop_3 + prop_4, data = subset(tmp, iterations == 1))$coefficient[2]]
+  tmp[, vac_effect_4 := lm(diff ~ prop_3 + prop_4, data = subset(tmp, iterations == 1))$coefficient[3]]
+  tmp[, diff_pred := intercept + vac_effect_3 * prop_3 + vac_effect_4 * prop_4]
+  tmp[, date_end_predict := date_start + diff_pred]
+  
+  tmp1 = tmp[, list( 	q= quantile(vac_effect_3, prob=ps, na.rm = T),
+                      q_label=paste0(p_labs, '3')), 
+             by=c('age')]	
+  tmp1 = dcast(tmp1, age ~ q_label, value.var = "q")
+  
+  tmp2 = tmp[, list( 	q= quantile(vac_effect_4, prob=ps, na.rm = T),
+                      q_label=paste0(p_labs, '4')), 
+             by=c('age')]	
+  tmp2 = dcast(tmp2, age ~ q_label, value.var = "q")
+  tmp1 = merge(tmp1, tmp2, by = 'age')
+  
+  tmp2 = tmp[, list( 	q= quantile(vac_effect_4, prob=ps, na.rm = T),
+                      q_label=paste0(p_labs, '_predict')), 
+             by=c('age')]	
+  tmp2 = dcast(tmp2, age ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, tmp2, by = 'age')
+  
+  return(tmp1)
 }
 
 find_vaccine_effects_unscaled <- function(fit, df_week, df_age_continuous, age_groups, var, suffix_var, outdir){
