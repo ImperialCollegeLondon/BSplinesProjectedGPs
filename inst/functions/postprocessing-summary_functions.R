@@ -1329,48 +1329,148 @@ find_vaccine_effects <- function(weekly_deaths, vaccine_data, start_resurgence, 
   set(df_age_vaccination, NULL, 'age_to', df_age_vaccination[,as.numeric(age_to)])
   vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
   
+  delay = 2*7
   tmp = vaccine_data[, list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
   tmp[, age_index := paste0('prop_', age_index)]
-  tmp = reshape2::dcast(tmp, code + date + loc_label ~ age_index, value.var = 'prop')
-  tmp = subset(tmp, date == start_resurgence)
-  
+  tmp = as.data.table( reshape2::dcast(tmp, code + date + loc_label ~ age_index, value.var = 'prop') )
+  tmp[, date := date - delay]
+  # tmp = subset(tmp, date == start_resurgence-delay)
+
+  # population
   tmp1 = vaccine_data[, list(pop = sum(pop)), by = c('code', 'loc_label', 'age_index')]
   tmp2 = tmp1[, list(pop_avg = mean(pop)), by = c('age_index')]
   tmp1 = merge(tmp1, tmp2, by = c('age_index'))
   
-  tmp2 = subset(weekly_deaths, date %in% c(pick_resurgence, start_resurgence))
-  tmp2 = merge(tmp2, tmp1, by = c('code', 'loc_label', 'age_index'))
-  tmp2[, weekly_deaths_adj := value / pop * pop_avg]
-  tmp2[, date2 := ifelse(date == pick_resurgence, 'date_end', 'date_start')]
-  tmp2 = data.table(reshape2::dcast(tmp2, code + age_index + age + iterations ~ date2, value.var = 'weekly_deaths_adj'))
-  tmp2[, diff := date_end - date_start]
+  # weekly deaths before resurgence
+  tmp2 = subset(weekly_deaths, date %in% c(start_resurgence - 7*1:2))
+  tmp2 = tmp2[, list(weekly_deaths_before_resurgence = mean(value)), by = c('code', 'age_index', 'iterations')]
   
-  tmp = merge(tmp2, tmp, by = c('code'))
-  tmp[, intercept := lm(diff ~ prop_3 + prop_4, data = subset(tmp, iterations == 1))$coefficient[1]]
-  tmp[, vac_effect_3 := lm(diff ~ prop_3 + prop_4, data = subset(tmp, iterations == 1))$coefficient[2]]
-  tmp[, vac_effect_4 := lm(diff ~ prop_3 + prop_4, data = subset(tmp, iterations == 1))$coefficient[3]]
-  tmp[, diff_pred := intercept + vac_effect_3 * prop_3 + vac_effect_4 * prop_4]
-  tmp[, date_end_predict := date_start + diff_pred]
+  # adjusted weekly deaths
+  tmp2 = merge(weekly_deaths, tmp2, by = c('code', 'age_index', 'iterations'))
+  # tmp2 = merge(tmp2, tmp1, by = c('code', 'loc_label', 'age_index'))
+  tmp2[, prop_increase := value / (weekly_deaths_before_resurgence)]
+  tmp2[value == 0 & weekly_deaths_before_resurgence == 0, prop_increase := 1]
+  tmp2[value > 0 & weekly_deaths_before_resurgence == 0, prop_increase := value / 0.1]
+  stopifnot(sum(is.na(tmp2$prop_increase)) == 0 )
+  stopifnot(sum(tmp2$prop_increase == Inf) == 0 )
+  tmp2 = subset(tmp2, age %in% c('18-64', '65+'))
   
-  tmp1 = tmp[, list( 	q= quantile(vac_effect_3, prob=ps, na.rm = T),
-                      q_label=paste0(p_labs, '3')), 
-             by=c('age')]	
-  tmp1 = dcast(tmp1, age ~ q_label, value.var = "q")
+  # find date index
+  tmp3 = merge(tmp2, tmp, by = c('code', 'loc_label', 'date'))
+  tmp3 = subset(tmp3, date >= start_resurgence)
+  tmp4 = unique(select(tmp3, date))
+  tmp4[, min_date := min(date)]
+  tmp4[, max_date := max(date)]
+  tmp4[, date_index := which(seq.Date(min_date, max_date, 7) == date), by = 'date']
+  tmp3 = merge(tmp3, tmp4, by = 'date')
   
-  tmp2 = tmp[, list( 	q= quantile(vac_effect_4, prob=ps, na.rm = T),
-                      q_label=paste0(p_labs, '4')), 
-             by=c('age')]	
-  tmp2 = dcast(tmp2, age ~ q_label, value.var = "q")
-  tmp1 = merge(tmp1, tmp2, by = 'age')
+  # regression to find the vaccine effects
+  tmp4 = unique(select(tmp3, loc_label, date, age, prop_3, prop_4))
+  tmp4[, prop_3_start_resurgence := prop_3[date == start_resurgence], by = c('loc_label', 'age')]
+  tmp4[, prop_4_start_resurgence := prop_4[date == start_resurgence], by = c('loc_label', 'age')]
+  # tmp4[, prop_start_resurgence_cat := ifelse(prop_3_start_resurgence < 0.45 & prop_4_start_resurgence < 0.8, 1, 
+  #                                             ifelse(prop_3_start_resurgence >= 0.45 & prop_4_start_resurgence >= 0.8, 2, 
+  #                                                    ifelse(prop_3_start_resurgence < 0.45, 3, 4)))]
+  tmp4[, prop_start_resurgence_cat := ifelse(prop_3_start_resurgence < 0.45 & prop_4_start_resurgence < 0.825, 1, 
+                                             ifelse(prop_3_start_resurgence >= 0.45 & prop_4_start_resurgence >= 0.825, 2, 3))]
+  tmp4[, prop_start_resurgence_cat := factor(prop_start_resurgence_cat, levels = c(2,3,1))]
+  tmp3 = merge(tmp3, tmp4, by = c('loc_label', 'date', 'age', 'prop_3', 'prop_4'))
+  tmp3[, dummy := 1]
   
-  tmp2 = tmp[, list( 	q= quantile(vac_effect_4, prob=ps, na.rm = T),
+  # prediction table
+  pred_tmp = unique(select(tmp3, loc_label, date_index, prop_3, prop_4, prop_start_resurgence_cat, dummy))
+  setnames(pred_tmp, 'loc_label', 'loc_label_pred')
+  pred_tmp = merge(pred_tmp, unique(select(tmp3, loc_label, dummy)), allow.cartesian=TRUE, by = 'dummy')
+  pred_tmp[, type := 'same intercept - same slope']
+  pred_tmp1 = merge(unique(select(pred_tmp, -prop_3, -prop_4, -date_index, -loc_label)), unique(select(tmp3, loc_label, prop_3, prop_4, date_index, dummy)), allow.cartesian=TRUE, by = 'dummy')
+  pred_tmp1[, type := 'same intercept']
+  pred_tmp = rbind(pred_tmp1, pred_tmp)
+  pred_tmp[, idx_predict := 1:nrow(pred_tmp)]
+  
+  # subset(pred_tmp, loc_label_pred %in% c('Florida', 'New York') & type == 'same intercept' & loc_label == 'California')
+  tmp3 = subset(tmp3, iterations < 100)
+  tmp4 = tmp3[,
+     {
+    fit <- glm(prop_increase ~ date_index + date_index*(prop_3) + date_index*(prop_4) + prop_3*prop_4 + prop_start_resurgence_cat, family = gaussian(link = 'log'))
+    predict <- predict(fit, newdata = pred_tmp, type = 'response')
+    summary <- summary(fit)$coefficients
+    list(predict = predict, idx_predict = pred_tmp$idx_predict, 
+         par_prop_3 = summary[rownames(summary) == 'prop_3', 1]/100, 
+         par_prop_4 = summary[rownames(summary) == 'prop_4', 1]/100, 
+         # par_prop_3_prop_4 = summary[rownames(summary) == 'prop_3:prop_4', 1]/1000,
+         par_prop_start_resurgence_cat1 = summary[rownames(summary) == 'prop_start_resurgence_cat1', 1]/100, 
+         par_prop_start_resurgence_cat3 = summary[rownames(summary) == 'prop_start_resurgence_cat3', 1]/100, 
+         # par_prop_start_resurgence_cat4 = summary[rownames(summary) == 'prop_start_resurgence_cat4', 1]/100, 
+         par_date_index_prop_3 = summary[rownames(summary) == 'date_index:prop_3', 1]/100,
+         par_date_index_prop_4 = summary[rownames(summary) == 'date_index:prop_4', 1]/100
+         )
+    }, by = c('age', 'iterations')]
+  tmp4 = merge(tmp4, pred_tmp, by = 'idx_predict')
+  
+  
+  if(0){ # demonstrate the fit
+
+    df = subset(tmp3, iterations ==1 & age == '65+')
+    # df1 = subset(df, code %in% c('CA', 'FL', 'OH', 'WA', 'NY'))
+    fit = glm(prop_increase ~ date_index  + prop_3*date_index + prop_4*date_index + prop_start_resurgence_cat + prop_3*prop_4, data = df, family = gaussian(link = 'log'))
+    summary(fit)
+    df$predict = predict(fit, newdata = df, type = 'response')
+    
+    ggplot(df1, aes(x = prop_3)) +
+      facet_wrap(~age) +
+      geom_point(aes(y = prop_increase, col = loc_label)) +
+      geom_point(aes(y = predict), col = 'red')
+    
+    ggplot(df, aes(x = prop_4)) +
+      facet_wrap(~age) +
+      geom_point(aes(y = prop_increase, col = loc_label)) +
+      geom_point(aes(y = predict), col = 'red')
+    
+    ggplot(df, aes(x = date, col = loc_label)) +
+      facet_wrap(~age) +
+      geom_point(aes(y = prop_increase)) +
+      geom_line(aes(y = predict))
+    
+  }
+  
+  # parameters
+  tmp5 = unique(select(tmp4, names(tmp4)[grepl('par', names(tmp4))], iterations, age))
+  tmp5 = as.data.table( reshape2::melt(tmp5, id.vars = c('iterations', 'age')))
+  
+  # predictions
+  tmp4 = merge(tmp3, select(tmp4, loc_label, loc_label_pred, date_index, age, predict, type, iterations), by = c('date_index', 'age', 'iterations', 'loc_label'))
+  tmp4[, weekly.deaths_predict := weekly_deaths_before_resurgence * predict]
+  tmp4[, diff.weekly.deaths := weekly.deaths_predict - value]
+  stopifnot(sum(is.na(tmp4$prop_increase_predict)) == 0)
+  # subset(tmp4, code =='TX' & type == 'same intercept - same slope' & iterations == 1)
+  
+  # summarise
+  tmp1 = tmp4[, list( 	q= quantile(weekly.deaths_predict, prob=ps, na.rm = T),
                       q_label=paste0(p_labs, '_predict')), 
-             by=c('age')]	
-  tmp2 = dcast(tmp2, age ~ q_label, value.var = "q")
+             by=c('age', 'code', 'loc_label', 'loc_label_pred', 'type', 'date')]	
+  tmp1 = dcast(tmp1, code + loc_label + loc_label_pred + date + age + type ~ q_label, value.var = "q")
+  tmp3 = tmp4[, list( 	q= quantile(diff.weekly.deaths, prob=ps, na.rm = T),
+                       q_label=paste0(p_labs, '_diff_predict')), 
+              by=c('age', 'code', 'loc_label', 'loc_label_pred', 'type', 'date')]	
+  tmp3 = dcast(tmp3, code + loc_label + loc_label_pred + date + age + type ~ q_label, value.var = "q")
+  tmp1 = merge(tmp3, tmp1, by=c('age', 'code', 'loc_label', 'loc_label_pred', 'type', 'date'))
   
-  tmp1 = merge(tmp1, tmp2, by = 'age')
+  tmp3 = tmp2[, list( 	q= quantile(prop_increase, prob=ps, na.rm = T),
+                      q_label=paste0(p_labs)), 
+             by=c('age', 'code', 'date', 'loc_label')]	
+  tmp3 = dcast(tmp3, loc_label + code + date + age ~ q_label, value.var = "q")
+  tmp2 = tmp2[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=paste0(p_labs, '_weekly_deaths')), 
+              by=c('age', 'code', 'date', 'loc_label')]	
+  tmp2 = dcast(tmp2, loc_label + code + date + age ~ q_label, value.var = "q")
+  tmp2 = merge(tmp2, tmp3, by=c('age', 'code', 'date', 'loc_label'))
   
-  return(tmp1)
+  tmp3 = tmp5[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=paste0(p_labs)), 
+              by=c('variable', 'age')]	
+  tmp3 = dcast(tmp3, variable + age ~ q_label, value.var = "q")
+  
+  return(list(tmp1, tmp2, tmp3, tmp))
 }
 
 find_vaccine_effects_unscaled <- function(fit, df_week, df_age_continuous, age_groups, var, suffix_var, outdir){
