@@ -162,6 +162,11 @@ tmp <- names(.GlobalEnv)
 tmp <- tmp[!grepl('^.__|^\\.|^model$',tmp)]
 save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")) )
 
+# initial values
+stan_init <- list()
+stan_init$nu <- 0.1
+stan_init$rho_gp1 <- 0.5
+stan_init$rho_gp2 <- 1
 
 # fit 
 cat("\n Start sampling \n")
@@ -175,7 +180,8 @@ if(0){
 
 
 fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
-                           seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+                           seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
+                           init = rep(list(stan_init), 8))
 
 # save
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_",run_tag,".rds"))
