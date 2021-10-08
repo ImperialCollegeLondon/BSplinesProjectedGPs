@@ -144,7 +144,7 @@ if(0){
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=4,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 
 # save

@@ -12,31 +12,20 @@
 - [R](https://www.r-project.org/) version >= 3.6.1
 
 ## instructions 
-The entry point to run the model on one US state is ```run-model-one-location.sh``` and for all 50 US states it is ```run-model.R```. 
+The entry point to run the model on one US state is ```run-model-one-location-bash.sh``` and for all 50 US states it is ```run-model-bash.R```. 
 
 ### Header
 In both files, you will need to specify the repository directory, the directory to store the results and the stan models under 
 ```bash
 INDIR="repositorydirectory"
 CWD="resultsdirectory"
-STAN_MODEL="stanmodelid"
-```
-Note the correspondence between the stan model's id and the model, 
-| stan model id    | Model |
-|-----------|------------------------------------------------------|
-| 210429h1   | Standard Gaussian Process |
-| 210529d      | Standard B-splines |
-| 210529b | Gaussian Process projected by regularized B-splines  |
 
-For example, if you wish to use a standard Gaussian Process, please specify
-```bash
-STAN_MODEL="210429h1"
-```
 
 ### Usage: one US state 
 To execute the model for one US state from the terminal console run, 
 ```bash
-$ ./run-model-one-location.sh
+$ chmod +x run-model-one-location-bash.sh
+$ ./run-model-one-location-bash.sh
 ```
 
 ### Usage: 50 US states on a laptop
