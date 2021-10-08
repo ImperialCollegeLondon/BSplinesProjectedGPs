@@ -19,7 +19,7 @@ In both files, you will need to specify the repository directory, the directory 
 ```bash
 INDIR="repositorydirectory"
 CWD="resultsdirectory"
-
+```
 
 ### Usage: one US state 
 To execute the model for one US state from the terminal console run, 
