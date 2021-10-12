@@ -1,15 +1,5 @@
 
-cat("\n Begin postprocessing_assess_mixing.R \n")
 
-library(rstan)
-library(data.table)
-library(dplyr)
-
-indir = "~/git/covid19Vaccination/inst" # path to the repo
-outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results'
-location.index = 26
-stan_model = "210505b1"
-JOBID = 2967
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -57,6 +47,7 @@ cat("Load fits \n")
 file = file.path(outdir.fit.post, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
 
+
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")
 make_convergence_diagnostics_stats(fit_cum, outdir.table)
@@ -80,12 +71,23 @@ plot_sum_missing_deaths(tmp1, outdir.fig)
 tmp1 = find_sum_nonr_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict', outdir.table)
 plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
-# trace plots
+# trace and paris plots
 p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_', Code, '.png'), h = 5, w = 6)
+ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_', Code, '.png'), h = 10, w = 10)
 
 p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_', Code, '.png'), h = 5, w = 6)
+ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_', Code, '.png'), h = 10, w = 10)
+
+if(stan_model == "210529b"){
+  p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('lambda_raw'))
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_lambda_raw_', Code, '.png'), h = 10, w = 10)
+  
+  p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp', 'lambda_raw'))
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_all_', Code, '.png'), h = 30, w = 30, limitsize = F)
+  
+  p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('z1'))
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_z1_raw_', Code, '.png'), h = 50, w = 10, limitsize = F)
+}
 
 cat("\n End postprocessing_assess_mixing.R \n")
 
