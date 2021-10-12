@@ -12,7 +12,7 @@ library(bayesplot)
 
 indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 5
+location.index = 43
 stan_model = "210529b"
 JOBID = 29051
 
@@ -68,6 +68,9 @@ date_10thcum = date_10thcum[ cum.deaths >=10, min(date)]
 cat("The first date with >= 10th cum deaths is ", as.character(date_10thcum))
 fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
+
+# week when resurgence started
+start_resurgence <- as.Date('2021-07-03')
 
 # age group vaccination
 if(!is.null(stan_data$max_age_not_vaccinated )){
@@ -127,7 +130,8 @@ make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
                                     reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                    age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F)
+                                    age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
+                                    reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], start_resurgence-7))
 
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                                      age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups',
