@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 location.index = 5
-stan_model = "210529b"
+stan_model = "210529e"
 JOBID = 3541
 
 if(0)
@@ -110,15 +110,11 @@ if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
   cat("\n Using 1D splines \n")
   stan_data = add_1D_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
 }
-if(grepl('210529b|210529c|210808|210823|210922|210923|210929|210930', stan_model)){
+if(grepl('210529b|210529c|210529e|210808|210823|210922|210923|210929|210930', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 4)
 }
-if(grepl('210429a1|210429b1', stan_model)){
-  cat("\n Adding adjacency matrix on 1D splines parameters \n")
-  stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis, m = stan_data$W)
-}
-if(grepl('210429a2|210429b2', stan_model)){
+if(grepl('210429a2|210429b2|210529e', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
@@ -139,6 +135,7 @@ if(grepl('210808|210823|210922|210923|210929|210930', stan_model)){
 if(grepl('210929', stan_model)){
   stan_data = add_vaccine_prop_other(stan_data, df_week, Code, vaccine_data, age.groups.vac)
 }
+
 if(grepl('210930', stan_model)){
   stan_data = add_piecewisegamma(stan_data)
 }
