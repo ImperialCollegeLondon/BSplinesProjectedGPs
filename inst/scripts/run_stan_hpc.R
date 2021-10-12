@@ -164,7 +164,7 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,"
 
 # initial values
 stan_init <- list()
-stan_init$nu <- 0.1
+stan_init$nu <- 0.5
 stan_init$rho_gp1 <- 0.5
 stan_init$rho_gp2 <- 1
 
