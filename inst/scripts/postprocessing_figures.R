@@ -126,6 +126,9 @@ make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
                                     reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
+make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+                                    age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F)
+
 make_weekly_death_rate_other_source_posteriorsamples(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                                      age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups',
                                                      reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
@@ -157,12 +160,12 @@ if(nrow(subset(scrapedData, code == Code)) > 0 ){
 names <- names(fit_cum)[grepl('gamma', names(fit_cum)) & !grepl('gamma_re', names(fit_cum)) & !grepl('gamma0', names(fit_cum))]
 if(length(names) != 0){
   p <- mcmc_areas(fit_cum, pars = names, prob = 0.5, prob_outer = 0.95)
-  ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_', Code, '.png'), h = 5, w = 6)
+  ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_', Code, '.png'), h = 10, w = 10)
 }
 
 if(any(grepl('delta', names(fit_cum)))){
   p <- mcmc_areas(fit_cum, regex_pars = 'delta', prob = 0.5, prob_outer = 0.95)
-  ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_others_', Code, '.png'), h = 5, w = 6)
+  ggsave(p, file = paste0(outdir.fig, '-vaccine_effects_others_', Code, '.png'), h = 10, w = 10)
   
 }
 

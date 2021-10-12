@@ -68,7 +68,7 @@ for(i in 1:length(lengthscales)){
                                                    coordinates_training = coordinates_training, 
                                                    y = y, y_mean = y_mean, 
                                                    lab = lab, method = 'GP', stan_model = model_GP, 
-                                                   outdir = outdir, overwrite = T))
+                                                   outdir = outdir, overwrite = F))
   
   for(j in 1:length(n_knots_vec)){
     #j = 1
@@ -79,7 +79,7 @@ for(i in 1:length(lengthscales)){
                                 y = y, y_mean = y_mean, 
                                 lab = lab, method = 'B-SPLINES', stan_model = model_BS, 
                                 n_knots = n_knots_vec[j], spline_degree = spline_degree,
-                                outdir = outdir, overwrite = T))
+                                outdir = outdir, overwrite = F))
     
     cat('\n Using Bayesian P-splines with ',  n_knots_vec[j], 'knots \n')
     assign(paste0('PS_2D_', j, '_', i),
@@ -88,7 +88,7 @@ for(i in 1:length(lengthscales)){
                                 y = y, y_mean = y_mean, 
                                 lab = lab, method = 'P-SPLINES', stan_model = model_PS, 
                                 n_knots = n_knots_vec[j], spline_degree = spline_degree,
-                                outdir = outdir, overwrite = T))
+                                outdir = outdir, overwrite = F))
     
     cat('\n Using regularised B-splines projected GP with ',  n_knots_vec[j], 'knots \n')
     assign(paste0('GPBS_2D_', j, '_', i), 
@@ -97,7 +97,7 @@ for(i in 1:length(lengthscales)){
                                 y = y, y_mean = y_mean, 
                                 lab = lab, method = 'GP-B-SPLINES', stan_model = model_GPBS, 
                                 n_knots = n_knots_vec[j], spline_degree = spline_degree,
-                                outdir = outdir, overwrite = T))
+                                outdir = outdir, overwrite = F))
     
   }
 }
@@ -167,7 +167,6 @@ for(l in lengthscales){
             panel.spacing.x = unit(1, "lines"), 
             axis.title.y = element_blank(),
             plot.title = element_text(size = rel(1), hjust = 0.5)) 
-    p0 = ggpubr::ggarrange(p0, labels = 'A', font.label = list(size = 15), vjust = 1.2)
     
     tmp2 = copy(select(tmp1, x_1, x_2, y, y_mean, y_training))
     tmp2[is.na(y_training), (y_var) := NA]
@@ -185,10 +184,9 @@ for(l in lengthscales){
             strip.text =  element_blank(),
             panel.spacing.x = unit(1, "lines"), 
             axis.title.y = element_blank(),
+            axis.ticks.y = element_blank(),
             axis.text.y = element_blank(),
             plot.title = element_text(size = rel(1), hjust = 0.5)) 
-    p02 = ggpubr::ggarrange(p02, labels = 'B', font.label = list(size = 15), vjust = 1.2)
-    
     
     tmp2 = subset(tmp1, method2 %in% c('Standard 2D GP'))
     p1 =ggplot(tmp2,aes(x=x_1,y=x_2)) +
@@ -206,12 +204,12 @@ for(l in lengthscales){
             panel.border = element_rect(colour = "black", fill = NA),
             axis.title.x = element_blank(),
             axis.title.y = element_blank(),
+            axis.ticks.y = element_blank(),
             axis.text.y = element_blank(),
             strip.text =  element_blank(),
             panel.spacing.x = unit(1, "lines"), 
             plot.title = element_text(size = rel(1), hjust = 0.5)) 
-    p1 = ggpubr::ggarrange(p1, labels = 'C', font.label = list(size = 15), hjust = -0.5, vjust = 1.2)
-    
+
     tmp2 = subset(tmp1, method2 == c('Standard B-splines 2D surface'))
     p2 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
       geom_raster(aes(fill=M), interpolate = TRUE) +
@@ -221,19 +219,19 @@ for(l in lengthscales){
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
       scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ) )), begin = 0.1) +
-      labs(y= '') + 
-      ggtitle(paste0('Standard B-splines surface\n',prediction_names)) + 
+      # ggtitle(paste0('Standard B-splines surface\n',prediction_names)) +
+      ggtitle(paste0('Standard B-splines surface')) +
       facet_grid(method2~n_knots2) +
       theme(legend.position = 'none',
             strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA), 
             strip.text.y = element_blank(), 
-            strip.text.x =  element_text(size = rel(1.1)),
+            strip.text.x =  element_text(size = rel(1)),
             axis.title.x = element_blank(),
-            panel.spacing.y = unit(3, "lines"), 
-            plot.title =element_text(hjust = 0.5,size=rel(1)))  
-    p2 = ggpubr::ggarrange(p2, labels = 'D', font.label = list(size = 15), hjust = -2)
-    
+            axis.title.y = element_blank(),
+            # panel.spacing.x = unit(0.6, "lines"), 
+            plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1))  
+
     tmp2 = subset(tmp1, method2 == c('P-splines'))
     p3 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
       geom_raster(aes(fill=M), interpolate = TRUE) +
@@ -243,8 +241,8 @@ for(l in lengthscales){
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
       scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ))), begin = 0.1) +
-      labs(y= '') + 
-      ggtitle(paste0('Bayesian P-splines\n',prediction_names)) + 
+      # ggtitle(paste0('Bayesian P-splines\n',prediction_names)) +
+      ggtitle(paste0('Bayesian P-splines')) +
       facet_grid(method2~n_knots2) +
       theme(legend.position = 'none',
             strip.background = element_blank(),
@@ -252,10 +250,10 @@ for(l in lengthscales){
             strip.text.y = element_blank(), 
             strip.text.x =  element_text(size = rel(1.1)),
             axis.title.x = element_blank(),
+            axis.title.y = element_blank(),
             panel.spacing.y = unit(3, "lines"), 
-            plot.title =element_text(hjust = 0.5,size=rel(1)))
-    p3 = ggpubr::ggarrange(p3, labels = 'E', font.label = list(size = 15), hjust = -2)
-    
+            plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1))
+
     tmp2 = subset(tmp1, method2 == c('Low-rank 2D GP'))
     p4 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
       geom_raster(aes(fill=M), interpolate = TRUE) +
@@ -265,29 +263,44 @@ for(l in lengthscales){
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
       scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ))), begin = 0.1) +
-      labs(y= '') + 
-      ggtitle(paste0('Regularised B-splines projected 2D GP\n',prediction_names)) + 
+      ggtitle(paste0('Regularised B-splines projected 2D GP')) +
+      # ggtitle(paste0('Regularised B-splines projected 2D GP\n',prediction_names)) +
       facet_grid(method2~n_knots2) +
       theme(legend.position = 'none',
             strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA), 
             strip.text.y = element_blank(), 
+            axis.title.y = element_blank(),
             strip.text.x =  element_text(size = rel(1.1)),
             axis.title.x = element_blank(),
             panel.spacing.y = unit(3, "lines"), 
-            plot.title =element_text(hjust = 0.5,size=rel(1)))
-    p4 = ggpubr::ggarrange(p4, labels = 'F', font.label = list(size = 15), hjust = -2)
-    
-    
-    p = grid.arrange(p0,p02,p1, p2, p3, p4, 
-                     layout_matrix = rbind(c(NA,1,1, 2, 3), 
-                                           rep(4, 5),
-                                           rep(5,5),
-                                           rep(6,5)), 
-                     widths = c(0.1,0.15, 1, 1, 1), heights = c(0.95,1, 1, 1))
+            plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1))
 
+    p01  <- p0 + theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
+    p021  <- p02 + theme( plot.margin=unit(c(5.5, 5.5, 0, 0), "pt") )
+    p11  <- p1 + theme( plot.margin=unit(c(5.5, 5.5, 0, 0), "pt"))
+    p00 = ggpubr::ggarrange(p01,p021,p11, widths = c(1.14, 1, 1), nrow =1, labels = c('A', 'B', 'C'),  font.label = list(size = 15))
+    ggsave(p00, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_', var, '_data.png')), w = 8, h = 3.25)
+    
 
-    ggsave(p, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_', var, '.png')), w = 6, h = 10)
+    p31 <- p3+ theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
+    p41 <- p4+ theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
+    p21 <- p2+ theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
+    
+    p = ggpubr::ggarrange(p21, p31, p41, nrow = 3, labels = c('A', 'B', 'C'),  font.label = list(size = 15))
+    ggsave(p, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_', var, '_Rsplines.png')), w = 7, h = 8.5)
+    
+# 
+#     p = grid.arrange(p0,p02,p1, p2, p3, p4, 
+#                      layout_matrix = rbind(c(NA,1,1, 2, 3), 
+#                                            rep(4,5),
+#                                            rep(5,5),
+#                                            rep(6,5)), 
+#                      widths = c(0.1,0.15, 1, 1, 1), heights = c(0.95,1, 1, 1))
+# 
+# 
+#     ggsave(p, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_', var, '.png')), w = 6, h = 10)
+    
     
   }
     

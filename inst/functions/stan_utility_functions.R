@@ -46,7 +46,14 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   # ref date
   W_ref_index = 6*4
   w_ref_index = sort(rev(subset(df_week, date <= ref_date )$week_index)[1:W_ref_index])
-
+  
+  # smooth weekly deaths on the spike
+  date.spike = as.Date("2021-01-23")
+  ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
+  tmp[, smooth.weekly.deaths := ma(weekly.deaths, 5), by = c('age')]
+  tmp[date == date.spike, weekly.deaths := as.integer(smooth.weekly.deaths)]
+  tmp = select(tmp, - smooth.weekly.deaths)
+  
   # create map of original age groups without NA 
   N_idx_non_missing = vector(mode = 'integer', length = W_OBSERVED)
   idx_non_missing = matrix(nrow = B, ncol = W_OBSERVED, 0)
