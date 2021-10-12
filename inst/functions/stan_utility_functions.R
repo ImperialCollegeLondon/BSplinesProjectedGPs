@@ -326,7 +326,7 @@ add_adjacency_matrix_stan_data = function(stan_data, n, m)
   
   A = find_adjacency_matrix(n,m)
 
-  stan_data$N = N
+  stan_data$K = N
   stan_data$Adj = A
   stan_data$Adj_n = sum(A) / 2
 
@@ -432,7 +432,7 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, age.groups.v
   # keep date in df_week - 2weeks and replace NA with 0
   delay = 7 * 2
   tmp1 = data.table( expand.grid(date_delay = df_week$date, age = unique(tmp$age )) )
-  tmp1[, date := date_delay - delay]
+  tmp1[, date := date_delay + delay]
   tmp1 = merge(tmp, tmp1, all.y = T, by = c('date', 'age'))
   tmp1[is.na(prop), prop := 0]
   tmp1 = tmp1[order(date_delay, age)]
@@ -484,7 +484,7 @@ add_vaccine_prop_other = function(stan_data, df_week, Code, vaccine_data, age.gr
   tmp2 = merge(df_age_continuous, tmp2, by = 'age_vac_index', allow.cartesian=TRUE)
   
   tmp3 = data.table( expand.grid(date_delay = df_week$date, age = unique(tmp$age )) )
-  tmp3[, date := date_delay - delay]
+  tmp3[, date := date_delay + delay]
   tmp2 = merge(tmp2, tmp3, all.y = T, by = c('date', 'age'))
   tmp2[is.na(prop), prop := 0]
   tmp2 = tmp2[order(date_delay, age)]
