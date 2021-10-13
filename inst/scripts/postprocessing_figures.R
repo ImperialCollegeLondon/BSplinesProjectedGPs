@@ -125,10 +125,10 @@ deatht = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha'
 tmp = make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
-                                    reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
+                                    reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], start_resurgence-7))
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
-                                    reduction = c(min(vaccine_data[date %in% df_week$date, date]), max(df_week$date)))
+                                    reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], start_resurgence-7))
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], start_resurgence-7))

@@ -395,7 +395,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
   tmp1 = merge(tmp1, df_pop_data, by = c('code', 'age_index'))
   
   tmp1[, prop_deaths := weekly.deaths / total_deaths]
-  tmp1[, date := date + delay ]
+  tmp1[, date := date - delay ]
   
   selected_code = c('CA', 'FL', 'NY', 'TX')
   
