@@ -1,4 +1,20 @@
 
+cat("\n Begin postprocessing_assess_mising.R \n")
+
+library(rstan)
+library(data.table)
+library(dplyr)
+library(gridExtra)
+library(ggpubr)
+library(cowplot)
+library(extraDistr)
+library(bayesplot)
+
+indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst/" # path to the repo
+outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
+location.index = 43
+stan_model = "210529b"
+JOBID = 29051
 
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
