@@ -76,10 +76,11 @@ plot_data = function(deathByAge, outdir, Code = NULL)
          fill = 'Retrievable weekly\nCOVID-19 attributable deaths')
   ggsave(p, file = paste0(outdir, '-deathByAge.png'), w = 10, h = 12)
   
+  df = data.frame(date = min(deathByAge$date), age = deathByAge$age[1],
+                  dummy = c('Missing\nweekly COVID-19\nattributable deaths', 'Non-retrievable\nweekly COVID-19\nattributable deaths'))
+  
   # library(geofacet)
   # library(ggpubr)
-  # df = data.frame(date = min(deathByAge$date), age = deathByAge$age[1],
-  #                 dummy = c('Missing\nweekly COVID-19\nattributable deaths', 'Non-retrievable\nweekly COVID-19\nattributable deaths'))
   # p = ggplot(deathByAge, aes(x = date, y = age)) + 
   #   geom_raster(aes(fill = weekly.deaths )) + 
   #   facet_geo(~loc_label,ncol = 6, grid = "us_state_without_DC_grid1" ) + 
@@ -102,6 +103,30 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   #   scale_color_manual(values = c('#FCB360', "grey70")) + 
   #   guides(color = guide_legend(override.aes = list(size=4)))
   # ggsave(p, file = paste0(outdir, '-deathByAge2.png'), w = 10, h = 12)
+
+  tmp = subset(deathByAge, code %in%  c('CA', 'FL', 'TX', 'WA', 'NY'))
+  p <- ggplot(tmp, aes(x = date, y = age)) +
+    geom_raster(aes(fill = weekly.deaths )) +
+    theme_bw() +
+    facet_wrap(~loc_label,ncol = 3) + 
+    scale_fill_viridis_c(trans = 'sqrt',  na.value="grey70", breaks = c(0, 100, 1000,3000),) +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    scale_y_discrete(expand = c(0,0), breaks = unique(deathByAge$age)[rep(c(T,F), length(unique(deathByAge$age))/2)]) +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1,size = rel(0.8)),
+          axis.text.y =  element_text(size = rel(0.8)),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.key = element_blank(),
+          legend.title = element_text(size = rel(1)),
+          legend.text = element_text(size = rel(1)),
+          strip.background = element_blank(),
+          panel.background = element_rect(fill = '#FCB360', colour = 'red')) +
+    geom_point(data = df, aes(color = dummy), shape = 15, size = 0) +
+    labs(x = '', y = 'Age group', fill = 'Retrievable\nweekly COVID-19\nattributable deaths', col = '') +
+    scale_color_manual(values = c('#FCB360', "grey70")) +
+    guides(color = guide_legend(override.aes = list(size=4)))
+  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 8, h = 5)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = min.sum.weekly.deaths )) + 
