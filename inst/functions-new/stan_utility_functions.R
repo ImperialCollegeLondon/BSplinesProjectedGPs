@@ -192,7 +192,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     
   }
 
-  data <<- merge(data, df_state, by = c('loc_label', 'code'))
+  tmp <<- merge(data, df_state, by = c('loc_label', 'code'))
   
   # create stan data list
   stan_data <- list()
