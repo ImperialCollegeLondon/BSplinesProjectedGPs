@@ -13,8 +13,8 @@ library(bayesplot)
 indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
 states = strsplit('CA,TX',',')[[1]]
-stan_model = "210529b"
-JOBID = 29051
+stan_model = "211014"
+JOBID = 319
 
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
