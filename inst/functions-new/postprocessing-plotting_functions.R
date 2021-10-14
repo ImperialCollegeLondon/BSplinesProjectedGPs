@@ -74,7 +74,6 @@ plot_estimate_vaccine <- function(data_res5, outdir){
   ggsave(p, file = paste0(outdir, '-vaccine_effect_estimate_beta.png'), w = 8, h = 4)
 }
 
-
 plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, discrete = F, limits = NULL, wo_ytext = F, wo_legend = F){
   
   if(!discrete)
@@ -82,71 +81,81 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
   
   n_row = length(unique(tmp1$date))
   
-  p = ggplot(tmp1, aes(x = age)) + 
-    theme_bw() +
-    labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
-    facet_wrap(~date) + 
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA))
+  df = copy(tmp1)
   
-  dates = unique(tmp1$date)
-  tmp2 = subset(tmp1, date %in% dates[seq(1, length(dates), length.out =3)])
-  tmp2[, date_format := format(date, "%d-%b-%y")]
-  p1 = ggplot(tmp2, aes(x = age)) + 
-    theme_bw() +
-    labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
-    facet_wrap(~date_format, ncol = 1)+ 
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA))
-  
-  if(discrete){
-    p = p + geom_point(aes(y = M)) + geom_errorbar(aes(ymin= CL, ymax = CU)) 
-    p1 = p1 + geom_point(aes(y = M)) + geom_errorbar(aes(ymin= CL, ymax = CU)) 
-  } else {
-    p = p + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
-    p1 = p1 + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
-  }
-  if(is.null(limits)){
-    p = p + coord_cartesian(ylim = limits)
-  }
+  for(Code in unique(df$code)){
     
-  if(!is.null(outdir)){
-    ggsave(p, file = paste0(outdir, "-continuous_contribution_", var_name, '_', Code, ".png") , w= 10, h = 8, limitsize = FALSE)
-    ggsave(p1, file = paste0(outdir, "-continuous_contribution_short_", var_name, '_', Code, ".png") , w= 4, h = 8, limitsize = FALSE)
+    tmp1 = subset(df, code == Code)
     
+    p = ggplot(tmp1, aes(x = age)) + 
+      theme_bw() +
+      labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
+      facet_wrap(~date) + 
+      theme(strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA))
+    
+    dates = unique(tmp1$date)
+    tmp2 = subset(tmp1, date %in% dates[seq(1, length(dates), length.out =3)])
+    tmp2[, date_format := format(date, "%d-%b-%y")]
+    p1 = ggplot(tmp2, aes(x = age)) + 
+      theme_bw() +
+      labs(y = 'Age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
+      facet_wrap(~date_format, ncol = 1)+ 
+      theme(strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA))
+    
+    if(discrete){
+      p = p + geom_point(aes(y = M)) + geom_errorbar(aes(ymin= CL, ymax = CU)) 
+      p1 = p1 + geom_point(aes(y = M)) + geom_errorbar(aes(ymin= CL, ymax = CU)) 
+    } else {
+      p = p + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
+      p1 = p1 + geom_line(aes(y = M)) + geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) 
+    }
+    if(is.null(limits)){
+      p = p + coord_cartesian(ylim = limits)
+    }
+    
+    if(!is.null(outdir)){
+      ggsave(p, file = paste0(outdir, "-continuous_contribution_", var_name, '_', Code, ".png") , w= 10, h = 8, limitsize = FALSE)
+      ggsave(p1, file = paste0(outdir, "-continuous_contribution_short_", var_name, '_', Code, ".png") , w= 4, h = 8, limitsize = FALSE)
+      
+    }
+    
+    p = ggplot(tmp1, aes(x = date, y = age)) +
+      geom_raster(aes(fill = M))  + 
+      theme(legend.position='bottom') + 
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      theme(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 90), 
+            panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank()) 
+    
+    if(is.null(limits)){
+      p = p + scale_fill_viridis_c(option = "E") 
+    } else {
+      p = p + scale_fill_viridis_c(option = "E", limits= limits) 
+    }
+    
+    if(wo_ytext)
+      p = p + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
+    
+    if(wo_legend)
+      p = p + theme(legend.position = 'none')
+    
+    if(discrete){
+      p = p + scale_y_discrete(expand = c(0,0))  + labs(x = '', y = 'Age group', fill = 'Estimated posterior value') 
+    } else {
+      p = p + scale_y_continuous(expand = c(0,0))  +labs(x = '', y = 'Age', fill = 'Estimated posterior value') 
+    }
+    if(!is.null(outdir)){
+      ggsave(p, file = paste0(outdir, '-continuous_contribution_allweeks_', var_name, '_', Code, '.png'), w = 5, h = 5.2)
+    }
   }
-
-  p = ggplot(tmp1, aes(x = date, y = age)) +
-    geom_raster(aes(fill = M))  + 
-    theme(legend.position='bottom') + 
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 90), 
-          panel.grid.major = element_blank(), 
-          panel.grid.minor = element_blank()) 
   
-  if(is.null(limits)){
-    p = p + scale_fill_viridis_c(option = "E") 
-  } else {
-    p = p + scale_fill_viridis_c(option = "E", limits= limits) 
-  }
-  
-  if(wo_ytext)
-    p = p + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
-  
-  if(wo_legend)
-    p = p + theme(legend.position = 'none')
-  
-  if(discrete){
-    p = p + scale_y_discrete(expand = c(0,0))  + labs(x = '', y = 'Age group', fill = 'Estimated posterior value') 
-  } else {
-    p = p + scale_y_continuous(expand = c(0,0))  +labs(x = '', y = 'Age', fill = 'Estimated posterior value') 
-  }
-  if(!is.null(outdir)){
-    ggsave(p, file = paste0(outdir, '-continuous_contribution_allweeks_', var_name, '_', Code, '.png'), w = 5, h = 5.2)
-  }
   return(list(p1, p))
 }
+
+
 
 plot_sum_missing_deaths = function(tmp, outdir)
 {
@@ -292,9 +301,9 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   p_labs <- c('M','CL','CU')
   
   tmp1 = as.data.table( reshape2::melt( fit_samples[[varname]] ))
-  setnames(tmp1, c('Var2', 'Var3'), c(row_name, column_name))
-  tmp1 = tmp1[, list(q = quantile(value, prob=ps), q_label=p_labs), by=c(column_name, row_name)]
-  tmp1 = dcast(tmp1, get(row_name) + get(column_name) ~ q_label, value.var = "q")
+  setnames(tmp1, 2:4, c('state_index', row_name, column_name))
+  tmp1 = tmp1[, list(q = quantile(value, prob=ps), q_label=p_labs), by=c('state_index', column_name, row_name)]
+  tmp1 = dcast(tmp1, state_index + get(row_name) + get(column_name) ~ q_label, value.var = "q")
   setnames(tmp1, c('row_name', 'column_name'), c(row_name, column_name))
   
   if(!is.null(stan_data$num_basis_rows)){
@@ -304,8 +313,10 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   }
   
   tmp1 = merge(tmp1, df_week, by = row_name)
-
-    p = ggplot(tmp1, aes(x = date, y = get(column_name))) + 
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  for(Code in unique(tmp1$code)){
+    p = ggplot(subset(tmp1, code == Code), aes(x = date, y = get(column_name))) + 
       geom_raster(aes(fill = M ), interpolate = TRUE) + 
       theme_bw() +
       theme(legend.position = 'none',
@@ -320,9 +331,13 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
     ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
     
-    
+  }
+  
+  
   return(p)
 }
+
+
 
 plot_mean_age_death = function(mean_age_death, outdir){
   if(length(unique(mean_age_death$code)) == 1)
