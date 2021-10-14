@@ -169,7 +169,7 @@ fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=8,
 #                            init = rep(list(stan_init), 8))
 
 # save
-file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_",run_tag,".rds"))
+file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
 cat('\n Save file', file, '\n')
 while(!file.exists(file)){
   tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})

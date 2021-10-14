@@ -62,7 +62,7 @@ outdir.fit = outdir.fit.post
 
 # load fit cumulative deaths
 cat("Load fits \n")
-file = file.path(outdir.fit.post, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
+file = file.path(outdir.fit.post, paste0("fit_cumulative_deaths_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
 
 
