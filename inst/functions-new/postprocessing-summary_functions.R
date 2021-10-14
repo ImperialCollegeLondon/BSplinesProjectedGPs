@@ -404,8 +404,8 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   
   # find ref week 
   df_week[, dummy := 1]
-  data_10thdeaths[, dummy := 1]
-  df_week1 = merge(df_week, data_10thdeaths, by = 'dummy', allow.cartesian = T)
+  date_10thcum[, dummy := 1]
+  df_week1 = merge(df_week, date_10thcum, by = 'dummy', allow.cartesian = T)
   df_week1 = df_week1[date >= date_10thcum]
   df_week1[, month := as.numeric(format(date, '%m'))]
   df_week1[grepl('2021', date), month := month + 12]
