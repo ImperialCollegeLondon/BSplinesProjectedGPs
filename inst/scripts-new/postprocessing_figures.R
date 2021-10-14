@@ -51,7 +51,7 @@ locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rd
 Code = locations[location.index,]$code
 
 # load image 
-load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
+load(file.path(outdir.data, paste0("stanin_",run_tag,".RData")))
 outdir.fig = outdir.fig.post
 outdir.fit = outdir.fit.post
 
