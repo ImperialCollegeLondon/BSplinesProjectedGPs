@@ -181,16 +181,19 @@ plot_sum_bounded_missing_deaths = function(tmp, outdir)
 plot_mortality_rate = function(mortality_rate_table, outdir)
 {
   
-  p = ggplot(mortality_rate_table, aes(x = date)) + 
-    geom_line(aes(y = M)) +
-    geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
-    facet_wrap(~age, scale = 'free_y') + 
-    labs(x = '', y = 'COVID-19 mortality rate', col = '', fill = '') + 
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-    theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 90))  +
-    theme_bw()
-  ggsave(p, file = paste0(outdir, '-MortalityRate_', Code, '.png'), w = 7, h =7, limitsize = F)
+  for(Code in unique(mortality_rate_table$code)){
+    p = ggplot(subset(mortality_rate_table, code == Code), aes(x = date)) + 
+      geom_line(aes(y = M)) +
+      geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
+      facet_wrap(~age, scale = 'free_y') + 
+      labs(x = '', y = 'COVID-19 mortality rate', col = '', fill = '') + 
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+      theme(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 90))  +
+      theme_bw()
+    ggsave(p, file = paste0(outdir, '-MortalityRate_', Code, '.png'), w = 7, h =7, limitsize = F)
+  }
+
 }
 
 compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
@@ -693,7 +696,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, outdir){
 
 
 plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, 
-                                                          selected_method, model_name, show.method = T, heights= c(0.4,0.6)){
+                                                          selected_method, model_name, show.method = T, heights= c(0.4,0.6), outdir){
   
   dates = unique(tab_cc$date)
   dates = dates[seq(3, length(dates)-3, length.out =3)]
@@ -703,110 +706,125 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
   tmp2 = subset(tab_cc, date %in% dates)
   tmp2[, age_c := as.numeric(age)]
   tmp2[, method := factor(method,  model_name)]
+  tmp22 = copy(tmp2)
   
   tmp3 = as.data.table(tab_d)
   tmp3[, age_c := as.numeric(age)]
+  tmp33 = copy(tmp3)
   
-  limit_SE = range(subset(tmp2, method == selected_method)$CL, subset(tmp2, method == selected_method)$CU)
+  tmp= tab_d[, list(sumM = sum(mean)), by = c('date', 'method', 'code')]
+  tmpp = copy(tmp)
   
-  tmp= tab_d[, list(sumM = sum(mean)), by = c('date', 'method')]
+  dataa = copy(data)
   
-  df = data.frame(value = dates, y = max(tmp$sumM) - max(tmp$sumM)*0.05, 
-                  key = as.character(1:length(dates)), 
-                  x_prop = 7,
-                  y_prop = limit_SE[2] -limit_SE[2]*0.06, date=dates)
-  
-
-  p1 = ggplot(tmp2, aes(x = age_c)) + 
-    geom_line(aes(y = M)) +
-    geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
-    theme_bw() +
-    labs(y = 'Estimated age-specific contribution\nto COVID-19 weekly deaths', x = "Age") + 
-    facet_grid(method~date) +
-    coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
-    scale_y_continuous(expand = c(0,0)) + 
-    scale_x_continuous(expand = c(0,0)) + 
-    theme(panel.border = element_rect(colour = "black", fill = NA), 
-          # legend.key = element_blank(), 
-          strip.background = element_rect(colour="white", fill="white"), 
-          panel.grid.major = element_blank(),
-          axis.title.y = element_text(size = rel(1.1)), 
-          plot.margin = unit(c(5.5,5.5,25,5.5), "pt"), 
-          legend.position = 'none')  + 
-    geom_point(data = df, aes(x = x_prop, y = y_prop, col = key, shape = key), size =3, stroke = 1.5 ) + 
-    scale_shape_manual(name = "Dates", labels = plot_labels, values = c(21, 22, 23)) + 
-    scale_colour_manual(name = "Dates", labels = plot_labels, values = gg_color_hue(3)) 
-  
-  if(show.method==F){
-    p1 = p1 + theme(strip.text = element_blank())
-  } else{
-    p1 = p1 + theme(strip.text.x =  element_blank(),
-                    strip.text.y =  element_text(size = rel(1.2)))
+  for(Code in unique(tmp2$code)){
+    
+    tmp = subset(tmp, code == Code)
+    tmp2 = subset(tmp22, code == Code)
+    tmp3 = subset(tmp33, code == Code)
+    data = subset(dataa, code == Code)
+    
+    limit_SE = range(subset(tmp2, method == selected_method)$CL, subset(tmp2, method == selected_method)$CU)
+    
+    df = data.frame(value = dates, y = max(tmp$sumM) - max(tmp$sumM)*0.05, 
+                    key = as.character(1:length(dates)), 
+                    x_prop = 7,
+                    y_prop = limit_SE[2] -limit_SE[2]*0.06, date=dates)
+    
+    
+    p1 = ggplot(tmp2, aes(x = age_c)) + 
+      geom_line(aes(y = M)) +
+      geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
+      theme_bw() +
+      labs(y = 'Estimated age-specific contribution\nto COVID-19 weekly deaths', x = "Age") + 
+      facet_grid(method~date) +
+      coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
+      scale_y_continuous(expand = c(0,0)) + 
+      scale_x_continuous(expand = c(0,0)) + 
+      theme(panel.border = element_rect(colour = "black", fill = NA), 
+            # legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"), 
+            panel.grid.major = element_blank(),
+            axis.title.y = element_text(size = rel(1.1)), 
+            plot.margin = unit(c(5.5,5.5,25,5.5), "pt"), 
+            legend.position = 'none')  + 
+      geom_point(data = df, aes(x = x_prop, y = y_prop, col = key, shape = key), size =3, stroke = 1.5 ) + 
+      scale_shape_manual(name = "Dates", labels = plot_labels, values = c(21, 22, 23)) + 
+      scale_colour_manual(name = "Dates", labels = plot_labels, values = gg_color_hue(3)) 
+    
+    if(show.method==F){
+      p1 = p1 + theme(strip.text = element_blank())
+    } else{
+      p1 = p1 + theme(strip.text.x =  element_blank(),
+                      strip.text.y =  element_text(size = rel(1.2)))
+    }
+    p1 = ggarrange(p1, labels = 'C', font.label = list(size = 20, face = 'bold'), label.x = 0.04, 
+                   vjust = 1)
+    
+    
+    tmp3[, age := factor(age, levels = rev(levels(tmp3$age)))]
+    tmp3[, dummy_new := 'JHU\noverall\nweekly\ndeaths']
+    p2 = ggplot(tmp3, aes(x = date)) + 
+      theme_bw() +
+      geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy_new), direction =  "vh") + 
+      labs(y = 'Posterior mean of the age-specific\nCOVID-19 weekly deaths', x = "", color = '', shape = '', fill = 'Age') + 
+      facet_grid(method~.) +
+      # coord_cartesian(ylim = limit_SE) + 
+      scale_fill_viridis_d(option = 'B',  direction = -1,
+                           guide = guide_colorsteps(show.limits = TRUE)) +
+      # scale_fill_binned(breaks = c(10, 25, 50)) +
+      scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+      geom_segment(data = df, aes(x = value, y = 0, xend = value, yend = y), 
+                   linetype = "dashed", colour = "grey30", alpha = 0.75) +
+      geom_point(data = df, aes(x = value, y = y, group = key, shape = key, col = key), size = 2, stroke = 1.5 ) +
+      scale_shape_manual(name = "", labels = plot_labels, values = c(21, 22, 23)) + 
+      scale_colour_manual(name = "", labels = plot_labels, values = gg_color_hue(3)) + 
+      geom_bar(aes(y = mean, fill = age), stat = 'identity', width = 7)  +
+      scale_y_continuous(expand = c(0,0)) +
+      theme(panel.border = element_rect(colour = "black", fill = NA),
+            strip.background = element_rect(colour="white", fill="white"), 
+            panel.grid.major = element_blank(),
+            strip.text = element_blank(),
+            axis.title.y = element_text(size = rel(1.1)),
+            legend.text = element_text(size = rel(1)),
+            legend.title = element_text(size = rel(1)),
+            axis.text.x = element_text(angle= 40, hjust =1)
+      ) +
+      guides(col = F, shape = F)
+    pl = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy_new), direction =  "vh") + 
+      geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age', linetype = '')  + theme_bw() + 
+      theme(legend.key.height = unit(0.8, "cm"),legend.spacing.y = unit(0.0, 'cm')) + guides(linetype = guide_legend(order=1), color = guide_colorbar(order=2))
+    p2 = ggpubr::ggarrange(p2,common.legend = T, legend.grob = get_legend(pl), legend = 'right',
+                           labels = 'B', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
+    
+    data[, age := factor(age, levels = rev(levels(data$age)))]
+    p3 = ggplot(data, aes(x = date)) + 
+      theme_bw() +
+      labs(y = 'Data age-specific COVID-19\nweekly deaths', x = "", color = '', shape = '', fill = 'Original\nAge\nGroup', linetype = '') + 
+      # coord_cartesian(ylim = limit_SE) + 
+      scale_fill_viridis_d(option = 'A', end = 0.95, direction = -1) +
+      scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
+      geom_bar(aes(y = weekly.deaths, fill = age), stat = 'identity', width = 7)  +
+      geom_step(data = tmp3, aes(x = date+ 3.5,y = emp_JHU), direction =  "vh") + 
+      scale_y_continuous(expand = c(0,0)) +
+      theme(panel.border = element_rect(colour = "black", fill = NA),
+            strip.background = element_rect(colour="white", fill="white"), 
+            panel.grid.major = element_blank(),
+            strip.text = element_blank(),
+            axis.title.y = element_text(size = rel(1.1)),
+            legend.text = element_text(size = rel(0.8)),
+            legend.title = element_text(size = rel(1)),
+            # legend.key.height = unit(0.6, "cm"),
+            axis.text.x = element_text(angle= 40, hjust =1)) + 
+      guides(linetype = guide_legend(order=1), color = guide_legend(order=2))
+    p3 = ggarrange(p3, labels = 'A', font.label = list(size = 20, face = 'bold'))
+    # p = ggpubr::ggarrange(p2,p1, common.legend = T, legend.grob = get_legend(p3), legend = 'left', widths = c(0.4, 0.6))
+    
+    p = grid.arrange(p1, p2, p3, layout_matrix = rbind(c(3,2), c(1,1)), heights = heights)
+    # ggsave(p, file = '~/Downloads/figure4.png', w = 9, h = 10)
+    
+    ggsave(p, file = paste0(outdir, '-panel_plot_1_', Code, '.png'), w = 9, h = 7)
   }
-  p1 = ggarrange(p1, labels = 'C', font.label = list(size = 20, face = 'bold'), label.x = 0.04, 
-                 vjust = 1)
-
-
-  tmp3[, age := factor(age, levels = rev(levels(tmp3$age)))]
-  tmp3[, dummy := 'JHU\noverall\nweekly\ndeaths']
-  p2 = ggplot(tmp3, aes(x = date)) + 
-    theme_bw() +
-    geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy), direction =  "vh") + 
-    labs(y = 'Posterior mean of the age-specific\nCOVID-19 weekly deaths', x = "", color = '', shape = '', fill = 'Age') + 
-    facet_grid(method~.) +
-    # coord_cartesian(ylim = limit_SE) + 
-    scale_fill_viridis_d(option = 'B',  direction = -1,
-    guide = guide_colorsteps(show.limits = TRUE)) +
-    # scale_fill_binned(breaks = c(10, 25, 50)) +
-    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
-    geom_segment(data = df, aes(x = value, y = 0, xend = value, yend = y), 
-                 linetype = "dashed", colour = "grey30", alpha = 0.75) +
-    geom_point(data = df, aes(x = value, y = y, group = key, shape = key, col = key), size = 2, stroke = 1.5 ) +
-    scale_shape_manual(name = "", labels = plot_labels, values = c(21, 22, 23)) + 
-    scale_colour_manual(name = "", labels = plot_labels, values = gg_color_hue(3)) + 
-    geom_bar(aes(y = mean, fill = age), stat = 'identity', width = 7)  +
-    scale_y_continuous(expand = c(0,0)) +
-    theme(panel.border = element_rect(colour = "black", fill = NA),
-          strip.background = element_rect(colour="white", fill="white"), 
-          panel.grid.major = element_blank(),
-          strip.text = element_blank(),
-          axis.title.y = element_text(size = rel(1.1)),
-          legend.text = element_text(size = rel(1)),
-          legend.title = element_text(size = rel(1)),
-          axis.text.x = element_text(angle= 40, hjust =1)
-    ) +
-    guides(col = F, shape = F)
-  pl = ggplot(tmp3, aes(x = date, y = M, col = age_c)) + geom_step(aes(x = date+ 3.5,y = emp_JHU, linetype = dummy), direction =  "vh") + 
-    geom_point() + scale_color_viridis_c(option = 'B') + labs(color = 'Age', linetype = '')  + theme_bw() + 
-    theme(legend.key.height = unit(0.8, "cm"),legend.spacing.y = unit(0.0, 'cm')) + guides(linetype = guide_legend(order=1), color = guide_colorbar(order=2))
-  p2 = ggpubr::ggarrange(p2,common.legend = T, legend.grob = get_legend(pl), legend = 'right',
-                         labels = 'B', font.label = list(size = 20, face = 'bold'), label.x = 0.04)
-
-  data[, age := factor(age, levels = rev(levels(data$age)))]
-  p3 = ggplot(data, aes(x = date)) + 
-    theme_bw() +
-    labs(y = 'Data age-specific COVID-19\nweekly deaths', x = "", color = '', shape = '', fill = 'Original\nAge\nGroup', linetype = '') + 
-    # coord_cartesian(ylim = limit_SE) + 
-    scale_fill_viridis_d(option = 'A', end = 0.95, direction = -1) +
-    scale_x_date(expand = c(0,0), breaks = '2 months', date_labels = "%b-%y") + 
-    geom_bar(aes(y = weekly.deaths, fill = age), stat = 'identity', width = 7)  +
-    geom_step(data = tmp3, aes(x = date+ 3.5,y = emp_JHU), direction =  "vh") + 
-    scale_y_continuous(expand = c(0,0)) +
-    theme(panel.border = element_rect(colour = "black", fill = NA),
-          strip.background = element_rect(colour="white", fill="white"), 
-          panel.grid.major = element_blank(),
-          strip.text = element_blank(),
-          axis.title.y = element_text(size = rel(1.1)),
-          legend.text = element_text(size = rel(0.8)),
-          legend.title = element_text(size = rel(1)),
-          # legend.key.height = unit(0.6, "cm"),
-          axis.text.x = element_text(angle= 40, hjust =1)) + 
-    guides(linetype = guide_legend(order=1), color = guide_legend(order=2))
-  p3 = ggarrange(p3, labels = 'A', font.label = list(size = 20, face = 'bold'))
-  # p = ggpubr::ggarrange(p2,p1, common.legend = T, legend.grob = get_legend(p3), legend = 'left', widths = c(0.4, 0.6))
-              
-  p = grid.arrange(p1, p2, p3, layout_matrix = rbind(c(3,2), c(1,1)), heights = heights)
-  # ggsave(p, file = '~/Downloads/figure4.png', w = 9, h = 10)
   
   return(p)
   
