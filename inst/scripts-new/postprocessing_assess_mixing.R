@@ -91,10 +91,10 @@ plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
 # trace and paris plots
 p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_', Code, '.png'), h = 10, w = 10)
+ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_', Code, '.png'), h = 20, w = 20, limitsize = F)
 
 p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_', Code, '.png'), h = 10, w = 10)
+ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_', Code, '.png'), h = 20, w = 20, limitsize = F)
 
 if(stan_model == "210529b"){
   p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('lambda_raw'))
