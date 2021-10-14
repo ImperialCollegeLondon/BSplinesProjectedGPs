@@ -58,7 +58,9 @@ outdir.data = file.path(outdir, run_tag, "data")
 outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
 if(!dir.exists(outdir.fit)) dir.create( outdir.fit, recursive = T)
 if(!dir.exists( dirname(outdir.fig)) ) dir.create( dirname(outdir.fig), recursive = T)
-
+print(outdir.fit)
+print(outdir.data)
+print(outdir.fig)
 cat("\n outfile.dir is ", file.path(outdir, run_tag), '\n')
 
 # load CDC data
@@ -139,7 +141,7 @@ print("A = 12, W = 4")
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
 tmp <- tmp[!grepl('^.__|^\\.|^model$',tmp)]
-save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")) )
+save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
 
 # initial values
 stan_init <- list()

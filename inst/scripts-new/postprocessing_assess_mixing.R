@@ -56,7 +56,7 @@ Code = locations[code %in% states, ]$code
 df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
 
 # load image 
-load(file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")))
+load(file.path(outdir.data, paste0("stanin_",run_tag,".RData")))
 outdir.fig = outdir.fig.post
 outdir.fit = outdir.fit.post
 
