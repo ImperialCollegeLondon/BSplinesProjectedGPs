@@ -104,13 +104,10 @@ if(0){
 ref_date = as.Date('2020-12-05')
 cat("The reference date is", as.character(ref_date), "\n")
 
-# load functions
-source(file.path(indir, "functions-new", "summary_functions.R"))
-source(file.path(indir, "functions-new", "plotting_functions.R"))
-source(file.path(indir, "functions-new", "stan_utility_functions.R"))
+
 # Prepare stan data
 cat("\n Prepare stan data \n")
-stan_data = prepare_stan_data(deathByAge, loc_name, ref_date);
+stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
 if(grepl('211014', stan_model)){
   cat("\n Using 2D splines \n")
