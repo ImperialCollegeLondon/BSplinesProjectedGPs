@@ -5,33 +5,34 @@ plot_posterior_predictive_checks = function(data, variable, outdir)
   data[, PPP := paste0('inside CI: ', round(mean(na.omit(inside.CI))*100, digits = 2), '%'), by = 'date']
   data[, date_ppp := paste0(as.character(date), ' - ', PPP)]
   
-  Code = unique(data$code)
-  
-  # posterior data check
-  p = ggplot(data, aes(x = age)) + 
-    geom_point(aes(y = M), col = "black", size = 1) +
-    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
-    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
-    theme_bw() +
-    labs(y = "Weekly COVID-19 deaths", x = "Age") + 
-    facet_wrap(~date_ppp, scale = 'free_y') + 
-    theme(axis.text.x = element_text(angle = 90),
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) 
-  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_", Code,".png") , w= 15, h = 10, limitsize = FALSE)
-  
-  # posterior predictive check
-  p = ggplot(data, aes(x = date)) + 
-    geom_point(aes(y = M), col = "black", size = 1) +
-    geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
-    geom_point(aes(y = get(variable)), col = "red", size = 1) + 
-    theme_bw() +
-    labs(y = "Weekly COVID-19 deaths", x = "Week") + 
-    facet_wrap(~age, ncol = 3, scale = 'free_y') + 
-    theme(axis.text.x = element_text(angle = 90),
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA))
-  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+  for(Code in unique(data$code)){
+    # posterior data check
+    p = ggplot(subset(data, code == Code), aes(x = age)) + 
+      geom_point(aes(y = M), col = "black", size = 1) +
+      geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
+      geom_point(aes(y = get(variable)), col = "red", size = 1) + 
+      theme_bw() +
+      labs(y = "Weekly COVID-19 deaths", x = "Age") + 
+      facet_wrap(~date_ppp, scale = 'free_y') + 
+      theme(axis.text.x = element_text(angle = 90),
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA)) 
+    ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_", Code,".png") , w= 15, h = 10, limitsize = FALSE)
+    
+    # posterior predictive check
+    p = ggplot(subset(data, code == Code), aes(x = date)) + 
+      geom_point(aes(y = M), col = "black", size = 1) +
+      geom_errorbar(aes(ymin = CL, ymax = CU), width=0.3, col = "black") +
+      geom_point(aes(y = get(variable)), col = "red", size = 1) + 
+      theme_bw() +
+      labs(y = "Weekly COVID-19 deaths", x = "Week") + 
+      facet_wrap(~age, ncol = 3, scale = 'free_y') + 
+      theme(axis.text.x = element_text(angle = 90),
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA))
+    ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+    
+  }
   
 }
 
@@ -150,32 +151,37 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
 plot_sum_missing_deaths = function(tmp, outdir)
 {
   
-  p = ggplot(tmp, aes(x = date)) + 
-    geom_point(aes(y = M)) +
-    geom_errorbar(aes(ymin = CL, ymax = CU)) +
-    geom_ribbon(aes(ymin = min_count_censored, ymax = max_count_censored), alpha = 0.5, fill = 'red') +
-    geom_point(aes(y = sum_count_censored), col = 'blue') +
-    facet_wrap(~age, scale = 'free_y') + 
-    labs(x = '', y = 'cumulative deaths')
-  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_missing_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
-  
+  for(Code in unique(tmp$code)){
+    p = ggplot(subset(tmp, code == Code), aes(x = date)) + 
+      geom_point(aes(y = M)) +
+      geom_errorbar(aes(ymin = CL, ymax = CU)) +
+      geom_ribbon(aes(ymin = min_count_censored, ymax = max_count_censored), alpha = 0.5, fill = 'red') +
+      geom_point(aes(y = sum_count_censored), col = 'blue') +
+      facet_wrap(~age, scale = 'free_y') + 
+      labs(x = '', y = 'cumulative deaths')
+    ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_missing_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+    
+  }
+
 }
 
 plot_sum_bounded_missing_deaths = function(tmp, outdir)
 {
   
-  tmp = copy(tmp1)
   tmp[, dummy := 1]
   
-  p = ggplot(tmp, aes(x = dummy) ) + 
-    geom_point(aes(y = M)) +
-    geom_errorbar(aes(ymin = CL, ymax = CU), width = 0.25) +
-    geom_errorbar(aes(ymin = min_count_censored, ymax = max_count_censored),  color = 'red', position = 'dodge', width = 0.25) +
-    geom_point(aes(y = sum_count_censored), col = 'blue') +
-    facet_wrap(~age, scale = 'free_y') + 
-    labs(x = '', y = 'cumulative deaths')
-  ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_missing_sum_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
-  
+  for(Code in unique(tmp$code)){
+    p = ggplot(subset(tmp, code == Code), aes(x = dummy) ) + 
+      geom_point(aes(y = M)) +
+      geom_errorbar(aes(ymin = CL, ymax = CU), width = 0.25) +
+      geom_errorbar(aes(ymin = min_count_censored, ymax = max_count_censored),  color = 'red', position = 'dodge', width = 0.25) +
+      geom_point(aes(y = sum_count_censored), col = 'blue') +
+      facet_wrap(~age, scale = 'free_y') + 
+      labs(x = '', y = 'cumulative deaths')
+    ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_missing_sum_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
+    
+  }
+
 }
 
 plot_mortality_rate = function(mortality_rate_table, outdir)
