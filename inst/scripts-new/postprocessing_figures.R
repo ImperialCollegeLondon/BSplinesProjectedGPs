@@ -57,7 +57,7 @@ outdir.fit = outdir.fit.post
 
 # load fit cumulative deaths
 cat("Load fits \n")
-file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_", run_tag,".rds"))
+file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
 
 # find date for the first 10th cumulative deaths
@@ -116,8 +116,8 @@ find_contribution_one_age_group(fit_cum, df_week, df_age_continuous, df_age_repo
 
 
 # mortality rate
-# mortality_rate_table = make_mortality_rate_table(fit_cum, fiveagegroups, date_10thcum, df_week, pop_data,
-#                                                  JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
+mortality_rate_table = make_mortality_rate_table(fit_cum, fiveagegroups, date_10thcum, df_week, pop_data,
+                                                 JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 # plot_mortality_rate(mortality_rate_table, outdir.fig)
 
 
