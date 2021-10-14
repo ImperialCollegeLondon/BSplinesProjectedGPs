@@ -1,7 +1,7 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="210429h2"
+STAN_MODEL="211014"
 CWD="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/"
 INDIR="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/"
 STATES='CA,TX'
