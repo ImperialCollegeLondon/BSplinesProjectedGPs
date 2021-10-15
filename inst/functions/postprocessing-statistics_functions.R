@@ -50,11 +50,10 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
   # return(contribution_baseline)
 }
 
-find_regime_state = function(contribution75, vaccine_data, start_resurgence, outdir){
+find_regime_state = function(contribution75, vaccine_data, start_resurgence, date_before_vaccine, outdir){
   
   contribution_stats = list()
   
-  date_before_vaccine = vaccine_data[prop > 0 & date %in% unique(contribution75$date), min(date)]
   contribution_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
   contribution_stats[['start_resurgence']] = format(start_resurgence,  '%B %d, %Y')
   
@@ -220,5 +219,30 @@ find_stats_vaccine_effects <- function(start_resurgence, pick_resurgence, data_r
                                                                                                    min_4 = paste0(round(min(prop_4*100), 2), '\\%'),
                                                                                                    max_4 = paste0(round(max(prop_4*100), 2), '\\%'))])
   saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
+}
+
+find_prop_deaths_vaccine_statistics <- function(propdeath3, start_vaccine, start_resurgence, outdir){
+  dmean75 = propdeath3[age == '75+', list(M = paste0(format(round((- mean(M))*100, 2), nsmall = 2), '\\%'), 
+                                          CL = paste0(format(round((-mean(CU))*100, 2), nsmall = 2), '\\%'),
+                                          CU = paste0(format(round((-mean(CL))*100, 2), nsmall = 2), '\\%'))]
+  dmean5574 = propdeath3[age == '55-74', list(M = paste0(format(round((- mean(M))*100, 2), nsmall = 2), '\\%'), 
+                                              CL = paste0(format(round((-mean(CU))*100, 2), nsmall = 2), '\\%'),
+                                              CU = paste0(format(round((-mean(CL))*100, 2), nsmall = 2), '\\%'))]
+  dmean054 = propdeath3[age == '0-54', list(M = paste0(format(round((- mean(M))*100, 2), nsmall = 2), '\\%'), 
+                                            CL = paste0(format(round((-mean(CU))*100, 2), nsmall = 2), '\\%'),
+                                            CU = paste0(format(round((-mean(CL))*100, 2), nsmall = 2), '\\%'))]
+  # state fastest and slowest
+  sf75 = propdeath3[order(M, decreasing = T) & age == '75+', list(loc_label = loc_label, 
+                                                                  M = paste0(format(round((- M)*100, 2), nsmall = 2), '\\%'), 
+                                                                  CL = paste0(format(round((-CU)*100, 2), nsmall = 2), '\\%'),
+                                                                  CU = paste0(format(round((-CL)*100, 2), nsmall = 2), '\\%')), by = 'loc_label'][c(1,length(selected_states))]
+  
+  
+  tmp <- list(format(c(start_vaccine, start_resurgence-7),  '%B %d, %Y'), 
+              as.numeric( (start_resurgence-7 - start_vaccine) / 7 - 1 ),
+              list(dmean75, dmean5574, dmean054), 
+              sf75)
+  
+  saveRDS(tmp, paste0(outdir, '-prop_red_deaths_vaccine.rds'))
 }
 

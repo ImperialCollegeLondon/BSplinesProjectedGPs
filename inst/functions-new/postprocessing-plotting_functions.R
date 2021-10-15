@@ -462,23 +462,23 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
   
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
   df[, variable2 := 'CDC data']
-
+  
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'New York', 'California', 'Washington'))]
   
   colfunc <- jcolors("pal8")[1:length(unique(death$code))]
   
-    
+  
   p = list()
   for(i in 1:length(unique(death$code))){
     
     # i = 1
     Code = unique(death$code)[i]
     
-  p[[i]]  = ggplot(subset(death, code == Code), aes(x= date) ) +
-    geom_point(data = subset(df, code == Code), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
+    p[[i]]  = ggplot(subset(death, code == Code), aes(x= date) ) +
+      geom_point(data = subset(df, code == Code), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
       geom_line(aes(y = M), col = colfunc[i]) +
-    geom_vline(data = data.table(dummy = 'Beginning of Summer 2021 resurgences'), aes(xintercept = start_resurgence, linetype = dummy), col = 'grey50') +
+      geom_vline(data = data.table(dummy = 'Beginning of Summer 2021 resurgences'), aes(xintercept = start_resurgence, linetype = dummy), col = 'grey50') +
       geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5, fill = colfunc[i]) + 
       facet_grid(loc_label~age, scale = 'free') +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
@@ -494,13 +494,13 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
             strip.text = element_text(size = rel(1.1)), 
             legend.position = 'bottom'#, 
             # legend.box="vertical"
-            ) +
+      ) +
       labs( y = '', shape = '',
             linetype = '', col = '', fill = '') + 
       scale_shape_manual(values = 16) +
       scale_linetype_manual(values = 2) + 
-    scale_color_jcolors("pal8") + 
-    scale_fill_jcolors("pal8") + 
+      scale_color_jcolors("pal8") + 
+      scale_fill_jcolors("pal8") + 
       guides(shape = guide_legend(override.aes = list(size=1, stroke =1.5), order = 2),
              linetype = guide_legend(order = 3), 
              col = guide_legend(order = 1),
@@ -513,7 +513,7 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
       p[[i]] = p[[i]] + theme(strip.text.x = element_blank())
     }
   }
-
+  
   
   p = ggarrange(plotlist=p, common.legend = T, legend = 'bottom', heights = c(1.1, 1, 1, 1, 1.2), nrow = length(unique(death$code)))
   p = gridExtra::grid.arrange(p, left = textGrob('Predicted age-specific COVID-19 attributable weekly deaths', gp=gpar(fontsize=15), rot = 90))

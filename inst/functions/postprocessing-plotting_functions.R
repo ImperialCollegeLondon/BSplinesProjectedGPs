@@ -1,4 +1,3 @@
-
 plot_posterior_predictive_checks = function(data, variable, outdir)
 {
   
@@ -34,6 +33,7 @@ plot_posterior_predictive_checks = function(data, variable, outdir)
   ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
   
 }
+
 
 plot_estimate_vaccine <- function(data_res5, outdir){
   # data_res5[, var := paste0(var,'_', age_param)]
@@ -108,13 +108,13 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
   if(is.null(limits)){
     p = p + coord_cartesian(ylim = limits)
   }
-    
+  
   if(!is.null(outdir)){
     ggsave(p, file = paste0(outdir, "-continuous_contribution_", var_name, '_', Code, ".png") , w= 10, h = 8, limitsize = FALSE)
     ggsave(p1, file = paste0(outdir, "-continuous_contribution_short_", var_name, '_', Code, ".png") , w= 4, h = 8, limitsize = FALSE)
     
   }
-
+  
   p = ggplot(tmp1, aes(x = date, y = age)) +
     geom_raster(aes(fill = M))  + 
     theme(legend.position='bottom') + 
@@ -147,6 +147,7 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
   return(list(p1, p))
 }
 
+
 plot_sum_missing_deaths = function(tmp, outdir)
 {
   
@@ -160,6 +161,7 @@ plot_sum_missing_deaths = function(tmp, outdir)
   ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_missing_cum_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
   
 }
+
 
 plot_sum_bounded_missing_deaths = function(tmp, outdir)
 {
@@ -295,23 +297,23 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   }
   
   tmp1 = merge(tmp1, df_week, by = row_name)
-
-    p = ggplot(tmp1, aes(x = date, y = get(column_name))) + 
-      geom_raster(aes(fill = M ), interpolate = TRUE) + 
-      theme_bw() +
-      theme(legend.position = 'none',
-            axis.text.x = element_text(angle = 90), 
-            panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank()) +
-      labs(y = column_lab, x = row_lab, fill ='') +
-      scale_fill_viridis_c(option = 'inferno', begin = 0.55) +
-      scale_y_reverse(expand = c(0,0)) + 
-      geom_contour(aes(z=M), bins = 12, color = "gray50", 
-                   size = 0.5, alpha = 0.5)  + 
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
-    ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
-    
-    
+  
+  p = ggplot(tmp1, aes(x = date, y = get(column_name))) + 
+    geom_raster(aes(fill = M ), interpolate = TRUE) + 
+    theme_bw() +
+    theme(legend.position = 'none',
+          axis.text.x = element_text(angle = 90), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank()) +
+    labs(y = column_lab, x = row_lab, fill ='') +
+    scale_fill_viridis_c(option = 'inferno', begin = 0.55) +
+    scale_y_reverse(expand = c(0,0)) + 
+    geom_contour(aes(z=M), bins = 12, color = "gray50", 
+                 size = 0.5, alpha = 0.5)  + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
+  ggsave(p, file = paste0(outdir, '-PlanePosterior_', Code, '.png'),width = 4, height = 4)
+  
+  
   return(p)
 }
 
@@ -443,14 +445,18 @@ plot_contribution_all_states <- function(contribution, vaccinedata, outdir){
 #   
 # }
 
-plot_mortality_all_states = function(death, outdir)
+plot_mortality_all_states = function(death, start_resurgence, outdir)
 {
   
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
   df[, variable2 := 'CDC data']
 
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
+  death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'New York', 'California', 'Washington'))]
   
+  colfunc <- jcolors("pal8")[1:length(unique(death$code))]
+  
+    
   p = list()
   for(i in 1:length(unique(death$code))){
     
@@ -459,9 +465,10 @@ plot_mortality_all_states = function(death, outdir)
     
   p[[i]]  = ggplot(subset(death, code == Code), aes(x= date) ) +
     geom_point(data = subset(df, code == Code), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
-      geom_line(aes(y = M, col = age)) + 
-      geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
-      facet_grid(age~loc_label, scales = 'free') +
+      geom_line(aes(y = M), col = colfunc[i]) +
+    geom_vline(data = data.table(dummy = 'Beginning of Summer 2021 resurgences'), aes(xintercept = start_resurgence, linetype = dummy), col = 'grey50') +
+      geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5, fill = colfunc[i]) + 
+      facet_grid(loc_label~age, scale = 'free') +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
       theme_bw() + 
       theme(strip.background = element_blank(),
@@ -469,30 +476,36 @@ plot_mortality_all_states = function(death, outdir)
             axis.text.x = element_text(angle = 45, hjust =1), 
             panel.grid.major = element_blank(), 
             axis.title.x = element_blank(), 
-            axis.title.y = element_text(size = rel(1.2)), 
+            axis.title.y = element_blank(), 
             legend.title = element_text(size = rel(1.1)), 
             legend.text = element_text(size = rel(1.1)), 
             strip.text = element_text(size = rel(1.1)), 
-            legend.position = 'bottom') +
-      labs( y = 'Predicted age-specific COVID-19\nattributable weekly deaths', col = 'Age group', fill = 'Age group', shape = '') + 
-      scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
-      scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8) +
+            legend.position = 'bottom'#, 
+            # legend.box="vertical"
+            ) +
+      labs( y = '', shape = '',
+            linetype = '', col = '', fill = '') + 
       scale_shape_manual(values = 16) +
+      scale_linetype_manual(values = 2) + 
+    scale_color_jcolors("pal8") + 
+    scale_fill_jcolors("pal8") + 
       guides(shape = guide_legend(override.aes = list(size=1, stroke =1.5), order = 2),
-             fill = guide_legend(order=2), col = guide_legend(order =2))
+             linetype = guide_legend(order = 3), 
+             col = guide_legend(order = 1),
+             fill = guide_legend(order = 1))
     
     if(i != length(unique(death$code))){
-      p[[i]] = p[[i]] + theme(strip.text.y = element_blank())
+      p[[i]] = p[[i]] + theme(axis.text.x = element_blank())
     }
     if(i != 1){
-      p[[i]] = p[[i]] + theme(axis.title.y = element_blank())
+      p[[i]] = p[[i]] + theme(strip.text.x = element_blank())
     }
   }
 
   
-  ggarrange(plotlist=p, common.legend = T, legend = 'bottom', widths = c(1.2, 1, 1, 1,1.1), nrow = 1)
-  
-  ggsave(paste0(outdir, paste0('-Mortality_allStates.png')), w = 9, h = 5)
+  p = ggarrange(plotlist=p, common.legend = T, legend = 'bottom', heights = c(1.1, 1, 1, 1, 1.2), nrow = length(unique(death$code)))
+  p = gridExtra::grid.arrange(p, left = textGrob('Predicted age-specific COVID-19 attributable weekly deaths', gp=gpar(fontsize=15), rot = 90))
+  ggsave(p, file = paste0(outdir, paste0('-Mortality_allStates.png')), w = 7.5, h = 9)
   
 }
 
@@ -570,34 +583,56 @@ plot_relative_resurgence_vaccine <- function(data_res2, data_res4, outdir){
   
   data_res5 <- merge(data_res2, data_res[[4]], by = c('loc_label', 'code', 'date'))
   data_res5 <- subset(data_res5, date >= start_resurgence- 7*2)
-  p1 = ggplot(data_res5, aes(x = prop_3)) + 
+  
+  data1 = subset(data_res5, date == max(date))
+  data1[code == 'CA', prop_3:=prop_3 + 0.02]
+  data1[code == 'CA' & age =='18-64', M:=M + 1]
+  data1[code == 'WA', prop_3:=prop_3 + 0.015]
+  
+  p0 <- ggplot(data_res5, aes(x = prop_3)) + 
+    geom_point(data = subset(data_res5, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1) + 
+    scale_shape_manual(values = 4) + 
+    labs(shape = 'Beginning of Summer 2021 resurgences') +
+    theme_bw() +
+    theme(legend.position = 'bottom')
+  
+  p1 <- ggplot(data_res5, aes(x = prop_3)) + 
     geom_line(aes(y = M, col = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5) +
     facet_grid(age~.) +
     geom_point(data = subset(data_res5, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1)  + 
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Proportion of vaccinated among age group 18-64\ntwo weeks before', shape = 'Summer 2021 resurgence start', col = '', fill = '') + 
+         x = 'Proportion of vaccinated among age group 18-64\ntwo weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
     theme_bw() +
     scale_x_continuous(labels = scales::percent) + 
     theme(strip.background = element_blank(),
           strip.text = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) +
-    scale_shape_manual(values = 4) 
+    scale_shape_manual(values = 4) + 
+      scale_color_jcolors(palette = "pal8") + 
+      scale_fill_jcolors(palette = "pal8") #+    
+      # geom_text(data = data1, aes(label = loc_label, y = M, x = prop_3+0.02, col = loc_label))
+
   p2 = ggplot(data_res5, aes(x = prop_4)) + 
     geom_line(aes(y = M, col = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5) +
     facet_grid(age~.) +
     geom_point(data = subset(data_res5, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1)     + 
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Proportion of vaccinated among age group 65+\ntwo weeks before', shape = 'Summer resurgence start', col = '', fill = '') + 
+         x = 'Proportion of vaccinated among age group 65+\ntwo weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
     theme_bw() +
     scale_x_continuous(labels = scales::percent) + 
     theme(strip.background = element_blank(),
           panel.border =  element_rect(colour = "black", fill = NA), 
           axis.title.y = element_blank(),
           axis.text.y = element_blank()) + 
-    scale_shape_manual(values = 4)
-  p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = 'bottom', widths = c(1.2,1))
+    scale_shape_manual(values = 4)+ 
+      scale_color_jcolors(palette = "pal8") + 
+      scale_fill_jcolors(palette = "pal8") #+
+      # geom_text(data = data1, aes(label = loc_label, y = M, x = prop_4+0.02, col = loc_label))
+  
+  
+  p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = 'bottom', widths = c(1.1,1)) # legend.grob = get_legend(p0)
   ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage.png'), w = 8, h = 5.5)
   
 }
@@ -632,7 +667,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, outdir){
           panel.border = element_rect(colour = "black", fill = NA)) +
     labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
          col = "Age group", fill = "Age group", x = 'Date\n',
-         shape = 'Summer 2021 resurgences start') + 
+         shape = 'Beginning of Summer 2021 resurgences') + 
     scale_shape_manual(values = 4)+ 
     scale_x_date(expand = c(0,0), breaks = '3 months', date_labels = "%b-%y") 
   
@@ -650,7 +685,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, outdir){
     labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
          x = 'Proportion of fully vaccinated individuals\n two weeks before',
          col = "Age group", fill = "Age group",
-         shape = 'Summer 2021 resurgences start') + 
+         shape = 'Beginning of Summer 2021 resurgences') + 
     scale_shape_manual(values = 4) 
   
   p = ggarrange(p1, p2,common.legend = T, legend = 'bottom')

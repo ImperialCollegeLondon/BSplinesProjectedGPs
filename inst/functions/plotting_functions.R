@@ -111,7 +111,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     facet_wrap(~loc_label,ncol = 3) + 
     scale_fill_viridis_c(trans = 'sqrt',  na.value="grey70", breaks = c(0, 100, 1000,3000),) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-    scale_y_discrete(expand = c(0,0), breaks = unique(deathByAge$age)[rep(c(T,F), length(unique(deathByAge$age))/2)]) +
+    scale_y_discrete(expand = c(0,0)) +
     theme(legend.position = 'bottom',
           axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1,size = rel(0.8)),
           axis.text.y =  element_text(size = rel(0.8)),
@@ -394,6 +394,8 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
   tmp = merge(select(tmp, -age_from, -age_to, -age), df_age_vaccination, by = 'age_index')
   tmp = tmp[, list(prop = unique(prop), pop = sum(pop)), by = c('age', 'code', 'date', 'loc_label', 'age_index')]
   
+  selected_code = c('CA', 'FL', 'NY', 'TX', 'WA')
+  
   ggplot(tmp, aes(date, prop)) +
     geom_line(aes(col = age)) + 
     facet_wrap(~loc_label) + 
@@ -402,6 +404,23 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="black", fill="white")) 
   ggsave(paste0(outdir, '-proportion_vaccine_age_code.png'), w = 9, h = 8)
+  
+  library(jcolors)
+  tmp[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', "New York", 'California', 'Washington'))]
+  ggplot(subset(tmp, code %in% selected_code & age_index >2), aes(date, prop)) +
+    geom_line(aes(col = loc_label)) + 
+    facet_wrap(~age) + 
+    theme_bw()+ 
+    labs(x = '', y = 'Proportion of fully vaccinated individuals', col = '') + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white"),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'bottom', 
+          axis.title.x = element_blank()) + 
+    scale_color_jcolors('pal8') + 
+    scale_y_continuous(labels = scales::percent)+ 
+    scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+  ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.5)
   
   # population count
   df_age_close_vaccination = data.table(age = unique(pop_data$age))

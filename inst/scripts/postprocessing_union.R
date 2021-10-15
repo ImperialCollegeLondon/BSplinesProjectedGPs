@@ -5,6 +5,7 @@ library(tidyverse)
 library(viridis)
 library(grid)
 library(ggpubr)
+library(jcolors)
 
 indir = "~/git/covid19Vaccination/inst/" # path to the repo
 outdir = file.path(indir, "results")
@@ -46,12 +47,20 @@ files = files[grepl('predictive_checks_table_', files)]
 locs = unique(gsub(paste0(run_tag, '-predictive_checks_table_(.+).rds'), "\\1", files))
 
 # find region name
-region_name = vector(mode = 'list', length = length(locs))
+tmp = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  region_name[[i]] = readRDS(paste0(outdir, '-predictive_checks_table_', locs[i], '.rds'))
+  tmp[[i]] = readRDS(paste0(outdir, '-predictive_checks_table_', locs[i], '.rds'))
 }
-region_name = do.call('rbind', region_name)
-region_name = unique(select(region_name, code, loc_label))
+tmp = do.call('rbind', tmp)
+region_name = unique(select(tmp, code, loc_label))
+
+# vaccine data
+vaccine_data = readRDS(paste0(outdir, '-vaccine_data.rds'))
+start_vaccine = vaccine_data[date %in% unique(tmp$date) & prop > 0, min(date)]
+
+# resurgence date
+start_resurgence <- as.Date('2021-07-03')
+pick_resurgence <- as.Date('2021-08-28')
 
 
 
@@ -79,16 +88,8 @@ for(i in seq_along(locs)){
 }
 weekly_deaths = do.call('rbind', weekly_deaths)
 weekly_deaths = merge(weekly_deaths, region_name, by = 'code')
-weekly_deaths = subset(weekly_deaths, !code %in% rm_states)
+weekly_deaths = subset(weekly_deaths, code %in% selected_states)
 
-vaccine_data = readRDS(paste0(outdir, '-vaccine_data.rds'))
-
-start_resurgence <- as.Date('2021-07-03')
-pick_resurgence <- as.Date('2021-08-28')
-
-unique(weekly_deaths$date)
-weekly_deaths1 = copy(weekly_deaths)
-weekly_deaths = subset(weekly_deaths1, code %in% selected_states)
 data_res = find_vaccine_effects(weekly_deaths, vaccine_data, start_resurgence, pick_resurgence)
 
 variable= 'y_counterfactual'
@@ -98,11 +99,8 @@ data_res4 <- copy(data_res[[4]])
 data_res5 = copy(data_res[[5]])
 
 plot_vaccine_effects_counterfactual(data_res1, data_res2, outdir)
-
 plot_relative_resurgence_vaccine(data_res2, data_res4, outdir)
-
 plot_estimate_vaccine(data_res5, outdir)
-
 find_stats_vaccine_effects(start_resurgence, pick_resurgence, data_res1, data_res4, outdir)
   
 
@@ -119,9 +117,19 @@ for(i in seq_along(locs)){
 death3 = do.call('rbind', death3)
 death3 = merge(death3, region_name, by = 'code')
 death3 = subset(death3, code %in% selected_states)
+plot_mortality_all_states(death3, start_resurgence, outdir)
 
-#subset(death3, date >= as.Date('2021-01-01'))
-plot_mortality_all_states(death3, outdir)
+# proportion weekly deaths after vaccine
+propdeath3 = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  propdeath3[[i]] = readRDS(paste0(outdir, '-DeathByAgeprop_Table_3agegroups_', locs[i], '.rds'))
+}
+propdeath3 = do.call('rbind', propdeath3)
+propdeath3 = merge(propdeath3, region_name, by = 'code')
+propdeath3 = subset(propdeath3, code %in% selected_states)
+find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, start_resurgence, outdir)
+
+
 
 
 
@@ -134,9 +142,8 @@ for(i in seq_along(locs)){
 contribution = do.call('rbind', contribution)
 contribution = subset(contribution, code %in% selected_states)
 plot_contribution_vaccine(contribution, vaccine_data, outdir)
-find_regime_state(contribution, vaccine_data, start_resurgence,  outdir)
+find_regime_state(contribution, vaccine_data, start_resurgence, start_vaccine, outdir)
 
-# contribution75 = copy(contribution)
 
 
 #

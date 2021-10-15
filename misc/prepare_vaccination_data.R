@@ -102,7 +102,11 @@ stopifnot(all(data$prop <= 1 & data$prop >= 0))
 stopifnot(all(!is.na(data)))
 nrow(data) == length(unique(data$date)) * length(unique(data$code)) * length(unique(data$age))
 
+# keep first date of non zera
+start_date = data[prop > 0, min(date) ]
+data = data[date >= start_date]
+
 # save
-saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-09-30.rds")))
+saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-10-14.rds")))
 
         
