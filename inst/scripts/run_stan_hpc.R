@@ -6,8 +6,8 @@ library(doParallel)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-location.index = 5
-stan_model = "210529e"
+location.index = 43
+stan_model = "210529b9"
 JOBID = 3541
 
 if(0)
@@ -41,7 +41,7 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-29.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-09-30.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-09-30.rds"))
+path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-10-14.rds"))
 path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
 
 # load functions
