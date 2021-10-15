@@ -164,20 +164,21 @@ if(!is.null(stan_data$prop_vac)){
 
 
 # compare to DoH data
-# if(nrow(subset(scrapedData, code == Code)) > 0 ){
-# 
-#   scrapedData = subset(scrapedData, code == Code)
-# 
-#   if(Code == 'GA')
-#     scrapedData = reduce_agebands_scrapedData_GA(scrapedData)
-# 
-#   tmp = find_cumulative_deaths_prop_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
-#   compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
-#                                      var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
-#   compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
-#   compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
-# 
-# }
+if(nrow(subset(scrapedData, code %in% Code)) > 0 ){
+
+  tmp = find_cumulative_deaths_prop_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
+  
+  compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
+                                     var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
+  compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
+  compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
+
+}
+
+scrapedData = subset(scrapedData, code == Code)
+
+if(Code == 'GA')
+  scrapedData = reduce_agebands_scrapedData_GA(scrapedData)
 
 
 

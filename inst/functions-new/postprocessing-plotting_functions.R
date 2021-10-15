@@ -198,12 +198,14 @@ plot_mortality_rate = function(mortality_rate_table, outdir)
 
 compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
 {
+  
   scraped_data = select(as.data.table(scraped_data), code, date, age, cum.deaths)
-  scraped_data = subset(scraped_data, code == Code)
+  scraped_data = subset(scraped_data, code %in% Code)
   scraped_data[, date := as.Date(date)]
   scraped_data[, CL := NA]
   scraped_data[, CU := NA]
-  scraped_data = scraped_data[order(code, age, date)]
+  scraped_data = merge(scraped_data, unique(select(CDC_data, code, loc_label)), by = 'code')
+  scraped_data = scraped_data[order(loc_label, code, age, date)]
 
   # age sorted
   ages = unique(select(CDC_data, age))
@@ -212,7 +214,7 @@ compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.de
   ages = ages[order(as.numeric(age_from))]$age
   
   # prepare CDC estimations
-  CDC_data = select(as.data.table(CDC_data), code, date, age, var.cum.deaths.CDC )
+  CDC_data = select(as.data.table(CDC_data), code, loc_label, date, age, var.cum.deaths.CDC )
   setnames(CDC_data, var.cum.deaths.CDC, c('cum.deaths', 'CL', 'CU'))
   CDC_data = subset(CDC_data, date <= max(scraped_data$date))
   
@@ -226,22 +228,25 @@ compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.de
   
   col = c('#5CC8D7FF', '#00203FFF')
   
-  p = ggplot(tmp2, aes(x = date, y = cum.deaths)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
-    geom_line(aes(col = source), size = 1) +
-    theme_bw() + 
-    scale_color_manual(values = col) + 
-    scale_fill_manual(values = col) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    facet_wrap(~age,  scale = 'free_y', ncol = 1) + 
-    theme(legend.position = 'bottom',
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
-          axis.title.x = element_blank()) + 
-    labs(y = 'Cumulative COVID-19 deaths', col = '', fill = '')
-  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_uncertainty_', Code, '.png'), w = 3, h = 10, limitsize = F)
-  
+  for(Code in unique(tmp2$code)){
+    p = ggplot(subset(tmp2, code == Code), aes(x = date, y = cum.deaths)) + 
+      geom_ribbon(aes(ymin = CL, ymax = CU, fill = source), alpha = 0.5) +
+      geom_line(aes(col = source), size = 1) +
+      theme_bw() + 
+      scale_color_manual(values = col) + 
+      scale_fill_manual(values = col) +
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      facet_grid(age~loc_label,  scale = 'free_y') + 
+      theme(legend.position = 'bottom',
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA),
+            axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+            axis.title.x = element_blank()) + 
+      labs(y = 'Cumulative COVID-19 deaths', col = '', fill = '')
+    ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_uncertainty_', Code, '.png'), w = 3, h = 10, limitsize = F)
+    
+  }
+
   return(p)
 }
 
@@ -922,12 +927,12 @@ plot_contribution_ref_all_states = function(contribution_ref, contribution_ref_a
 
 compare_CDCestimation_DoH_age_prop_plot = function(tmp, outdir)
 {
-  tmp1 = select(tmp, date, age, prop.weekly.deaths)
+  tmp1 = select(tmp, code, loc_label, date, age, prop.weekly.deaths)
   tmp1[, CL_prop := NA]
   tmp1[, CU_prop := NA]
   tmp1[, source := 'DoH']
   
-  tmp2 = select(tmp, date, age, CL_prop,  CU_prop,  M_prop)
+  tmp2 = select(tmp, code, loc_label, date, age, CL_prop,  CU_prop,  M_prop)
   setnames(tmp2, 'M_prop', 'prop.weekly.deaths')
   tmp2[, source := 'estimated']
 
@@ -935,30 +940,35 @@ compare_CDCestimation_DoH_age_prop_plot = function(tmp, outdir)
 
   col = c('#5CC8D7FF', '#00203FFF')
   
-  p = ggplot(tmp1, aes(x = date, y = prop.weekly.deaths)) +
-    geom_ribbon(aes(ymin = CL_prop, ymax = CU_prop, fill = source), alpha = 0.5) +
-    geom_line(aes(col = source), size = 0.5) +
-    theme_bw() +
-    scale_color_manual(values = col) +
-    scale_fill_manual(values = col) +
-    facet_wrap(~age,  scale = 'free', ncol = 1) +
-    theme(legend.position = 'bottom',
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text.x = element_text(angle = 90)) +
-    labs(y = 'Age-specific contribution to COVID-19 weekly deaths', col = '', fill = '', x = '')
-  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 5, h = 12, limitsize = F)
+  for(Code in unique(tmp1$code)){
+    
+    p = ggplot(subset(tmp1, code == Code), aes(x = date, y = prop.weekly.deaths)) +
+      geom_ribbon(aes(ymin = CL_prop, ymax = CU_prop, fill = source), alpha = 0.5) +
+      geom_line(aes(col = source), size = 0.5) +
+      theme_bw() +
+      scale_color_manual(values = col) +
+      scale_fill_manual(values = col) +
+      facet_wrap(~age,  scale = 'free', ncol = 1) +
+      theme(legend.position = 'bottom',
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA),
+            axis.text.x = element_text(angle = 90)) +
+      labs(y = 'Age-specific contribution to COVID-19 weekly deaths', col = '', fill = '', x = '')
+    ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_prop_', Code, '.png'), w = 5, h = 12, limitsize = F)
+    
+    
+  }
 
 }
 
 compare_CDCestimation_DoH_age_weekly_plot = function(tmp, outdir)
 {
-  tmp1 = select(tmp, date, age, weekly.deaths)
+  tmp1 = select(tmp, code, loc_label, date, age, weekly.deaths)
   tmp1[, CL_abs_weekly := NA]
   tmp1[, CU_abs_weekly := NA]
   tmp1[, source := 'DoH']
   
-  tmp2 = select(tmp, date, age, CL_abs_weekly,  CU_abs_weekly,  M_abs_weekly)
+  tmp2 = select(tmp,code, loc_label,  date, age, CL_abs_weekly,  CU_abs_weekly,  M_abs_weekly)
   setnames(tmp2, 'M_abs_weekly', 'weekly.deaths')
   tmp2[, source := 'estimated']
   
@@ -966,20 +976,24 @@ compare_CDCestimation_DoH_age_weekly_plot = function(tmp, outdir)
   
   col = c('#5CC8D7FF', '#00203FFF')
   
-  p = ggplot(tmp1, aes(x = date, y = weekly.deaths)) +
-    geom_ribbon(aes(ymin = CL_abs_weekly, ymax = CU_abs_weekly, fill = source), alpha = 0.5) +
-    geom_line(aes(col = source), size = 0.5) +
-    theme_bw() +
-    scale_color_manual(values = col) +
-    scale_fill_manual(values = col) +
-    facet_wrap(~age,  scale = 'free', ncol = 1) +
-    theme(legend.position = 'bottom',
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text.x = element_text(angle = 90)) +
-    labs(y = 'Age-specific COVID-19 weekly deaths', col = '', fill = '', x = '')
-  ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_weekly_', Code, '.png'), w = 5, h = 12, limitsize = F)
-  
+  for(Code in unique(tmp1$code)){
+    
+    p = ggplot(subset(tmp1, code == Code), aes(x = date, y = weekly.deaths)) +
+      geom_ribbon(aes(ymin = CL_abs_weekly, ymax = CU_abs_weekly, fill = source), alpha = 0.5) +
+      geom_line(aes(col = source), size = 0.5) +
+      theme_bw() +
+      scale_color_manual(values = col) +
+      scale_fill_manual(values = col) +
+      facet_wrap(~age,  scale = 'free', ncol = 1) +
+      theme(legend.position = 'bottom',
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA),
+            axis.text.x = element_text(angle = 90)) +
+      labs(y = 'Age-specific COVID-19 weekly deaths', col = '', fill = '', x = '')
+    ggsave(p, file = paste0(outdir, '-comparison_DoH_CDC_weekly_', Code, '.png'), w = 5, h = 12, limitsize = F)
+    
+  }
+
 }
 
 plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir){
