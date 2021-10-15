@@ -130,9 +130,11 @@ make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_
                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], start_resurgence-7))
 
-
 # vaccine effect
 if(!is.null(stan_data$prop_vac)){
+  
+  # predicted contribution
+  make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'phi_reduced_vac', outdir.table)
   
   min_age_index_vac = 3
   df_age_vaccination2 = df_age_vaccination[age_index >= 3]
