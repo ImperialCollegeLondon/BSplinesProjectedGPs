@@ -477,38 +477,68 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
   return(stan_data)
 }
 
-add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, age.groups.vaccination){
+add_resurgence_period = function(stan_data, df_week, start_resurgence, pick_resurgence){
+  stan_data[['w_start_resurgence']] = df_week[date == start_resurgence]$week_index
+  stan_data[['w_stop_resurgence']] = df_week[date == pick_resurgence]$week_index
+  stan_data[['T']] = nrow(df_week[date %in% seq(start_resurgence, pick_resurgence, 7)])
+  stan_data[['week_indices_resurgence']] = 0:(stan_data[['T']]-1)
   
-  tmp = subset(vaccine_data, code == Code)
-  
-  # keep date in df_week - 2weeks and replace NA with 0
-  delay = 7 * 2
-  tmp1 = data.table( expand.grid(date_delay = df_week$date, age = unique(tmp$age )) )
-  tmp1[, date := date_delay + delay]
-  tmp1 = merge(tmp, tmp1, all.y = T, by = c('date', 'age'))
-  tmp1[is.na(prop), prop := 0]
-  tmp1 = tmp1[order(date_delay, age)]
-  tmp1 = reshape2::dcast(tmp1, age ~ date_delay, value.var = 'prop')[,-1]
-  
-  # find population count
-  # tmp = unique(select(tmp, age, pop))
-  # tmp = tmp[order(age)]
-  
-  # define age groups for vaccination coefficients
-  df_agegroups_vac <<- data.table(age.group = age.groups.vaccination)
-  # df_agegroups_vac <<- data.table(age.group = c('18-64', '65-105'))
-  df_agegroups_vac[, index := 1:nrow(df_agegroups_vac)]
-  df_agegroups_vac = df_agegroups_vac[, age.min := gsub('(.+)\\-(.*)', '\\1', age.group), by = 'age.group']
-  df_agegroups_vac = df_agegroups_vac[, age.max := gsub(paste0(age.min, '\\-(.+)'), '\\1', age.group), by = 'age.min']
-  df_agegroups_vac = df_agegroups_vac[, list(age = age.min:age.max), by = c('age.group', 'index')]
-  
-  max_age_not_vaccinated = 17
-    
-  stan_data[['prop_vaccinated']] = tmp1*100
-  stan_data[['C']] = length(unique(df_agegroups_vac$index))
-  stan_data[['map_A_to_C']] = df_agegroups_vac$index
-  stan_data[['max_age_not_vaccinated']] = length(0:max_age_not_vaccinated)
+  return(stan_data)
+}
 
+add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, start_resurgence, pick_resurgence){
+  
+  delay = 2*7
+  
+  age_index_min = df_age_vaccination[age == '18-64']$age_index
+  
+  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
+  tmp = vaccine_data[age_index >= age_index_min, list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
+  tmp[, date := date + delay]
+  tmp = tmp[code %in% Code]
+  tmp = tmp[date %in% df_week$date & date >= start_resurgence & date <= pick_resurgence]
+  
+  # set proportion
+  tmp1 = tmp[, list(pre_prop = prop[date == start_resurgence]), by = c('loc_label', 'age_index')]
+  tmp = merge(tmp, tmp1,  by = c('loc_label', 'age_index'))
+  tmp[, prop := prop - pre_prop]
+  
+  prop_vac = list(); prop_vac_start = list()
+  for(i in 1:length(unique(tmp$age_index))){
+    tmp1 = subset(tmp, age_index == unique(tmp$age_index)[i])
+    
+    prop_vac[[i]] = as.matrix( reshape2::dcast(tmp1, date ~ code, value.var = 'prop')[,-1] )
+    prop_vac_start[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
+  }
+
+  stan_data[['prop_vac']] = prop_vac
+  stan_data[['prop_vac_start']] = prop_vac_start
+  stan_data[['c_counterfactual']] = df_age_vaccination[age == '65+']$age_index - age_index_min + 1
+  stan_data[['age_from_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_from
+  stan_data[['age_to_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_to
+  stan_data[['C']] = nrow(df_age_vaccination[age_index >= age_index_min])
+  
+  return(stan_data)
+}
+
+add_JHU_data <- function(stan_data, df_week, Code){
+  
+  JHUData = as.data.table(JHUData)
+  JHUData = subset(JHUData, code %in% Code)
+  JHUData[, date := as.Date(date)]
+  tmp2 = JHUData[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
+  tmp2 = tmp2[order(code, date)]
+  tmp2[, cum.death := cumsum(daily_deaths)]
+  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
+  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
+  tmp2 = merge(tmp2, df_week, by = 'date')
+  tmp2 = select(tmp2, code, week_index, weekly.deaths)
+  tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths<0, weekly.deaths := 0]
+  
+  stan_data[['deaths_JHU']] = as.matrix(reshape2::dcast(tmp2, code ~ week_index, value.var = 'weekly.deaths')[,-1])
+  
   return(stan_data)
 }
 

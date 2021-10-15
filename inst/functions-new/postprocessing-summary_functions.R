@@ -168,6 +168,30 @@ make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   return(tmp1)
 }
 
+make_var_by_age_age_table = function(fit, df_state_age, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:3, c('age_index_recipient', 'age_index_source'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('age_index_recipient', 'age_index_source')]	
+  tmp1 = dcast(tmp1, age_index_recipient + age_index_source ~ q_label, value.var = "q")
+  
+  tmp1[, age_index_recipient := df_state_age$age[age_index_recipient]]
+  tmp1[, age_index_source := df_state_age$age[age_index_source]]
+  
+  return(tmp1)
+}
+
+
 make_var_by_varying_age_table = function(fit, df_week, df_age_continuous, age_groups, var_name, operation, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
