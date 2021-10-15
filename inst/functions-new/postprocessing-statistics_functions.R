@@ -209,15 +209,15 @@ find_statistics_mortality_rate <- function(mortality_rate, outdir){
   saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
 }
 
-find_stats_vaccine_effects <- function(start_resurgence, pick_resurgence, data_res1, data_res4, outdir){
+find_stats_vaccine_effects <- function(start_resurgence, pick_resurgence, data_res1, prop_vac, outdir){
   stat = list(format(c(start_resurgence, pick_resurgence),  '%B %d, %Y'),
-              subset(data_res1, date == pick_resurgence)[, list(M = round(-M_diff_predict), 
-                                                                CL = round(-CU_diff_predict), 
-                                                                CU = round(-CL_diff_predict)), by = c('age', 'loc_label')],
-              subset(data_res4, date == start_resurgence - 7*2 & code %in% selected_states)[, list(min_3 = paste0(round(min(prop_3*100), 2), '\\%'),
-                                                                                                   max_3 = paste0(round(max(prop_3*100), 2), '\\%'),
-                                                                                                   min_4 = paste0(round(min(prop_4*100), 2), '\\%'),
-                                                                                                   max_4 = paste0(round(max(prop_4*100), 2), '\\%'))])
+              subset(data_res1, date == pick_resurgence)[, list(M = round(M), 
+                                                                CL = round(CU), 
+                                                                CU = round(CL)), by = c('age', 'loc_label')],
+              subset(prop_vac, date == start_resurgence)[, list(min_3 = paste0(round(min(prop_1*100), 2), '\\%'),
+                                                                                                   max_3 = paste0(round(max(prop_1*100), 2), '\\%'),
+                                                                                                   min_4 = paste0(round(min(prop_2*100), 2), '\\%'),
+                                                                                                   max_4 = paste0(round(max(prop_2*100), 2), '\\%'))])
   saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
 }
 

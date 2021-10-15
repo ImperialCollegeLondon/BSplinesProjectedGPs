@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,TX',',')[[1]]
-stan_model = "211014"
+stan_model = "211014b"
 JOBID = 3541
 
 if(0)
@@ -77,6 +77,9 @@ vaccine_data = readRDS(path_to_vaccine_data)
 pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
 setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
 
+# define resurgence period
+start_resurgence <- as.Date('2021-07-03')
+pick_resurgence <- as.Date('2021-08-28')
 
 # Create age maps
 age_max = 105
@@ -119,18 +122,12 @@ if(grepl('211015', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
-# if(grepl('211014', stan_model)){
-#   cat("\n With vaccine effects \n")
-#   age.groups.vac = c('18-64', '65-105')
-#   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, age.groups.vac)
-# }
-# if(grepl('211014', stan_model)){
-#   stan_data = add_vaccine_prop_other(stan_data, df_week, Code, vaccine_data, age.groups.vac)
-# }
-# if(grepl('211014', stan_model)){
-#   cat("\n With vaccine effects extrapolated \n")
-#   stan_data = add_vaccine_date(stan_data)
-# }
+if(grepl('211014b', stan_model)){
+  cat("\n With vaccine effects \n")
+  stan_data = add_resurgence_period(stan_data, df_week, start_resurgence, pick_resurgence)
+  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, start_resurgence, pick_resurgence)
+  stan_data = add_JHU_data(stan_data, df_week, Code)
+}
 if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')

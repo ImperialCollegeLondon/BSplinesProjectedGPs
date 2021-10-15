@@ -9,6 +9,7 @@ library(ggpubr)
 library(cowplot)
 library(extraDistr)
 library(bayesplot)
+library(jcolors)
 
 indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
@@ -71,7 +72,7 @@ fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # week when resurgence started
-start_resurgence <- as.Date('2021-07-03')
+# start_resurgence <- as.Date('2021-07-03')
 
 # age group vaccination
 if(!is.null(stan_data$max_age_not_vaccinated )){
@@ -133,6 +134,33 @@ make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_
 make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], start_resurgence-7))
+
+
+# vaccine effect
+if(!is.null(stan_data$prop_vac)){
+  min_age_index_vac = 3
+  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+  
+  df_week2 = df_week[week_index >= stan_data$w_start_resurgence & week_index <= stan_data$w_stop_resurgence]
+  df_week2[, week_index := 1:nrow(df_week2)]
+  
+  chi_table = make_var_by_age_age_table(fit_cum, df_age_vaccination2, 'chi', outdir.table)
+  psi_table = make_var_by_age_age_table(fit_cum, df_age_vaccination2, 'psi', outdir.table)
+  plot_estimate_vaccine(psi_table, 'pre-resurgence proportion', 'pre_resurgence', outdir.fig)
+  plot_estimate_vaccine(chi_table, 'trends in the proportion', 'trends', outdir.fig)
+  
+  E_pdeaths = make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths', outdir.table)
+  E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'E_pdeaths_counterfactual', outdir.table)
+  diff_E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual', outdir.table)
+  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths, diff_E_pdeaths_counterfactual, outdir.fig)
+  
+  prop_vac = prepare_prop_vac_table(stan_data)
+  r_pdeaths = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'r_pdeaths', outdir.table)
+  plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
+  find_stats_vaccine_effects(start_resurgence, pick_resurgence, diff_E_pdeaths_counterfactual, prop_vac, outdir.table)
+  
+}
 
 
 # compare to DoH data
