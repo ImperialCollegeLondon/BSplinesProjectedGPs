@@ -8,7 +8,7 @@ library(grid)
 
 indir = "~/git/covid19Vaccination" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
-model = 'P-SPLINES'
+model = 'GP-B-SPLINES'
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -34,8 +34,8 @@ if(model == 'P-SPLINES') # Bayesian P-splines
   model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'P-SPLINES_2D.stan') )
 
 # tune 
-n_knots_x = 125
-n_knots_y = 125
+n_knots_x = 200
+n_knots_y = 200
 spline_degree = 3
 
 
