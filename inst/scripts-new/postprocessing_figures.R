@@ -12,10 +12,10 @@ library(bayesplot)
 library(jcolors)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
-outdir = file.path('~/Downloads/', "results")
+outdir = file.path('/rds/general/user/mm3218/home/git/covid19Vaccination/inst', "results")
 states = strsplit('CA,TX',',')[[1]]
 stan_model = "211014b"
-JOBID = 3541
+JOBID = 7259
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -37,6 +37,7 @@ if(length(args_line) > 0)
 # load functions
 source(file.path(indir, "functions-new", "postprocessing-plotting_functions.R"))
 source(file.path(indir, "functions-new", "postprocessing-summary_functions.R"))
+source(file.path(indir, "functions-new", "postprocessing-statistics_functions.R"))
 source(file.path(indir, "functions-new", "postprocessing-utils.R"))
 source(file.path(indir, "functions-new", "summary_functions.R"))
 
@@ -76,16 +77,8 @@ fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 # week when resurgence started
 start_resurgence <- as.Date('2021-07-03')
 
-# age group vaccination
-if(!is.null(stan_data$max_age_not_vaccinated )){
-  df_age_vac_effects = copy(df_age_continuous)
-  df_age_vac_effects[, age_index := c(rep(0, stan_data$max_age_not_vaccinated ), stan_data$map_A_to_C)]
-  df_age_vac_effects = df_age_vac_effects[, list(age_from = min(age), age_to = max(age), 
-                                                 age = paste0(min(age), '-', max(age))), by = 'age_index']
-  df_age_vac_effects[age_to == max(df_age_continuous$age), age := paste0(age_from, '+')]
-  
-}
 
+####
 
 # Plot estimate B-splines parameters plane 
 plot_posterior_plane(fit_cum, df_week, df_age_continuous, stan_data, outdir = outdir.fig)
@@ -140,6 +133,7 @@ make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_
 
 # vaccine effect
 if(!is.null(stan_data$prop_vac)){
+  
   min_age_index_vac = 3
   df_age_vaccination2 = df_age_vaccination[age_index >= 3]
   df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
@@ -176,12 +170,6 @@ if(nrow(subset(scrapedData, code %in% Code)) > 0 ){
   compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
 
 }
-
-scrapedData = subset(scrapedData, code == Code)
-
-if(Code == 'GA')
-  scrapedData = reduce_agebands_scrapedData_GA(scrapedData)
-
 
 
 # make panel figure

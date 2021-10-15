@@ -1,5 +1,5 @@
 
-statistics_contributionref_all_states = function(contribution_ref_adj){
+statistics_contributionref_all_states = function(contribution_ref_adj, outdir){
   
 
   tmp = copy( subset(contribution_ref_adj, !code %in% c('HI', 'VT', 'AK')))
@@ -235,7 +235,7 @@ find_prop_deaths_vaccine_statistics <- function(propdeath3, start_vaccine, start
   sf75 = propdeath3[order(M, decreasing = T) & age == '75+', list(loc_label = loc_label, 
                                                                   M = paste0(format(round((- M)*100, 2), nsmall = 2), '\\%'), 
                                                                   CL = paste0(format(round((-CU)*100, 2), nsmall = 2), '\\%'),
-                                                                  CU = paste0(format(round((-CL)*100, 2), nsmall = 2), '\\%')), by = 'loc_label'][c(1,length(selected_states))]
+                                                                  CU = paste0(format(round((-CL)*100, 2), nsmall = 2), '\\%')), by = 'loc_label'][c(1,length(locs))]
   
   
   tmp <- list(format(c(start_vaccine, start_resurgence-7),  '%B %d, %Y'), 
