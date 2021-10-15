@@ -49,7 +49,9 @@ outdir.table = file.path(outdir, run_tag, "table", run_tag)
 
 # code
 locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
-Code = locations[location.index,]$code
+loc_name = locations[code %in% states,]$loc_label
+Code = locations[code %in% states, ]$code
+df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
 
 # load image 
 load(file.path(outdir.data, paste0("stanin_",run_tag,".RData")))
@@ -72,7 +74,7 @@ fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # week when resurgence started
-# start_resurgence <- as.Date('2021-07-03')
+start_resurgence <- as.Date('2021-07-03')
 
 # age group vaccination
 if(!is.null(stan_data$max_age_not_vaccinated )){
