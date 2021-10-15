@@ -143,7 +143,7 @@ transformed parameters {
   matrix[C,W] E_pdeaths[M];
   matrix[C,T] r_pdeaths[M];
   matrix[C,T] log_r_pdeaths[M];
-  matrix[M,W] E_pdeaths_before_resurgence;
+  matrix[M,C] E_pdeaths_before_resurgence;
   matrix[T, M] xi[C];
 
   for(m in 1:M){
