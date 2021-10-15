@@ -1,10 +1,11 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="211014"
+STAN_MODEL="211014b"
 CWD="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/"
 INDIR="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/"
-STATES='CA,FL,NY,TX,WA'
+#STATES='CA,FL,NY,TX,WA'
+STATES='CA,FL'
   
 cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF
   
