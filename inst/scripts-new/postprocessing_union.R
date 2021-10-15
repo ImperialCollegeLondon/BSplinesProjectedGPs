@@ -19,7 +19,7 @@ if(length(args_line) > 0)
 {
   stopifnot(args_line[[1]]=='-indir')
   stopifnot(args_line[[3]]=='-outdir')
-  stopifnot(args_line[[5]]=='-location.index')
+  stopifnot(args_line[[5]]=='-states')
   stopifnot(args_line[[7]]=='-stan_model')
   stopifnot(args_line[[9]]=='-JOBID')
   indir <- args_line[[2]]
