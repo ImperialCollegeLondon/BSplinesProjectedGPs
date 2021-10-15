@@ -52,6 +52,8 @@ statistics_contributionref_all_states = function(contribution_ref_adj, outdir){
 
 find_regime_state = function(contribution75, vaccine_data, start_resurgence, date_before_vaccine, outdir){
   
+  delay = 2*7
+  
   contribution_stats = list()
   
   contribution_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
@@ -69,7 +71,6 @@ find_regime_state = function(contribution75, vaccine_data, start_resurgence, dat
   
   
   # find vaccine effect
-  delay = 2*7
   vaccine_data_sum = vaccine_data[age >= 18, list(prop = mean(prop)), by = c('code', 'date')]
   vaccine_data_sum[, date := date + delay]
   contribution75 = merge(contribution75, vaccine_data_sum, by = c('code', 'date'))

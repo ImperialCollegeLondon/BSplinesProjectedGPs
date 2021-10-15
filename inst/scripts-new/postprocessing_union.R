@@ -88,14 +88,14 @@ find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, start_resurgence,
 
 # 
 # vaccination effect on contribution
-# contribution = vector(mode = 'list', length = length(locs))
-# for(i in seq_along(locs)){
-#   contribution[[i]] = readRDS(paste0(outdir.table, '-posterior_table_phi_', locs[i], '.rds'))
-# }
-# contribution = do.call('rbind', contribution)
-# plot_contribution_vaccine(contribution, vaccine_data, outdir.fig)
-# find_regime_state(contribution, vaccine_data, start_resurgence, start_vaccine, outdir.table)
-
+if(!is.null(stan_data$prop_vac)){
+  contribution = vector(mode = 'list', length = length(locs))
+  for(i in seq_along(locs)){
+    contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
+  }
+  contribution = do.call('rbind', contribution)
+  find_regime_state(contribution, vaccine_data, start_resurgence, start_vaccine, outdir.table)
+}
 
 
 #

@@ -621,7 +621,6 @@ find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continu
     tmp2 = emp[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c('date', 'code')]
     emp = merge(emp, tmp2, by = c('date', 'code'))
     emp[, prop_deaths := weekly.deaths / total_deaths]
-    
   }
 
   # tmp1
