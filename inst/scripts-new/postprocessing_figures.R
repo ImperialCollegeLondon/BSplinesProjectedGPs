@@ -11,11 +11,11 @@ library(extraDistr)
 library(bayesplot)
 library(jcolors)
 
-indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst/" # path to the repo
-outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
-location.index = 43
-stan_model = "210529b"
-JOBID = 29051
+indir ="~/git/covid19Vaccination/inst" # path to the repo
+outdir = file.path('~/Downloads/', "results")
+states = strsplit('CA,TX',',')[[1]]
+stan_model = "211014b"
+JOBID = 3541
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -28,7 +28,7 @@ if(length(args_line) > 0)
   stopifnot(args_line[[9]]=='-JOBID')
   indir <- args_line[[2]]
   outdir <- args_line[[4]]
-  location.index <- as.numeric(args_line[[6]])
+  states <-  strsplit((args_line[[6]]),',')[[1]]
   stan_model <- args_line[[8]]
   JOBID <- as.numeric(args_line[[10]])
 }
