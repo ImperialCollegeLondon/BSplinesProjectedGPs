@@ -879,7 +879,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   # data comp
   if('GA' %in% Code){
     data_comp = rbind(subset(data_comp, code != 'GA', 
-                       reduce_agebands_scrapedData_GA(subset(data_comp, code == 'GA')))
+                       reduce_agebands_scrapedData_GA(subset(data_comp, code == 'GA'))))
   }
   
   df_week_10thcum = merge(df_week, data_10thdeaths, by = 'dummy', allow.cartesian = T)
