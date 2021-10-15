@@ -851,7 +851,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   fit_samples = rstan::extract(fit)
   
   # df age
-  df_age_state = data.table(age = unique(subset(data_comp, code == Code)$age))
+  df_age_state = data.table(unique(select(subset(data_comp, code %in% Code), code, age)))
   df_age_state[, age_index := 1:nrow(df_age_state)]
   df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
   df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
@@ -864,8 +864,15 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   set(df_age_state, NULL, 'age_to_index', df_age_state[,as.numeric(age_to_index)])
   set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
-  df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
-  
+  tmp = list()
+  for(c in Code){
+    df_age_state_m = subset(df_age_state, code == c)
+    tmp[[c]] = copy(df_age_continuous)
+    tmp[[c]][, age_state_index := which(df_age_state_m$age_from_index <= age_index & df_age_state_m$age_to_index >= age_index), by = 'age_index']
+    tmp[[c]][, code := c]
+  }
+  df_age_continuous = do.call('rbind', tmp)
+
   # ref week
   df_week[, dummy := 1]
   data_10thdeaths[, dummy := 1]
@@ -921,14 +928,15 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   tmp1[, value := value / deaths_predict_t]
   
   # sum by state age group
-  tmp1 = merge(tmp1, df_age_continuous, 'age_index')
+  df_age_continuous = merge(df_age_continuous, df_state, by = 'code')
+  tmp1 = merge(tmp1, df_age_continuous, c('age_index', 'state_index'))
   tmp1 = tmp1[, list(value = sum(value)), by = c('state_index', 'week_index', 'age_state_index', 'iterations')]
   setnames(tmp1, 'age_state_index', 'age_index')
   
   # predict weekly deaths
   tmp5 = as.data.table( reshape2::melt(fit_samples['alpha']) )
   setnames(tmp5,2:4, c('state_index', 'age_index','week_index'))
-  tmp5 = merge(tmp5, df_age_continuous, 'age_index')
+  tmp5 = merge(tmp5, df_age_continuous, c('age_index', 'state_index'))
   tmp5 = tmp5[, list(value = sum(value)), by = c('state_index', 'week_index', 'age_state_index', 'iterations')]
   setnames(tmp5, 'age_state_index', 'age_index')
   
