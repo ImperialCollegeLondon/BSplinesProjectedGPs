@@ -98,10 +98,10 @@ ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20
 
 if(!is.null(stan_data$prop_vac)){
   p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('varphi', 'psi', 'chi', 'kappa'))
-  ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_vaccine_parameters.png'), h = 10, w = 10)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_vaccine_parameters.png'), h = 10, w = 10, limitsize = F)
   
   p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('varphi', 'psi', 'chi', 'kappa'))
-  ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_parameters.png'), h = 10, w = 10)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_parameters.png'), h = 20, w = 20, limitsize = F)
   
 }
 
