@@ -76,6 +76,7 @@ fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # week when resurgence started
 start_resurgence <- as.Date('2021-07-03')
+pick_resurgence <- as.Date('2021-08-28')
 
 
 ####
