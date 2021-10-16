@@ -45,7 +45,7 @@ outdir.table = file.path(outdir, run_tag, "table", run_tag)
 locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
 loc_name = locations[code %in% states,]$loc_label
 locs = locations[code %in% states, ]$code
-region_name = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
+region_name = data.table(loc_label = loc_name, code = locs, state_index = 1:length(locs))
 
 # load image 
 load(file.path(outdir.data, paste0("stanin_",run_tag,".RData")))
