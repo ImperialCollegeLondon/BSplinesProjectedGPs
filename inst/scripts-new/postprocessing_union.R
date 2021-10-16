@@ -1,3 +1,7 @@
+
+cat("\n Begin postprocessing_union.R \n")
+
+
 library(rstan)
 library(data.table)
 library(dplyr)
@@ -122,7 +126,7 @@ plot_contribution_ref_all_states(contribution_ref, contribution_ref_adj, outdir.
 contribution_baseline = statistics_contributionref_all_states(contribution_ref_adj, outdir.table)
 
 
-
+cat("\n End postprocessing_union.R \n")
 
 
 
