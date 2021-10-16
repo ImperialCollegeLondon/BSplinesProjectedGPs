@@ -37,6 +37,7 @@ source(file.path(indir, "functions-new", "postprocessing-statistics_functions.R"
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
 outdir.data = file.path(outdir, run_tag, "data")
+outdir.fit.post = file.path(outdir, run_tag, "fits")
 outdir.fig.post = file.path(outdir, run_tag, "figure", run_tag)
 outdir.table = file.path(outdir, run_tag, "table", run_tag)
 
