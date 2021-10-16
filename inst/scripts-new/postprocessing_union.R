@@ -54,6 +54,10 @@ outdir.fig = outdir.fig.post
 # date 
 start_vaccine = vaccine_data[prop > 0 & date %in% df_week$date, min(date)]
 
+# week when resurgence started
+start_resurgence <- as.Date('2021-07-03')
+pick_resurgence <- as.Date('2021-08-28')
+
 #
 # mortality rate over time
 mortality_rate = vector(mode = 'list', length = length(locs))
