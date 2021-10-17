@@ -850,7 +850,8 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   fit_samples = rstan::extract(fit)
   
   # df age
-  df_age_state = data.table(unique(select(subset(data_comp, code %in% Code), code, age)))
+  Code_in_data_comp= Code[Code %in% unique(data_comp$code)]
+  df_age_state = data.table(unique(select(subset(data_comp, code %in% Code_in_data_comp), code, age)))
   df_age_state[, age_index := 1:nrow(df_age_state)]
   df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
   df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
@@ -864,7 +865,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   set(df_age_state, NULL, 'age_from_index', df_age_state[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   tmp = list()
-  for(c in Code){
+  for(c in Code_in_data_comp){
     df_age_state_m = subset(df_age_state, code == c)
     tmp[[c]] = copy(df_age_continuous)
     tmp[[c]][, age_state_index := which(df_age_state_m$age_from_index <= age_index & df_age_state_m$age_to_index >= age_index), by = 'age_index']
@@ -883,19 +884,19 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   df_week1 = df_week1[keep == T]
   
   # data comp
-  if('GA' %in% Code){
+  if('GA' %in% Code_in_data_comp){
     data_comp = rbind(subset(data_comp, code != 'GA', 
                        reduce_agebands_scrapedData_GA(subset(data_comp, code == 'GA'))))
   }
   
   df_week_10thcum = merge(df_week, data_10thdeaths, by = 'dummy', allow.cartesian = T)
   df_week_10thcum[, date >= date_10thcum]
-  tmp2 = as.data.table( subset(data_comp, code %in% Code))
+  tmp2 = as.data.table( subset(data_comp, code %in% Code_in_data_comp))
   tmp2[, date := as.Date(date)]
   tmp2 = tmp2[, list(cum.death = sum(get(cum.death.var))), by = c('code', 'date', 'age')]
   tmp2 = tmp2[order(code, date)]
   last.cum.deaths = list()
-  for(c in Code){
+  for(c in Code_in_data_comp){
     df_week_10thcum_c = subset(df_week_10thcum, code == c)
     tmp2_c = subset(tmp2, code == c)
     
@@ -988,7 +989,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, data_10thdeaths, 
   tmp1 = merge(tmp1, tmp2, by = c('week_index', 'age', 'state_index'))
   
   tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
-  tmp4 = as.data.table( select(subset(data_comp, code %in% Code), code, age, date, cum.deaths) )
+  tmp4 = as.data.table( select(subset(data_comp, code %in% Code_in_data_comp), code, age, date, cum.deaths) )
   tmp4[, date := as.Date(date)]
   tmp4 = merge(tmp4, df_state, by = 'code')
   tmp1 = merge(tmp1, tmp4, by = c('date', 'age', 'state_index', 'code', 'loc_label'))
