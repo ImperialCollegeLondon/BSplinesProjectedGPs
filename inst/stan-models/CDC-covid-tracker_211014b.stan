@@ -270,7 +270,7 @@ generated quantities {
         xi_counterfactual[c] = rep_matrix(rep_row_vector(varphi0[c],M), T) + rep_matrix(week_indices_resurgence * varphi[c], M);
   
         for(c_prime in 1:C){
-        xi_counterfactual[c] += rep_matrix(prop_vac_start[c_prime], T) .* rep_matrix(psi[c, c_counterfactual], T, M);
+        xi_counterfactual[c] += rep_matrix(prop_vac_start[c_counterfactual], T) .* rep_matrix(psi[c, c_prime], T, M);
         xi_counterfactual[c] += prop_vac[c_prime] .* rep_matrix(chi[c, c_prime], T, M);
         }
     }
