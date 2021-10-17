@@ -65,8 +65,6 @@ mkdir \$PWD/\$STAN_MODEL-\$JOBID/table
 Rscript \$INDIR/scripts-new/postprocessing_assess_mixing.R -indir \$INDIR -outdir \$PWD -states $STATES -stan_model \$STAN_MODEL -JOBID \$JOBID
 Rscript \$INDIR/scripts-new/postprocessing_figures.R -indir \$INDIR -outdir \$PWD -states $STATES -stan_model \$STAN_MODEL -JOBID \$JOBID
 Rscript \$INDIR/scripts-new/postprocessing_union.R -indir \$INDIR -outdir \$PWD -states $STATES -stan_model \$STAN_MODEL -JOBID \$JOBID
-
-cp -R --no-preserve=mode,ownership \$PWD/* \$CWD
   
 EOF
 
