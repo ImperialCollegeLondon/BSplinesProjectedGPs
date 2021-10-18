@@ -74,11 +74,6 @@ date_10thcum = date_10thcum[ cum.deaths >=10, list(date_10thcum = min(date)), by
 fouragegroups = c('0-24', '25-54', '55-79', '80+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
-# week when resurgence started
-start_resurgence <- as.Date('2021-07-03')
-pick_resurgence <- as.Date('2021-08-28')
-
-
 ####
 
 # Plot estimate B-splines parameters plane 
@@ -162,16 +157,12 @@ if(!is.null(stan_data$prop_vac)){
 
 
 # compare to DoH data
-if(nrow(subset(scrapedData, code %in% Code)) > 0 ){
-
-  tmp = find_cumulative_deaths_prop_givensum_state_age(fit_cum, date_10thcum, df_week, df_age_continuous, scrapedData, 'cum.deaths', outdir.table)
-  
-  compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
-                                     var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
-  compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
-  compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
-
-}
+tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_cum, date_10thcum, df_week, df_age_continuous, 
+                                                                           scrapedData, 'cum.deaths', Code, outdir.table)
+compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
+                                   var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
+compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
+compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
 
 
 # make panel figure
