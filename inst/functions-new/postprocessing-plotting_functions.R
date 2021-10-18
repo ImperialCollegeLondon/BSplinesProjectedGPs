@@ -468,6 +468,7 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
   
   colfunc <- jcolors("pal8")[1:length(unique(death$code))]
   
+  death[, `Age group` := age]
   
   p = list()
   for(i in 1:length(unique(death$code))){
@@ -480,7 +481,7 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
       geom_line(aes(y = M), col = colfunc[i]) +
       geom_vline(data = data.table(dummy = 'Beginning of Summer 2021 resurgences'), aes(xintercept = start_resurgence, linetype = dummy), col = 'grey50') +
       geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5, fill = colfunc[i]) + 
-      facet_grid(loc_label~age, scale = 'free') +
+      facet_grid(loc_label~`Age group`, scale = 'free') +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
       theme_bw() + 
       theme(strip.background = element_blank(),
@@ -620,7 +621,7 @@ prepare_prop_vac_table <- function(stan_data){
 plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, outdir){
   
   data_res = merge(data_res1, prop_vac, by = c('code', 'date'))
-  
+  data_res[, `Age group` := age]
   p0 <- ggplot(data_res, aes(x = prop_1)) + 
     geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1) + 
     scale_shape_manual(values = 4) + 
@@ -631,41 +632,47 @@ plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccina
   p1 <- ggplot(data_res, aes(x = prop_1)) + 
     geom_line(aes(y = M, col = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5) +
-    facet_grid(age~.) +
-    geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1)  + 
+    facet_grid(`Age group`~., label = 'label_both') +
+    geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1, col = 'grey50')  + 
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Proportion of vaccinated among age group 18-64\ntwo weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
+         x = 'Proportion of individuals aged 18-64\nfully vaccinated two weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
     theme_bw() +
     scale_x_continuous(labels = scales::percent) + 
     theme(strip.background = element_blank(),
           strip.text = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) +
+          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
+          legend.title = element_text(size = rel(0.85)),
+          axis.title.x = element_text(size = rel(0.9)),
+          axis.title.y = element_text(size = rel(1)),
+          legend.spacing.y = unit(-0, "cm")) +
     scale_shape_manual(values = 4) + 
       scale_color_jcolors(palette = "pal8") + 
-      scale_fill_jcolors(palette = "pal8") #+    
-      # geom_text(data = data1, aes(label = loc_label, y = M, x = prop_3+0.02, col = loc_label))
+      scale_fill_jcolors(palette = "pal8") +
+    guides(color = guide_legend(order=1), fill = guide_legend(order=1), shape = guide_legend(order=2)) 
 
   p2 = ggplot(data_res, aes(x = prop_2)) + 
     geom_line(aes(y = M, col = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5) +
-    facet_grid(age~.) +
-    geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1)     + 
+    facet_grid(`Age group`~., label = 'label_both') +
+    geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1, col = 'grey50')     + 
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Proportion of vaccinated among age group 65+\ntwo weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
+         x = 'Proportion of individuals aged 65+\nfully vaccinated two weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
     theme_bw() +
     scale_x_continuous(labels = scales::percent) + 
     theme(strip.background = element_blank(),
           panel.border =  element_rect(colour = "black", fill = NA), 
+          strip.text = element_text(size = rel(0.85)),
           axis.title.y = element_blank(),
-          axis.text.y = element_blank()) + 
+          axis.text.y = element_blank(),
+          axis.title.x = element_text(size = rel(0.9)),
+          legend.box="vertical") + 
     scale_shape_manual(values = 4)+ 
       scale_color_jcolors(palette = "pal8") + 
-      scale_fill_jcolors(palette = "pal8") #+
-      # geom_text(data = data1, aes(label = loc_label, y = M, x = prop_4+0.02, col = loc_label))
-  
+      scale_fill_jcolors(palette = "pal8") +
+    guides(color = guide_legend(order=1), fill = guide_legend(order=1), shape = guide_legend(order=2)) 
   
   p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = 'bottom', widths = c(1.1,1)) # legend.grob = get_legend(p0)
-  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage.png'), w = 8, h = 5.5)
+  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage.png'), w = 6.5, h = 5)
   
 }
 
