@@ -492,7 +492,7 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
             axis.title.y = element_blank(), 
             legend.title = element_text(size = rel(1.1)), 
             legend.text = element_text(size = rel(1.1)), 
-            strip.text = element_text(size = rel(1.1)), 
+            strip.text = element_text(size = rel(1)), 
             legend.position = 'bottom'#, 
             # legend.box="vertical"
       ) +
