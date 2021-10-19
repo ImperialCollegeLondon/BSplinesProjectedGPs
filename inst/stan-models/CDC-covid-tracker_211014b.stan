@@ -261,7 +261,8 @@ generated quantities {
   matrix[C,T] log_r_pdeaths_counterfactual[M];
   matrix[T, M] xi_counterfactual[C];
   matrix[C,T] E_pdeaths_counterfactual[M];
-  matrix[C,T] diff_E_pdeaths_counterfactual[M];    
+  matrix[C,T] diff_E_pdeaths_counterfactual[M];  
+  matrix[C,T] perc_E_pdeaths_counterfactual[M]; 
   {
     int idx_log_lik = 0;
 
@@ -282,7 +283,8 @@ generated quantities {
         for(c in 1:C){
             log_r_pdeaths_counterfactual[m][c,:] = to_row_vector( normal_rng(xi_counterfactual[c][:,m], kappa[c]));
             E_pdeaths_counterfactual[m][c,:] = rep_row_vector(E_pdeaths_before_resurgence[m,c], T) .* exp( log_r_pdeaths_counterfactual[m][c,:] );
-            diff_E_pdeaths_counterfactual[m][c,:] = E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence]  - E_pdeaths_counterfactual[m][c,:];
+            diff_E_pdeaths_counterfactual[m][c,:] = cumulative_sum(E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence] - E_pdeaths_counterfactual[m][c,:]);
+            perc_E_pdeaths_counterfactual[m][c,:] = diff_E_pdeaths_counterfactual[m][c,:] ./ cumulative_sum( E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence] ) ;
         }
 
         for(w in 1:W){

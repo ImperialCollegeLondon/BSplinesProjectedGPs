@@ -462,67 +462,49 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
   
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
   df[, variable2 := 'CDC data']
+  df[, `Age group` := age]
   
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
-  death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'New York', 'California', 'Washington'))]
+  death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
   colfunc <- jcolors("pal8")[1:length(unique(death$code))]
   
   death[, `Age group` := age]
   
-  p = list()
-  for(i in 1:length(unique(death$code))){
-    
-    # i = 1
-    Code = unique(death$code)[i]
-    
-    p[[i]]  = ggplot(subset(death, code == Code), aes(x= date) ) +
-      geom_point(data = subset(df, code == Code), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
-      geom_line(aes(y = M), col = colfunc[i]) +
-      geom_vline(data = data.table(dummy = 'Beginning of Summer 2021 resurgences'), aes(xintercept = start_resurgence, linetype = dummy), col = 'grey50') +
-      geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5, fill = colfunc[i]) + 
-      facet_grid(loc_label~`Age group`, scale = 'free') +
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-      theme_bw() + 
-      theme(strip.background = element_blank(),
-            panel.border = element_rect(colour = "black", fill = NA), 
-            axis.text.x = element_text(angle = 45, hjust =1), 
-            panel.grid.major = element_blank(), 
-            axis.title.x = element_blank(), 
-            axis.title.y = element_blank(), 
-            legend.title = element_text(size = rel(1.1)), 
-            legend.text = element_text(size = rel(1.1)), 
-            strip.text = element_text(size = rel(1)), 
-            legend.position = 'bottom'#, 
-            # legend.box="vertical"
-      ) +
-      labs( y = '', shape = '',
-            linetype = '', col = '', fill = '') + 
-      scale_shape_manual(values = 16) +
-      scale_linetype_manual(values = 2) + 
-      scale_color_jcolors("pal8") + 
-      scale_fill_jcolors("pal8") + 
-      guides(shape = guide_legend(override.aes = list(size=1, stroke =1.5), order = 2),
-             linetype = guide_legend(order = 3), 
-             col = guide_legend(order = 1),
-             fill = guide_legend(order = 1))
-    
-    if(i != length(unique(death$code))){
-      p[[i]] = p[[i]] + theme(axis.text.x = element_blank())
-    }
-    if(i != 1){
-      p[[i]] = p[[i]] + theme(strip.text.x = element_blank())
-    }
-  }
-  
-  
-  p = ggarrange(plotlist=p, common.legend = T, legend = 'bottom', heights = c(1.1, 1, 1, 1, 1.2), nrow = length(unique(death$code)))
-  p = gridExtra::grid.arrange(p, left = textGrob('Predicted age-specific COVID-19 attributable weekly deaths', gp=gpar(fontsize=15), rot = 90))
+  p <- ggplot(subset(death), aes(x= date) ) +
+    geom_point(data = subset(df), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
+    geom_line(aes(y = M, fill = loc_label), show.legend = F) +
+    geom_vline(data = data.table(dummy = 'Beginning of Summer 2021 resurgences'), aes(xintercept = start_resurgence, linetype = dummy), col = 'grey50') +
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
+    facet_grid(loc_label~`Age group`, scale = 'free') +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    scale_y_continuous(expand = c(0,0)) + 
+    theme_bw() + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.text.x = element_text(angle = 45, hjust =1), 
+          panel.grid.major = element_blank(), 
+          axis.title.x = element_blank(), 
+          axis.title.y = element_blank(), 
+          legend.title = element_text(size = rel(1.1)), 
+          legend.text = element_text(size = rel(1.1)), 
+          strip.text = element_text(size = rel(1)), 
+          legend.position = 'bottom') +
+    labs( y = 'Predicted age-specific COVID-19 attributable weekly deaths', shape = '',
+          linetype = '', col = '', fill = '') + 
+    scale_shape_manual(values = 16) +
+    scale_linetype_manual(values = 2) + 
+    scale_color_jcolors("pal8") + 
+    scale_fill_jcolors("pal8") + 
+    guides(shape = guide_legend(override.aes = list(size=1, stroke =1.5), order = 2),
+           linetype = guide_legend(order = 3), 
+           col = guide_legend(order = 1),
+           fill = guide_legend(order = 1))
   ggsave(p, file = paste0(outdir, paste0('-Mortality_allStates.png')), w = 7.5, h = 9)
   
 }
 
-plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3, outdir){
+plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3, data_res4, outdir){
   
   dummies = c('Counterfactual analysis with proportion of vaccinated in age group 18-64\nset to be the same as in age group 65+', 
               'Fit to observed data')
@@ -541,7 +523,7 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3,
   
   codes = unique(data_res1$code)
   
-  p = list(); p1 = list()
+  p = list(); p1 = list(); p2 = list()
   for(i in 1:length(codes)){
     # i = 1
     Code = codes[i]
@@ -571,18 +553,35 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3,
       theme(strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA), 
             legend.position = 'bottom') + 
-      labs(x = '', y = 'Predicted age-specific COVID-19\nattributable weekly deaths') +
+      labs(x = '', y = 'Predicted difference age-specific COVID-19\nattributable weekly deaths\n counterfactual scenario') +
       guides(fill=guide_legend(nrow=2,byrow=TRUE), col=guide_legend(nrow=2,byrow=TRUE)) + 
       geom_hline(yintercept = 0, linetype = 'dashed')
+    
+    p2[[i]] = ggplot(subset(data_res4, code == Code), aes(x = date)) + 
+      geom_line(aes(y = M)) + 
+      geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) + 
+      facet_grid(age~loc_label, scale = 'free') + 
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      theme_bw() + 
+      theme(strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA), 
+            legend.position = 'bottom') + 
+      labs(x = '', y = 'Predicted percentage of age-specific COVID-19\nattributable weekly deaths\n counterfactual scenario') +
+      guides(fill=guide_legend(nrow=2,byrow=TRUE), col=guide_legend(nrow=2,byrow=TRUE)) + 
+      geom_hline(yintercept = 0, linetype = 'dashed')
+    
     
     if(i != 1){
       p[[i]] = p[[i]] + theme(axis.title.y = element_blank())
       p1[[i]] = p1[[i]] + theme(axis.title.y = element_blank())
+      p2[[i]] = p2[[i]] + theme(axis.title.y = element_blank())
     }
     
     if(i != length(codes)){
       p[[i]] = p[[i]] + theme(strip.text.y = element_blank())
       p1[[i]] = p1[[i]] + theme(strip.text.y = element_blank())
+      p2[[i]] = p2[[i]] + theme(strip.text.y = element_blank())
+      
     }
   }
   
@@ -592,6 +591,8 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3,
   p1 = ggarrange(plotlist = p1, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.2, 1, 1, 1, 1.1))
   ggsave(p1, file = paste0(outdir, '-predicted_weekly_deaths_diff_vaccine_coverage.png'), w = 10, h = 5)
   
+  p2 = ggarrange(plotlist = p2, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.2, 1, 1, 1, 1.1))
+  ggsave(p2, file = paste0(outdir, '-predicted_weekly_deaths_perc_vaccine_coverage.png'), w = 10, h = 5)
   
 }
 

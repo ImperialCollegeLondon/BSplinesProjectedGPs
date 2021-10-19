@@ -6,7 +6,7 @@ library(doParallel)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('CA,TX',',')[[1]]
+states = strsplit('CA,FL,NY,TX,WA',',')[[1]]
 stan_model = "211014b"
 JOBID = 3541
 
@@ -94,7 +94,7 @@ df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(
 cat("Location ", as.character(loc_name), "\n")
 
 # plot data 
-if(0){
+if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
