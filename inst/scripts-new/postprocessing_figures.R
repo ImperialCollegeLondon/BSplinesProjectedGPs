@@ -146,12 +146,13 @@ if(!is.null(stan_data$prop_vac)){
   E_pdeaths = make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths', outdir.table)
   E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'E_pdeaths_counterfactual', outdir.table)
   diff_E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual', outdir.table)
-  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths, diff_E_pdeaths_counterfactual, outdir.fig)
+  perc_E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'perc_E_pdeaths_counterfactual', outdir.table)
+  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths, diff_E_pdeaths_counterfactual,perc_E_pdeaths_counterfactual, outdir.fig)
   
   prop_vac = prepare_prop_vac_table(stan_data)
   r_pdeaths = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'r_pdeaths', outdir.table)
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
-  find_stats_vaccine_effects(start_resurgence, pick_resurgence, diff_E_pdeaths_counterfactual, prop_vac, outdir.table)
+  find_stats_vaccine_effects(start_resurgence, pick_resurgence, diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, prop_vac, outdir.table)
   
 }
 
