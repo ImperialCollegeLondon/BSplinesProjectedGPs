@@ -137,12 +137,7 @@ if(!is.null(stan_data$prop_vac)){
   df_week2[, week_index := 1:nrow(df_week2)]
   
   make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'phi_reduced_vac', outdir.table)
-  
-  chi_table = make_var_by_age_age_table(fit_cum, df_age_vaccination2, 'chi', outdir.table)
-  psi_table = make_var_by_age_age_table(fit_cum, df_age_vaccination2, 'psi', outdir.table)
-  plot_estimate_vaccine(psi_table, 'pre-resurgence proportion', 'pre_resurgence', outdir.fig)
-  plot_estimate_vaccine(chi_table, 'trends in the proportion', 'trends', outdir.fig)
-  
+
   E_pdeaths = make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths', outdir.table)
   E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'E_pdeaths_counterfactual', outdir.table)
   diff_E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual', outdir.table)
