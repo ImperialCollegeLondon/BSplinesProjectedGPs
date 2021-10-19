@@ -129,6 +129,7 @@ parameters {
   row_vector[M] slope_resurgence_re[C];
   real<lower=0> sigma_slope_resurgence[C];
   real vaccine_effect_intercept[C,C];
+  real<lower=0> sigma_r_pdeaths[C];
 }
 
 transformed parameters {
@@ -214,6 +215,7 @@ model {
   sigma_intercept_resurgence ~ cauchy(0,1);
   slope_resurgence0 ~ normal(0,1);
   sigma_slope_resurgence ~ cauchy(0,1);
+  sigma_r_pdeaths ~ cauchy(0,1);
 
   for(c in 1:C){
     intercept_resurgence_re[c] ~ normal(intercept_resurgence0[c],sigma_intercept_resurgence[c]);
@@ -255,7 +257,7 @@ model {
     } 
 
     for(c in 1:C){
-      log_r_pdeaths[m][c,:] ~ normal(xi[c][:,m], 0.1);
+      log_r_pdeaths[m][c,:] ~ normal(xi[c][:,m], sigma_r_pdeaths[c]);
     }
   }
 
@@ -292,9 +294,9 @@ generated quantities {
     for(m in 1:M){
 
         for(c in 1:C){
-            log_r_pdeaths_predict[m][c,:] = to_row_vector( normal_rng(xi[c][:,m], 0.1) );
+            log_r_pdeaths_predict[m][c,:] = to_row_vector( normal_rng(xi[c][:,m], sigma_r_pdeaths[c]) );
 
-            log_r_pdeaths_counterfactual[m][c,:] = to_row_vector( normal_rng(xi_counterfactual[c][:,m], 0.1));
+            log_r_pdeaths_counterfactual[m][c,:] = to_row_vector( normal_rng(xi_counterfactual[c][:,m], sigma_r_pdeaths[c]));
             E_pdeaths_counterfactual[m][c,:] = rep_row_vector(E_pdeaths_before_resurgence[m,c], T) .* exp( log_r_pdeaths_counterfactual[m][c,:] );
             diff_E_pdeaths_counterfactual[m][c,:] = cumulative_sum(E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence] - E_pdeaths_counterfactual[m][c,:]);
             perc_E_pdeaths_counterfactual[m][c,:] = diff_E_pdeaths_counterfactual[m][c,:] ./ cumulative_sum( E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence] ) ;
