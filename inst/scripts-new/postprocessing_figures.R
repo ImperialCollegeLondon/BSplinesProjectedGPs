@@ -149,6 +149,9 @@ if(!is.null(stan_data$prop_vac)){
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
   find_stats_vaccine_effects(start_resurgence, pick_resurgence, diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, prop_vac, outdir.table)
   
+  log_r_pdeaths = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'log_r_pdeaths', outdir.table)
+  log_r_pdeaths_predict = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'log_r_pdeaths_predict', outdir.table)
+  plot_PPC_relative_resurgence(log_r_pdeaths, log_r_pdeaths_predict, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
 }
 
 
