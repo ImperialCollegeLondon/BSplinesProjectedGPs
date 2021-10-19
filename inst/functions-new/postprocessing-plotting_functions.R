@@ -718,8 +718,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, prop_vac, df_age_
     theme(strip.background = element_blank(),
           panel.border =  element_rect(colour = "black", fill = NA), 
           strip.text = element_text(size = rel(0.85)),
-          axis.title.y = element_blank(),
-          axis.text.y = element_blank(),
+          axis.title.y =  element_text(size = rel(1)),
           axis.title.x = element_text(size = rel(0.9)),
           legend.box="vertical") + 
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
