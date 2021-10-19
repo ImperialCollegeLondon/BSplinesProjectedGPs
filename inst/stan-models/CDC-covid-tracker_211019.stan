@@ -276,6 +276,7 @@ generated quantities {
   row_vector[M] intercept_resurgence_counterfactual[C];
   row_vector[M] slope_resurgence_counterfactual[C];
   matrix[C,T] log_r_pdeaths_counterfactual[M];
+  matrix[C,T] log_r_pdeaths_predict[M];
   matrix[T, M] xi_counterfactual[C];
   matrix[C,T] E_pdeaths_counterfactual[M];
   matrix[C,T] diff_E_pdeaths_counterfactual[M];  
@@ -304,6 +305,9 @@ generated quantities {
     for(m in 1:M){
 
         for(c in 1:C){
+            log_r_pdeaths_predict[m][c,:] = to_row_vector( normal_rng(xi[c][:,m], 0.1) );
+
+
             log_r_pdeaths_counterfactual[m][c,:] = to_row_vector( normal_rng(xi_counterfactual[c][:,m], 0.1));
             E_pdeaths_counterfactual[m][c,:] = rep_row_vector(E_pdeaths_before_resurgence[m,c], T) .* exp( log_r_pdeaths_counterfactual[m][c,:] );
             diff_E_pdeaths_counterfactual[m][c,:] = cumulative_sum(E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence] - E_pdeaths_counterfactual[m][c,:]);
