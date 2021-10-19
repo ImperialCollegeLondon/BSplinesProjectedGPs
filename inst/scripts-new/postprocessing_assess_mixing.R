@@ -121,9 +121,16 @@ if(any(c('intercept_resurgence0', 'slope_resurgence0', 'vaccine_effect_intercept
   
   names_var = c('intercept_resurgence_re', 'slope_resurgence_re', 'vaccine_effect_intercept', 'vaccine_effect_slope')
   tmp <- data.table(name= names_fit[ grepl(paste(paste0('^',names_var),collapse = '|'),names_fit) ])
-  p <- bayesplot::mcmc_intervals(fit_cum, pars=tmp$name,prob = .95, prob_outer = 0.95)+
-    theme_bw()
-  ggsave(p, file = paste0(outdir.fig, '-mcmc_interval_vaccine_parameters.png'), h = 10, w = 7, limitsize = F)
+
+  p <- bayesplot::mcmc_intervals(fit_cum, pars=tmp[grepl('\\[1', name)]$name,prob = .95, prob_outer = 0.95)+
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed', col = 'grey50')
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_interval_vaccine_parameters_1864.png'), h = 6, w = 4, limitsize = F)
+  
+  p <- bayesplot::mcmc_intervals(fit_cum, pars=tmp[grepl('\\[2', name)]$name,prob = .95, prob_outer = 0.95)+
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed', col = 'grey50')
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_interval_vaccine_parameters_65p.png'), h = 6, w = 4, limitsize = F)
   
 }
 
