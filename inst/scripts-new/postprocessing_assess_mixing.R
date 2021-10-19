@@ -96,14 +96,37 @@ ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 2
 p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
 
-if(!is.null(stan_data$prop_vac)){
+samples <- rstan::extract(fit_cum)
+names_samples <- names(samples)
+names_fit <- names(fit_cum)
+
+if(any(c('varphi', 'psi', 'chi', 'kappa') %in% names_samples)){
+
   p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('varphi', 'psi', 'chi', 'kappa'))
   ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_vaccine_parameters.png'), h = 10, w = 10, limitsize = F)
   
   p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('varphi', 'psi', 'chi', 'kappa'))
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_parameters.png'), h = 20, w = 20, limitsize = F)
   
+  
 }
+
+if(any(c('intercept_resurgence0', 'slope_resurgence0', 'vaccine_effect_intercept') %in% names_samples)){
+  
+  p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('intercept_resurgence', 'slope_resurgence', 'vaccine_effect'))
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_vaccine_parameters.png'), h = 20, w = 20, limitsize = F)
+  
+  # p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('intercept_resurgence', 'slope_resurgence', 'vaccine_effect'))
+  # ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_parameters.png'), h = 20, w = 20, limitsize = F)
+  
+  names_var = c('intercept_resurgence_re', 'slope_resurgence_re', 'vaccine_effect_intercept', 'vaccine_effect_slope')
+  tmp <- data.table(name= names_fit[ grepl(paste(paste0('^',names_var),collapse = '|'),names_fit) ])
+  p <- bayesplot::mcmc_intervals(fit_cum, pars=tmp$name,prob = .95, prob_outer = 0.95)+
+    theme_bw()
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_interval_vaccine_parameters.png'), h = 10, w = 7, limitsize = F)
+  
+}
+
 
 cat("\n End postprocessing_assess_mixing.R \n")
 

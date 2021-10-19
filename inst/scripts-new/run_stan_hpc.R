@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,WA',',')[[1]]
-stan_model = "211014b"
+stan_model = "211020"
 JOBID = 3541
 
 if(0)
@@ -114,7 +114,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211014', stan_model)){
+if(grepl('211014|211019|211020', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 4)
 }
@@ -122,7 +122,7 @@ if(grepl('211015', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
-if(grepl('211014b', stan_model)){
+if(grepl('211014b|211019|211020', stan_model)){
   cat("\n With vaccine effects \n")
   stan_data = add_resurgence_period(stan_data, df_week, start_resurgence, pick_resurgence)
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, start_resurgence, pick_resurgence)
