@@ -623,6 +623,9 @@ plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccina
   
   data_res = merge(data_res1, prop_vac, by = c('code', 'date'))
   data_res[, `Age group` := age]
+  data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  
+  
   p0 <- ggplot(data_res, aes(x = prop_1)) + 
     geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1) + 
     scale_shape_manual(values = 4) + 
