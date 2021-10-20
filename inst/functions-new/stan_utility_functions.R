@@ -65,7 +65,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     # smooth weekly deaths on the spike
     date.spike = as.Date("2021-01-23")
     ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
-    tmp[, smooth.weekly.deaths := ma(weekly.deaths, 5), by = c('age')]
+    tmp[, smooth.weekly.deaths := ma(weekly.deaths, 9), by = c('age')]
     tmp[date == date.spike, weekly.deaths := as.integer(smooth.weekly.deaths)]
     tmp = select(tmp, - smooth.weekly.deaths)
     
