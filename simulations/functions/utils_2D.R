@@ -77,8 +77,8 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
   file = file.path(outdir, paste0(method, '_', lab, '_nknots_', n_knots, '.rds'))
   
   if(!file.exists(file) | overwrite){
-    fit <- rstan::sampling(stan_model,data=stan_data,iter=1000,warmup=200,chains=3,
-                          control = list( adapt_delta = 0.99))
+    fit <- rstan::sampling(stan_model,data=stan_data,iter=2000,warmup=500,chains=3,
+                          control = list(max_treedepth = 15, adapt_delta = 0.99))
     saveRDS(fit, file)
   } else{
     fit = readRDS(file)
