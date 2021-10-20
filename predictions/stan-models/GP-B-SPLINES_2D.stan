@@ -1,12 +1,8 @@
-/**
-Same as simulations/GP-B-SPLINES_2D for incomplete training grid
-*/
-
 functions {
-    matrix kron_mvprod(matrix A, matrix B, matrix V) 
-    {
-        return transpose(A*transpose(B*V));
-    }
+  matrix kron_mvprod(matrix A, matrix B, matrix V) 
+  {
+    return transpose(A*transpose(B*V));
+  }
     
   matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
             real delta0,
@@ -36,22 +32,21 @@ functions {
 }
 
 data {
-  // training
-  int<lower=1> n;
-  int<lower=1> m;
-  int<lower=1> N;
-  int coordinates[N,2];
-  vector[N] y;
+  int<lower=1> n; // number of rows
+  int<lower=1> m; // number of columns
+  int<lower=1> N; // number of entries observed
+  int coordinates[N,2]; // coordinate of entries observed
+  int y[N]; // data on entries observed
   
   //splines
-  int num_basis_rows;
-  int num_basis_columns;
-  matrix[num_basis_rows, n] BASIS_ROWS; 
-  matrix[num_basis_columns, m] BASIS_COLUMNS; 
+  int num_basis_rows; // number of B-Splines basis functions rows 
+  int num_basis_columns; // number of B-Splines basis functions columns 
+  matrix[num_basis_rows, n] BASIS_ROWS; // B-splines basis functions on the rows
+  matrix[num_basis_columns, m] BASIS_COLUMNS; // B-splines basis functions on the columns
   
   // GP
-  real IDX_BASIS_ROWS[num_basis_rows];
-  real IDX_BASIS_COLUMNS[num_basis_columns];
+  real IDX_BASIS_ROWS[num_basis_rows]; // index of the B-splines basis functions rows
+  real IDX_BASIS_COLUMNS[num_basis_columns]; // index of the B-splines basis functions columns
 }
 
 transformed data {
@@ -59,11 +54,11 @@ transformed data {
 }
 
 parameters {
-  real<lower=0> rho_1;
-  real<lower=0> rho_2;
-  real<lower=0> alpha_gp;
-  matrix[num_basis_rows,num_basis_columns] eta;
-  real<lower=0> sigma;
+  real<lower=0> rho_1; // length scale rows
+  real<lower=0> rho_2; // length scale columns
+  real<lower=0> alpha_gp; // output variance
+  matrix[num_basis_rows,num_basis_columns] eta; // GP variables
+  real<lower=0> sigma; // observational noise 
 }
 
 transformed parameters {
@@ -81,6 +76,7 @@ model {
   rho_1 ~ inv_gamma(5, 5);
   rho_2 ~ inv_gamma(5, 5);
   alpha_gp ~ cauchy(0,1);
+  
   sigma ~ cauchy(0,1);
   
   for(i in 1:num_basis_rows){
