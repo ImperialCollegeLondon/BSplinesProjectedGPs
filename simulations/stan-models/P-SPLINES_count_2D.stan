@@ -86,18 +86,19 @@ parameters {
   real<lower = 0> tau;
   real<lower = 0, upper = 1> p;
   vector[K] beta_raw; 
-  real<lower=0> nu;
+  real<lower=0> nu_unscaled;
 }
 
 transformed parameters {
+  real<lower=0> nu = (1/nu_unscaled)^2;
+  real<lower=0> theta = (1 / nu);
   matrix[num_basis_rows,num_basis_columns] beta = to_matrix(beta_raw, num_basis_rows,num_basis_columns); 
   matrix[n,m] f = exp( (BASIS_ROWS') * beta * BASIS_COLUMNS );
   matrix[n,m] alpha = f / nu;
-  real<lower=0> theta = (1 / nu);
 }
 
 model {
-  nu ~ exponential(1);
+  nu_unscaled ~ exponential(1);
   
   tau ~ gamma(1, 0.001);
   beta_raw ~ sparse_car(tau, p, Adj_sparse, D_sparse, egv, K, Adj_n);

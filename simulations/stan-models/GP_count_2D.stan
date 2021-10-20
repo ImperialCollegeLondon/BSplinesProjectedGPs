@@ -1,5 +1,3 @@
-
-
 functions {
     matrix kron_mvprod(matrix A, matrix B, matrix V) 
     {
@@ -51,20 +49,21 @@ parameters {
   real<lower=0> rho_2;
   real<lower=0> alpha_gp;
   matrix[n,m] eta;
-  real<lower=0> nu;
+  real<lower=0> nu_unscaled;
 }
 transformed parameters {
+  real<lower=0> nu = (1/nu_unscaled)^2;
+  real<lower=0> theta = (1 / nu);
   matrix[n,m] f = exp(gp(n, m, x_1, x_2,
                               delta,
                               alpha_gp, 
                               rho_1,  rho_2,
                               eta));
   matrix[n,m] alpha = f / nu;
-  real<lower=0> theta = (1 / nu);
 }
 
 model {
-  nu ~ exponential(1);
+  nu_unscaled ~ normal(0,1);
     
   rho_1 ~ inv_gamma(5, 5);
   rho_2 ~ inv_gamma(5, 5);

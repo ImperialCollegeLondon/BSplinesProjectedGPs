@@ -48,22 +48,23 @@ transformed data {
 parameters {
   real<lower=0> alpha_gp;
   matrix[num_basis_rows,num_basis_columns] eta;
-  real<lower=0> nu;
+  real<lower=0> nu_unscaled;
 }
 
 transformed parameters {
+  real<lower=0> nu = (1/nu_unscaled)^2;
+  real<lower=0> theta = (1 / nu);
   matrix[num_basis_rows,num_basis_columns] beta = gp(num_basis_rows, num_basis_columns, 
                                                      delta,
                                                      alpha_gp, 
                                                      eta); 
    matrix[n,m] f = exp( (BASIS_ROWS') * beta * BASIS_COLUMNS );
    matrix[n,m] alpha = f / nu;
-   real<lower=0> theta = (1 / nu);
 }
 
 model {
   alpha_gp ~ cauchy(0,1);
-  nu ~ exponential(1);
+  nu_unscaled ~ normal(0, 1);
   
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
