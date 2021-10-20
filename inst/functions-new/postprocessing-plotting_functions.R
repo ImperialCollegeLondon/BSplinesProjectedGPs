@@ -728,11 +728,10 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, prop_vac, df_age_
   
 }
 
-
 plot_contribution_vaccine <- function(contribution, vaccine_data, outdir){
   
   delay = 7*2
-  df_age_vaccination = unique(select(weekly_deaths, age_index, age))
+  df_age_vaccination = unique(select(contribution, age_index, age))
   df_age_vaccination[, age_from := gsub('(.+)-.*', '\\1', age)]
   df_age_vaccination[, age_to := gsub('.*-(.+)', '\\1', age)]
   df_age_vaccination[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
@@ -740,11 +739,10 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, outdir){
   set(df_age_vaccination, NULL, 'age_from', df_age_vaccination[,as.numeric(age_from)])
   set(df_age_vaccination, NULL, 'age_to', df_age_vaccination[,as.numeric(age_to)])
   vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
-  vaccine_data = vaccine_data[, list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
+  vaccine_data = vaccine_data[!is.na(age_index), list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
   vaccine_data[, date := date + delay]
   
   tmp <- merge(contribution, vaccine_data, by = c('code', 'date', 'loc_label', 'age_index'), all.x = T)
-  tmp <- subset(tmp,  age_index > 2)
   
   p1 = ggplot(tmp, aes(x = date)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
@@ -752,7 +750,6 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, outdir){
     geom_point(data = subset(tmp, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1.1) + 
     facet_wrap(~loc_label, nrow = length(unique(tmp$loc_label))) +
     scale_y_continuous(labels = scales::percent) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     theme_bw() +
     theme(legend.position = 'bottom', 
           strip.background = element_blank(),
@@ -763,6 +760,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, outdir){
     scale_shape_manual(values = 4)+ 
     scale_x_date(expand = c(0,0), breaks = '3 months', date_labels = "%b-%y") 
   
+
   p2 = ggplot(tmp, aes(x = prop)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     geom_line(aes(y = M, col = as.factor(age))) + 

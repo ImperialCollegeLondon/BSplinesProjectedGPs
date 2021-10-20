@@ -99,6 +99,7 @@ if(!is.null(stan_data$prop_vac)){
     contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
   }
   contribution = do.call('rbind', contribution)
+  plot_contribution_vaccine(contribution, vaccine_data, outdir.fig)
   find_regime_state(contribution, vaccine_data, start_resurgence, start_vaccine, outdir.table)
 }
 
