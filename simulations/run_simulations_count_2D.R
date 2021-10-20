@@ -10,10 +10,16 @@ library(grid)
 
 indir ="~/git/covid19Vaccination" # path to the repo
 outdir = file.path(indir, 'simulations', 'results')
+dir.create(outdir)
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 
+# load functions
+source(file.path(indir, 'simulations', "functions", "utils_2D.R"))
+source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
+
+# load stan models functions
 # standard GP
 model_GP = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'GP_count_2D.stan') )
 # standard B-splines
@@ -22,10 +28,6 @@ model_BS = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'B-
 model_PS = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'P-SPLINES_count_2D.stan') )
 # regularised B-splines projected GP
 model_GPBS = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'GP-B-SPLINES_count_2D.stan') )
-
-# load functions
-source(file.path(indir, 'simulations', "functions", "utils_2D.R"))
-source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
 
 
 ## tuning parameters
@@ -101,6 +103,7 @@ for(i in 1:length(lengthscales)){
     
   }
 }
+
 
 
 ## plot results

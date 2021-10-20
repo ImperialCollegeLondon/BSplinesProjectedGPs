@@ -136,5 +136,9 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
   time = sum(get_elapsed_time(fit))
   tmp[, time := time]
   
+  neff = summary(fit)$summary[, 9]
+  tmp[, min_neff := min(neff)]
+  tmp[, max_neff := max(neff)]
+
   return(list(tmp, fit))
 }
