@@ -129,7 +129,6 @@ parameters {
   row_vector[M] slope_resurgence_re[C];
   real<lower=0> sigma_slope_resurgence[C];
   real vaccine_effect_intercept[C,C];
-  real vaccine_effect_slope[C,C];
 }
 
 transformed parameters {
@@ -144,7 +143,6 @@ transformed parameters {
   matrix[num_basis_rows,num_basis_columns] beta[M]; 
   matrix[A, W] f[M];
   row_vector[M] intercept_resurgence[C];
-  row_vector[M] slope_resurgence[C];
   matrix[C,W] E_pdeaths[M];
   matrix[C,T] r_pdeaths[M];
   matrix[C,T] log_r_pdeaths[M];
@@ -192,14 +190,12 @@ transformed parameters {
   
   for(c in 1:C){
     intercept_resurgence[c] = intercept_resurgence_re[c];
-    slope_resurgence[c] = slope_resurgence_re[c];
 
     for(c_prime in 1:C){
       intercept_resurgence[c] += prop_vac_start[c_prime] .* rep_row_vector(vaccine_effect_intercept[c,c_prime], M);
-      slope_resurgence[c] += prop_vac_start[c_prime] .* rep_row_vector(vaccine_effect_slope[c,c_prime], M);
     }
 
-    xi[c] = rep_matrix(intercept_resurgence[c], T) + rep_matrix(week_indices_resurgence, M) .* rep_matrix(slope_resurgence[c], T);
+    xi[c] = rep_matrix(intercept_resurgence[c], T) + rep_matrix(week_indices_resurgence, M) .* rep_matrix(slope_resurgence_re[c], T);
     
   }
 
@@ -224,7 +220,6 @@ model {
     slope_resurgence_re[c] ~ normal(slope_resurgence0[c],sigma_slope_resurgence[c]);
 
     vaccine_effect_intercept[c,:] ~ normal(0,1);
-    vaccine_effect_slope[c,:] ~ normal(0,1);
   }
 
   for(i in 1:num_basis_rows){
@@ -272,9 +267,8 @@ generated quantities {
   int deaths_predict[M,A,W];
   int deaths_predict_state_age_strata[M,B,W];
   row_vector[M] intercept_resurgence_counterfactual[C];
-  row_vector[M] slope_resurgence_counterfactual[C];
-  matrix[C,T] log_r_pdeaths_counterfactual[M];
   matrix[C,T] log_r_pdeaths_predict[M];
+  matrix[C,T] log_r_pdeaths_counterfactual[M];
   matrix[T, M] xi_counterfactual[C];
   matrix[C,T] E_pdeaths_counterfactual[M];
   matrix[C,T] diff_E_pdeaths_counterfactual[M];  
@@ -284,15 +278,13 @@ generated quantities {
 
     for(c in 1:C){
         intercept_resurgence_counterfactual[c] = intercept_resurgence_re[c];
-        slope_resurgence_counterfactual[c] = slope_resurgence_re[c];
 
         for(c_prime in 1:C){
             intercept_resurgence_counterfactual[c] += prop_vac_start[c_counterfactual] .* rep_row_vector(vaccine_effect_intercept[c,c_prime], M);
-            slope_resurgence_counterfactual[c] += prop_vac_start[c_counterfactual] .* rep_row_vector(vaccine_effect_slope[c,c_prime], M);
         }
 
         xi_counterfactual[c] = rep_matrix(intercept_resurgence_counterfactual[c], T) + 
-                               rep_matrix(week_indices_resurgence, M) .* rep_matrix(slope_resurgence_counterfactual[c], T);
+                               rep_matrix(week_indices_resurgence, M) .* rep_matrix(slope_resurgence_re[c], T);
 
     }
 
@@ -341,10 +333,4 @@ generated quantities {
   }
 
 }
-
-
-
-
-
-
 
