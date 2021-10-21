@@ -1,11 +1,11 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="211014b"
+STAN_MODEL="211019d"
 CWD="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/"
 INDIR="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/"
-#STATES='CA,FL,NY,TX,WA'
-STATES='CA,FL'
+STATES='CA,FL,NY,TX,WA'
+#STATES='CA'
   
 cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF
   
@@ -43,7 +43,7 @@ cat > $CWD/bash_$STAN_MODEL-$JOBID-postprocessing.pbs <<EOF
   
 #!/bin/sh
 #PBS -l walltime=40:59:00
-#PBS -l select=1:ncpus=10:ompthreads=1:mem=120gb
+#PBS -l select=1:ncpus=10:ompthreads=1:mem=240gb
 #PBS -j oe
 module load anaconda3/personal
   
