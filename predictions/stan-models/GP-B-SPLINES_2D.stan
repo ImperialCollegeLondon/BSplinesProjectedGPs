@@ -36,7 +36,7 @@ data {
   int<lower=1> m; // number of columns
   int<lower=1> N; // number of entries observed
   int coordinates[N,2]; // coordinate of entries observed
-  int y[N]; // data on entries observed
+  vector[N] y; // data on entries observed
   
   //splines
   int num_basis_rows; // number of B-Splines basis functions rows 
