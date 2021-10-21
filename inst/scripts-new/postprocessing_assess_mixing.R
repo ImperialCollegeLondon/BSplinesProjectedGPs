@@ -90,9 +90,11 @@ tmp1 = find_sum_nonr_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_
 plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
 # trace and paris plots
+cat("\n Trace plot weekly deaths params \n")
 p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 20, limitsize = F)
 
+cat("\n Pairs plot weekly deaths params \n")
 p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
 
@@ -102,9 +104,11 @@ names_fit <- names(fit_cum)
 
 if(any(c('varphi', 'psi', 'chi', 'kappa') %in% names_samples)){
 
+  cat("\n Trace plot vaccination params \n")
   p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('varphi', 'psi', 'chi', 'kappa'))
   ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_vaccine_parameters.png'), h = 10, w = 10, limitsize = F)
   
+  cat("\n Pairs plot vaccination params \n")
   p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('varphi', 'psi', 'chi', 'kappa'))
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_parameters.png'), h = 20, w = 20, limitsize = F)
 
@@ -113,10 +117,12 @@ if(any(c('varphi', 'psi', 'chi', 'kappa') %in% names_samples)){
 if(any(c('slope_resurgence0', 'vaccine_effect_slope') %in% names_samples)){
   
   ## trace plots
+  cat("\n Trace plot vaccination slope params \n")
   p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('slope_resurgence', 'vaccine_effect_slope'))
   ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_vaccine_slope_parameters.png'), h = 20, w = 20, limitsize = F)
   
   ## pairs plot 
+  cat("\n Pairs plot vaccination slope params \n")
   names_var = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope')
   tmp <- data.table(name= names_fit[ grepl(paste(paste0('^',names_var),collapse = '|'),names_fit) ])
   p <- bayesplot::mcmc_pairs(fit_cum, pars = tmp[grepl('\\[1', name)]$name)
@@ -125,6 +131,7 @@ if(any(c('slope_resurgence0', 'vaccine_effect_slope') %in% names_samples)){
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_slope_65p_parameters.png'), h = 20, w = 20, limitsize = F)
   
   ## interval plots
+  cat("\n Interval plot vaccination slope params \n")
   names_var = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope')
   tmp <- data.table(name= names_fit[ grepl(paste(paste0('^',names_var),collapse = '|'),names_fit) ])
   p <- bayesplot::mcmc_intervals(fit_cum, pars=tmp[grepl('\\[1', name)]$name,prob = .95, prob_outer = 0.95)+
@@ -149,10 +156,12 @@ if(any(c('slope_resurgence0', 'vaccine_effect_slope') %in% names_samples)){
 if(any(c('intercept_resurgence0', 'vaccine_effect_intercept') %in% names_samples)){
   
   ## trace plots
+  cat("\n Trace plot vaccination intercept params \n")
   p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('intercept_resurgence', 'vaccine_effect_intercept'))
   ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_vaccine_intercept_parameters.png'), h = 20, w = 20, limitsize = F)
   
   ## pairs plot 
+  cat("\n Pairs plot vaccination intercept params \n")
   names_var = c('intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept')
   tmp <- data.table(name= names_fit[ grepl(paste(paste0('^',names_var),collapse = '|'),names_fit) ])
   p <- bayesplot::mcmc_pairs(fit_cum, pars = tmp[grepl('\\[1', name)]$name)
@@ -161,6 +170,7 @@ if(any(c('intercept_resurgence0', 'vaccine_effect_intercept') %in% names_samples
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_intercept_65p_parameters.png'), h = 20, w = 20, limitsize = F)
 
   ## interval plots
+  cat("\n Interval plot vaccination intercept params \n")
   names_var = c('intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept')
   tmp <- data.table(name= names_fit[ grepl(paste(paste0('^',names_var),collapse = '|'),names_fit) ])
   p <- bayesplot::mcmc_intervals(fit_cum, pars=tmp[grepl('\\[1', name)]$name,prob = .95, prob_outer = 0.95)+
