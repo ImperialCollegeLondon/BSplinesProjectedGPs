@@ -153,7 +153,7 @@ transformed parameters {
 
   for(m in 1:M){
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
-    nu[m] = 1/sqrt(nu_unscaled[m]);
+    nu[m] =  (1/nu_unscaled[m])^2;
     theta[m] = (1 / nu[m]);
 
     beta[m] = gp(num_basis_rows, num_basis_columns, IDX_BASIS_ROWS, IDX_BASIS_COLUMNS, delta0,
