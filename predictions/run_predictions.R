@@ -105,7 +105,7 @@ stan_data = list(n = n, m = m, N = nrow(training),
 
 file= file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds'))
 if(!file.exists(file)){
-  fit <- rstan::sampling(model_stan,data=stan_data,iter=1000,warmup=200,chains=3, 
+  fit <- rstan::sampling(model_stan,data=stan_data,iter=5000,warmup=2500,chains=3, 
                          control = list(max_treedepth = 15, adapt_delta = 0.99))
   saveRDS(fit, file)
 } else{
