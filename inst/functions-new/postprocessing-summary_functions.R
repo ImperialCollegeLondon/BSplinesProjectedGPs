@@ -38,7 +38,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   
   stopifnot(!is.null(fit))
   
-  summary = rstan::summary(fit_cum)$summary
+  summary = rstan::summary(fit)$summary
   eff_sample_size_cum = summary[,9][!is.na(summary[,9])]
   Rhat_cum = summary[,10][!is.na(summary[,10])]
   cat("the minimum and maximum effective sample size are ", range(eff_sample_size_cum), "\n")
@@ -46,7 +46,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   if(min(eff_sample_size_cum) < 500) cat('\nEffective sample size smaller than 500 \n')
   
   tryCatch({
-    sampler_params <- get_sampler_params(fit_cum, inc_warmup = FALSE)
+    sampler_params <- get_sampler_params(fit, inc_warmup = FALSE)
     sampler_diagnostics <- data.table()
     for (i in colnames(sampler_params[[1]])) {
       tmp <- data.table(t(sapply(sampler_params, function(x) quantile(x[, i],probs = c(0.025,0.5,0.975)))))
@@ -62,11 +62,11 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   check_all_diagnostics(fit, outdir)
   
   # compute WAIC and LOO
-  re = rstan::extract(fit_cum)
+  re = rstan::extract(fit)
   tryCatch({
     
     if('log_lik' %in% names(re)){
-      log_lik <- loo::extract_log_lik(fit_cum)
+      log_lik <- loo::extract_log_lik(fit)
       log_lik = log_lik[!is.na(log_lik[,1]),]
       .WAIC = loo::waic(log_lik)
       .LOO = loo::loo(log_lik)
