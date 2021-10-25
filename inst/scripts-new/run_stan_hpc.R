@@ -116,7 +116,7 @@ stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
 if(grepl('211014|211019|211020|211025', stan_model)){
   cat("\n Using 2D splines \n")
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 4)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
 }
 if(grepl('211015', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
@@ -145,7 +145,7 @@ if(grepl('211025', stan_model)){
   stan_data$P = length(stan_data$prop_vac_sequence)
 }
 
-print("A = 12, W = 4")
+print("A = 12, W = 10")
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
@@ -168,7 +168,7 @@ if(0){
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=3500,warmup=2500,chains=8,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
                            init = rep(list(stan_init), 8))
 
