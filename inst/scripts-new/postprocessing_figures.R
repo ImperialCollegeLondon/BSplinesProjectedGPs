@@ -162,6 +162,23 @@ if(!is.null(stan_data$prop_vac)){
   plot_PPC_relative_resurgence(log_r_pdeaths, log_r_pdeaths_predict, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
 }
 
+# prediction for sequence
+if(!is.null(stan_data$prop_vac_sequence)){
+  
+  min_age_index_vac = 3
+  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+  
+  prop_prediction = data.table(prop = stan_data$prop_vac_sequence, prop_index = 1:length(stan_data$prop_vac_sequence))
+  
+  prediction_intercept <- make_var_by_age_age_table(fit_cum, df_age_vaccination2, prop_prediction, 'vaccine_effect_total_intercept', outdir)
+  p1 <- plot_vaccination_effect_prediction(prediction_intercept, 'magnitude', outdir.fig)
+  
+  prediction_slope <- make_var_by_age_age_table(fit_cum, df_age_vaccination2, prop_prediction, 'vaccine_effect_total_slope', outdir)
+  p2 <- plot_vaccination_effect_prediction(prediction_slope, 'time trends', outdir.fig)
+  
+}
+
 
 # compare to DoH data
 tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_cum, date_10thcum, df_week, df_age_continuous, 

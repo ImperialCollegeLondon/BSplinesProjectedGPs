@@ -680,6 +680,43 @@ plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccina
   
 }
 
+plot_vaccination_effect_prediction <- function(prediction, var, outdir){
+  
+  p = list()
+  for(i in 1:length(unique(prediction$age_recipient))){
+    # Age="18-64"
+    Age = unique(prediction$age_recipient)[i]
+    tmp <- subset(prediction, age_source == Age)
+    p[[i]] = ggplot(tmp, aes(x = prop)) + 
+      geom_line(aes(y = M, col = age_recipient)) + 
+      geom_ribbon(aes(ymin = CL, ymax = CU, fill = age_recipient), alpha = 0.3) +
+      labs(y = 'Mitigation on the magnitude of\nrelative COVID-19 attributable weekly deaths', 
+           x = paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before the\nbeginning of Summer 2021 resurgences'), 
+           col = 'Age group', fill = 'Age group') + 
+      theme_bw() +
+      theme(strip.background = element_blank(),
+            strip.text = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
+            legend.title = element_text(size = rel(0.85)),
+            axis.title.x = element_text(size = rel(0.9)),
+            axis.title.y = element_text(size = rel(1)),
+            legend.spacing.y = unit(-0, "cm")) +
+      scale_color_jcolors(palette = "pal6") + 
+      scale_fill_jcolors(palette = "pal6") 
+    
+    if(i > 1){
+      p[[i]] <- p[[i]] + theme(axis.title.y = element_blank())
+    }
+  }
+  
+  
+  p = ggarrange(plotlist = p, ncol = 2, common.legend = T, legend = 'bottom', widths = c(1.1,1)) # legend.grob = get_legend(p0)
+  ggsave(p, file = paste0(outdir, '-vaccine_effect_prediction_', var, '.png', collapse= '_'), w = 6.5, h = 5)
+  
+  return(p)
+}
+
+
 plot_PPC_relative_resurgence <- function(data_res1, data_res2, prop_vac, df_age_vaccination2, df_week2, outdir){
   
   data_res1[, type := 'fitted']
