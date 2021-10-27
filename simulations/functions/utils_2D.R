@@ -75,6 +75,7 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
   }
   
   file = file.path(outdir, paste0(method, '_', lab, '_nknots_', n_knots, '.rds'))
+  file2 = file.path(outdir, paste0(method, '_', lab, '_nknots_', n_knots, '_summary.rds'))
   
   if(!file.exists(file) | overwrite){
     fit <- rstan::sampling(stan_model,data=stan_data,iter=2000,warmup=500,chains=3,
@@ -84,8 +85,13 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
     fit = readRDS(file)
   }
   
+  if(file.exists(file2) & !overwrite){
+    tmp = readRDS(file2)
+    return(list(tmp, fit))
+  }
+  
   # predictions
-  samples = extract(fit)
+  samples = rstan::extract(fit)
   stan_data_predictions <- list(M = dim(samples$alpha)[1], 
                                 n = dim(samples$alpha)[2], 
                                 m = dim(samples$alpha)[3], 
@@ -109,7 +115,7 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
   tmp = dcast(tmp, rows_idx + column_idx ~ q_label, value.var = "q")
   tmp[, variable := 'f']
   
-  samples.pred <- extract(pred)
+  samples.pred <- rstan::extract(pred, pars = 'y_hat')
   tmp1 = as.data.table( reshape2::melt(samples.pred$y_hat[1,,,]) )
   setnames(tmp1, 2:3, c('rows_idx', 'column_idx'))
   tmp1 = tmp1[, list( 	q= c(quantile(value, prob=ps, na.rm = T), mean(value)),
@@ -140,5 +146,6 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
   tmp[, min_neff := min(neff)]
   tmp[, max_neff := max(neff)]
 
+  saveRDS(tmp, file2)
   return(list(tmp, fit))
 }

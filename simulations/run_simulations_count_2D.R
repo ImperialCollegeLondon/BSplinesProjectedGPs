@@ -106,7 +106,7 @@ for(i in 1:length(lengthscales)){
 
 
 
-## plot results
+## joint
 tmp = do.call('rbind', list(GP_2D_1[[1]], 
                             GPBS_2D_1_1[[1]], GPBS_2D_2_1[[1]], GPBS_2D_3_1[[1]], 
                             BS_2D_1_1[[1]], BS_2D_2_1[[1]], BS_2D_3_1[[1]],  
@@ -130,56 +130,51 @@ tmp[grepl('knots', method), method2 := gsub('(.+)\n#knots = .*', '\\1', method)]
 tmp[!grepl('knots', method), method2 := method]
 tmp[!grepl('knots', method), n_knots := 0]
 
+
+## Convergence disagnostics
+range(tmp[,'min_neff'])
+
+
+## plot results
 variables = c('y_hat', 'f')
 for(l in lengthscales){
-  # l = lengthscales[2]
-  for(k in 1:length(variables)){
-    # k = 1
-    tmp1 = subset(tmp, variable == variables[k] & lengthscale == l)
+  # l = lengthscales[1]
 
+    tmp1 = subset(tmp,  lengthscale == l)
+    
     tmp1[, method2 := factor(method2, levels = c('Standard 2D GP', 
                                                  'Standard B-splines 2D surface', 
                                                  'P-splines',
                                                  'Low-rank 2D GP'))]
     tmp1[, n_knots := factor(n_knots, levels = sort(unique(tmp1$n_knots), decreasing = F))]
     tmp1[, n_knots2:= factor(paste0(n_knots, ' knots'), levels = paste0(sort(unique(tmp1$n_knots), decreasing = F), ' knots'))]
-    
-    var = variables[k]
-    y_var = ifelse(var == 'y_hat', 'y', 'y_mean')
-    option_viridis = ifelse(var == 'y_hat', 'A', 'viridis')
-    var_names = ifelse(var == 'y_hat', 'Simulated observations\n', 'Mean of the\nsimulated observations\n')
-    var_names_training = ifelse(var == 'y_hat', 'Simulated observations\nincluded in the training set', 'Mean of the\nsimulated observations\nincluded in the training set')
-    prediction_names = ifelse(var == 'y_hat', 'Predicted observations', 'Estimated mean of the observations')
-    prediction_names_break  = ifelse(var == 'y_hat', 'Predicted observations', 'Estimated mean of the\nobservations')
-    
-    tmp2 = select(tmp1, x_1, x_2, y, y_mean)
+
+    tmp2 = subset(tmp1, variable == 'f', select = c('x_1', 'x_2', 'y', 'y_training', 'y_mean'))
     p0 = ggplot(unique(tmp2),aes(x=x_1,y=x_2)) +
-      geom_raster(aes(fill=all_of(get(y_var))), interpolate = TRUE) +
-      geom_contour(aes(z=all_of(get(y_var))), bins = 12, color = "gray30", 
-                   size = 0.5, alpha = 0.5) +
+      geom_raster(aes(fill=y)) +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ) )), begin = 0.1) +
+      scale_fill_viridis_c(option = 'A', begin = 0.1) +
       labs(x = '') + 
-      ggtitle(var_names) + 
-      theme(legend.position = 'none',
+      ggtitle('Simulated observations\n') + 
+      theme(legend.position = 'right',
+            legend.title = element_blank(),
             strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA),
             axis.title.x = element_blank(),
             strip.text =  element_blank(),
             panel.spacing.x = unit(1, "lines"), 
             axis.title.y = element_blank(),
-            plot.title = element_text(size = rel(1), hjust = 0.5)) 
+            plot.title = element_text(size = rel(1), hjust = 0.5))+
+      guides(fill = guide_colourbar(barheight = 10, barwidth = 0.5))
     
-    tmp2 = copy(select(tmp1, x_1, x_2, y, y_mean, y_training))
-    tmp2[is.na(y_training), (y_var) := NA]
-    p02 = ggplot(unique(tmp2),aes(x=x_1,y=x_2)) +
-      geom_raster(aes(fill=all_of(get(y_var))), interpolate = TRUE) +
+    p01 = ggplot(unique(tmp2),aes(x=x_1,y=x_2)) +
+      geom_raster(aes(fill=y_training)) +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ) )), begin = 0.1) +
+      scale_fill_viridis_c(option = 'A', , begin = 0.1, na.value = 'white') +
       labs(x = '') + 
-      ggtitle(var_names_training) + 
+      ggtitle('Simulated observations\n included in the training set') + 
       theme(legend.position = 'none',
             strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA),
@@ -187,63 +182,99 @@ for(l in lengthscales){
             strip.text =  element_blank(),
             panel.spacing.x = unit(1, "lines"), 
             axis.title.y = element_blank(),
-            axis.ticks.y = element_blank(),
             axis.text.y = element_blank(),
             plot.title = element_text(size = rel(1), hjust = 0.5)) 
     
-    tmp2 = subset(tmp1, method2 %in% c('Standard 2D GP'))
+    p02 = ggplot(unique(tmp2),aes(x=x_1,y=x_2)) +
+      geom_raster(aes(fill=y_mean)) +
+      scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
+      scale_y_continuous(expand=c(0,0)) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp1$y_mean )), begin = 0.1) +
+      labs(x = '') + 
+      geom_contour(aes(z=y_mean), bins = 12, color = "gray30", 
+                   size = 0.5, alpha = 0.5) +
+      ggtitle('Simulated mean surface\n') + 
+      theme(legend.position = 'right',
+            legend.title = element_blank(),
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA),
+            axis.title.x = element_blank(),
+            strip.text =  element_blank(),
+            panel.spacing.x = unit(1, "lines"), 
+            axis.title.y = element_blank(),
+            # axis.ticks.y = element_blank(),
+            axis.text.y = element_blank(),
+            plot.title = element_text(size = rel(1), hjust = 0.5)) +
+      guides(fill = guide_colourbar(barheight = 10, barwidth = 0.5))
+    
+    p00 = ggpubr::ggarrange(p0,p01, widths = c(1.1, 1), nrow =1, labels = c('B', 'C'),  font.label = list(size = 15), common.legend = T, legend = 'right')
+    p02 = ggpubr::ggarrange(p02,  labels = c('A'),  font.label = list(size = 15), common.legend = T, legend = 'right')
+    p = ggpubr::ggarrange(p02, p00, widths = c(1, 1.9), nrow =1)
+    ggsave(p, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_data.png')), w = 9, h = 3.15)
+    
+    
+    
+    
+    tmp2 = subset(tmp1, variable == 'f' & method2 %in% c('Standard 2D GP'))
     p1 =ggplot(tmp2,aes(x=x_1,y=x_2)) +
-      geom_raster(aes(fill=M), interpolate = TRUE) +
+      geom_raster(aes(fill=M)) +
       geom_contour(aes(z=M), bins = 12, color = "gray30", 
                    size = 0.5, alpha = 0.5) +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ))), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean)), begin = 0.1) +
       labs(x = '', y= '') + 
       facet_wrap(.~method2, scale = 'free_y') +
-      ggtitle(paste0('Standard 2D GP\n',prediction_names_break)) + 
-      theme(legend.position = 'none',
+      # ggtitle(paste0('Standard 2D GP')) + 
+      theme(legend.position = 'right',
             strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA),
             axis.title.x = element_blank(),
             axis.title.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            axis.text.y = element_blank(),
             strip.text =  element_blank(),
             panel.spacing.x = unit(1, "lines"), 
-            plot.title = element_text(size = rel(1), hjust = 0.5)) 
-
-    tmp2 = subset(tmp1, method2 == c('Standard B-splines 2D surface'))
+            plot.title = element_text(size = rel(1), hjust = 0.5),
+            legend.title = element_blank()) +
+      guides(fill = guide_colourbar(barheight = 10, barwidth = 0.5)) 
+    ggsave(p1, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_2DGP.png')), w = 3.9, h = 3.15)
+    
+    
+    
+    
+    
+    tmp2 = subset(tmp1, variable == 'f' & method2 == c('Standard B-splines 2D surface'))
     p2 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
-      geom_raster(aes(fill=M), interpolate = TRUE) +
+      geom_raster(aes(fill=M)) +
       geom_contour(aes(z=M), bins = 12, color = "gray30", 
                    size = 0.5, alpha = 0.5) +
       coord_equal() +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ) )), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean )), begin = 0.1) +
       # ggtitle(paste0('Standard B-splines surface\n',prediction_names)) +
       ggtitle(paste0('Standard B-splines surface')) +
       facet_grid(method2~n_knots2) +
-      theme(legend.position = 'none',
+      theme(legend.position = 'right',
             strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA), 
             strip.text.y = element_blank(), 
             strip.text.x =  element_text(size = rel(1)),
             axis.title.x = element_blank(),
             axis.title.y = element_blank(),
+            legend.title = element_blank(),
             # panel.spacing.x = unit(0.6, "lines"), 
-            plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1))  
-
-    tmp2 = subset(tmp1, method2 == c('P-splines'))
+            plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1)) +
+      guides(fill = guide_colourbar( barheight  = 15, barwidth = 0.5))  
+    
+    tmp2 = subset(tmp1, variable == 'f' & method2 == c('P-splines'))
     p3 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
-      geom_raster(aes(fill=M), interpolate = TRUE) +
+      geom_raster(aes(fill=M)) +
       geom_contour(aes(z=M), bins = 12, color = "gray30", 
                    size = 0.5, alpha = 0.5) +
       coord_equal() +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ))), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean)), begin = 0.1) +
       # ggtitle(paste0('Bayesian P-splines\n',prediction_names)) +
       ggtitle(paste0('Bayesian P-splines')) +
       facet_grid(method2~n_knots2) +
@@ -256,16 +287,16 @@ for(l in lengthscales){
             axis.title.y = element_blank(),
             panel.spacing.y = unit(3, "lines"), 
             plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1))
-
-    tmp2 = subset(tmp1, method2 == c('Low-rank 2D GP'))
+    
+    tmp2 = subset(tmp1, variable == 'f' &method2 == c('Low-rank 2D GP'))
     p4 = ggplot(tmp2,aes(x=x_1,y=x_2)) +
-      geom_raster(aes(fill=M), interpolate = TRUE) +
+      geom_raster(aes(fill=M)) +
       geom_contour(aes(z=M), bins = 12, color = "gray30", 
                    size = 0.5, alpha = 0.5) +
       coord_equal() +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = option_viridis, limits = range(c(tmp1$M, as.vector(select(tmp1,y_var) ))), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean)), begin = 0.1) +
       ggtitle(paste0('Regularised B-splines projected 2D GP')) +
       # ggtitle(paste0('Regularised B-splines projected 2D GP\n',prediction_names)) +
       facet_grid(method2~n_knots2) +
@@ -274,38 +305,19 @@ for(l in lengthscales){
             panel.border = element_rect(colour = "black", fill = NA), 
             strip.text.y = element_blank(), 
             axis.title.y = element_blank(),
-            strip.text.x =  element_text(size = rel(1.1)),
             axis.title.x = element_blank(),
+            strip.text.x =  element_text(size = rel(1.1)),
             panel.spacing.y = unit(3, "lines"), 
-            plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1))
-
-    p01  <- p0 + theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
-    p021  <- p02 + theme( plot.margin=unit(c(5.5, 5.5, 0, 0), "pt") )
-    p11  <- p1 + theme( plot.margin=unit(c(5.5, 5.5, 0, 0), "pt"))
-    p00 = ggpubr::ggarrange(p01,p021,p11, widths = c(1.14, 1, 1), nrow =1, labels = c('A', 'B', 'C'),  font.label = list(size = 15))
-    ggsave(p00, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_', var, '_data.png')), w = 8, h = 3.25)
+            plot.title =element_text(hjust = 0.5,size=rel(1), vjust = -1)) 
     
 
     p31 <- p3+ theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
     p41 <- p4+ theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
     p21 <- p2+ theme( plot.margin=unit(c(5.5, 5.5, 0, 5.5), "pt") )
     
-    p = ggpubr::ggarrange(p21, p31, p41, nrow = 3, labels = c('A', 'B', 'C'),  font.label = list(size = 15))
-    ggsave(p, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_', var, '_Rsplines.png')), w = 7, h = 8.5)
-    
-# 
-#     p = grid.arrange(p0,p02,p1, p2, p3, p4, 
-#                      layout_matrix = rbind(c(NA,1,1, 2, 3), 
-#                                            rep(4,5),
-#                                            rep(5,5),
-#                                            rep(6,5)), 
-#                      widths = c(0.1,0.15, 1, 1, 1), heights = c(0.95,1, 1, 1))
-# 
-# 
-#     ggsave(p, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_', var, '.png')), w = 6, h = 10)
-    
-    
-  }
+    p = ggpubr::ggarrange(p21, p31, p41, nrow = 3, labels = c('A', 'B', 'C'),  font.label = list(size = 15), 
+                          common.legend = T, legend = 'right')
+    ggsave(p, file = file.path(outdir, paste0('v2_2D_comp_count_lengthscale_', l, '_Rsplines.png')), w = 7, h = 8.5)
     
  }
 
