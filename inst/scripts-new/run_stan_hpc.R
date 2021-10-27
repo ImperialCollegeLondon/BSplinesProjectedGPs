@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,WA',',')[[1]]
-stan_model = "211026"
+stan_model = "211019b6a"
 JOBID = 3541
 
 if(0)
@@ -133,11 +133,9 @@ if(1){
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
 if(grepl('211019b6a', stan_model)){
-  stan_data$prop_vac_start[[1]] = as.numeric(stan_data$prop_vac_start[[1]] >= 0.4)
-  stan_data$prop_vac_start[[2]] = as.numeric(stan_data$prop_vac_start[[2]] >= 0.75)
-  stan_data$prop_vac_start_counterfactual = list()
-  stan_data$prop_vac_start_counterfactual[[1]] = rep(1, stan_data$M)
-  stan_data$prop_vac_start_counterfactual[[2]] = stan_data$prop_vac_start[[2]] 
+  cutoff_1864 = round(mean(range(stan_data$prop_vac_start[[1]])), 2)
+  cutoff_65p =  round(mean(range(stan_data$prop_vac_start[[2]])), 2)
+  stan_data = add_vaccine_prop_indicator(stan_data, cutoff_1864, cutoff_65p)
 }
 if(grepl('211025', stan_model)){
   cat("\n Add sequence of vaccinated \n")

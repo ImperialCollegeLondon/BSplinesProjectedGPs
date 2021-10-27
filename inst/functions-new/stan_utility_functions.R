@@ -521,6 +521,16 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, start_resurg
   return(stan_data)
 }
 
+add_vaccine_prop_indicator <- function(stan_data, cutoff_1864, cutoff_65p){
+  stan_data$prop_vac_start[[1]] = as.numeric(stan_data$prop_vac_start[[1]] >= cutoff_1864)
+  stan_data$prop_vac_start[[2]] = as.numeric(stan_data$prop_vac_start[[2]] >= cutoff_65p)
+  stan_data$prop_vac_start_counterfactual = list()
+  stan_data$prop_vac_start_counterfactual[[1]] = rep(1, stan_data$M)
+  stan_data$prop_vac_start_counterfactual[[2]] = stan_data$prop_vac_start[[2]] 
+  
+  return(stan_data)
+}
+
 add_JHU_data <- function(stan_data, df_week, Code){
   
   JHUData = as.data.table(JHUData)
