@@ -769,7 +769,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
     scale_fill_gradient2(high = 'lightpink', low = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)))
   
   p = grid.arrange(p1, p2, ncol = 2)
-  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage_indicator.png'), w = 8, h = 5)
+  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage2.png'), w = 8, h = 5)
   
 }
 
