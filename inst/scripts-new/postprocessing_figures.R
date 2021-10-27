@@ -167,7 +167,6 @@ if(!is.null(stan_data$prop_vac)){
 
 
 if(!is.null(stan_data$prop_vac_start_counterfactual)){
-  cutoff_1864 = 0.4; cutoff_65p = 0.775
   prop_vac_indicator = subset(prop_vac, date == min(date))
   prop_vac_indicator[, indic1 := prop_1 >= cutoff_1864]
   prop_vac_indicator[, indic2 := prop_2 >= cutoff_65p]
