@@ -152,15 +152,29 @@ if(!is.null(stan_data$prop_vac)){
   perc_E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'perc_E_pdeaths_counterfactual', outdir.table)
   plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths, diff_E_pdeaths_counterfactual,perc_E_pdeaths_counterfactual, outdir.fig)
   
-  prop_vac = prepare_prop_vac_table(stan_data)
+  stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, start_resurgence, pick_resurgence)
+  prop_vac = prepare_prop_vac_table(stan_data1)
   r_pdeaths = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'r_pdeaths', outdir.table)
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
+  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
   find_stats_vaccine_effects(start_resurgence, pick_resurgence, diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, prop_vac, outdir.table)
   
   log_r_pdeaths = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'log_r_pdeaths', outdir.table)
   log_r_pdeaths_predict = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'log_r_pdeaths_predict', outdir.table)
   plot_PPC_relative_resurgence(log_r_pdeaths, log_r_pdeaths_predict, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
 }
+
+
+
+if(!is.null(stan_data$prop_vac_start_counterfactual)){
+  cutoff_1864 = 0.4; cutoff_65p = 0.775
+  prop_vac_indicator = subset(prop_vac, date == min(date))
+  prop_vac_indicator[, indic1 := prop_1 >= cutoff_1864]
+  prop_vac_indicator[, indic2 := prop_2 >= cutoff_65p]
+
+  plot_relative_resurgence_vaccine_indicator(r_pdeaths, prop_vac_indicator, df_age_vaccination2, df_week2, outdir.fig)
+}
+
 
 # prediction for sequence
 if(!is.null(stan_data$prop_vac_sequence)){
