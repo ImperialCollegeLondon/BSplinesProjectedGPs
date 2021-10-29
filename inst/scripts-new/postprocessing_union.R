@@ -78,7 +78,7 @@ for(i in seq_along(locs)){
   death3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
 death3 = do.call('rbind', death3)
-plot_mortality_all_states(death3, start_resurgence, outdir.fig)
+plot_mortality_all_states(death3, resurgence_dates, outdir.fig)
 
 
 #
@@ -88,7 +88,7 @@ for(i in seq_along(locs)){
   propdeath3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeprop_Table_3agegroups_', locs[i], '.rds'))
 }
 propdeath3 = do.call('rbind', propdeath3)
-find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, start_resurgence, outdir.table)
+find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, min(resurgence_dates$start_resurgence), outdir.table)
 
 
 # 
@@ -100,7 +100,7 @@ if(!is.null(stan_data$prop_vac)){
   }
   contribution = do.call('rbind', contribution)
   plot_contribution_vaccine(contribution, vaccine_data, outdir.fig)
-  find_regime_state(contribution, vaccine_data, start_resurgence, start_vaccine, outdir.table)
+  find_regime_state(contribution, vaccine_data, resurgence_dates, start_vaccine, outdir.table)
 }
 
 

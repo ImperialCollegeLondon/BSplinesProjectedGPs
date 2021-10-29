@@ -155,8 +155,14 @@ make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
               by=c('state_index', 'age_index', 'week_index')]	
   tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
   
-  tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
   tmp1[, age := df_state_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_state_age$age)]
 
@@ -1964,3 +1970,28 @@ summary_death_all_states = function(death2, rm_states){
   
   return(tmp1)
 }
+
+prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
+  
+  prop_vac = data.table( do.call('rbind', stan_data$prop_vac) ) 
+  prop_vac[, age := rep(df_age_vaccination2$age, each = nrow(stan_data$prop_vac[[1]]))]
+  prop_vac[, week_index := rep(1:nrow(stan_data$prop_vac[[1]]), length(stan_data$prop_vac))]
+  prop_vac = data.table(reshape2::melt(prop_vac, id.vars = c('age', 'week_index')))
+  setnames(prop_vac, c('variable', 'value'), c('code', 'prop'))
+  prop_vac = merge(prop_vac, df_week2, by = c('week_index', 'code'))
+  
+  prop_vac_start = data.table( do.call('rbind', stan_data$prop_vac_start) ) 
+  colnames(prop_vac_start) = colnames(stan_data$prop_vac[[1]])
+  prop_vac_start[, age := df_age_vaccination2$age] 
+  prop_vac_start = data.table(reshape2::melt(prop_vac_start, id.vars = c('age')))
+  setnames(prop_vac_start, c('variable', 'value'), c('code', 'pre_prop'))
+  
+  prop_vac = merge(prop_vac, prop_vac_start, by = c('code', 'age'))
+  prop_vac = merge(prop_vac, df_age_vaccination2, by = c('age'))
+  prop_vac[, prop := prop + pre_prop]
+  prop_vac[, cat := paste0('prop_', age_index)]
+  prop_vac = data.table(reshape2::dcast(prop_vac, code + date ~ cat, value.var = 'prop'))
+  
+  return(prop_vac)
+}
+

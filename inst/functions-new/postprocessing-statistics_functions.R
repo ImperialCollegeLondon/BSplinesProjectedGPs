@@ -50,14 +50,16 @@ statistics_contributionref_all_states = function(contribution_ref_adj, outdir){
   # return(contribution_baseline)
 }
 
-find_regime_state = function(contribution75, vaccine_data, start_resurgence, date_before_vaccine, outdir){
+find_regime_state = function(contribution75, vaccine_data, resurgence_dates, date_before_vaccine, outdir){
   
   delay = 2*7
   
   contribution_stats = list()
   
   contribution_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
-  contribution_stats[['start_resurgence']] = format(start_resurgence,  '%B %d, %Y')
+  contribution_stats[['start_resurgence']] = format(min(resurgence_dates$start_resurgence),  '%B %d, %Y')
+  
+  contribution75 = merge(contribution75, resurgence_dates, by = 'code')
   
   con_bv = contribution75[date == date_before_vaccine, list(paste0(round(mean(M)*100, 2), '\\%'), 
                                                    paste0(round(mean(CL)*100, 2), '\\%'),
@@ -210,16 +212,21 @@ find_statistics_mortality_rate <- function(mortality_rate, outdir){
   saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
 }
 
-find_stats_vaccine_effects <- function(start_resurgence, pick_resurgence, data_res1, data_res2, prop_vac, outdir){
-  stat = list(format(c(start_resurgence, pick_resurgence),  '%B %d, %Y'),
-              subset(data_res1, date == pick_resurgence)[, list(M = round(M), 
+find_stats_vaccine_effects <- function(data_res1, data_res2, prop_vac, resurgence_dates, outdir){
+  
+  data_res1 = merge(data_res1, resurgence_dates, by = 'code')
+  prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
+  data_res2 = merge(data_res2, resurgence_dates, by = 'code')
+  
+  stat = list(format(c(min(resurgence_dates$start_resurgence), max(resurgence_dates$stop_resurgence)),  '%B %d, %Y'),
+              subset(data_res1, date == stop_resurgence)[, list(M = round(M), 
                                                                 CL = round(CU), 
                                                                 CU = round(CL)), by = c('age', 'loc_label')],
               subset(prop_vac, date == start_resurgence)[, list(min_3 = paste0(round(min(prop_1*100), 2), '\\%'),
                                                                                                    max_3 = paste0(round(max(prop_1*100), 2), '\\%'),
                                                                                                    min_4 = paste0(round(min(prop_2*100), 2), '\\%'),
                                                                                                    max_4 = paste0(round(max(prop_2*100), 2), '\\%'))],
-              subset(data_res2, date == pick_resurgence)[, list(M = round(M*100, digits = 2), 
+              subset(data_res2, date == stop_resurgence)[, list(M = round(M*100, digits = 2), 
                                                                 CL = round(CU*100, digits = 2), 
                                                                 CU = round(CL*100, digits = 2)), by = c('age', 'loc_label')])
   saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
@@ -228,6 +235,7 @@ find_stats_vaccine_effects <- function(start_resurgence, pick_resurgence, data_r
 }
 
 find_prop_deaths_vaccine_statistics <- function(propdeath3, start_vaccine, start_resurgence, outdir){
+  
   dmean75 = propdeath3[age == '75+', list(M = paste0(format(round((- mean(M))*100, 2), nsmall = 2), '\\%'), 
                                           CL = paste0(format(round((-mean(CU))*100, 2), nsmall = 2), '\\%'),
                                           CU = paste0(format(round((-mean(CL))*100, 2), nsmall = 2), '\\%'))]

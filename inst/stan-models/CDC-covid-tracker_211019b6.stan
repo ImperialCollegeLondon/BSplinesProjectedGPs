@@ -74,8 +74,8 @@ data{
   real IDX_BASIS_COLUMNS[num_basis_columns];
 
   // vaccine effect
-  int<lower=1,upper=W> w_stop_resurgence; // index of the week when Summer 2021 resurgences stop
-  int<lower=1,upper=w_stop_resurgence> w_start_resurgence; // index of the week when Summer 2021 resurgences starts
+  int<lower=1,upper=W> w_stop_resurgence[M]; // index of the week when Summer 2021 resurgences stop
+  int<lower=1,upper=W> w_start_resurgence[M]; // index of the week when Summer 2021 resurgences starts
   int<lower=1> T; // number of weeks during the Summer 2021 resurgences (w_stop_resurgence-w_start_resurgence+1)
   vector[T] week_indices_resurgence; // 0:(T-1)
   int<lower=1> C; // number of age groups in vaccination data
@@ -176,13 +176,13 @@ transformed parameters {
         phi_reduced_vac[m][c,w] = sum(phi[m][age_from_vac_age_strata[c]:age_to_vac_age_strata[c], w]);
         E_pdeaths[m][c,w] = phi_reduced_vac[m][c,w] * deaths_JHU[m,w];
 
-        if(w == w_start_resurgence - 1){
-            E_pdeaths_before_resurgence[m,c] = (E_pdeaths[m][c,(w_start_resurgence - 1)] + E_pdeaths[m][c,(w_start_resurgence - 2)]) / 2;
+        if(w == w_start_resurgence[m] - 1){
+            E_pdeaths_before_resurgence[m,c] = (E_pdeaths[m][c,(w_start_resurgence[m] - 1)] + E_pdeaths[m][c,(w_start_resurgence[m] - 2)]) / 2;
         }
 
-        if(w >= w_start_resurgence && w <= w_stop_resurgence){
-            r_pdeaths[m][c,w - w_start_resurgence + 1] = E_pdeaths[m][c,w] / E_pdeaths_before_resurgence[m,c] ;
-            log_r_pdeaths[m][c,w - w_start_resurgence + 1] = log( r_pdeaths[m][c,w - w_start_resurgence + 1] );
+        if(w >= w_start_resurgence[m] && w <= w_stop_resurgence[m]){
+            r_pdeaths[m][c,w - w_start_resurgence[m] + 1] = E_pdeaths[m][c,w] / E_pdeaths_before_resurgence[m,c] ;
+            log_r_pdeaths[m][c,w - w_start_resurgence[m] + 1] = log( r_pdeaths[m][c,w - w_start_resurgence[m] + 1] );
         }
         
       }
@@ -306,8 +306,8 @@ generated quantities {
 
             log_r_pdeaths_counterfactual[m][c,:] = to_row_vector( normal_rng(xi_counterfactual[c][:,m], sigma_r_pdeaths[c]));
             E_pdeaths_counterfactual[m][c,:] = rep_row_vector(E_pdeaths_before_resurgence[m,c], T) .* exp( log_r_pdeaths_counterfactual[m][c,:] );
-            diff_E_pdeaths_counterfactual[m][c,:] = cumulative_sum(E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence] - E_pdeaths_counterfactual[m][c,:]);
-            perc_E_pdeaths_counterfactual[m][c,:] = diff_E_pdeaths_counterfactual[m][c,:] ./ cumulative_sum( E_pdeaths[m][c,w_start_resurgence:w_stop_resurgence] ) ;
+            diff_E_pdeaths_counterfactual[m][c,:] = cumulative_sum(E_pdeaths[m][c,w_start_resurgence[m]:w_stop_resurgence[m]] - E_pdeaths_counterfactual[m][c,:]);
+            perc_E_pdeaths_counterfactual[m][c,:] = diff_E_pdeaths_counterfactual[m][c,:] ./ cumulative_sum( E_pdeaths[m][c,w_start_resurgence[m]:w_stop_resurgence[m]] ) ;
         }
 
         for(w in 1:W){
