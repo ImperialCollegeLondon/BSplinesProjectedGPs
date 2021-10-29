@@ -111,7 +111,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211014|211019|211020|211025|211026|211027', stan_model)){
+if(grepl('211014|211019|211020|211025|211026|211027|211029', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
 }
@@ -119,7 +119,7 @@ if(grepl('211015', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
-if(grepl('211014b|211019|211020|211025|211026|211027', stan_model)){
+if(grepl('211014b|211019|211020|211025|211026|211027|211029', stan_model)){
   cat("\n With vaccine effects \n")
   resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
   stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
@@ -130,7 +130,7 @@ if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
-if(grepl('211019b6a|211019b6b|211019b6a|211027b2', stan_model)){
+if(grepl('211019b6a|211019b6b|211019b6a|211027b2|211027b|211029b', stan_model)){
   cutoff_1864 = round(mean(range(stan_data$prop_vac_start[[1]])), 2)
   cutoff_65p =  round(mean(range(stan_data$prop_vac_start[[2]])), 2)
   stan_data = add_vaccine_prop_indicator(stan_data, cutoff_1864, cutoff_65p)
