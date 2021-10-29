@@ -65,7 +65,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     # smooth weekly deaths on the spike
     date.spike = as.Date("2021-01-23")
     ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
-    tmp[, smooth.weekly.deaths := ma(weekly.deaths, 9), by = c('age')]
+    tmp[, smooth.weekly.deaths := ma(weekly.deaths, 5), by = c('age')]
     tmp[date == date.spike, weekly.deaths := as.integer(smooth.weekly.deaths)]
     tmp = select(tmp, - smooth.weekly.deaths)
     
@@ -260,7 +260,7 @@ add_1D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
 add_2D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8)
 {
   
-  knots_rows = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots_rows)]
+  knots_rows = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots_rows)] 
   knots_columns = (1:stan_data$W)[seq(1, stan_data$W, length.out = n_knots_columns)]
   
   stan_data$num_basis_rows = length(knots_rows) + spline_degree - 1
