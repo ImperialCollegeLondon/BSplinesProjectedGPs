@@ -457,7 +457,7 @@ plot_contribution_all_states <- function(contribution, vaccinedata, outdir){
 #   
 # }
 
-plot_mortality_all_states = function(death, start_resurgence, outdir)
+plot_mortality_all_states = function(death, resurgence_dates, outdir)
 {
   
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
@@ -471,10 +471,13 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
   
   death[, `Age group` := age]
   
+  dummy.dt = merge(resurgence_dates, unique(select(death, code, loc_label)), by = 'code')
+  dummy.dt[, text := 'Beginning of Summer 2021 resurgences']
+  
   p <- ggplot(subset(death), aes(x= date) ) +
     geom_point(data = subset(df), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
     geom_line(aes(y = M, fill = loc_label), show.legend = F) +
-    geom_vline(data = data.table(dummy = 'Beginning of Summer 2021 resurgences'), aes(xintercept = start_resurgence, linetype = dummy), col = 'grey50') +
+    geom_vline(data = dummy.dt, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
     facet_grid(loc_label~`Age group`, scale = 'free') +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
@@ -504,7 +507,7 @@ plot_mortality_all_states = function(death, start_resurgence, outdir)
   
 }
 
-plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3, data_res4, outdir){
+plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3, data_res4, resurgence_dates, outdir){
   
   dummies = c('Counterfactual analysis with proportion of vaccinated in age group 18-64\nset to be the same as in age group 65+', 
               'Fit to observed data')
@@ -516,7 +519,9 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3,
   tmp3[, dummy := dummies[1]]
   data_res1 = rbind(data_res1, tmp3)
   
-  data_res2 = subset(data_res2, date <= max(data_res1$date))
+  data_res2 = merge(data_res2, select(resurgence_dates, code, stop_resurgence), by = 'code')
+  data_res2 = data_res2[date <= stop_resurgence]
+  data_res2 = select(data_res2, -stop_resurgence)
   data_res1 = rbind(data_res1, data_res2)
 
   values_col = c('darkorchid4', 'grey50')
@@ -596,34 +601,13 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, data_res3,
   
 }
 
-prepare_prop_vac_table <- function(stan_data){
-  prop_vac = data.table( do.call('rbind', stan_data$prop_vac) ) 
-  prop_vac[, age := rep(df_age_vaccination2$age, each = nrow(stan_data$prop_vac[[1]]))]
-  prop_vac[, week_index := rep(1:nrow(stan_data$prop_vac[[1]]), length(stan_data$prop_vac))]
-  prop_vac = data.table(reshape2::melt(prop_vac, id.vars = c('age', 'week_index')))
-  setnames(prop_vac, c('variable', 'value'), c('code', 'prop'))
-  prop_vac = merge(prop_vac, df_week2, by = 'week_index')
-  
-  prop_vac_start = data.table( do.call('rbind', stan_data$prop_vac_start) ) 
-  colnames(prop_vac_start) = colnames(stan_data$prop_vac[[1]])
-  prop_vac_start[, age := df_age_vaccination2$age] 
-  prop_vac_start = data.table(reshape2::melt(prop_vac_start, id.vars = c('age')))
-  setnames(prop_vac_start, c('variable', 'value'), c('code', 'pre_prop'))
-  
-  prop_vac = merge(prop_vac, prop_vac_start, by = c('code', 'age'))
-  prop_vac = merge(prop_vac, df_age_vaccination2, by = c('age'))
-  prop_vac[, prop := prop + pre_prop]
-  prop_vac[, cat := paste0('prop_', age_index)]
-  prop_vac = data.table(reshape2::dcast(prop_vac, code + date ~ cat, value.var = 'prop'))
-  
-  return(prop_vac)
-}
-
-plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, outdir){
+plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir){
   
   data_res = merge(data_res1, prop_vac, by = c('code', 'date'))
   data_res[, `Age group` := age]
   data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  
+  data_res = merge(data_res, resurgence_dates, by = 'code')
   
   p1 <- ggplot(data_res, aes(x = prop_1)) + 
     geom_line(aes(y = M, col = loc_label)) + 
@@ -712,7 +696,13 @@ plot_relative_resurgence_vaccine_indicator <- function(data_res1, prop_vac_indic
   
 }
 
-plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, outdir){
+base_breaks <- function(n = 10){
+  function(x) {
+    axisTicks(log(range(x, na.rm = TRUE)), log = TRUE, n = n)
+  }
+}
+
+plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir){
   
   prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
   data_res = merge(data_res1, prop_vac_init, by = 'code')
@@ -720,6 +710,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   data_res[, `Age group` := age]
   data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
 
+  data_res = merge(data_res, resurgence_dates, by = 'code')
   
   lab = function(Age) paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before\nthe beginning of Summer 202\nresurgences')
   
@@ -731,8 +722,8 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
          x = '', shape = 'Beginning of Summer 2021 resurgences', 
          col = lab('18-64'), fill = lab('18-64')) + 
     theme_bw() +
-    geom_text(data = subset(data_res, date == max(date)), aes(label = loc_label, x = date, y = M), hjust = -.1, size = 3) +
-    scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
+    geom_text(data = subset(data_res, week_index == max(week_index)), aes(label = loc_label, x = date, y = M), hjust = -.1, size = 3) +
+    scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
@@ -741,7 +732,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
           strip.text = element_blank(),
           legend.spacing.y = unit(-0, "cm"), 
           legend.position = 'bottom') +
-    scale_y_continuous(trans = 'log', breaks = round(seq(min(log(data_res$M)), max(log(data_res$M)), length.out =3))) + 
+    scale_y_continuous(trans = 'log', breaks = base_breaks()) + 
     scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init))) + 
     scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)))
   
@@ -764,7 +755,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
           strip.text = element_text(size = rel(0.9)),
           legend.spacing.y = unit(-0, "cm"), 
           legend.position = 'bottom') +
-    scale_y_continuous(trans = 'log', breaks = round(seq(min(log(data_res$M)), max(log(data_res$M)), length.out =3))) + 
+    scale_y_continuous(trans = 'log', breaks = base_breaks()) + 
     scale_color_gradient2(high = 'lightpink', low = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init))) + 
     scale_fill_gradient2(high = 'lightpink', low = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)))
   

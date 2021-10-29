@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,WA',',')[[1]]
-stan_model = "211019b6a"
+stan_model = "211027b"
 JOBID = 3541
 
 if(0)
@@ -77,10 +77,6 @@ vaccine_data = readRDS(path_to_vaccine_data)
 pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
 setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
 
-# define resurgence period
-start_resurgence <- as.Date('2021-07-17')
-pick_resurgence <- as.Date('2021-09-04')
-
 # Create age maps
 age_max = 105
 create_map_age(age_max)
@@ -92,6 +88,7 @@ loc_name = locations[code %in% states,]$loc_label
 Code = locations[code %in% states, ]$code
 df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
 cat("Location ", as.character(loc_name), "\n")
+
 
 # plot data 
 if(1){
@@ -124,8 +121,9 @@ if(grepl('211015', stan_model)){
 }
 if(grepl('211014b|211019|211020|211025|211026|211027', stan_model)){
   cat("\n With vaccine effects \n")
-  stan_data = add_resurgence_period(stan_data, df_week, start_resurgence, pick_resurgence)
-  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, start_resurgence, pick_resurgence)
+  resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
+  stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
+  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
   stan_data = add_JHU_data(stan_data, df_week, Code)
 }
 if(1){
