@@ -681,7 +681,6 @@ plot_relative_resurgence_vaccine_indicator <- function(data_res1, prop_vac_indic
     geom_text(data = subset(data_res, week_index == max(week_index)), aes(label = loc_label, x = week_index, y = M), hjust = -.1, size = 3) +
     # scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.15)), date_labels = "%b-%y") + 
     scale_x_continuous(expand=  expansion(mult = c(0,0.15))) + 
-    
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
@@ -704,7 +703,7 @@ base_breaks <- function(n = 10){
   }
 }
 
-plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir){
+plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir){
   
   prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
   data_res = merge(data_res1, prop_vac_init, by = 'code')
@@ -735,7 +734,6 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
           strip.text = element_blank(),
           legend.spacing.y = unit(-0, "cm"), 
           legend.position = 'bottom') +
-    scale_y_continuous(trans = 'log', breaks = base_breaks()) + 
     scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init))) + 
     scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)))
   
@@ -759,12 +757,23 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
           strip.text = element_text(size = rel(0.9)),
           legend.spacing.y = unit(-0, "cm"), 
           legend.position = 'bottom') +
-    scale_y_continuous(trans = 'log', breaks = base_breaks()) + 
     scale_color_gradient2(high = 'lightpink', low = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init))) + 
     scale_fill_gradient2(high = 'lightpink', low = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)))
   
+  if(log_transform){
+    p1 = p1 + scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'log relative COVID-19 attributable weekly deaths')
+    p2 = p2 + scale_y_continuous(trans = 'log', breaks = base_breaks()) 
+  }
+  
   p = grid.arrange(p1, p2, ncol = 2)
-  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage2.png'), w = 8, h = 5)
+  
+  if(log_transform){
+    file =  paste0(outdir, '-log_relative_deaths_vaccine_coverage2.png')
+  } else{
+    file =  paste0(outdir, '-relative_deaths_vaccine_coverage2.png')
+  }
+  
+  ggsave(p, file =file, w = 8, h = 5)
   
 }
 
