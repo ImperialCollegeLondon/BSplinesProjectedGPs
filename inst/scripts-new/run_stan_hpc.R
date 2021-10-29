@@ -130,7 +130,7 @@ if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
-if(grepl('211019b6a', stan_model)){
+if(grepl('211019b6a|211019b6b|211019b6a|211027b2', stan_model)){
   cutoff_1864 = round(mean(range(stan_data$prop_vac_start[[1]])), 2)
   cutoff_65p =  round(mean(range(stan_data$prop_vac_start[[2]])), 2)
   stan_data = add_vaccine_prop_indicator(stan_data, cutoff_1864, cutoff_65p)
