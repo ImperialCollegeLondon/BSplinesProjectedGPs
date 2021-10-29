@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,WA',',')[[1]]
-stan_model = "211027b"
+stan_model = "211019b6a"
 JOBID = 3541
 
 if(0)

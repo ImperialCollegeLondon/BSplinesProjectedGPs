@@ -479,6 +479,7 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
 
 add_resurgence_period = function(stan_data, df_week, resurgence_dates){
   
+  resurgence_dates = resurgence_dates[order(code)]
   
   stan_data[['w_start_resurgence']] = sapply(resurgence_dates$start_resurgence, function(x) df_week[date == x]$week_index)
   stan_data[['w_stop_resurgence']] = sapply(resurgence_dates$stop_resurgence, function(x) df_week[date == x]$week_index)
@@ -673,8 +674,8 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   tmp2[, smooth.weekly.deaths := ma(weekly.deaths, 3), by = c('code')]
   tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
   tmp2 = merge(tmp2, df_week, by = 'week_index')
-  tmp3 <- tmp2[diff.smooth.weekly.deaths > 0 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) - 7), by = c('code')]
-  tmp3[, stop_resurgence := start_resurgence + 7*7]
+  tmp3 <- tmp2[diff.smooth.weekly.deaths > 0 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) +7), by = c('code')]
+  tmp3[, stop_resurgence := start_resurgence + 7*6]
   
   tmp2 <- tmp2[code %in% Code]
   tmp3 <- tmp3[code %in% Code]

@@ -669,7 +669,7 @@ plot_relative_resurgence_vaccine_indicator <- function(data_res1, prop_vac_indic
   
   lab = function(Age, prop) paste0('Proportion of individuals aged ', Age, ' fully vaccinated\ntwo weeks before the beginning of Summer 2021\nresurgences greater than ', prop, '%')
   
-  p1 <- ggplot(data_res, aes(x = date)) + 
+  p1 <- ggplot(data_res, aes(x = week_index)) + 
     geom_line(aes(y = M, col = indic1, linetype = indic2, group = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = indic1, group = loc_label), alpha = 0.5, width = 0.1) +
     facet_grid(`Age group`~., label = 'label_both') +
@@ -678,8 +678,10 @@ plot_relative_resurgence_vaccine_indicator <- function(data_res1, prop_vac_indic
          col = lab('18-64', cutoff_1864*100), fill = lab('18-64', cutoff_1864*100), 
          linetype = lab('64+', cutoff_65p*100)) + 
     theme_bw() +
-    geom_text(data = subset(data_res, date == max(date)), aes(label = loc_label, x = date, y = M), hjust = -.1, size = 3) +
-    scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.15)), date_labels = "%b-%y") + 
+    geom_text(data = subset(data_res, week_index == max(week_index)), aes(label = loc_label, x = week_index, y = M), hjust = -.1, size = 3) +
+    # scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.15)), date_labels = "%b-%y") + 
+    scale_x_continuous(expand=  expansion(mult = c(0,0.15))) + 
+    
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
@@ -714,7 +716,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   
   lab = function(Age) paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before\nthe beginning of Summer 202\nresurgences')
   
-  p1 <- ggplot(data_res, aes(x = date)) + 
+  p1 <- ggplot(data_res, aes(x = week_index)) + 
     geom_line(aes(y = M, col = prop_1_init, group = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_1_init, group = loc_label), alpha = 0.5) +
     facet_grid(`Age group`~., label = 'label_both') +
@@ -722,8 +724,9 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
          x = '', shape = 'Beginning of Summer 2021 resurgences', 
          col = lab('18-64'), fill = lab('18-64')) + 
     theme_bw() +
-    geom_text(data = subset(data_res, week_index == max(week_index)), aes(label = loc_label, x = date, y = M), hjust = -.1, size = 3) +
-    scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
+    geom_text(data = subset(data_res, week_index == max(week_index)), aes(label = loc_label, x = week_index, y = M), hjust = -.1, size = 3) +
+    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
+    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
@@ -736,7 +739,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
     scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init))) + 
     scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)))
   
-  p2 <- ggplot(data_res, aes(x = date)) + 
+  p2 <- ggplot(data_res, aes(x = week_index)) + 
     geom_line(aes(y = M, col = prop_2_init, group = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_2_init, group = loc_label), alpha = 0.5, width = 0.1) +
     facet_grid(`Age group`~., label = 'label_both') +
@@ -744,8 +747,9 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
          x = '', shape = 'Beginning of Summer 2021 resurgences', 
          col = lab('65+'), fill = lab('65+')) + 
     theme_bw() +
-    geom_text(data = subset(data_res, date == max(date)), aes(label = loc_label, x = date, y = M), hjust = -.1, size = 3) +
-    scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
+    geom_text(data = subset(data_res, week_index == max(week_index)), aes(label = loc_label, x = week_index, y = M), hjust = -.1, size = 3) +
+    # scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") +
+    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),

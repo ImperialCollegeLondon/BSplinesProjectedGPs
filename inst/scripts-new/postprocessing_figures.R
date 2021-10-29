@@ -171,7 +171,7 @@ if(!is.null(stan_data$prop_vac)){
 
 
 if(!is.null(stan_data$prop_vac_start_counterfactual)){
-  prop_vac_indicator = subset(prop_vac, date == min(date))
+  prop_vac_indicator = prop_vac[, list(prop_1 = prop_1[date == min(date)], prop_2 = prop_2[date == min(date)], date = min(date)), by = 'code']
   prop_vac_indicator[, indic1 := prop_1 >= cutoff_1864]
   prop_vac_indicator[, indic2 := prop_2 >= cutoff_65p]
 
