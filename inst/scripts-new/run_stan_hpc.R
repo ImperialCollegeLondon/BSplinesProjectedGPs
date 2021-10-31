@@ -7,7 +7,7 @@ library(doParallel)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,WA',',')[[1]]
-stan_model = "211019b6a"
+stan_model = "211030a1"
 JOBID = 3541
 
 if(0)
@@ -111,7 +111,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211014|211019|211020|211025|211026|211027|211029', stan_model)){
+if(grepl('211014|211019|211020|211025|211026|211027|211029|211030', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
 }
@@ -119,7 +119,7 @@ if(grepl('211015', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
-if(grepl('211014b|211019|211020|211025|211026|211027|211029', stan_model)){
+if(grepl('211014b|211019|211020|211025|211026|211027|211029|211030', stan_model)){
   cat("\n With vaccine effects \n")
   resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
   stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
@@ -156,6 +156,9 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
 stan_init <- list()
 stan_init$rho_gp1 <- rep(1.25, stan_data$M)
 stan_init$rho_gp2 <- rep(1.25, stan_data$M)
+# stan_init$intercept_resurgence0 <- rep(0, stan_data$C)
+# stan_init$slope_resurgence0 <- rep(0, stan_data$C)
+
 
 # fit 
 cat("\n Start sampling \n")
@@ -164,7 +167,8 @@ model = rstan::stan_model(path.to.stan.model)
 if(0){
   
   fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
-                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99),
+                             init = rep(list(stan_init), 1))
 }
 
 

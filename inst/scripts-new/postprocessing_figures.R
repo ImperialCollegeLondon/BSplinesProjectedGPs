@@ -167,6 +167,7 @@ if(!is.null(stan_data$prop_vac)){
   log_r_pdeaths = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'log_r_pdeaths', outdir.table)
   log_r_pdeaths_predict = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'log_r_pdeaths_predict', outdir.table)
   plot_PPC_relative_resurgence(log_r_pdeaths, log_r_pdeaths_predict, prop_vac, df_age_vaccination2, df_week2, outdir.fig)
+  plot_slope_by_prop(log_r_pdeaths, prop_vac, outdir.fig)
 }
 
 

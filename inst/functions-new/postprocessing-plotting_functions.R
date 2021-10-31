@@ -703,6 +703,31 @@ base_breaks <- function(n = 10){
   }
 }
 
+plot_slope_by_prop <- function(log_r_pdeaths, prop_vac, outdir){
+  tmp <- log_r_pdeaths[, {
+    fit = lm(M ~ week_index)
+    list(beta = fit$coefficient[2])
+  }, by = c('code', 'age')]
+  
+  tmp1 = prop_vac[, list(prop_1 = prop_1[date == min(date)], prop_2 = prop_2[date == min(date)]), by = 'code']
+  tmp = merge(tmp,tmp1, by = 'code')
+  
+  p1 <- ggplot(tmp, aes(x = prop_1, y = beta)) + 
+    geom_point() + 
+    facet_wrap(~age, nrow = 2) + 
+    geom_smooth(method = 'lm')
+  
+  p2 <- ggplot(tmp, aes(x = prop_2, y = beta)) + 
+    geom_point() + 
+    facet_wrap(~age, nrow = 2) + 
+    geom_smooth(method = 'lm')
+  
+  p = ggpubr::ggarrange(p1, p2, ncol = 2)
+  ggsave(p, file = paste0(outdir, '-relative_deaths_slope_to_prop.png'), w = 8, h = 8)
+  
+}
+
+
 plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir){
   
   prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
