@@ -515,6 +515,7 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
   tmp1 = tmp[, list(pre_prop = prop[date == start_resurgence]), by = c('loc_label', 'age_index')]
   tmp = merge(tmp, tmp1,  by = c('loc_label', 'age_index'))
   tmp[, prop := prop - pre_prop]
+  tmp = tmp[order(code)]
   
   prop_vac = list(); prop_vac_start = list()
   for(i in 1:length(unique(tmp$age_index))){
@@ -559,6 +560,7 @@ add_JHU_data <- function(stan_data, df_week, Code){
   tmp2 = select(tmp2, code, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
   tmp2[weekly.deaths<0, weekly.deaths := 0]
+  tmp2 = tmp2[order(code)]
   
   stan_data[['deaths_JHU']] = as.matrix(reshape2::dcast(tmp2, code ~ week_index, value.var = 'weekly.deaths')[,-1])
   
@@ -694,7 +696,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
     ggsave('~/Downloads/file.png', h= 10, w =5)
   }
   
-
+  tmp3 <- tmp3[order(code)]
   return(tmp3)
 }
 

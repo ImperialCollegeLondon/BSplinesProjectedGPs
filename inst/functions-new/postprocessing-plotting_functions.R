@@ -465,7 +465,7 @@ plot_mortality_all_states = function(death, resurgence_dates, outdir)
   df[, `Age group` := age]
   
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
-  death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  # death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
   colfunc <- jcolors("pal8")[1:length(unique(death$code))]
   
@@ -605,7 +605,7 @@ plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccina
   
   data_res = merge(data_res1, prop_vac, by = c('code', 'date'))
   data_res[, `Age group` := age]
-  data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
   data_res = merge(data_res, resurgence_dates, by = 'code')
   
@@ -660,7 +660,7 @@ plot_relative_resurgence_vaccine_indicator <- function(data_res1, prop_vac_indic
   
   data_res = merge(data_res1, select(prop_vac_indicator, -date), by = c('code'))
   data_res[, `Age group` := age]
-  data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
   prop_vac_indicator[indic1 & indic2, group := '1']
   prop_vac_indicator[indic1 & !indic2, group := '2']
@@ -734,7 +734,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   data_res = merge(data_res1, prop_vac_init, by = 'code')
 
   data_res[, `Age group` := age]
-  data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
 
   data_res = merge(data_res, resurgence_dates, by = 'code')
   
@@ -848,7 +848,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, prop_vac, df_age_
   data_res = merge(data_res1, prop_vac, by = c('code', 'date'))
   
   data_res[, `Age group` := age]
-  data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
   p1 <- ggplot(data_res, aes(x = prop_1)) + 
     geom_line(aes(y = M, col = type)) + 

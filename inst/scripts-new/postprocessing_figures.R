@@ -13,9 +13,9 @@ library(jcolors)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/covid19Vaccination/inst', "results")
-states = strsplit("CA,FL,NY,TX,WA",',')[[1]]
-stan_model = "211014b"
-JOBID = 2378
+states = strsplit("CA,FL,NY,TX",',')[[1]]
+stan_model = "211030b1"
+JOBID = 1875
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -146,6 +146,7 @@ if(!is.null(stan_data$prop_vac)){
   df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
   df_week2[, week_index := 1:length(date), by = 'code']
   df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
+  df_week2 = df_week2[order(code)]
   df_week = select(df_week, -dummy)
   
   make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'phi_reduced_vac', outdir.table)

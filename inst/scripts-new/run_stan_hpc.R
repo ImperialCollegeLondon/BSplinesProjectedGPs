@@ -83,6 +83,7 @@ create_map_age(age_max)
 
 # find locations 
 locations = unique(select(deathByAge, loc_label, code)) 
+locations = locations[order(code)]
 saveRDS(locations, file = file.path(outdir.fit, paste0("location_", run_tag,".rds")))
 loc_name = locations[code %in% states,]$loc_label
 Code = locations[code %in% states, ]$code
