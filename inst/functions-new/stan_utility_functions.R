@@ -66,6 +66,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     date.spike = as.Date("2021-01-23")
     ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
     tmp[, smooth.weekly.deaths := ma(weekly.deaths, 5), by = c('age')]
+    tmp[is.na(smooth.weekly.deaths), smooth.weekly.deaths := weekly.deaths, by = c('age')]
     tmp[date == date.spike, weekly.deaths := as.integer(smooth.weekly.deaths)]
     tmp = select(tmp, - smooth.weekly.deaths)
     
@@ -674,7 +675,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   tmp2[, smooth.weekly.deaths := ma(weekly.deaths, 3), by = c('code')]
   tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
   tmp2 = merge(tmp2, df_week, by = 'week_index')
-  tmp3 <- tmp2[diff.smooth.weekly.deaths > 0 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) +7), by = c('code')]
+  tmp3 <- tmp2[diff.smooth.weekly.deaths > 0 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
   tmp3[, stop_resurgence := start_resurgence + 7*6]
   
   tmp2 <- tmp2[code %in% Code]
@@ -690,6 +691,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
       geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
       geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
       theme_bw()
+    ggsave('~/Downloads/file.png', h= 10, w =5)
   }
   
 

@@ -6,7 +6,7 @@ library(doParallel)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('CA,FL,NY,TX,WA',',')[[1]]
+states = strsplit('CA,FL,IL,GA,OH,MI,NC,NY,PA,TX',',')[[1]]
 stan_model = "211030a1"
 JOBID = 3541
 
@@ -140,10 +140,10 @@ if(grepl('211025', stan_model)){
   stan_data$prop_vac_sequence = seq(0, 1, 0.05)
   stan_data$P = length(stan_data$prop_vac_sequence)
 }
-if(1){
-  stan_data$prop_vac_start[[1]] = stan_data$prop_vac_start[[1]] * 100
-  stan_data$prop_vac_start[[2]]	= stan_data$prop_vac_start[[2]]	* 100
-}
+# if(1){
+#   stan_data$prop_vac_start[[1]] = stan_data$prop_vac_start[[1]] * 100
+#   stan_data$prop_vac_start[[2]]	= stan_data$prop_vac_start[[2]]	* 100
+# }
 
 print("A = 12, W = 10")
 
