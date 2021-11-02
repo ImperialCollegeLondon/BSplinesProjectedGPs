@@ -654,7 +654,10 @@ plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccina
   p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = 'bottom', widths = c(1.1,1)) # legend.grob = get_legend(p0)
   ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage.png'), w = 6.5, h = 5)
   
+  
 }
+
+
 
 plot_relative_resurgence_vaccine_indicator <- function(data_res1, prop_vac_indicator, df_age_vaccination2, df_week2, outdir){
   
@@ -801,6 +804,74 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   ggsave(p, file =file, w = 8, h = 5)
   
 }
+
+plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir){
+  
+  prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
+  data_res = merge(data_res1, prop_vac_init, by = 'code')
+  
+  data_res[, `Age group` := age]
+  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
+  
+  data_res = merge(data_res, resurgence_dates, by = 'code')
+  
+  lab = function(Age) paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before\nthe beginning of Summer 202\nresurgences')
+  
+  p1 <- ggplot(data_res, aes(x = prop_1_init)) + 
+    geom_point(aes(y = M, col = week_index, shape = loc_label, group = loc_label)) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU, group = loc_label), alpha = 0.5) +
+    facet_grid(`Age group`~., label = 'label_both') +
+    labs(y = 'Relative COVID-19 attributable weekly deaths', 
+         x = '', shape = 'Beginning of Summer 2021 resurgences', 
+         col = lab('18-64'), fill = lab('18-64')) + 
+    theme_bw() +
+    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
+    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
+          legend.title = element_text(size = rel(0.85)),
+          axis.title.x = element_text(size = rel(0.9)),
+          axis.title.y = element_text(size = rel(1)),
+          strip.text = element_blank(),
+          legend.spacing.y = unit(-0, "cm"), 
+          legend.position = 'bottom') 
+  
+  p2 <- ggplot(data_res, aes(x = prop_2_init)) + 
+    geom_point(aes(y = M, col = week_index, shape = loc_label, group = loc_label)) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU, group = loc_label), alpha = 0.5) +
+    facet_grid(`Age group`~., label = 'label_both') +
+    labs(y = 'Relative COVID-19 attributable weekly deaths', 
+         x = '', shape = 'Beginning of Summer 2021 resurgences', 
+         col = lab('65+'), fill = lab('65+')) + 
+    theme_bw() +
+    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
+    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
+          legend.title = element_text(size = rel(0.85)),
+          axis.title.x = element_text(size = rel(0.9)),
+          axis.title.y = element_text(size = rel(1)),
+          strip.text = element_blank(),
+          legend.spacing.y = unit(-0, "cm"), 
+          legend.position = 'bottom') 
+  
+  if(log_transform){
+    p1 = p1 + scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'log relative COVID-19 attributable weekly deaths')
+    p2 = p2 + scale_y_continuous(trans = 'log', breaks = base_breaks()) 
+  }
+  
+  p = grid.arrange(p1, p2, ncol = 2)
+  
+  if(log_transform){
+    file =  paste0(outdir, '-log_relative_deaths_vaccine_coverage_no_time.png')
+  } else{
+    file =  paste0(outdir, '-relative_deaths_vaccine_coverage_no_time.png')
+  }
+  
+  ggsave(p, file =file, w = 8, h = 5)
+  
+}
+
 
 plot_vaccination_effect_prediction <- function(prediction, var, outdir){
   
