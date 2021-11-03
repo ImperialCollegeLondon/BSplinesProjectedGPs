@@ -151,8 +151,8 @@ if(!is.null(stan_data$prop_vac)){
   
   make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'phi_reduced_vac', outdir.table)
 
-  E_pdeaths = make_var_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths', outdir.table)
-  E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'E_pdeaths_counterfactual', outdir.table)
+  E_pdeaths = make_var_cum_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths', outdir.table)
+  E_pdeaths_counterfactual = make_var_cum_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'E_pdeaths_counterfactual', outdir.table)
   diff_E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual', outdir.table)
   perc_E_pdeaths_counterfactual = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'perc_E_pdeaths_counterfactual', outdir.table)
   plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths, diff_E_pdeaths_counterfactual,perc_E_pdeaths_counterfactual, resurgence_dates, outdir.fig)

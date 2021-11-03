@@ -9,6 +9,7 @@ library(ggpubr)
 library(cowplot)
 library(extraDistr)
 library(bayesplot)
+library(scales)
 
 indir = "/rds/general/user/mm3218/home/git/covid19Vaccination/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/'
@@ -68,7 +69,7 @@ fit_cum <- readRDS(file=file)
 
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")
-make_convergence_diagnostics_stats(fit_cum, outdir.table)
+summary <- make_convergence_diagnostics_stats(fit_cum, outdir.table)
 
 # Make predictive checks table
 cat("\nMake posterior predictive checks table \n")
@@ -196,6 +197,23 @@ if(any(c('intercept_resurgence0', 'vaccine_effect_intercept') %in% names_samples
   }
 
 }
+
+names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept')
+if(any(names %in% names_samples)){
+  min_age_index_vac = 3
+  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+  
+  math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vac"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vac"*""')
+  groups = c('slope', 'slope', 'vaccination effect\nslope', 'intercept', 'intercept', 'vaccination effect\nintercept')
+  groups_levels = c('intercept', 'vaccination effect\nintercept', 'slope', 'vaccination effect\nslope')
+  
+  tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
+  plot_forest_plot(tmp, outdir)
+
+}
+
+
 
 
 cat("\n End postprocessing_assess_mixing.R \n")

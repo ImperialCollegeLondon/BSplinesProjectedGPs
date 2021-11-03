@@ -85,6 +85,8 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   saveRDS(.LOO, file = paste0(outdir, "-LOO.rds"))
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics.rds"))
   saveRDS(time, file = paste0(outdir, "-time_elapsed.rds"))
+  
+  return(summary)
 }
 
 make_probability_ratio_table = function(fit, df_week, df_state_age, data, stan_data, outdir){
@@ -173,6 +175,44 @@ make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
 
   return(tmp1)
 }
+
+make_var_cum_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
+  tmp1[, value := cumsum(value), by = c('state_index', 'age_index')]
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'CumTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
 
 make_var_by_age_age_table = function(fit, df_state_age, prop_prediction, var_name, outdir){
   
@@ -1619,6 +1659,23 @@ find_vaccine_effects_old <- function(weekly_deaths, vaccine_data, start_resurgen
   tmp3 = dcast(tmp3, variable + age ~ q_label, value.var = "q")
   
   return(list(tmp1, tmp2, tmp3, tmp))
+}
+
+make_forest_plot_table <- function(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels){
+  tmp <- summary[ grepl(paste(paste0('^',names),collapse = '|'),rownames(summary)) ,]
+  
+  variables <- rownames(tmp); group = c()
+  for(x in 1:length(variables)) group[x] = groups[which(grepl(gsub('(.+)\\[.*', '\\1', variables[x]), names))]
+  for(x in 1:length(names)) variables = gsub(names[x], math_name[x], variables)
+  for(x in df_age_vaccination2$age_index) variables = gsub(paste0('\\[',x), paste0('\\["', df_age_vaccination2$age[x], '"'), variables) 
+  for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_age_vaccination2$age[x], '"\\]'), variables[grepl('vac', variables)]) 
+  for(x in df_state$state_index) variables[!grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_state$loc_label[x], '"\\]'), variables[!grepl('vac', variables)]) 
+  
+  tmp <- as.data.table(tmp)
+  tmp[, variable := variables]
+  tmp[, group := factor(group, levels = groups_levels)]
+  setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
+  
 }
 
 find_vaccine_effects <- function(weekly_deaths, vaccine_data, start_resurgence, pick_resurgence)
