@@ -910,25 +910,23 @@ plot_vaccination_effect_prediction <- function(prediction, var, outdir){
 }
 
 
-plot_PPC_relative_resurgence <- function(data_res1, data_res2, prop_vac, df_age_vaccination2, df_week2, outdir){
+plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   
   data_res1[, type := 'fitted']
   data_res2[, type := 'predicted']
-  data_res1 = rbind(data_res1, data_res2)
-  
-  data_res = merge(data_res1, prop_vac, by = c('code', 'date'))
+  data_res = rbind(data_res1, data_res2)
   
   data_res[, `Age group` := age]
   # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-  p1 <- ggplot(data_res, aes(x = prop_1)) + 
+  p1 <- ggplot(data_res, aes(x = date)) + 
     geom_line(aes(y = M, col = type)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
     facet_grid(`Age group`~loc_label, label = 'label_both') +
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
          x = 'Proportion of individuals aged 18-64\nfully vaccinated two weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
     theme_bw() +
-    scale_x_continuous(labels = scales::percent) + 
+    scale_x_date(expand = c(0,0), breaks = '2 weeks', date_labels = "%b-%y") + 
     theme(strip.background = element_blank(),
           strip.text = element_text(size = rel(0.85)),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
@@ -938,14 +936,14 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, prop_vac, df_age_
           legend.spacing.y = unit(-0, "cm")) +
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
-  p2 = ggplot(data_res, aes(x = prop_2)) + 
+  p2 = ggplot(data_res, aes(x = date)) + 
     geom_line(aes(y = M, col = type)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
     facet_grid(`Age group`~loc_label, label = 'label_both') +
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
          x = 'Proportion of individuals aged 65+\nfully vaccinated two weeks before', shape = 'Beginning of Summer 2021 resurgences', col = '', fill = '') + 
     theme_bw() +
-    scale_x_continuous(labels = scales::percent) + 
+    scale_x_date(expand = c(0,0), breaks = '2 weeks', date_labels = "%b-%y") + 
     theme(strip.background = element_blank(),
           panel.border =  element_rect(colour = "black", fill = NA), 
           strip.text = element_text(size = rel(0.85)),
@@ -955,7 +953,8 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, prop_vac, df_age_
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
   p = ggarrange(p1, p2, nrow = 2, common.legend = T, legend = 'bottom') # legend.grob = get_legend(p0)
-  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC.png'), w = 8, h = 8)
+  
+  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC', lab, '.png'), w = 8, h = 8)
   
 }
 
