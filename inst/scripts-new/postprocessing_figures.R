@@ -14,8 +14,8 @@ library(jcolors)
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/covid19Vaccination/inst', "results")
 states = strsplit("CA,FL,NY,TX",',')[[1]]
-stan_model = "211030b1"
-JOBID = 1875
+stan_model = "211031a1"
+JOBID = 1929
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -163,8 +163,8 @@ if(!is.null(stan_data$prop_vac)){
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir)
-  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir)
+  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig)
+  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
   find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, prop_vac, resurgence_dates, outdir.table)
   
   log_r_pdeaths = make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'log_r_pdeaths', outdir.table)
