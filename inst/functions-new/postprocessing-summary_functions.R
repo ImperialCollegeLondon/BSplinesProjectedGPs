@@ -248,14 +248,14 @@ make_var_cum_by_age_table_counterfactual = function(fit, df_week, df_week_counte
   if(is.null(fit)) stop()
   
   # find start resurgence date
-  df_week[, dummy := 1]; df_state[, dummy := 1]
+  df_week[, dummy := 1]; 
   df_week3 <- merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
   df_week3[, after_resurgence := date >= start_resurgence]
   df_week3 = merge(df_week3, df_state, by = 'code')
   
   df_week_counterfactual = df_week3[(after_resurgence)]
   df_week_counterfactual[, week_index_resurgence := 1:length(date), by = 'code']
-  
+
   # extract samples
   fit_samples = rstan::extract(fit)
   
@@ -273,17 +273,15 @@ make_var_cum_by_age_table_counterfactual = function(fit, df_week, df_week_counte
   tmp1 <- rbind(tmp1, tmp2)
   tmp1[, value := cumsum(value), by = c('state_index', 'age_index', 'iterations')]
   
-  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
-                       q_label=p_labs), 
-              by=c('state_index', 'age_index', 'week_index')]	
+  tmp1 = tmp1[, list(q=quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'age_index', 'week_index')]	
   tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
   
-  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  tmp1 = merge(tmp1, select(df_state, loc_label, code, state_index), by = 'state_index')
   
   if('code' %in% names(df_week)){
-    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+    tmp1 = merge(tmp1, select(df_week, week_index, code, date), by = c('week_index', 'code'))
   }else{
-    tmp1 = merge(tmp1, df_week, by = 'week_index')
+    tmp1 = merge(tmp1, select(df_week, week_index, date), by = 'week_index')
   }
   
   tmp1[, age := df_state_age$age[age_index]]
