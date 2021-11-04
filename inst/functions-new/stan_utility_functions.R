@@ -678,7 +678,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
   tmp2 = merge(tmp2, df_week, by = 'week_index')
   tmp3 <- tmp2[diff.smooth.weekly.deaths > 0 & date >= as.Date('2021-06-15'), list(start_resurgence = min(date) ), by = c('code')]
-  tmp3[, stop_resurgence := start_resurgence + 7*9]
+  tmp3[, stop_resurgence := start_resurgence + 7*7]
   
   tmp2 <- tmp2[code %in% Code]
   tmp3 <- tmp3[code %in% Code]
@@ -693,12 +693,12 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
       geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
       geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
       theme_bw()
-    ggsave('~/Downloads/file.png', h= 30, w =5)
+    ggsave('~/Downloads/file.png', h= 30, w =5) 
   }
   
   if(1){
     tmp3[code == 'FL', start_resurgence := start_resurgence - 7]
-    tmp3[, stop_resurgence := start_resurgence + 7*9]
+    tmp3[, stop_resurgence := start_resurgence + 7*7]
   }
   tmp3 <- tmp3[order(code)]
 

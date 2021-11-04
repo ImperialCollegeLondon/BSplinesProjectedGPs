@@ -213,6 +213,63 @@ make_var_cum_by_age_table = function(fit, df_week, df_state_age, var_name, outdi
   return(tmp1)
 }
 
+make_var_cum_by_age_table_counterfactual = function(fit, df_week, df_week_counterfactual, resurgence_dates, df_state_age, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # find start resurgence date
+  df_week[, dummy := 1]; df_state[, dummy := 1]
+  df_week3 <- merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
+  df_week3[, after_resurgence := date >= start_resurgence]
+  df_week3 = merge(df_week3, df_state, by = 'code')
+  
+  df_week_counterfactual = df_week3[(after_resurgence)]
+  df_week_counterfactual[, week_index_resurgence := 1:length(date), by = 'code']
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name[1]]]) )
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
+  tmp1 = merge(tmp1, select(df_week3, state_index, week_index, after_resurgence), by = c('state_index', 'week_index'))
+  tmp1 = tmp1[(!after_resurgence)]
+  tmp1 = select(tmp1, -after_resurgence)
+  
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[var_name[2]]]) )
+  setnames(tmp2, 2:4, c('state_index', 'age_index','week_index_resurgence'))
+  tmp2 = merge(tmp2, select(df_week_counterfactual, state_index, week_index, week_index_resurgence), by = c('state_index', 'week_index_resurgence'))
+  tmp2 = select(tmp2,  -week_index_resurgence)
+
+  tmp1 <- rbind(tmp1, tmp2)
+  tmp1[, value := cumsum(value), by = c('state_index', 'age_index')]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name[2],  'CumTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
 
 make_var_by_age_age_table = function(fit, df_state_age, prop_prediction, var_name, outdir){
   
