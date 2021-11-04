@@ -176,6 +176,33 @@ make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   return(tmp1)
 }
 
+make_var_by_age_across_state_table = function(fit, df_week, df_state_age, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list(value= sum(value)), by = c('iterations', 'age_index','week_index')]
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c( 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesTable.rds'))
+  
+  return(tmp1)
+}
+
+
 make_var_cum_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -188,7 +215,7 @@ make_var_cum_by_age_table = function(fit, df_week, df_state_age, var_name, outdi
   
   tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
   setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
-  tmp1[, value := cumsum(value), by = c('state_index', 'age_index')]
+  tmp1[, value := cumsum(value), by = c('state_index', 'age_index', 'iterations')]
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
               by=c('state_index', 'age_index', 'week_index')]	
@@ -244,7 +271,7 @@ make_var_cum_by_age_table_counterfactual = function(fit, df_week, df_week_counte
   tmp2 = select(tmp2,  -week_index_resurgence)
 
   tmp1 <- rbind(tmp1, tmp2)
-  tmp1[, value := cumsum(value), by = c('state_index', 'age_index')]
+  tmp1[, value := cumsum(value), by = c('state_index', 'age_index', 'iterations')]
   
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
