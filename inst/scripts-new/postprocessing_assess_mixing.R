@@ -209,7 +209,7 @@ if(any(names %in% names_samples)){
   groups_levels = c('intercept', 'vaccination effect\nintercept', 'slope', 'vaccination effect\nslope')
   
   tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
-  plot_forest_plot(tmp, outdir)
+  plot_forest_plot(tmp, outdir.fig)
 
 }
 

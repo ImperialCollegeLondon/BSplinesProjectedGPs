@@ -279,8 +279,13 @@ generated quantities {
   matrix[T, M] xi_counterfactual[C];
   matrix[T, M] log_xi_counterfactual[C];
   matrix[C,T] E_pdeaths_counterfactual[M];
+  matrix[C,T] E_pdeaths_counterfactual_resurgence_cumulative[M];
+  matrix[C,T] E_pdeaths_resurgence_cumulative[M];
+  matrix[C,T] E_pdeaths_resurgence_cumulative_all = rep_matrix(0, C, T);
   matrix[C,T] diff_E_pdeaths_counterfactual[M];
   matrix[C,T] perc_E_pdeaths_counterfactual[M];
+  matrix[C,T] diff_E_pdeaths_counterfactual_all = rep_matrix(0, C, T);
+  matrix[C,T] perc_E_pdeaths_counterfactual_all;
   {
     int idx_log_lik = 0;
 
@@ -310,8 +315,15 @@ generated quantities {
             log_r_pdeaths_counterfactual[m][c,:] = log( r_pdeaths_counterfactual[m][c,:] );
 
             E_pdeaths_counterfactual[m][c,:] = rep_row_vector(max(E_pdeaths[m][c,1:(w_start_resurgence[m] - 1)]), T) .* r_pdeaths_counterfactual[m][c,:] ;
-            diff_E_pdeaths_counterfactual[m][c,:] = cumulative_sum(E_pdeaths[m][c,w_start_resurgence[m]:w_stop_resurgence[m]] - E_pdeaths_counterfactual[m][c,:]);
-            perc_E_pdeaths_counterfactual[m][c,:] = diff_E_pdeaths_counterfactual[m][c,:] ./ cumulative_sum( E_pdeaths[m][c,w_start_resurgence[m]:w_stop_resurgence[m]] ) ;
+            E_pdeaths_counterfactual_resurgence_cumulative[m][c,:] = cumulative_sum(E_pdeaths_counterfactual[m][c,:]);
+            E_pdeaths_resurgence_cumulative[m][c,:] = cumulative_sum(E_pdeaths[m][c,w_start_resurgence[m]:w_stop_resurgence[m]]);
+            
+            diff_E_pdeaths_counterfactual[m][c,:] = E_pdeaths_resurgence_cumulative[m][c,:] - E_pdeaths_counterfactual_resurgence_cumulative[m][c,:];
+            perc_E_pdeaths_counterfactual[m][c,:] = diff_E_pdeaths_counterfactual[m][c,:] ./ E_pdeaths_resurgence_cumulative[m][c,:] ;
+            
+            diff_E_pdeaths_counterfactual_all[c,:] += diff_E_pdeaths_counterfactual[m][c,:];
+            E_pdeaths_resurgence_cumulative_all[c,:] += E_pdeaths_resurgence_cumulative[m][c,:];
+            
         }
 
         for(w in 1:W){
@@ -343,6 +355,7 @@ generated quantities {
         }
 
     }
+    perc_E_pdeaths_counterfactual_all = diff_E_pdeaths_counterfactual_all ./ E_pdeaths_resurgence_cumulative_all;
 
   }
 
