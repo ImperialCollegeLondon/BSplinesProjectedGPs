@@ -693,7 +693,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
       geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
       geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
       theme_bw()
-    ggsave('~/Downloads/file.png', h= 30, w =5)
+    ggsave('~/Downloads/file.png', h= 30, w =5) 
   }
   
   if(1){
