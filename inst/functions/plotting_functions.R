@@ -46,12 +46,13 @@ compare_CDC_JHU_DoH_error_plot = function(CDC_data, JHUData, scrapedData, var.we
     p = ggplot(tmp, aes(x = date, y = cumulative_deaths, col = source)) + 
       geom_line() +
       theme_bw() + 
+      facet_wrap(~code) +
       scale_color_viridis_d(option = "B", direction = -1, end = 0.8) +
       labs(x = '', y = 'Cumulative COVID-19 \ndeaths', col = '') + 
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
       theme(legend.position = 'bottom',
             axis.text.x = element_text(angle = 90)) 
-    ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC_Code.pdf'), w = 5, h = 3, limitsize = F)
+    ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC_Code.pdf'), w = 7, h = 6, limitsize = F)
     
   }
 }
