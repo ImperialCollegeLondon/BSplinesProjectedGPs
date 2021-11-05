@@ -9,24 +9,27 @@ make_predictive_checks_table = function(fit, df_week, df_state_age, data, deaths
   fit_samples = rstan::extract(fit)
   
   tmp1 = as.data.table( reshape2::melt(fit_samples[deaths_predict_var]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('age_index', 'week_index')]	
-  tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
+              by=c('state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1[, age := df_state_age$age[age_index]]
   
-  tmp1 = merge(tmp1, data, by = c('date', 'age'))
+  tmp1 = merge(tmp1, data, by = c('date', 'age', 'state_index'))
   tmp1[, age := factor(age, levels = levels(data$age))]
   
   # stat
   tmp1[, inside.CI := weekly.deaths <= CU & weekly.deaths >= CL]
   
   # save
-  saveRDS(tmp1, file = paste0(outdir, '-predictive_checks_table_', Code, '.rds'))
-  
+  for(Code in unique(tmp1$code)){
+    saveRDS(tmp1, file = paste0(outdir, '-predictive_checks_table_', Code, '.rds'))
+    
+  }
+
   return(tmp1)
 }
 
@@ -35,7 +38,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   
   stopifnot(!is.null(fit))
   
-  summary = rstan::summary(fit_cum)$summary
+  summary = rstan::summary(fit)$summary
   eff_sample_size_cum = summary[,9][!is.na(summary[,9])]
   Rhat_cum = summary[,10][!is.na(summary[,10])]
   cat("the minimum and maximum effective sample size are ", range(eff_sample_size_cum), "\n")
@@ -43,7 +46,7 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   if(min(eff_sample_size_cum) < 500) cat('\nEffective sample size smaller than 500 \n')
   
   tryCatch({
-    sampler_params <- get_sampler_params(fit_cum, inc_warmup = FALSE)
+    sampler_params <- get_sampler_params(fit, inc_warmup = FALSE)
     sampler_diagnostics <- data.table()
     for (i in colnames(sampler_params[[1]])) {
       tmp <- data.table(t(sapply(sampler_params, function(x) quantile(x[, i],probs = c(0.025,0.5,0.975)))))
@@ -59,11 +62,11 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   check_all_diagnostics(fit, outdir)
   
   # compute WAIC and LOO
-  re = rstan::extract(fit_cum)
+  re = rstan::extract(fit)
   tryCatch({
     
     if('log_lik' %in% names(re)){
-      log_lik <- loo::extract_log_lik(fit_cum)
+      log_lik <- loo::extract_log_lik(fit)
       log_lik = log_lik[!is.na(log_lik[,1]),]
       .WAIC = loo::waic(log_lik)
       .LOO = loo::loo(log_lik)
@@ -76,12 +79,14 @@ make_convergence_diagnostics_stats = function(fit, outdir)
   time = sum(rstan::get_elapsed_time(fit))
   
   # save
-  saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum_", Code, ".rds"))
-  saveRDS(Rhat_cum, file = paste0(outdir, "-Rhat_cum_", Code, ".rds"))
-  saveRDS(.WAIC, file = paste0(outdir, "-WAIC_", Code, ".rds"))
-  saveRDS(.LOO, file = paste0(outdir, "-LOO_", Code, ".rds"))
-  saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics_", Code, ".rds"))
-  saveRDS(time, file = paste0(outdir, "-time_elapsed_", Code, ".rds"))
+  saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum.rds"))
+  saveRDS(Rhat_cum, file = paste0(outdir, "-Rhat_cum.rds"))
+  saveRDS(.WAIC, file = paste0(outdir, "-WAIC.rds"))
+  saveRDS(.LOO, file = paste0(outdir, "-LOO.rds"))
+  saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics.rds"))
+  saveRDS(time, file = paste0(outdir, "-time_elapsed.rds"))
+  
+  return(summary)
 }
 
 make_probability_ratio_table = function(fit, df_week, df_state_age, data, stan_data, outdir){
@@ -135,6 +140,42 @@ make_probability_ratio_table = function(fit, df_week, df_state_age, data, stan_d
   return(tmp1)
 }
 
+make_var_by_age_by_state_table = function(fit, df_week, df_state_age, df_state, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
+    
+  }
+
+  return(tmp1)
+}
+
 make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -146,21 +187,140 @@ make_var_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
   fit_samples = rstan::extract(fit)
   
   tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1, 2:3, c('age_index','week_index'))
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('age_index', 'week_index')]	
-  tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
+              by=c( 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1,  week_index + age_index ~ q_label, value.var = "q")
+  # tmp1 = merge(tmp1, df_week, by = 'week_index')
   
-  tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1[, age := df_state_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_state_age$age)]
-  tmp1[, code := Code]
+  
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesTable.rds'))
 
-  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
   
   return(tmp1)
 }
+
+
+make_var_cum_by_age_table = function(fit, df_week, df_state_age, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
+  tmp1[, value := cumsum(value), by = c('state_index', 'age_index', 'iterations')]
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'CumTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_var_cum_by_age_table_counterfactual = function(fit, df_week, df_week_counterfactual, resurgence_dates, df_state_age, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # find start resurgence date
+  df_week[, dummy := 1]; 
+  df_week3 <- merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
+  df_week3[, after_resurgence := date >= start_resurgence]
+  df_week3 = merge(df_week3, df_state, by = 'code')
+  
+  df_week_counterfactual = df_week3[(after_resurgence)]
+  df_week_counterfactual[, week_index_resurgence := 1:length(date), by = 'code']
+
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name[1]]]) )
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
+  tmp1 = merge(tmp1, select(df_week3, state_index, week_index, after_resurgence), by = c('state_index', 'week_index'))
+  tmp1 = tmp1[(!after_resurgence)]
+  tmp1 = select(tmp1, -after_resurgence)
+  
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[var_name[2]]]) )
+  setnames(tmp2, 2:4, c('state_index', 'age_index','week_index_resurgence'))
+  tmp2 = merge(tmp2, select(df_week_counterfactual, state_index, week_index, week_index_resurgence), by = c('state_index', 'week_index_resurgence'))
+  tmp2 = select(tmp2,  -week_index_resurgence)
+
+  tmp1 <- rbind(tmp1, tmp2)
+  tmp1[, value := cumsum(value), by = c('state_index', 'age_index', 'iterations')]
+  
+  tmp1 = tmp1[, list(q=quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, select(df_state, loc_label, code, state_index), by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, select(df_week, week_index, code, date), by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, select(df_week, week_index, date), by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name[2],  'CumTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+
+make_var_by_age_age_table = function(fit, df_state_age, prop_prediction, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  if(is.null(fit)) stop()
+  
+  # extract samples
+  fit_samples = rstan::extract(fit)
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('age_index_recipient', 'age_index_source', 'prop_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('age_index_recipient', 'age_index_source', 'prop_index')]	
+  tmp1 = dcast(tmp1, age_index_recipient + age_index_source + prop_index ~ q_label, value.var = "q")
+  
+  tmp1[, age_recipient := df_state_age$age[age_index_recipient]]
+  tmp1[, age_source := df_state_age$age[age_index_source]]
+  tmp1 = merge(tmp1, prop_prediction, by = 'prop_index')
+  
+  return(tmp1)
+}
+
 
 make_var_by_varying_age_table = function(fit, df_week, df_age_continuous, age_groups, var_name, operation, outdir){
   
@@ -217,11 +377,6 @@ make_var_by_varying_age_table = function(fit, df_week, df_age_continuous, age_gr
 
 make_contribution_ref = function(fit, data_10thdeaths, fiveagegroups, data, df_week, df_age_continuous, outdir){
   
-  df_week1 = subset(df_week, date >= data_10thdeaths)
-  df_week1[, month := as.numeric(format(date, '%m'))]
-  df_week1[grepl('2021', date), month := month + 12]
-  df_week1 = subset(df_week1, month %in% min(df_week1$month):(min(df_week1$month) + 2))
-  
   # df age
   df_age = data.table(age = fiveagegroups)
   df_age[, age_index := 1:nrow(df_age)]
@@ -238,12 +393,22 @@ make_contribution_ref = function(fit, data_10thdeaths, fiveagegroups, data, df_w
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age$age_from_index <= age_index & df_age$age_to_index >= age_index), by = 'age_index']
   
+  # week data table
+  df_week[, dummy := 1]
+  data_10thdeaths[, dummy := 1]
+  df_week1 = merge(df_week, data_10thdeaths, by = 'dummy', allow.cartesian = T)
+  df_week1 = df_week1[date >= date_10thcum]
+  df_week1[, month := as.numeric(format(date, '%m'))]
+  df_week1[grepl('2021', date), month := month + 12]
+  df_week1[, keep := month %in% min(df_week1$month):(min(df_week1$month) + 2), by = 'code']
+  df_week1 = df_week1[keep == T]
+  
   # empirical estimate
   df_age_reporting[, age_state_index := which(df_age$age_from <= age_from & df_age$age_to >= age_to), by = 'age_index']
   empirical = merge(data, df_age_reporting, by = 'age_from')
-  empirical = merge(empirical, df_week1, by = 'date')
-  empirical = empirical[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c( 'age_state_index')]
-  empirical[, emp_est := weekly.deaths / sum(na.omit(weekly.deaths))]
+  empirical = merge(empirical, df_week1, by = c('date', 'code'))
+  empirical = empirical[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c( 'age_state_index', 'code')]
+  empirical[, emp_est := weekly.deaths / sum(na.omit(weekly.deaths)), by = c('code')]
   setnames(empirical, 'age_state_index', 'age_index')
   
   ps <- c(0.5, 0.025, 0.975)
@@ -255,30 +420,34 @@ make_contribution_ref = function(fit, data_10thdeaths, fiveagegroups, data, df_w
   fit_samples = rstan::extract(fit)
   
   tmp1 = as.data.table( reshape2::melt(fit_samples[['phi']]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
   
   # by selected age groups
   tmp1 = merge(tmp1, df_age_continuous, by = 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('iterations', 'week_index', 'age_state_index')]
+  tmp1 = tmp1[, list(value = sum(value)), by = c('iterations','state_index',  'week_index', 'age_state_index')]
   setnames(tmp1, 'age_state_index', 'age_index')
   
   # take reference
-  tmp1 = subset(tmp1, week_index %in% df_week1$week_index)
-  tmp1 = tmp1[, list(value = mean(value)), by = c('iterations', 'age_index')]
+  df_week1 = merge(df_week1, df_state, by = 'code')
+  tmp1 = merge(tmp1, select(df_week1, week_index, state_index), by = c('state_index', 'week_index'))
+  tmp1 = tmp1[, list(value = mean(value)), by = c('iterations', 'state_index', 'age_index')]
   
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('age_index')]	
-  tmp1 = dcast(tmp1, age_index ~ q_label, value.var = "q")
+              by=c('state_index', 'age_index')]	
+  tmp1 = dcast(tmp1, state_index + age_index ~ q_label, value.var = "q")
   
   tmp1[, age := fiveagegroups[age_index]]
   tmp1[, age := factor(age, levels = fiveagegroups)]
-  tmp1[, code := Code]
   
-  tmp1 = merge(tmp1, select(empirical, age_index, emp_est), by = 'age_index')
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  tmp1 = merge(tmp1, select(empirical, age_index, emp_est, code), by = c('age_index', 'code'))
   
-  saveRDS(tmp1, file = paste0(outdir, '-', 'contribution_ref',  'Table_', Code, '.rds'))
-  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'contribution_ref',  'Table_', Code, '.rds'))
+    
+  }
+
   return(tmp1)
 }
 
@@ -299,7 +468,6 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, df_wee
   set(df_age, NULL, 'age_from_index', df_age[,as.numeric(age_from_index)])
   df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
   df_age_continuous[, age_state_index := which(df_age$age_from_index <= age_index & df_age$age_to_index >= age_index), by = 'age_index']
-  
   
   # find population proportion
   pop_data1 = copy(pop_data)
@@ -322,13 +490,17 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, df_wee
   tmp = pop_data1[, list(pop = sum(pop)), by = 'age']
   tmp[, pop_prop_US := pop / sum(pop_data$pop)]
   pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
-  pop_data1 = subset(pop_data1, code == Code)
+  pop_data1 = subset(pop_data1, code %in% df_state$code)
   
   # ref week
-  df_week1 = subset(df_week, date >= data_10thdeaths)
+  df_week[, dummy := 1]
+  data_10thdeaths[, dummy := 1]
+  df_week1 = merge(df_week, data_10thdeaths, by = 'dummy', allow.cartesian = T)
+  df_week1 = df_week1[date >= date_10thcum]
   df_week1[, month := as.numeric(format(date, '%m'))]
   df_week1[grepl('2021', date), month := month + 12]
-  df_week1 = subset(df_week1, month %in% min(df_week1$month):(min(df_week1$month) + 2))
+  df_week1[, keep := month %in% min(df_week1$month):(min(df_week1$month) + 2), by = 'code']
+  df_week1 = df_week1[keep == T]
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -339,33 +511,37 @@ make_contribution_ref_adj = function(fit, data_10thdeaths, fouragegroups, df_wee
   fit_samples = rstan::extract(fit)
   
   tmp1 = as.data.table( reshape2::melt(fit_samples[['phi']]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
   
   # group by age group
   tmp1 = merge(tmp1, df_age_continuous, by = 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('iterations', 'age_state_index', 'week_index')]
+  tmp1 = tmp1[, list(value = sum(value)), by = c('iterations','state_index',  'week_index', 'age_state_index')]
   setnames(tmp1, 'age_state_index', 'age_index')
   
   # take reference
-  tmp1 = subset(tmp1, week_index %in% df_week1$week_index)
-  tmp1 = tmp1[, list(value = mean(value)), by = c('iterations', 'age_index')]
+  df_week1 = merge(df_week1, df_state, by = 'code')
+  tmp1 = merge(tmp1, select(df_week1, week_index, state_index), by = c('state_index', 'week_index'))
+  tmp1 = tmp1[, list(value = mean(value)), by = c('iterations', 'state_index', 'age_index')]
   
   # adjust by population proportion
-  tmp1 = merge(tmp1, select(pop_data1, age_index, pop_prop, pop_prop_US), by = 'age_index')
-  tmp1[, value := value / pop_prop * pop_prop_US]
-  tmp1[, value := value / sum(value), by = c('iterations')]
+  pop_data1 = merge(pop_data1, df_state, by = 'code')
+  tmp1 = merge(tmp1, select(pop_data1, age_index, pop_prop, pop_prop_US, state_index), by = c('age_index', 'state_index'))
+  tmp1[, value := value / pop_prop * pop_prop_US, by = 'state_index']
+  tmp1[, value := value / sum(value), by = c('iterations', 'state_index')]
   
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('age_index')]	
-  tmp1 = dcast(tmp1, age_index ~ q_label, value.var = "q")
+              by=c('age_index', 'state_index')]	
+  tmp1 = dcast(tmp1, state_index + age_index ~ q_label, value.var = "q")
   
   tmp1[, age := df_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_age$age)]
-  tmp1[, code := Code]
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
   
-  saveRDS(tmp1, file = paste0(outdir, '-', 'contribution_ref_adj',  'Table_', Code, '.rds'))
-  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'contribution_ref_adj',  'Table_', Code, '.rds'))
+  }
+
   return(tmp1)
 }
 
@@ -381,10 +557,14 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   fit_samples = rstan::extract(fit_cum)
   
   # find ref week 
-  df_week1 = subset(df_week, date >= date_10thcum)
+  df_week[, dummy := 1]
+  date_10thcum[, dummy := 1]
+  df_week1 = merge(df_week, date_10thcum, by = 'dummy', allow.cartesian = T)
+  df_week1 = df_week1[date >= date_10thcum]
   df_week1[, month := as.numeric(format(date, '%m'))]
   df_week1[grepl('2021', date), month := month + 12]
-  df_week1 = subset(df_week1, month %in% min(df_week1$month):(min(df_week1$month) + 2))
+  df_week1[, keep := month %in% min(df_week1$month):(min(df_week1$month) + 2), by = 'code']
+  df_week1 = df_week1[keep == T]
   
   # df age
   if(grepl('\\+', age_group))
@@ -430,56 +610,58 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   pop_data1[, pop_prop := pop / Total]
   pop_data1 = pop_data1[, list(pop = sum(pop), pop_prop = sum(pop_prop), pop_prop_US = sum(pop_prop_US)), by = c('Total', 'code', 'age_state_index')]
   pop_data1[, multiplier := pop_prop / pop_prop_US]
-  pop_data1 = subset(pop_data1, code == Code)
-  stopifnot(nrow(pop_data1) == length(age_groups))
+  pop_data1 = subset(pop_data1, code %in% df_state$code)
+  stopifnot(nrow(subset(pop_data1, code == df_state$code[1])) == length(age_groups))
   
   # empirical estimate
   if(with_empirical){
     df_age_reporting[, age_state_index := which(df_age_state$age_from <= age_from & df_age_state$age_to >= age_to), by = 'age_index']
     empirical = merge(data, df_age_reporting, by = 'age_from')
-    empirical = empirical[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('date', 'age_state_index')]
-    baseline_emp = merge(empirical, df_week1, by = 'date')
-    baseline_emp = baseline_emp[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c( 'age_state_index')]
-    baseline_emp[, emp_ref := weekly.deaths / sum(na.omit(weekly.deaths))]
-    empirical1 = empirical[, list(weekly.deaths_t = sum(na.omit(weekly.deaths))), by = c( 'date')]
-    empirical = merge(empirical, empirical1, by = c( 'date'))
-    empirical = merge(empirical, select(baseline_emp, age_state_index, emp_ref), by = c( 'age_state_index'))
-    empirical = merge(empirical, pop_data1, by = 'age_state_index')
+    empirical = empirical[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('date', 'age_state_index', 'code')]
+    baseline_emp = merge(empirical, df_week1, by = c('date', 'code'))
+    baseline_emp = baseline_emp[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c( 'age_state_index', 'code')]
+    baseline_emp[, emp_ref := weekly.deaths / sum(na.omit(weekly.deaths)), by = 'code']
+    empirical1 = empirical[, list(weekly.deaths_t = sum(na.omit(weekly.deaths))), by = c( 'date', 'code')]
+    empirical = merge(empirical, empirical1, by = c( 'date', 'code'))
+    empirical = merge(empirical, select(baseline_emp, age_state_index, emp_ref, code), by = c( 'age_state_index', 'code'))
+    empirical = merge(empirical, pop_data1, by = c('age_state_index', 'code'))
     empirical[, emp := weekly.deaths / weekly.deaths_t]
     empirical[, emp_rel := emp / emp_ref]
     empirical[, emp_adj := emp * multiplier]
-    empirical[, emp_adj := emp_adj / sum(emp_adj), by = c('date')]
+    empirical[, emp_adj := emp_adj / sum(emp_adj), by = c('date', 'code')]
     empirical[, emp_ref_adj :=  emp_ref * multiplier]
-    empirical[, emp_ref_adj :=  emp_ref_adj / sum(emp_ref_adj), by = c('date')]
+    empirical[, emp_ref_adj :=  emp_ref_adj / sum(emp_ref_adj), by = c('date', 'code')]
     empirical[, emp_rel_adj :=  emp_adj / emp_ref_adj]
     
     empirical = subset(empirical, age_state_index == which(age_groups == age_group))
     setnames(empirical, 'age_state_index', 'age_index')
     
-    empirical = select(empirical, date, age_index, emp, emp_rel, emp_adj, emp_rel_adj)
+    empirical = select(empirical, date, code, age_index, emp, emp_rel, emp_adj, emp_rel_adj)
     
   }
 
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[['phi']]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'iterations', 'age_state_index')]
+  tmp1 = tmp1[, list(value = sum(value)), by = c('state_index', 'week_index', 'iterations', 'age_state_index')]
   
   # # find reference
-  tmp2 = subset(tmp1, week_index %in% df_week1$week_index)
-  tmp2 = tmp2[, list(value_ref = mean(value)), by = c('iterations', 'age_state_index')]
-  tmp1 = merge(tmp1, tmp2, by = c('iterations', 'age_state_index'))
+  df_week1 = merge(df_week1, df_state, by = 'code')
+  tmp1 = merge(tmp1, select(df_week1, week_index, state_index), by = c('state_index', 'week_index'))
+  tmp2 = tmp1[, list(value_ref = mean(value)), by = c('iterations', 'state_index', 'age_state_index')]
+  tmp1 = merge(tmp1, tmp2, by = c('iterations', 'state_index', 'age_state_index'))
   tmp1[, value_rel := value / value_ref]
   
   # adjust by population proportion
-  tmp1 = merge(tmp1, pop_data1, by = 'age_state_index')
+  pop_data1 = merge(pop_data1, df_state, by = 'code')
+  tmp1 = merge(tmp1, pop_data1, by = c('age_state_index', 'state_index'))
   tmp1[, value_adj := value * multiplier]
-  tmp1[, value_adj := value_adj / sum(value_adj), by = c('iterations', 'week_index')]
+  tmp1[, value_adj := value_adj / sum(value_adj), by = c('iterations', 'week_index', 'state_index')]
   tmp1[, value_ref_adj := value_ref * multiplier]
-  tmp1[, value_ref_adj := value_ref_adj / sum(value_ref_adj), by = c('iterations', 'week_index')]
+  tmp1[, value_ref_adj := value_ref_adj / sum(value_ref_adj), by = c('iterations', 'week_index', 'state_index')]
   tmp1[, value_rel_adj := value_adj / value_ref_adj ]
   
   # keep only interested age group 
@@ -488,42 +670,46 @@ find_contribution_one_age_group = function(fit, df_week, df_age_continuous, df_a
   # take quantiles
   tmp2 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('week_index')]	
-  tmp2 = dcast(tmp2, week_index ~ q_label, value.var = "q")
+              by=c('state_index', 'week_index')]	
+  tmp2 = dcast(tmp2, state_index + week_index ~ q_label, value.var = "q")
   
   tmp3 = tmp1[, list( 	q= quantile(value_rel, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('week_index')]	
-  tmp3 = dcast(tmp3, week_index ~ q_label, value.var = "q")
+              by=c('state_index', 'week_index')]	
+  tmp3 = dcast(tmp3, state_index + week_index ~ q_label, value.var = "q")
   setnames(tmp3, p_labs, paste0(p_labs, '_rel'))
-  tmp2 = merge(tmp2, tmp3, by = 'week_index')
+  tmp2 = merge(tmp2, tmp3, by =c('state_index', 'week_index'))
   
   tmp3 = tmp1[, list( 	q= quantile(value_adj, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('week_index')]	
-  tmp3 = dcast(tmp3, week_index ~ q_label, value.var = "q")
+              by=c('state_index', 'week_index')]	
+  tmp3 = dcast(tmp3, state_index + week_index ~ q_label, value.var = "q")
   setnames(tmp3, p_labs, paste0(p_labs, '_adj'))
-  tmp2 = merge(tmp2, tmp3, by = 'week_index')
+  tmp2 = merge(tmp2, tmp3, by = c('state_index', 'week_index'))
   
   tmp1 = tmp1[, list( 	q= quantile(value_rel_adj, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('week_index')]	
-  tmp1 = dcast(tmp1, week_index ~ q_label, value.var = "q")
+              by=c('state_index', 'week_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index ~ q_label, value.var = "q")
   setnames(tmp1, p_labs, paste0(p_labs, '_rel_adj'))
-  tmp1 = merge(tmp2, tmp1, by = 'week_index')
+  tmp1 = merge(tmp2, tmp1, by = c('state_index', 'week_index'))
   
   tmp1[, age := age_group]
-  tmp1[, code := Code]
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
   
   tmp1 = merge(tmp1, df_week, by = 'week_index')
+  
+  tmp1 = merge(tmp1, date_10thcum, by = 'code')
   tmp1[, after.10thcumdeaths := date >= date_10thcum]
   
   if(with_empirical){
-    tmp1= merge(tmp1, empirical, by = c('date'), all.x = T)
-    
+    tmp1= merge(tmp1, empirical, by = c('date', 'code'), all.x = T)
+
   }
 
-  saveRDS(tmp1, file = paste0(outdir, '-Contribution_Age_', age_group,'_', Code, '.rds'))
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-Contribution_Age_', age_group,'_', Code, '.rds'))
+  }
 
   return(tmp1)
 }
@@ -565,7 +751,6 @@ find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continu
     tmp2 = emp[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c('date', 'code')]
     emp = merge(emp, tmp2, by = c('date', 'code'))
     emp[, prop_deaths := weekly.deaths / total_deaths]
-    
   }
 
   # tmp1
@@ -598,6 +783,7 @@ find_contribution_age_groups_vaccination = function(fit, df_week, df_age_continu
 }
 
 
+
 find_cumsum_nonr_deaths_state_age = function(fit, df_week, df_age_continuous, state_age_groups, stan_data, deaths_predict_var){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -625,41 +811,47 @@ find_cumsum_nonr_deaths_state_age = function(fit, df_week, df_age_continuous, st
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
   # include missing information
-  df_missing = as.data.table( reshape2::melt(stan_data$idx_weeks_missing) )[,-1]
-  setnames(df_missing, 1:2, c('idx_serie_missing', 'week_index'))
-  df_missing = subset(df_missing, week_index != -1)
-  
-  tmp = data.table(age_index = stan_data$age_missing,
-                   min_count_censored = stan_data$min_count_censored,
-                   max_count_censored = stan_data$max_count_censored,
-                   sum_count_censored = stan_data$sum_count_censored,
-                   idx_serie_missing = 1:length(stan_data$age_missing))
-  tmp[min_count_censored == -1, min_count_censored := NA]
-  tmp[max_count_censored == -1, max_count_censored := NA]
-  tmp[sum_count_censored == -1, sum_count_censored := NA]
-  df_missing = merge(df_missing, tmp, by = 'idx_serie_missing')
+  df_missing = vector(mode = 'list', length = stan_data$M)
+  for(m in 1:stan_data$M){
+    df_missing_m = NULL
+    for(x in 1:stan_data$N_missing[[m]]){
+      df_missing_m = rbind(df_missing_m, data.table(idx_serie_missing = x, week_index = stan_data$idx_weeks_missing_min[[m]][x]:stan_data$idx_weeks_missing_max[[m]][x])
+      )
+    }
+    
+    tmp = data.table(age_index = stan_data$age_missing[[m]],
+                     min_count_censored = stan_data$min_count_censored[[m]],
+                     max_count_censored = stan_data$max_count_censored[[m]],
+                     sum_count_censored = stan_data$sum_count_censored[[m]],
+                     idx_serie_missing = 1:length(stan_data$age_missing[[m]]))
+    tmp[min_count_censored == -1, min_count_censored := NA]
+    tmp[max_count_censored == -1, max_count_censored := NA]
+    tmp[sum_count_censored == -1, sum_count_censored := NA]
+    df_missing[[m]] = merge(df_missing_m, tmp, by = 'idx_serie_missing')
+    df_missing[[m]]$state_index = m
+  }
+  df_missing = do.call('rbind', df_missing)
   
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[deaths_predict_var]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
-  tmp1 = merge(tmp1, df_missing, by.x = c('age_state_index','week_index'), by.y = c('age_index','week_index'))
+  tmp1 = tmp1[, list(value = sum(value)), by = c('state_index', 'week_index', 'age_state_index', 'iterations')]
+  tmp1 = merge(tmp1, df_missing, by.x = c('age_state_index', 'state_index', 'week_index'), by.y = c('age_index','state_index', 'week_index'))
   
   # take the cum sum
-  tmp1 = tmp1[, value := cumsum(value), by = c('iterations', 'age_state_index')]
+  tmp1 = tmp1[, value := cumsum(value), by = c('iterations', 'age_state_index', 'state_index')]
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('week_index', 'age_state_index')]	
-  tmp1 = dcast(tmp1, week_index + age_state_index ~ q_label, value.var = "q")
+              by=c('state_index', 'week_index', 'age_state_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_state_index ~ q_label, value.var = "q")
   
-  tmp1[, code := Code]
-  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
   tmp1 = merge(tmp1, df_week, by = 'week_index')
   tmp1 = merge(tmp1, df_age_state, by.x = 'age_state_index', by.y = 'age_index')
-  tmp1 = merge(tmp1, df_missing, by.x = c('age_state_index','week_index'), by.y = c('age_index','week_index'))
+  tmp1 = merge(tmp1, df_missing, by.x = c('age_state_index','week_index', 'state_index'), by.y = c('age_index','week_index', 'state_index'))
   
   setnames(tmp1, 'age_state_index', 'age_index')
   
@@ -693,40 +885,46 @@ find_sum_nonr_deaths_state_age = function(fit, df_age_continuous, state_age_grou
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
   # include missing information
-  df_missing = as.data.table( reshape2::melt(stan_data$idx_weeks_missing) )[,-1]
-  setnames(df_missing, 1:2, c('idx_serie_missing', 'week_index'))
-  df_missing = subset(df_missing, week_index != -1)
-  
-  tmp = data.table(age_index = stan_data$age_missing,
-                   min_count_censored = stan_data$min_count_censored,
-                   max_count_censored = stan_data$max_count_censored,
-                   sum_count_censored = stan_data$sum_count_censored,
-                   idx_serie_missing = 1:length(stan_data$age_missing))
-  tmp[min_count_censored == -1, min_count_censored := NA]
-  tmp[max_count_censored == -1, max_count_censored := NA]
-  tmp[sum_count_censored == -1, sum_count_censored := NA]
-  df_missing = merge(df_missing, tmp, by = 'idx_serie_missing')
+  df_missing = vector(mode = 'list', length = stan_data$M)
+  for(m in 1:stan_data$M){
+    df_missing_m = NULL
+    for(x in 1:stan_data$N_missing[[m]]){
+      df_missing_m = rbind(df_missing_m, data.table(idx_serie_missing = x, week_index = stan_data$idx_weeks_missing_min[[m]][x]:stan_data$idx_weeks_missing_max[[m]][x])
+      )
+    }
+    
+    tmp = data.table(age_index = stan_data$age_missing[[m]],
+                     min_count_censored = stan_data$min_count_censored[[m]],
+                     max_count_censored = stan_data$max_count_censored[[m]],
+                     sum_count_censored = stan_data$sum_count_censored[[m]],
+                     idx_serie_missing = 1:length(stan_data$age_missing[[m]]))
+    tmp[min_count_censored == -1, min_count_censored := NA]
+    tmp[max_count_censored == -1, max_count_censored := NA]
+    tmp[sum_count_censored == -1, sum_count_censored := NA]
+    df_missing[[m]] = merge(df_missing_m, tmp, by = 'idx_serie_missing')
+    df_missing[[m]]$state_index = m
+  }
+  df_missing = do.call('rbind', df_missing)
   
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[deaths_predict_var]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
-  tmp1 = merge(tmp1, df_missing, by.x = c('age_state_index','week_index'), by.y = c('age_index','week_index'))
+  tmp1 = tmp1[, list(value = sum(value)), by = c('state_index','week_index', 'age_state_index', 'iterations')]
+  tmp1 = merge(tmp1, df_missing, by.x = c('state_index','age_state_index','week_index'), by.y = c('state_index','age_index','week_index'))
   
   # take the cum sum
-  tmp1 = tmp1[, list(value = sum(value)), by = c('age_state_index', 'iterations')]
+  tmp1 = tmp1[, list(value = sum(value)), by = c('state_index','age_state_index', 'iterations')]
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
-              by=c('age_state_index')]	
-  tmp1 = dcast(tmp1,age_state_index ~ q_label, value.var = "q")
+              by=c('state_index','age_state_index')]	
+  tmp1 = dcast(tmp1,state_index + age_state_index ~ q_label, value.var = "q")
   
-  tmp1[, code := Code]
-  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
   tmp1 = merge(tmp1, df_age_state, by.x = 'age_state_index', by.y = 'age_index')
-  tmp1 = merge(tmp1, unique(select(df_missing, -week_index)),by.x = 'age_state_index', by.y = 'age_index')
+  tmp1 = merge(tmp1, unique(select(df_missing, -week_index)),by.x = c('age_state_index', 'state_index'), by.y = c('age_index', 'state_index'))
   
   setnames(tmp1, 'age_state_index', 'age_index')
   
@@ -735,7 +933,10 @@ find_sum_nonr_deaths_state_age = function(fit, df_age_continuous, state_age_grou
   tmp1[!is.na(sum_count_censored), inside.CI := sum_count_censored >= CL & sum_count_censored <= CU]
   
   # save
-  saveRDS(tmp1, file = paste0(outdir, '-predictive_checks_table2_', Code, '.rds'))
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-predictive_checks_table2_', Code, '.rds'))
+    
+  }
   
   return(tmp1)
 }
@@ -768,7 +969,37 @@ find_mean_age_death = function(fit, df_week, outdir){
   return(tmp1)
 }
 
-find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_week, df_age_continuous, data_comp, cum.death.var, outdir){
+find_cumulative_deaths_prop_givensum_state_age_multiple_states <- function(fit, date_10thcum, df_week, df_age_continuous, scrapedData, cum.death.var, 
+                                                                           Code, outdir){
+  if(nrow(subset(scrapedData, code %in% Code)) > 0 ){
+    
+    tmp = list(); i = 1
+    for(c in Code){
+
+      scrapedData_c = subset(scrapedData, code == c)
+      
+      if(c == 'GA'){
+        scrapedData_c = reduce_agebands_scrapedData_GA(scrapedData_c)
+      }
+      
+      if(nrow(scrapedData_c) > 0){
+        tmp[[i]] = find_cumulative_deaths_prop_givensum_state_age(fit, date_10thcum, df_week, df_age_continuous, scrapedData_c, cum.death.var, c, outdir)
+        i = i + 1
+      }
+      
+    }
+
+    tmp = do.call('rbind',tmp)
+    tmp = merge(tmp, df_state, by = 'code')
+    
+    return(tmp)
+  }
+  
+  
+}
+
+
+find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_week, df_age_continuous, data_comp, cum.death.var, c, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -779,7 +1010,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   fit_samples = rstan::extract(fit)
   
   # df age
-  df_age_state = data.table(age = unique(subset(data_comp, code == Code)$age))
+  df_age_state = data.table(age = unique(subset(data_comp, code == c)$age))
   df_age_state[, age_index := 1:nrow(df_age_state)]
   df_age_state[, age_from := gsub('(.+)-.*', '\\1', age)]
   df_age_state[, age_to := gsub('.*-(.+)', '\\1', age)]
@@ -795,20 +1026,20 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   df_age_continuous[, age_state_index := which(df_age_state$age_from_index <= age_index & df_age_state$age_to_index >= age_index), by = 'age_index']
   
   # ref week
-  df_week1 = subset(df_week, date >= date_10thcum)
+  df_week1 = subset(df_week, date >= date_10thcum[code == c]$date_10thcum)
   df_week1[, month := as.numeric(format(date, '%m'))]
   df_week1[grepl('2021', date), month := month + 12]
   df_week1 = subset(df_week1, month %in% min(df_week1$month):(min(df_week1$month) + 2))
   
   # data comp
-  df_week_10thcum = subset(df_week, date >= date_10thcum)
-  tmp2 = as.data.table( subset(data_comp, code == Code))
+  df_week_10thcum = subset(df_week, date >= date_10thcum[code == c]$date_10thcum)
+  tmp2 = as.data.table( subset(data_comp, code == c))
   tmp2[, date := as.Date(date)]
   tmp2 = tmp2[, list(cum.death = sum(get(cum.death.var))), by = c('date', 'age')]
   tmp2 = tmp2[order( date)]
   dummy = min(df_week_10thcum$date) %in% tmp2$date 
   last.cum.deaths = sum(subset(tmp2, date == ifelse(dummy, min(df_week_10thcum$date), 
-                                (min(tmp2$date):(min(tmp2$date)+6))[min(tmp2$date):(min(tmp2$date)+6) %in% df_week_10thcum$date] ) )$cum.death )
+                                                    (min(tmp2$date):(min(tmp2$date)+6))[min(tmp2$date):(min(tmp2$date)+6) %in% df_week_10thcum$date] ) )$cum.death )
   tmp2 = unique(subset(tmp2, date %in% c(max(df_week_10thcum$date) + 7, df_week_10thcum$date)))
   tmp2[, weekly.deaths := c(diff(cum.death), NA), by = 'age']
   tmp2 = unique(subset(tmp2, date %in% df_week$date))
@@ -824,7 +1055,8 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   
   # find pi noisy
   tmp1 = as.data.table( reshape2::melt(fit_samples['deaths_predict']) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
+  tmp1 = subset(tmp1, state_index == df_state[code == c]$state_index)
   
   # find proportion with overdispersion noise
   tmpt = tmp1[, list(deaths_predict_t = sum(value)), by = c('week_index', 'iterations')]
@@ -838,7 +1070,9 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   
   # predict weekly deaths
   tmp5 = as.data.table( reshape2::melt(fit_samples['alpha']) )
-  setnames(tmp5, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp5,2:4, c('state_index', 'age_index','week_index'))
+  tmp5 = subset(tmp5, state_index == df_state[code == c]$state_index)
+  
   tmp5 = merge(tmp5, df_age_continuous, 'age_index')
   tmp5 = tmp5[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
   setnames(tmp5, 'age_state_index', 'age_index')
@@ -886,7 +1120,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   tmp1 = merge(tmp1, tmp2, by = c('week_index', 'age'))
   
   tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
-  tmp4 = as.data.table( select(subset(data_comp, code == Code), age, date, cum.deaths) )
+  tmp4 = as.data.table( select(subset(data_comp, code == c), age, date, cum.deaths) )
   tmp4[, date := as.Date(date)]
   tmp1 = merge(tmp1, tmp4, by = c('date', 'age'))
   
@@ -895,10 +1129,10 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit, date_10thcum, df_
   tmp1[, weekly.death.inside.CI := ( weekly.deaths <= CU_abs_weekly & weekly.deaths  >= CL_abs_weekly)] 
   tmp1[, cum.death.inside.CI := (cum.deaths  <= CU_abs_cum & cum.deaths  >= CL_abs_cum)] 
   
-  tmp1[, code := Code]
+  tmp1[, code := c]
   tmp1[, age := factor(age, levels = as.character(df_age_state[order(age_from)]$age))]
   
-  saveRDS(list(data_comp, tmp1), file = paste0(outdir, '-CumDeathsComp_', 'ScrapedData', '_', Code, '.rds'))
+  saveRDS(list(data_comp, tmp1), file = paste0(outdir, '-CumDeathsComp_', 'ScrapedData', '_', c, '.rds'))
   
   return(tmp1)
 }
@@ -930,10 +1164,14 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   df_age_continuous[, age_state_index := which(df_age$age_from_index <= age_index & df_age$age_to_index >= age_index), by = 'age_index']
   
   # ref week
-  df_week1 = subset(df_week, date >= date_10thcum)
+  df_week[, dummy := 1]
+  date_10thcum[, dummy := 1]
+  df_week1 = merge(df_week, date_10thcum, by = 'dummy', allow.cartesian = T)
+  df_week1 = df_week1[date >= date_10thcum]
   df_week1[, month := as.numeric(format(date, '%m'))]
   df_week1[grepl('2021', date), month := month + 12]
-  df_week1 = subset(df_week1, month %in% min(df_week1$month):(min(df_week1$month) + 2))
+  df_week1[, keep := month %in% min(df_week1$month):(min(df_week1$month) + 2), by = 'code']
+  df_week1 = df_week1[keep == T]
   
   # find population proportion
   pop_data1 = copy(pop_data)
@@ -952,68 +1190,82 @@ make_mortality_rate_table = function(fit_cum, fouragegroups, date_10thcum, df_we
   tmp = pop_data1[, list(pop = sum(pop)), by = 'age']
   tmp[, pop_prop_US := pop / sum(pop_data$pop)]
   pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
-  pop_data1 = subset(pop_data1, code == Code)
+  pop_data1 = subset(pop_data1, code %in% df_state$code)
   
   # week index
+  df_week[, dummy := 1]
+  date_10thcum[, dummy := 1]
+  df_week = merge(df_week, date_10thcum, by = 'dummy', allow.cartesian=TRUE)
   df_week_10thcum = subset(df_week, date >= date_10thcum)
-  data_comp = as.data.table( subset(data_comp, code == Code))
+  data_comp = as.data.table( subset(data_comp, code %in% df_state$code))
   data_comp[, date := as.Date(date)]
-  tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = 'date']
-  tmp2 = tmp2[order( date)]
-  dummy = min(df_week_10thcum$date)  %in% tmp2$date
-  last.cum.deaths = max(subset(tmp2, date == ifelse(dummy, min(df_week_10thcum$date) , 
-                                                    (min(tmp2$date):(min(tmp2$date)+6))[min(tmp2$date):(min(tmp2$date)+6) %in% df_week_10thcum$date] ) )$cum.death )
-  tmp2 = unique(subset(tmp2, date %in% c(df_week_10thcum$date, max(df_week_10thcum$date)+7)))
-  tmp2[, weekly.deaths := c(diff(cum.death),NA)]
+  tmp2 = data_comp[, list(cum.death = sum(get(cum.death.var))), by = c('date', 'code')]
+  tmp2 = tmp2[order(code, date)]
+  last.cum.deaths = list(); tmp3 = list()
+  for(Code in df_state$code){
+    df_week_10thcum_m = subset(df_week_10thcum, code == Code)
+    tmp2_m = subset(tmp2, code == Code)
+    dummy = min(df_week_10thcum_m$date)  %in% tmp2_m$date
+    last.cum.deaths[[Code]] = max(subset(tmp2_m, date == ifelse(dummy, min(df_week_10thcum_m$date) , 
+                                                      (min(tmp2_m$date):(min(tmp2_m$date)+6))[min(tmp2_m$date):(min(tmp2_m$date)+6) %in% df_week_10thcum_m$date] ) )$cum.death )
+    tmp3[[Code]] = unique(subset(tmp2, code == Code & date %in% c(df_week_10thcum_m$date, max(df_week_10thcum_m$date)+7)))
+  }
+  tmp2 = do.call('rbind', tmp3)
+  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
   tmp2 = unique(subset(tmp2, date %in% df_week$date))
-  tmp2 = merge(tmp2, df_week, by = 'date')
-  tmp2 = select(tmp2, week_index, weekly.deaths)
+  tmp2 = merge(tmp2, df_week, by = c('date', 'code'))
+  tmp2 = select(tmp2, code, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
   tmp2[weekly.deaths <0, weekly.deaths := 0]
   
   # adjust dfweek for cum
-  df_week_adj = df_week[, list(date = date + 7), by = 'week_index']
+  df_week_adj = unique(df_week[, list(date = date + 7), by = 'week_index'])
   
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples['alpha']) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
   
   # sum by state age group
   tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-  tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
+  tmp1 = tmp1[, list(value = sum(value)), by = c('state_index', 'week_index', 'age_state_index', 'iterations')]
   setnames(tmp1, 'age_state_index', 'age_index')
   
-  # add cumsum from weeks before 10th date
-  tmp3 = subset(tmp1, week_index %in% df_week1$week_index)
-  tmp3 = tmp3[, list(value_ref = mean(value)), by = c('age_index', 'iterations')]
-  tmp3[, value_ref := rdirmnom(1, last.cum.deaths, value_ref), by =  c('iterations')]
+  # find value from weeks before 10th date
+  df_week1 = merge(df_week1, df_state, by = 'code')
+  tmp3 = merge(tmp1, select(df_week1, week_index, state_index), by = c('state_index', 'week_index'))
+  tmp3 = tmp3[, list(value_ref = mean(value)), by = c('state_index', 'age_index', 'iterations')]
+  tmp3 = merge(tmp3, data.table(state_index = 1:length(last.cum.deaths), 
+                         last.cum.deaths = unlist(last.cum.deaths) ), by = 'state_index')
+  tmp3[, value_ref := rdirmnom(1, last.cum.deaths, value_ref), by =  c('state_index', 'iterations')]
   
-  # multiply by the weekly death
-  tmp1 = merge(tmp1, tmp2, by = 'week_index')
-  tmp1[, value := rdirmnom(1, weekly.deaths, value), by =  c('iterations', 'week_index')]
+  #find value from weeks after 10th date
+  tmp2 = merge(tmp2, df_state, by = 'code')
+  tmp1 = merge(tmp1, tmp2, by = c('week_index', 'state_index'))
+  tmp1[, value := rdirmnom(1, weekly.deaths, value), by =  c('iterations', 'state_index', 'week_index')]
   
   # find cumulative death
-  tmp1 = merge(tmp1, tmp3, by = c('age_index', 'iterations'))
-  tmp1[, value := cumsum(value), by = c('iterations', 'age_index')]
+  tmp1 = merge(tmp1, tmp3, by = c('age_index', 'iterations', 'state_index'))
+  tmp1[, value := cumsum(value), by = c('iterations', 'state_index', 'age_index')]
   tmp1[, value := value + value_ref]
   
   # find mortality rate
-  tmp1 = merge(tmp1, pop_data1, by = 'age_index')
+  tmp1 = merge(tmp1, pop_data1, by = c('age_index', 'code'))
   tmp1[, value := value / pop]
   
   # quantiles
-  tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('week_index', 'age_index')]	
-  tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
-  
-  tmp1[, code := Code]
+  tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
   
   tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
   tmp1[, age := df_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_age$age)]
-  tmp1[, code := Code]
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
   
-  saveRDS(tmp1, file = paste0(outdir, '-', 'MortalityRate', 'Table_', Code, '.rds'))
-  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'MortalityRate', 'Table_', Code, '.rds'))
+    
+  }
+
   return(tmp1)
 }
 
@@ -1049,18 +1301,19 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
   
   # ref data
   data_comp = as.data.table(data_comp)
-  data_comp = subset(data_comp, code == Code)
+  data_comp = subset(data_comp, code %in% df_state$code)
   data_comp[, date := as.Date(date)]
-  tmp2 = data_comp[, list(daily_deaths = sum(daily_deaths)), by = 'date']
-  tmp2 = tmp2[order( date)]
-  tmp2[, cum.death := cumsum(daily_deaths)]
+  tmp2 = data_comp[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
+  tmp2 = tmp2[order(code, date)]
+  tmp2[, cum.death := cumsum(daily_deaths), by = 'code']
   tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
-  tmp2[, weekly.deaths := c(diff(cum.death),NA)]
+  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
   tmp2 = unique(subset(tmp2, date %in% df_week$date))
   tmp2 = merge(tmp2, df_week, by = 'date')
-  tmp2 = select(tmp2, week_index, weekly.deaths)
+  tmp2 = select(tmp2, code, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
   tmp2[weekly.deaths<0, weekly.deaths := 0]
+  tmp2 = merge(tmp2, df_state, by = 'code')
   
   if(withempirical){
     
@@ -1068,87 +1321,88 @@ make_weekly_death_rate_other_source = function(fit_cum, df_week, data_comp, var.
       df_age_reporting[, age_state_index := which(df_age$age_from <= age_from & df_age$age_to >= age_to), by = 'age_index']
       empirical = merge(data, df_age_reporting, by = 'age_from')
       empirical = merge(empirical, df_week, by = 'date')
-      empirical = empirical[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c( 'age_state_index', 'week_index')]
+      empirical = empirical[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('code', 'age_state_index', 'week_index')]
       setnames(empirical, 'age_state_index', 'age_index')
     } else{
       empirical = merge(data, df_age_reporting, by = 'age_from')
       empirical = merge(empirical, df_week, by = 'date')
     }
     setnames(empirical, 'weekly.deaths', 'emp')
-    tmp_emp = empirical[, list(total_deaths = sum(na.omit(emp))), by = 'week_index']
-    empirical = merge(empirical, tmp_emp, by = c('week_index'))
+    tmp_emp = empirical[, list(total_deaths = sum(na.omit(emp))), by = c('code', 'week_index')]
+    empirical = merge(empirical, tmp_emp, by = c('code', 'week_index'))
     empirical[, prop_deaths := emp / total_deaths]
-    empirical = merge(empirical, tmp2, by = c('week_index'))
+    empirical = merge(empirical, tmp2, by = c('code','week_index'))
     empirical[, emp_adj := weekly.deaths * prop_deaths]
-    empirical = select(empirical, emp, emp_adj, week_index, age_index)
+    empirical = select(empirical, emp, emp_adj, code, week_index, age_index)
   }
   
   # tmp1
   tmp1 = as.data.table( reshape2::melt(fit_samples[[var.alpha]]) )
-  setnames(tmp1, c('Var2', 'Var3'), c('age_index','week_index'))
+  setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
   
   # sum by state age group
   if(!is.null(age_groups)){
     tmp1 = merge(tmp1, df_age_continuous, 'age_index')
-    tmp1 = tmp1[, list(value = sum(value)), by = c('week_index', 'age_state_index', 'iterations')]
+    tmp1 = tmp1[, list(value = sum(value)), by = c('state_index', 'week_index', 'age_state_index', 'iterations')]
     setnames(tmp1, 'age_state_index', 'age_index')
   }
   
   # prediction weekly deaths
-  tmp1 = merge(tmp1, tmp2, by = 'week_index')
-  tmp1[, value := rdirmnom(1, weekly.deaths, value), by = c('week_index', 'iterations')]
+  tmp1 = merge(tmp1, tmp2, by = c('week_index', 'state_index'))
+  tmp1[, value := rdirmnom(1, weekly.deaths, value), by = c('state_index', 'week_index', 'iterations')]
   
   if(!is.null(reduction)){
     tmp3 = tmp1[week_index %in% df_week[date %in%reduction, week_index]]
     tmp3 = select(tmp3, - weekly.deaths)
-    tmp3 = as.data.table( dcast.data.table(tmp3, age_index + iterations ~ week_index, value.var = 'value') )
-    setnames(tmp3, 3:4, c('week1', 'week2'))
-    tmp3[, value := (week2 - week1) / week1, by = c('iterations', 'age_index')]
-    tmp3 = tmp3[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c( 'age_index')]	
-    tmp3 = dcast(tmp3, age_index ~ q_label, value.var = "q")
-    tmp3[, code := Code]
+    tmp3 = as.data.table( dcast.data.table(tmp3, state_index + age_index + iterations ~ week_index, value.var = 'value') )
+    setnames(tmp3, 4:5, c('week1', 'week2'))
+    tmp3[, value := (week2 - week1) / week1, by = c('iterations', 'state_index', 'age_index')]
+    tmp3 = tmp3[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'age_index')]	
+    tmp3 = dcast(tmp3, state_index + age_index ~ q_label, value.var = "q")
+    tmp3 = merge(tmp3, df_state, by = 'state_index')
     tmp3[, age := df_age$age[age_index]]
     tmp3[, age := factor(age, levels = df_age$age)]
   }
   
   # quantiles
   tmp1 = tmp1[, list(q= c(quantile(value, prob=ps, na.rm = T), mean(value)), q_label=c(p_labs, 'mean')), 
-              by=c('week_index', 'age_index')]	
-  tmp1 = dcast(tmp1, week_index + age_index ~ q_label, value.var = "q")
+              by=c('state_index', 'week_index', 'age_index')]	
+  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
   
-  tmp1[, code := Code]
   tmp1 = merge(tmp1, df_week, by = 'week_index')
 
   tmp1[, age := df_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_age$age)]
-  
-  if(withempirical){
-    tmp1 = merge(tmp1, empirical, by = c('week_index', 'age_index'), all.x = T)
-  }
-  
-  tmp1 = merge(tmp1, tmp2, by = 'week_index', all.x = T)
+
+  tmp1 = merge(tmp1, tmp2, by = c('week_index', 'state_index'), all.x = T)
   setnames(tmp1, 'weekly.deaths', 'emp_JHU')
   
-  
-  if(!is.null(lab)){
-    file = paste0(outdir, '-', 'DeathByAge', 'Table_', lab, '_', Code, '.rds')
-    
-  }else{
-    file =  paste0(outdir, '-', 'DeathByAge', 'Table_', var.alpha, '_', Code, '.rds')
+  if(withempirical){
+    tmp1 = merge(tmp1, empirical, by = c('code', 'week_index', 'age_index'), all.x = T)
   }
-
-  saveRDS(tmp1, file =file)
-
-  if(!is.null(reduction)){
+  
+  for(Code in unique(tmp1$code)){
     if(!is.null(lab)){
-      file = paste0(outdir, '-', 'DeathByAge', 'prop_Table_', lab, '_', Code, '.rds')
+      file = paste0(outdir, '-', 'DeathByAge', 'Table_', lab, '_', Code, '.rds')
       
     }else{
-      file =  paste0(outdir, '-', 'DeathByAge', 'prop_Table_', var.alpha, '_', Code, '.rds')
+      file =  paste0(outdir, '-', 'DeathByAge', 'Table_', var.alpha, '_', Code, '.rds')
     }
     
-    saveRDS(tmp3, file= file)
+    saveRDS(subset(tmp1, code == Code), file =file)
+    
+    if(!is.null(reduction)){
+      if(!is.null(lab)){
+        file = paste0(outdir, '-', 'DeathByAge', 'prop_Table_', lab, '_', Code, '.rds')
+        
+      }else{
+        file =  paste0(outdir, '-', 'DeathByAge', 'prop_Table_', var.alpha, '_', Code, '.rds')
+      }
+      
+      saveRDS(subset(tmp3, code == Code), file= file)
+    }
   }
+
   
   return(tmp1)
 }
@@ -1488,6 +1742,23 @@ find_vaccine_effects_old <- function(weekly_deaths, vaccine_data, start_resurgen
   tmp3 = dcast(tmp3, variable + age ~ q_label, value.var = "q")
   
   return(list(tmp1, tmp2, tmp3, tmp))
+}
+
+make_forest_plot_table <- function(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels){
+  tmp <- summary[ grepl(paste(paste0('^',names),collapse = '|'),rownames(summary)) ,]
+  
+  variables <- rownames(tmp); group = c()
+  for(x in 1:length(variables)) group[x] = groups[which(grepl(gsub('(.+)\\[.*', '\\1', variables[x]), names))]
+  for(x in 1:length(names)) variables = gsub(names[x], math_name[x], variables)
+  for(x in df_age_vaccination2$age_index) variables = gsub(paste0('\\[',x), paste0('\\["', df_age_vaccination2$age[x], '"'), variables) 
+  for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_age_vaccination2$age[x], '"\\]'), variables[grepl('vac', variables)]) 
+  for(x in df_state$state_index) variables[!grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_state$loc_label[x], '"\\]'), variables[!grepl('vac', variables)]) 
+  
+  tmp <- as.data.table(tmp)
+  tmp[, variable := variables]
+  tmp[, group := factor(group, levels = groups_levels)]
+  setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
+  
 }
 
 find_vaccine_effects <- function(weekly_deaths, vaccine_data, start_resurgence, pick_resurgence)
@@ -1839,3 +2110,28 @@ summary_death_all_states = function(death2, rm_states){
   
   return(tmp1)
 }
+
+prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
+  
+  prop_vac = data.table( do.call('rbind', stan_data$prop_vac) ) 
+  prop_vac[, age := rep(df_age_vaccination2$age, each = nrow(stan_data$prop_vac[[1]]))]
+  prop_vac[, week_index := rep(1:nrow(stan_data$prop_vac[[1]]), length(stan_data$prop_vac))]
+  prop_vac = data.table(reshape2::melt(prop_vac, id.vars = c('age', 'week_index')))
+  setnames(prop_vac, c('variable', 'value'), c('code', 'prop'))
+  prop_vac = merge(prop_vac, df_week2, by = c('week_index', 'code'))
+  
+  prop_vac_start = data.table( do.call('rbind', stan_data$prop_vac_start) ) 
+  colnames(prop_vac_start) = colnames(stan_data$prop_vac[[1]])
+  prop_vac_start[, age := df_age_vaccination2$age] 
+  prop_vac_start = data.table(reshape2::melt(prop_vac_start, id.vars = c('age')))
+  setnames(prop_vac_start, c('variable', 'value'), c('code', 'pre_prop'))
+  
+  prop_vac = merge(prop_vac, prop_vac_start, by = c('code', 'age'))
+  prop_vac = merge(prop_vac, df_age_vaccination2, by = c('age'))
+  prop_vac[, prop := prop + pre_prop]
+  prop_vac[, cat := paste0('prop_', age_index)]
+  prop_vac = data.table(reshape2::dcast(prop_vac, code + date ~ cat, value.var = 'prop'))
+  
+  return(prop_vac)
+}
+

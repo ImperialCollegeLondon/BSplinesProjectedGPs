@@ -16,7 +16,7 @@ create_map_age = function(age_max){
   # create map vaccination age 
   df_age_vaccination <<- data.table(age = c('0-11', '12-17', '18-64', '65+'), 
                                   age_from = c(0, 12, 18, 65), 
-                                  age_to = c(11, 17, 64 ,105))
+                                  age_to = c(11, 17, 64 ,age_max))
   df_age_vaccination[, age_index := 1:nrow(df_age_vaccination)]
   
 }
