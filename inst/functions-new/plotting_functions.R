@@ -84,7 +84,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   p <- ggplot(tmp, aes(x = date, y = age)) +
     geom_raster(aes(fill = weekly.deaths )) +
     theme_bw() +
-    facet_wrap(~loc_label,ncol = 3) + 
+    facet_wrap(~loc_label,ncol = 4) + 
     scale_fill_viridis_c(trans = 'sqrt',  na.value="grey70", breaks = c(0, 100, 1000,2500),) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     scale_y_discrete(expand = c(0,0)) +
@@ -104,8 +104,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     scale_color_manual(values = c('#FCB360', "grey70")) +
     guides(color = guide_legend(override.aes = list(size=4)), 
            fill = guide_colorbar(title.position = "right")) 
-
-  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 6.5, h = 5)
+  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 8.5, h = 3.5)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = min.sum.weekly.deaths )) + 
@@ -279,14 +278,12 @@ plot_basis_functions = function()
   ggsave(file = '~/Box\ Sync/2021/CDC/basis_functions.png', w = 6, h = 5)
 }
 
-plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
+plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
   
   tmp = merge(vaccine_data, select(df_age_continuous, -age_index), by = 'age')
   tmp[, age_index := which(df_age_vaccination$age_from <= age_from & df_age_vaccination$age_to >= age_to), by = c('age_from', 'age_to')]
   tmp = merge(select(tmp, -age_from, -age_to, -age), df_age_vaccination, by = 'age_index')
   tmp = tmp[, list(prop = unique(prop), pop = sum(pop)), by = c('age', 'code', 'date', 'loc_label', 'age_index')]
-  
-  selected_code = c('CA', 'FL', 'NY', 'TX', 'WA')
   
   ggplot(tmp, aes(date, prop)) +
     geom_line(aes(col = age)) + 
@@ -297,10 +294,8 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
           strip.background = element_rect(colour="black", fill="white")) 
   ggsave(paste0(outdir, '-proportion_vaccine_age_code.png'), w = 9, h = 8)
   
-  library(jcolors)
-  tmp[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', "New York", 'California', 'Washington'))]
   tmp[, `Age group` := age]
-  ggplot(subset(tmp, code %in% selected_code & age_index >2), aes(date, prop)) +
+  ggplot(subset(tmp, code %in% Code & age_index >2), aes(date, prop)) +
     geom_line(aes(col = loc_label)) + 
     facet_wrap(~`Age group`, label = 'label_both') + 
     theme_bw()+ 
@@ -335,10 +330,8 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
   tmp1[, prop_deaths := weekly.deaths / total_deaths]
   tmp1[, date := date - delay ]
   
-  selected_code = c('CA', 'FL', 'NY', 'TX')
-  
   tmp = merge(tmp, tmp1, c('code', 'date', 'loc_label', 'age_index'))
-  tmp = subset(tmp, code %in% selected_code )
+  tmp = subset(tmp, code %in% Code )
   # summary(lm(prop_deaths ~ prop*age  + age, data = subset(tmp, code == 'TX')))
   
   tmp2 = tmp[, list(max_date = max(date[prop == 0])), by = c('age', 'loc_label')]

@@ -212,7 +212,7 @@ find_statistics_mortality_rate <- function(mortality_rate, outdir){
   saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
 }
 
-find_stats_vaccine_effects <- function(data_res1, data_res2, prop_vac, resurgence_dates, outdir){
+find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res4, prop_vac, resurgence_dates, outdir){
   
   data_res1 = merge(data_res1, resurgence_dates, by = 'code')
   prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
@@ -226,13 +226,46 @@ find_stats_vaccine_effects <- function(data_res1, data_res2, prop_vac, resurgenc
                                                                                                    max_3 = paste0(round(max(prop_1*100), 2), '\\%'),
                                                                                                    min_4 = paste0(round(min(prop_2*100), 2), '\\%'),
                                                                                                    max_4 = paste0(round(max(prop_2*100), 2), '\\%'))],
-              subset(data_res2, date == stop_resurgence)[, list(M = round(M*100, digits = 2), 
-                                                                CL = round(CU*100, digits = 2), 
-                                                                CU = round(CL*100, digits = 2)), by = c('age', 'loc_label')])
+              subset(data_res2, date == stop_resurgence)[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round(CU*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('age', 'loc_label')],
+              subset(data_res3, week_index == max(week_index))[, list(M = round(M), 
+                                                                CL = round(CU), 
+                                                                CU = round(CL)), by = c('age')],
+              subset(data_res4, week_index == max(week_index))[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round(CU*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('age')]
+              
+              )
   saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
   
   return(stat)
 }
+
+find_stats_vaccine_effects_old <- function(data_res1, data_res2, prop_vac, resurgence_dates, outdir){
+  
+  data_res1 = merge(data_res1, resurgence_dates, by = 'code')
+  prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
+  data_res2 = merge(data_res2, resurgence_dates, by = 'code')
+  
+  stat = list(format(c(min(resurgence_dates$start_resurgence), max(resurgence_dates$stop_resurgence)),  '%B %d, %Y'),
+              subset(data_res1, date == stop_resurgence)[, list(M = round(M), 
+                                                                CL = round(CU), 
+                                                                CU = round(CL)), by = c('age', 'loc_label')],
+              subset(prop_vac, date == start_resurgence)[, list(min_3 = paste0(round(min(prop_1*100), 2), '\\%'),
+                                                                max_3 = paste0(round(max(prop_1*100), 2), '\\%'),
+                                                                min_4 = paste0(round(min(prop_2*100), 2), '\\%'),
+                                                                max_4 = paste0(round(max(prop_2*100), 2), '\\%'))],
+              subset(data_res2, date == stop_resurgence)[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round(CU*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('age', 'loc_label')]
+              
+  )
+  saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
+  
+  return(stat)
+}
+
 
 find_prop_deaths_vaccine_statistics <- function(propdeath3, start_vaccine, start_resurgence, outdir){
   

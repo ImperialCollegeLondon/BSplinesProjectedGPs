@@ -94,7 +94,7 @@ cat("Location ", as.character(loc_name), "\n")
 # plot data 
 if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, outdir = outdir.fig)
+  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                  JHUData = JHUData, 
                                  scrapedData = scrapedData,
