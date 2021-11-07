@@ -3,11 +3,12 @@ library(data.table)
 library(dplyr)
 library(foreach)
 library(doParallel)
+library(jcolors)
 
 indir ="~/git/covid19Vaccination/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-location.index = 43
-stan_model = "210529b9"
+states = strsplit('CA,FL,NY,TX',',')[[1]]
+stan_model = "211102a2"
 JOBID = 3541
 
 if(0)
@@ -22,15 +23,16 @@ if(length(args_line) > 0)
 {
   stopifnot(args_line[[1]]=='-indir')
   stopifnot(args_line[[3]]=='-outdir')
-  stopifnot(args_line[[5]]=='-location.index')
+  stopifnot(args_line[[5]]=='-states')
   stopifnot(args_line[[7]]=='-stan_model')
   stopifnot(args_line[[9]]=='-JOBID')
   indir <- args_line[[2]]
   outdir <- args_line[[4]]
-  location.index <- as.numeric(args_line[[6]])
+  states <-  strsplit((args_line[[6]]),',')[[1]]
   stan_model <- args_line[[8]]
   JOBID <- as.numeric(args_line[[10]])
 }
+
 
 # stan model
 options(mc.cores = parallel::detectCores())
@@ -57,7 +59,9 @@ outdir.data = file.path(outdir, run_tag, "data")
 outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
 if(!dir.exists(outdir.fit)) dir.create( outdir.fit, recursive = T)
 if(!dir.exists( dirname(outdir.fig)) ) dir.create( dirname(outdir.fig), recursive = T)
-
+print(outdir.fit)
+print(outdir.data)
+print(outdir.fig)
 cat("\n outfile.dir is ", file.path(outdir, run_tag), '\n')
 
 # load CDC data
@@ -74,96 +78,89 @@ vaccine_data = readRDS(path_to_vaccine_data)
 pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
 setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
 
-
 # Create age maps
 age_max = 105
 create_map_age(age_max)
 
 # find locations 
 locations = unique(select(deathByAge, loc_label, code)) 
+locations = locations[order(code)]
 saveRDS(locations, file = file.path(outdir.fit, paste0("location_", run_tag,".rds")))
-loc_name = locations[location.index,]$loc_label
-Code = locations[location.index,]$code
+loc_name = locations[code %in% states,]$loc_label
+Code = locations[code %in% states, ]$code
+df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
 cat("Location ", as.character(loc_name), "\n")
+
 
 # plot data 
 if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, outdir = outdir.fig)
+  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                  JHUData = JHUData, 
-                                    scrapedData = scrapedData,
-                                    var.weekly.deaths.CDC = 'weekly.deaths', 
-                                    outdir = outdir.fig,
-                                    Code = Code)
+                                 scrapedData = scrapedData,
+                                 var.weekly.deaths.CDC = 'weekly.deaths', 
+                                 outdir = outdir.fig,
+                                 Code = Code)
 }
 
 # reference date
 ref_date = as.Date('2020-12-05')
 cat("The reference date is", as.character(ref_date), "\n")
 
+
 # Prepare stan data
 cat("\n Prepare stan data \n")
-stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data = tmp
+stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('210429a1|210429b1|210505b|210513a', stan_model)){
-  cat("\n Using 1D splines \n")
-  stan_data = add_1D_splines_stan_data(stan_data, spline_degree = 3, n_knots = 8)
-}
-if(grepl('210529b|210529c|210529e|210808|210823|210922|210923|210929|210930', stan_model)){
+if(grepl('211014|211019|211020|211025|211026|211027|211029|211030|211031|211102', stan_model)){
   cat("\n Using 2D splines \n")
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 4)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
 }
-if(grepl('210429a2|210429b2|210529e', stan_model)){
+if(grepl('211015', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
-if(grepl('210429a', stan_model)){
-  cat("\n Adding nodes index \n")
-  stan_data = add_nodes_stan_data(stan_data)
-}
-if(grepl('210429f|210429g', stan_model)){
-  cat("\n With RW2 prior on splines parameters \n")
-  stan_data = add_diff_matrix(stan_data, n = stan_data$num_basis, m = stan_data$W)
-}
-if(grepl('210808|210823|210922|210923|210929|210930', stan_model)){
+if(grepl('211014b|211019|211020|211025|211026|211027|211029|211030|211031|211102', stan_model)){
   cat("\n With vaccine effects \n")
-  age.groups.vac = c('18-64', '65-105')
-  # stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, c('12-17', '18-54', '55-74', '75-105'))
-  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, age.groups.vac)
-}
-if(grepl('210929', stan_model)){
-  stan_data = add_vaccine_prop_other(stan_data, df_week, Code, vaccine_data, age.groups.vac)
-}
-
-if(grepl('210930', stan_model)){
-  stan_data = add_piecewisegamma(stan_data)
-}
-if(grepl('210823b|210922|210923b|210923c|210923d', stan_model)){
-  cat("\n With vaccine effects extrapolated \n")
-  stan_data = add_vaccine_prop_extrapolate(stan_data)
-}
-if(grepl('210923', stan_model)){
-  cat("\n With vaccine effects extrapolated \n")
-  stan_data = add_vaccine_date(stan_data)
+  resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
+  stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
+  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
+  stan_data = add_JHU_data(stan_data, df_week, Code)
 }
 if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
+if(grepl('211019b6a|211019b6b|211019b6a|211027b2|211027b|211029b', stan_model)){
+  cutoff_1864 = round(mean(range(stan_data$prop_vac_start[[1]])), 2)
+  cutoff_65p =  round(mean(range(stan_data$prop_vac_start[[2]])), 2)
+  stan_data = add_vaccine_prop_indicator(stan_data, cutoff_1864, cutoff_65p)
+}
+if(grepl('211025', stan_model)){
+  cat("\n Add sequence of vaccinated \n")
+  stan_data$prop_vac_sequence = seq(0, 1, 0.05)
+  stan_data$P = length(stan_data$prop_vac_sequence)
+}
+# if(1){
+#   stan_data$prop_vac_start[[1]] = stan_data$prop_vac_start[[1]] * 100
+#   stan_data$prop_vac_start[[2]]	= stan_data$prop_vac_start[[2]]	* 100
+# }
 
-print("A = 12, W = 4")
+print("A = 12, W = 10")
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
 tmp <- tmp[!grepl('^.__|^\\.|^model$',tmp)]
-save(list=tmp, file=file.path(outdir.data, paste0("stanin_", Code, "_",run_tag,".RData")) )
+save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
 
 # initial values
 stan_init <- list()
-stan_init$nu <- 0.5
-stan_init$rho_gp1 <- 0.5
-stan_init$rho_gp2 <- 1
+stan_init$rho_gp1 <- rep(1.25, stan_data$M)
+stan_init$rho_gp2 <- rep(1.25, stan_data$M)
+# stan_init$intercept_resurgence0 <- rep(0, stan_data$C)
+# stan_init$slope_resurgence0 <- rep(0, stan_data$C)
+
 
 # fit 
 cat("\n Start sampling \n")
@@ -172,21 +169,21 @@ model = rstan::stan_model(path.to.stan.model)
 if(0){
   
   fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
-                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99),
+                             init = rep(list(stan_init), 1))
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=50,warmup=10,chains=2,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
                            init = rep(list(stan_init), 8))
 
 # save
-file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", Code, "_",run_tag,".rds"))
+file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
 cat('\n Save file', file, '\n')
 while(!file.exists(file)){
   tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
 }
-
 
 
 

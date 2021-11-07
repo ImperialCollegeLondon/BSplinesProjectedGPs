@@ -41,17 +41,18 @@ compare_CDC_JHU_DoH_error_plot = function(CDC_data, JHUData, scrapedData, var.we
   ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
   
   if(!is.null(Code)){
-    tmp = subset(tmp2, code == Code)
+    tmp = subset(tmp2, code %in% Code)
     
     p = ggplot(tmp, aes(x = date, y = cumulative_deaths, col = source)) + 
       geom_line() +
       theme_bw() + 
+      facet_wrap(~code) +
       scale_color_viridis_d(option = "B", direction = -1, end = 0.8) +
       labs(x = '', y = 'Cumulative COVID-19 \ndeaths', col = '') + 
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
       theme(legend.position = 'bottom',
             axis.text.x = element_text(angle = 90)) 
-    ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC_', Code, '.pdf'), w = 5, h = 3, limitsize = F)
+    ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC_Code.pdf'), w = 7, h = 6, limitsize = F)
     
   }
 }
@@ -79,54 +80,32 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   df = data.frame(date = min(deathByAge$date), age = deathByAge$age[1],
                   dummy = c('Missing\nweekly COVID-19\nattributable deaths', 'Non-retrievable\nweekly COVID-19\nattributable deaths'))
   
-  # library(geofacet)
-  # library(ggpubr)
-  # p = ggplot(deathByAge, aes(x = date, y = age)) + 
-  #   geom_raster(aes(fill = weekly.deaths )) + 
-  #   facet_geo(~loc_label,ncol = 6, grid = "us_state_without_DC_grid1" ) + 
-  #   theme_bw() +
-  #   scale_fill_viridis_c(trans = 'pseudo_log', breaks = c(0, 10, 100,3000), na.value="grey70") +
-  #   scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-  #   scale_y_discrete(expand = c(0,0), breaks = unique(deathByAge$age)[rep(c(T,F), length(unique(deathByAge$age))/2)]) + 
-  #   theme(legend.position = 'bottom',
-  #         axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1,size = rel(0.8)), 
-  #         axis.text.y =  element_text(size = rel(0.8)), 
-  #         panel.grid.major = element_blank(), 
-  #         panel.grid.minor = element_blank(),
-  #         legend.key = element_blank(), 
-  #         legend.title = element_text(size = rel(1)),
-  #         legend.text = element_text(size = rel(1)),
-  #         strip.background = element_blank(),
-  #         panel.background = element_rect(fill = '#FCB360', colour = 'red')) +
-  #   geom_point(data = df, aes(color = dummy), shape = 15, size = 0) + 
-  #   labs(x = '', y = 'Age group', fill = 'Retrievable\nweekly COVID-19\nattributable deaths', col = '') + 
-  #   scale_color_manual(values = c('#FCB360', "grey70")) + 
-  #   guides(color = guide_legend(override.aes = list(size=4)))
-  # ggsave(p, file = paste0(outdir, '-deathByAge2.png'), w = 10, h = 12)
 
-  tmp = subset(deathByAge, code %in%  c('CA', 'FL', 'TX', 'WA', 'NY'))
+  tmp = subset(deathByAge, code %in%  Code)
   p <- ggplot(tmp, aes(x = date, y = age)) +
     geom_raster(aes(fill = weekly.deaths )) +
     theme_bw() +
-    facet_wrap(~loc_label,ncol = 3) + 
-    scale_fill_viridis_c(trans = 'sqrt',  na.value="grey70", breaks = c(0, 100, 1000,3000),) +
+    facet_wrap(~loc_label,ncol = 4) + 
+    scale_fill_viridis_c(trans = 'sqrt',  na.value="grey70", breaks = c(0, 100, 1000,2500),) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     scale_y_discrete(expand = c(0,0)) +
     theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1,size = rel(0.8)),
-          axis.text.y =  element_text(size = rel(0.8)),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+          axis.title.x = element_blank(),
+          # axis.text.y =  element_text(size = rel(0.8)),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           legend.key = element_blank(),
-          legend.title = element_text(size = rel(1)),
-          legend.text = element_text(size = rel(1)),
+          legend.title = element_text(size = rel(0.85)),
+          # legend.text = element_text(size = rel(1)),
           strip.background = element_blank(),
           panel.background = element_rect(fill = '#FCB360', colour = 'red')) +
     geom_point(data = df, aes(color = dummy), shape = 15, size = 0) +
     labs(x = '', y = 'Age group', fill = 'Retrievable\nweekly COVID-19\nattributable deaths', col = '') +
     scale_color_manual(values = c('#FCB360', "grey70")) +
-    guides(color = guide_legend(override.aes = list(size=4)))
-  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 8, h = 5)
+    guides(color = guide_legend(override.aes = list(size=4)), 
+           fill = guide_colorbar(title.position = "right")) 
+  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 8.5, h = 3.5)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = min.sum.weekly.deaths )) + 
@@ -176,93 +155,6 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   p = ggpubr::ggarrange(p1, p2, p3,  common.legend = T, legend = 'bottom')
   ggsave(p, file = paste0(outdir, '-deathByAge_boundaries.png'), w = 20, h = 25)
   
-  if(!is.null(Code)){
-    tmp = subset(deathByAge, code == Code)
-    tmp1 = tmp[, list(total_deaths = sum(na.omit(weekly.deaths))), by = 'date']
-    tmp = merge(tmp, tmp1, by = 'date')
-    tmp[, prop_deaths := weekly.deaths / total_deaths]
-      
-    range_wd = sqrt(range(na.omit(tmp$weekly.deaths)))
-    digits_cut= ifelse(range_wd[2]/100 > 1, 2, 1)
-    digits_cut= ifelse(range_wd[2]/10 > 1, digits_cut, 0)
-    p = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = weekly.deaths )) + 
-      theme_bw() +
-      scale_fill_viridis_c(trans = 'sqrt', breaks = round(seq(range_wd[2]/2, range_wd[2], length.out = 3)^2, digits = -digits_cut) ) +
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-      scale_y_discrete(expand = c(0,0)) + 
-      theme(legend.position = 'bottom',
-            axis.text.x = element_text(angle = 90), 
-            panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank()) +
-      labs(x = '', y = 'Age group',
-           fill = 'Reported covid-19 deaths')
-    ggsave(p, file = paste0(outdir, '-deathByAge_', Code, '.png'), w = 5, h = 5.2)
-    
-    p = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = prop_deaths )) + 
-      theme_bw() +
-      scale_fill_viridis_c(option = "E") +
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-      scale_y_discrete(expand = c(0,0)) + 
-      theme(legend.position = 'bottom',
-            axis.text.x = element_text(angle = 90), 
-            panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank()) +
-      labs(x = '', y = 'Age group',
-           fill = 'Share of weekly COVID-19 deaths')
-    ggsave(p, file = paste0(outdir, '-deathByAge_prop_', Code, '.png'), w = 5, h = 5.2)
-    
-    p1 = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = min.sum.weekly.deaths )) + 
-      theme_bw() +
-      scale_fill_viridis_c(breaks = c(0,10,20,30),
-                           limits = c(0,max(c(na.omit(tmp$sum.weekly.deaths),na.omit(tmp$max.sum.weekly.deaths))))) +
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-      scale_y_discrete(expand = c(0,0)) + 
-      theme(legend.position = 'bottom',
-            axis.text.x = element_text(angle = 90), 
-            panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank(),
-            plot.title = element_text(hjust = 0.5)) +
-      labs(x = '', y = 'Age group',
-           fill = "Sum of unobserved covid-19 weekly deaths", title = 'Lower bound')
-    
-    p2 = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = max.sum.weekly.deaths )) + 
-      theme_bw() +
-      scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                           limits = c(0,max(c(na.omit(tmp$sum.weekly.deaths),na.omit(tmp$max.sum.weekly.deaths))))) +
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-      scale_y_discrete(expand = c(0,0)) + 
-      theme(legend.position = 'bottom',
-            axis.text.x = element_text(angle = 90), 
-            panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank(),
-            plot.title = element_text(hjust = 0.5)) +
-      labs(x = '', y = 'Age group',
-           fill = "Sum of unobserved covid-19 weekly deaths", title = 'Upper bound')
-    
-    p3 = ggplot(tmp, aes(x = date, y = age)) + 
-      geom_raster(aes(fill = sum.weekly.deaths )) + 
-      theme_bw() +
-      scale_fill_viridis_c(breaks = c(0,10,20,30), 
-                           limits = c(0,max(c(na.omit(tmp$sum.weekly.deaths), na.omit(tmp$max.sum.weekly.deaths))))) +
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-      scale_y_discrete(expand = c(0,0)) + 
-      theme(legend.position = 'bottom',
-            axis.text.x = element_text(angle = 90), 
-            panel.grid.major = element_blank(), 
-            panel.grid.minor = element_blank(),
-            plot.title = element_text(hjust = 0.5)) +
-      labs(x = '', y = 'Age group',
-           fill = "Sum of unobserved COVID-19 weekly deaths", title = 'Exact value')
-    
-    p = ggpubr::ggarrange(p1, p2, p3, nrow = 1, common.legend = T, legend = 'bottom')
-    ggsave(p, file = paste0(outdir, '-deathByAge_boundaries_', Code, '.png'), w = 10, h = 4)
-    
-  }
-
 }
 
 plot_data_one_state = function(tmp)
@@ -387,14 +279,12 @@ plot_basis_functions = function()
   ggsave(file = '~/Box\ Sync/2021/CDC/basis_functions.png', w = 6, h = 5)
 }
 
-plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
+plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
   
   tmp = merge(vaccine_data, select(df_age_continuous, -age_index), by = 'age')
   tmp[, age_index := which(df_age_vaccination$age_from <= age_from & df_age_vaccination$age_to >= age_to), by = c('age_from', 'age_to')]
   tmp = merge(select(tmp, -age_from, -age_to, -age), df_age_vaccination, by = 'age_index')
   tmp = tmp[, list(prop = unique(prop), pop = sum(pop)), by = c('age', 'code', 'date', 'loc_label', 'age_index')]
-  
-  selected_code = c('CA', 'FL', 'NY', 'TX', 'WA')
   
   ggplot(tmp, aes(date, prop)) +
     geom_line(aes(col = age)) + 
@@ -405,22 +295,22 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
           strip.background = element_rect(colour="black", fill="white")) 
   ggsave(paste0(outdir, '-proportion_vaccine_age_code.png'), w = 9, h = 8)
   
-  library(jcolors)
-  tmp[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', "New York", 'California', 'Washington'))]
-  ggplot(subset(tmp, code %in% selected_code & age_index >2), aes(date, prop)) +
+  tmp[, `Age group` := age]
+  ggplot(subset(tmp, code %in% Code & age_index >2), aes(date, prop)) +
     geom_line(aes(col = loc_label)) + 
-    facet_wrap(~age) + 
+    facet_wrap(~`Age group`, label = 'label_both') + 
     theme_bw()+ 
-    labs(x = '', y = 'Proportion of fully vaccinated individuals', col = '') + 
+    labs( y = 'Proportion of fully vaccinated individuals', col = '') + 
     theme(legend.key = element_blank(), 
-          strip.background = element_rect(colour="black", fill="white"),
+          strip.background = element_rect(colour="white", fill="white"),
           panel.border = element_rect(colour = "black", fill = NA), 
-          legend.position = 'bottom', 
+          legend.position = 'bottom',
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
           axis.title.x = element_blank()) + 
     scale_color_jcolors('pal8') + 
     scale_y_continuous(labels = scales::percent)+ 
     scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
-  ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.5)
+  ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.75)
   
   # population count
   df_age_close_vaccination = data.table(age = unique(pop_data$age))
@@ -441,10 +331,8 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, outdir){
   tmp1[, prop_deaths := weekly.deaths / total_deaths]
   tmp1[, date := date - delay ]
   
-  selected_code = c('CA', 'FL', 'NY', 'TX')
-  
   tmp = merge(tmp, tmp1, c('code', 'date', 'loc_label', 'age_index'))
-  tmp = subset(tmp, code %in% selected_code )
+  tmp = subset(tmp, code %in% Code )
   # summary(lm(prop_deaths ~ prop*age  + age, data = subset(tmp, code == 'TX')))
   
   tmp2 = tmp[, list(max_date = max(date[prop == 0])), by = c('age', 'loc_label')]
