@@ -142,10 +142,6 @@ if(grepl('211025', stan_model)){
   stan_data$prop_vac_sequence = seq(0, 1, 0.05)
   stan_data$P = length(stan_data$prop_vac_sequence)
 }
-# if(1){
-#   stan_data$prop_vac_start[[1]] = stan_data$prop_vac_start[[1]] * 100
-#   stan_data$prop_vac_start[[2]]	= stan_data$prop_vac_start[[2]]	* 100
-# }
 
 print("A = 12, W = 10")
 
@@ -174,7 +170,7 @@ if(0){
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=50,warmup=10,chains=2,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
                            init = rep(list(stan_init), 8))
 
