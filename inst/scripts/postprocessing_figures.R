@@ -76,17 +76,6 @@ fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 ####
 
-# Plot estimate B-splines parameters plane 
-df_week1 = subset(df_week, week_index %in% (1:stan_data$W)[seq(1, stan_data$W, length.out = length(stan_data$IDX_BASIS_COLUMNS))] )
-df_week1[, week_index := 1:nrow(df_week1)]
-df_age_continuous1 = subset(df_age_continuous, age %in% stan_data$age[seq(1, length(stan_data$age), length.out = length(stan_data$IDX_BASIS_ROWS))])
-df_age_continuous1[, age_index := 1:nrow(df_age_continuous1)]
-b_splines_param = make_var_by_age_by_state_table(fit_cum, df_week1, df_age_continuous1, df_state, 'beta', outdir.table)
-plot_probability_deaths_age_contribution(b_splines_param, 'beta', outdir = outdir.fig)
-
-# Plot estimate B-splines parameters plane 
-unscaled_surface = make_var_by_age_by_state_table(fit_cum, df_week, df_age_continuous, df_state, 'f', outdir.table)
-plot_probability_deaths_age_contribution(unscaled_surface, 'f', outdir = outdir.fig)
 
 # Plots continuous and aggregated age distribution phi
 age_contribution_continuous_table = make_var_by_age_by_state_table(fit_cum, df_week, df_age_continuous, df_state, 'phi', outdir.table)
