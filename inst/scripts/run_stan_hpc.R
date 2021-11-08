@@ -170,7 +170,7 @@ if(0){
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=25,warmup=5,chains=2,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
                            init = rep(list(stan_init), 8))
 
