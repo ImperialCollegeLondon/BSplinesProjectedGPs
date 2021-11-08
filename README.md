@@ -21,12 +21,14 @@ The COVID-19 pandemic has caused severe public health consequences in the United
 ## Installation 
 A ```yml``` file is provided and can be used to build a conda virtual environment containing all R dependencies. Create the environment using:
 ```bash
-$ conda env create -f covid19Vaccination.yml
+$ conda env create -f BSplinesProjectedGPs.yml
 ```
 Then activate the environment for use:
 ```bash
-$ source activate covid19Vaccination
+$ source activate BSplinesProjectedGPs
 ```
+
+Conda is notorious for not working with RStan since it causes issues with the compiler linking. It is safer to install rstan and StanHeaders through R directly by following the steps [here](https://github.com/stan-dev/rstan/wiki/Installing-RStan-from-Source#mac) after loading the virtual environment.
 
 
 ## Warranty

@@ -7,80 +7,67 @@
 | stan-models | Stan models of the weekly COVID-19 attributable deaths by age model |
 
 
-## System Requirements
-- macOS or UNIX, the code was developed on macOS Mojave 10.14
-- [R](https://www.r-project.org/) version >= 3.6.1
+## Data
+Datasets in ```data/``` generated in ```misc/``` include:
+* All-ages daily deaths reported by JHU, ```JHU_data-$DATE.rds```
+* Age-specific weekly deaths reported by the CDC, ```CDC-data-$DATE.rds```
+* Vaccination data reported by the CDC, ```vaccination-prop-$DATE.rds```
+
+Datasets extracted from other source include:
+* Age-specific daily deaths reported by the DoH and extracted by the [Imperial College COVID-19 Response Team](https://github.com/ImperialCollegeLondon/US-covid19-agespecific-mortality-data), ```DeathsByAge_US_$DATE.csv```
+* Population counts in the United States from the 2018 Census, ```us_population_withnyc.rds```
 
 ## instructions 
-The entry point to run the model on one US state is ```run-model-one-location.sh``` and for all 50 US states it is ```run-model.R```. 
+The entry point to run the model on a laptop is ```run-model.sh``` and on a high performance computing environment ```run-model-HPC.R```. 
 
 ### Header
-In both files, you will need to specify the repository directory, the directory to store the results and the stan models under 
+In both files, you will need to specify 
+* the repository directory, ```INDIR```
+* the output directory (to store the results), ```CWD``` and, 
+* the stan model ID under ```STAN_MODEL```
+with,
 ```bash
 INDIR="repositorydirectory"
 CWD="resultsdirectory"
 STAN_MODEL="stanmodelid"
 ```
-Note the correspondence between the stan model's id and the model, 
+
+Note the correspondence between the stan model ID and the model, 
 | stan model id    | Model |
 |-----------|------------------------------------------------------|
 | 210429h1   | Standard Gaussian Process |
-| 210529d      | Standard B-splines |
+| 210529d     | Standard B-splines |
 | 210529b | Gaussian Process projected by regularized B-splines  |
 
-For example, if you wish to use a standard Gaussian Process, please specify
+For example, if you wish to use a standard Gaussian Process, specify
 ```bash
 STAN_MODEL="210429h1"
 ```
 
-### Usage: one US state 
-To execute the model for one US state from the terminal console run, 
+### Usage on a laptop
+From the repository directory, on the terminal console execute, 
 ```bash
-$ ./run-model-one-location.sh
+$ source activate BSplinesProjectedGPs
+$ cd inst/
+$ ./run-model.sh
+```
+This attaches to your run a unique JOBID and generates in the output directory two bash scripts. One for running the model and one for processing the results. Execute these bash scripts one after the other,
+```bash
+$ cd $CWD/$STAN_MODEL-JOBID
+$ ./$STAN_MODEL-JOBID.sh 
+```
+when finished, 
+```bash
+$ ./$STAN_MODEL-JOBID-postprocessing.sh 
 ```
 
-### Usage: 50 US states on a laptop
-To execute the model for 50 US states from the terminal console run, 
-```bash
-$ Rscript run-model-bash.R
-```
-This will print a JOBID and generate in the specified output directory one bash script for each state. Execute these bash script one by one, or alternatively run them in the background,
-```bash
-$ cd CWD/STAN_MODEL-JOBID
-$ ./startme-STAN_MODEL-JOBID-1.sh 
-```
+### Usage in high-throughput computing
+You need to modify the PBS header of ```run-model-HPC.sh``` (i.e., ```#PBS [...]```), l.14-17 and l.46-49. 
 
-### Usage: 50 US states in high-throughput computing
-Run the Rscript
+From the repository directory, on the terminal console execute, 
 ```bash
-$ run-model-bash.R
+$ source activate BSplinesProjectedGPs
+$ cd inst/
+$ ./run-model-HPC.sh
 ```
-that will generate a general submission script encapsulating the submission scripts of each state in individual PBS arrays.
-
-You will need to modify the PBS header function at the start of this Rscript:
-```R
-#	function to make PBS header
-make.PBS.header <- function(hpc.walltime=47, hpc.select=1, hpc.nproc=1, hpc.mem= "6gb", hpc.load= "module load anaconda3/personal", hpc.q="pqcovid19c", hpc.array=1, hpc.log = NULL )
-{	
-  pbshead <- "#!/bin/sh"
-  tmp <- paste("#PBS -l walltime=", hpc.walltime, ":59:00", sep = "")
-  pbshead <- paste(pbshead, tmp, sep = "\n")
-  tmp <- paste("#PBS -l select=", hpc.select, ":ncpus=", hpc.nproc,":ompthreads=", hpc.nproc,":mem=", hpc.mem, sep = "")	
-  pbshead <- paste(pbshead, tmp, sep = "\n")
-  pbshead <- paste(pbshead, "#PBS -j oe", sep = "\n")
-  if(hpc.array>1)
-  {
-    pbshead	<- paste(pbshead, "\n#PBS -J 1-", hpc.array, sep='')
-  }				
-  if(!is.na(hpc.q))
-  {
-    pbshead <- paste(pbshead, paste("#PBS -q", hpc.q), sep = "\n")
-  }		
-  if(!is.null(hpc.log)){
-    pbshead <- paste(pbshead, paste("#PBS -o", hpc.log), sep = "\n")
-  }
-  
-  pbshead	<- paste(pbshead, hpc.load, sep = "\n")
-  pbshead
-}
-```
+This attaches to your run a unique JOBID and generates in the output directory two PBS scripts. One for running the model and one for processing the results. The scripts are submitted automatically as PBS jobs. 
