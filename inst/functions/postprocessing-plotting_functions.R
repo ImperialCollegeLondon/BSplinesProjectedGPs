@@ -609,7 +609,8 @@ plot_vaccine_effects_counterfactual_stat <- function(data_res, resurgence_dates,
 }
 
 plot_forest_plot <- function(tmp, outdir){
-  tmp1 = subset(tmp, grepl('\\["18-64', variable))
+  
+  tmp1 = subset(tmp, grepl('\\["18-64', variable) | (grepl('18-64"\\]', variable) & !grepl('\\["65', variable)))
   p1 <- ggplot(tmp1, aes(y = variable)) + 
     geom_point(aes(x = M)) + 
     geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
@@ -624,7 +625,7 @@ plot_forest_plot <- function(tmp, outdir){
           title = element_text(size = rel(0.8))) #+
   # ggtitle("95% credible intervals of model's prameters\non relative weekly deaths among 18-64")
   
-  tmp1 = subset(tmp, grepl('\\["65', variable))
+  tmp1 = subset(tmp, grepl('\\["65', variable) | (grepl('65"\\]', variable) & !grepl('\\["18-64', variable)))
   p2 <- ggplot(tmp1, aes(y = variable)) + 
     geom_point(aes(x = M)) + 
     geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 

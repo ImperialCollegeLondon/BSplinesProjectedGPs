@@ -1754,6 +1754,22 @@ make_forest_plot_table <- function(summary, df_age_vaccination2, df_state, names
   for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_age_vaccination2$age[x], '"\\]'), variables[grepl('vac', variables)]) 
   for(x in df_state$state_index) variables[!grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_state$loc_label[x], '"\\]'), variables[!grepl('vac', variables)]) 
   
+  variables = gsub('\\+', 'plus', variables)
+  
+  age1 = gsub('(.+),.*', '\\1', gsub('.*\\["(.+)','\\1', variables))
+  loc1 = gsub('.*, (.+)"\\]','\\1', variables)
+  idx.swap = which(!grepl('\\]', age1) & !grepl('[0-9]', loc1))
+    
+  for(x in 1:length(idx.swap)){
+
+    variables[idx.swap[x]] = gsub(age1[idx.swap[x]],paste0(age1[idx.swap[x]], '1'), variables[idx.swap[x]])
+    variables[idx.swap[x]] = gsub(loc1[idx.swap[x]],age1[idx.swap[x]], variables[idx.swap[x]])
+    variables[idx.swap[x]] = gsub(paste0(age1[idx.swap[x]], '1'),loc1[idx.swap[x]], variables[idx.swap[x]])
+    
+  }
+  
+  variables = gsub('plus', '+', variables)
+  
   tmp <- as.data.table(tmp)
   tmp[, variable := variables]
   tmp[, group := factor(group, levels = groups_levels)]
