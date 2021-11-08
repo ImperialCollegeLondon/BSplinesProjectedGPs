@@ -657,7 +657,7 @@ add_vaccine_date <- function(stan_data){
 
 find_resurgence_dates <- function(JHUData, deathByAge, Code){
   
-  ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
+  ma <- function(x, n = 5){as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))}
   
   JHUData = as.data.table(JHUData)
   JHUData = subset(JHUData, code %in% Code)
@@ -676,14 +676,19 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   tmp2[, dummy := 1:nrow(tmp2)]
   tmp2[, smooth.weekly.deaths := ma(weekly.deaths, 4), by = c('code')]
   tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
+  tmp2[, lag.smooth.weekly.deaths := (shift(smooth.weekly.deaths)), by = c('code')]
+  tmp2[, change.smooth.weekly.deaths := diff.smooth.weekly.deaths / lag.smooth.weekly.deaths]
+  
+  # find start resurgence
   tmp2 = merge(tmp2, df_week, by = 'week_index')
-  tmp3 <- tmp2[diff.smooth.weekly.deaths > 0 & date >= as.Date('2021-06-15'), list(start_resurgence = min(date) ), by = c('code')]
-  tmp3[, stop_resurgence := start_resurgence + 7*9]
+  tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
   
-  tmp2 <- tmp2[code %in% Code]
-  tmp3 <- tmp3[code %in% Code]
-  
+  # find stop resurgence
+  max_resurgence_period = as.numeric(max(deathByAge$date) - max(tmp3$start_resurgence)) / 7
+  tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
+
   stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
+  
   
   if(0){ #plot
     ggplot(subset(tmp2, date >= as.Date('2021-04-01')), aes(x = date)) + 
@@ -693,13 +698,9 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
       geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
       geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
       theme_bw()
-    ggsave('~/Downloads/file.png', h= 30, w =5) 
+    ggsave('~/Downloads/file.png', h= 10, w =5) 
   }
   
-  # if(1){
-  #   tmp3[code == 'FL', start_resurgence := start_resurgence - 7]
-  #   tmp3[, stop_resurgence := start_resurgence + 7*7]
-  # }
   tmp3 <- tmp3[order(code)]
 
   return(tmp3)
