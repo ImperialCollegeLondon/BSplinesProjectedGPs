@@ -5,7 +5,7 @@ library(foreach)
 library(doParallel)
 library(jcolors)
 
-indir ="~/git/covid19Vaccination/inst" # path to the repo
+indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX',',')[[1]]
 stan_model = "211102a2"
@@ -13,7 +13,7 @@ JOBID = 3541
 
 if(0)
 {
-  outdir = '/rds/general/user/mm3218/home/git/covid19Vaccination/results'
+  outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/results'
   JOBID = 18389
 }
 
@@ -170,7 +170,7 @@ if(0){
 }
 
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
+fit_cum <- rstan::sampling(model,data=stan_data,iter=25,warmup=5,chains=2,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
                            init = rep(list(stan_init), 8))
 

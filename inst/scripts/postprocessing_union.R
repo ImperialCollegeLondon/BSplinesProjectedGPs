@@ -7,12 +7,12 @@ library(data.table)
 library(dplyr)
 library(tidyverse)
 library(viridis)
-library(grid)
+library(gridExtra)
 library(ggpubr)
 library(jcolors)
 
-indir ="~/git/covid19Vaccination/inst" # path to the repo
-outdir = file.path('/rds/general/user/mm3218/home/git/covid19Vaccination/inst', "results")
+indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
+outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 states = strsplit('CA,FL',',')[[1]]
 stan_model = "211014b"
 JOBID = 7259

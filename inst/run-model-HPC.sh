@@ -2,10 +2,12 @@
 
 JOBID=$$
 STAN_MODEL="211031b1"
-CWD="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/results/"
-INDIR="/rds/general/user/mm3218/home/git/covid19Vaccination/inst/"
+CWD="/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/"
+INDIR="/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/"
 STATES='CA,FL,NY,TX'
   
+mkdir $CWD
+
 cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF
   
 #!/bin/sh
@@ -16,7 +18,7 @@ module load anaconda3/personal
   
 PWD=\$(pwd)
 CWD=$CWD
-INDIR=$INDIR
+INDIR=$INDIR/inst
 STAN_MODEL=$STAN_MODEL
 JOBID=$JOBID
   
@@ -48,7 +50,7 @@ module load anaconda3/personal
   
 CWD=$CWD
 PWD=$CWD
-INDIR=$INDIR
+INDIR=$INDIR/inst
 STAN_MODEL=$STAN_MODEL
 JOBID=$JOBID
   
@@ -70,5 +72,4 @@ EOF
   
 cd $CWD
 qsub bash_$STAN_MODEL-$JOBID.pbs
-
 

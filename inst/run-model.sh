@@ -2,18 +2,18 @@
 
 JOBID=$$
 STAN_MODEL="211031b1"
-CWD="/Users/melodiemonod/git/covid19Vaccination/inst/results-try/"
-INDIR="/Users/melodiemonod/git/covid19Vaccination/inst/"
+CWD="/Users/melodiemonod/git/BSplinesProjectedGPs/inst/results-try/"
+INDIR="/Users/melodiemonod/git/BSplinesProjectedGPs/"
 STATES='CA,FL,NY,TX'
 
-mdkdir $CWD
+mkdir $CWD
   
 cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF
   
 #!/bin/sh
   
 CWD=$CWD
-INDIR=$INDIR
+INDIR=$INDIR/inst
 STAN_MODEL=$STAN_MODEL
 JOBID=$JOBID
   
@@ -37,7 +37,7 @@ cat > $CWD/bash_$STAN_MODEL-$JOBID-postprocessing.pbs <<EOF
 #!/bin/sh
   
 CWD=$CWD
-INDIR=$INDIR
+INDIR=$INDIR/inst
 STAN_MODEL=$STAN_MODEL
 JOBID=$JOBID
   
@@ -59,5 +59,5 @@ EOF
 chmod +x $CWD/bash_$STAN_MODEL-$JOBID.pbs
 chmod +x $CWD/bash_$STAN_MODEL-$JOBID-postprocessing.pbs
 
-
-
+echo "run model by executing: \$ $CWD/bash_$STAN_MODEL-$JOBID.pbs"
+echo "then produce results by executing: \$ $CWD/bash_$STAN_MODEL-$JOBID-postprocessing.pbs"

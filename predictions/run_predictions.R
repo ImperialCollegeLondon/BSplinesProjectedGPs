@@ -4,9 +4,8 @@ library(data.table)
 library(gridExtra)
 library(dplyr)
 library(loo)
-library(grid)
 
-indir = "~/git/covid19Vaccination" # path to the repo
+indir = "~/git/BSplinesProjectedGPs" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
 model = 'GP-B-SPLINES'
 

@@ -11,8 +11,8 @@ library(extraDistr)
 library(bayesplot)
 library(jcolors)
 
-indir ="~/git/covid19Vaccination/inst" # path to the repo
-outdir = file.path('/rds/general/user/mm3218/home/git/covid19Vaccination/inst', "results")
+indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
+outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 states = strsplit("CA,FL,NY,TX",',')[[1]]
 stan_model = "211031b1"
 JOBID = 775

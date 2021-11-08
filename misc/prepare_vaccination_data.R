@@ -1,11 +1,11 @@
 library(data.table)
 library(dplyr)
 
-indir ="~/git/covid19Vaccination/inst" # path to the repo
-indir2 ="~/git/covid19Vaccination/misc" # path to the repo
+indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
+indir2 ="~/git/BSplinesProjectedGPs/misc" # path to the repo
 
 # data for location name
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-08-03.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-29.rds"))
 locname_data = unique(select(readRDS(path.to.CDC.data), loc_label, code)) # cdc data 
 
 # population data

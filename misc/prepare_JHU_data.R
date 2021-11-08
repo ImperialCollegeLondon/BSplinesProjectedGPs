@@ -1,7 +1,7 @@
 library(data.table)
 library(dplyr)
 
-indir ="~/git/covid19Vaccination/inst" # path to the repo
+indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-29.rds"))
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
