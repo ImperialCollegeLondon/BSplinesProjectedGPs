@@ -3,6 +3,8 @@
 |-----------|------------------------------------------------------|
 | stan-models   | Stan models |
 | functions      | Functions needed to run the scripts   |
+| data      | Simulated data   |
+
 
 
 ## Instruction 
@@ -22,5 +24,5 @@ From the repository directory, on the terminal console execute,
 ```bash
 $ source activate BSplinesProjectedGPs
 $ cd simulations
-$ Rscript run_simulations_2D.R
+$ Rscript run_simulations_count_2D.R
 ``` 

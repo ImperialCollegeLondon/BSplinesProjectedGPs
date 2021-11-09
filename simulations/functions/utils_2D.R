@@ -1,44 +1,51 @@
+distance <- function (X) 
+{
+  X = as.matrix(X)
+  
+  D <- sapply(1:nrow(X), function(i) apply( (matrix(X[i,], ncol = ncol(X), nrow = nrow(X), byrow = T) - X)^2 , 1, sum)  )
+
+  return(D)
+}
 
 rbf_D <- function(X,l=1, eps = sqrt(.Machine$double.eps) ){
   # squared exponential kernel
-  D <- plgp::distance(X)
+  D <- distance(X)
   Sigma <- exp(-D/l)^2 + diag(eps, nrow(X))
 }
 
 generate_2DGP = function(X, l){
   Sigma <- rbf_D(X,l=l)
-  y <- MASS::mvrnorm(1,rep(0,dim(Sigma)[1]), Sigma) 
+  y <- MASS::mvrnorm(n = 1, mu = rep(0,dim(Sigma)[1]), Sigma = Sigma) 
   return(y)
-}
-
-square_exponential_1D <- function(x, l, alpha = 1,  eps = sqrt(.Machine$double.eps)){
-  Sigma <- alpha * exp( -(1/(2*l^2)) * as.matrix(dist(x, upper=T, diag=T)^2) ) + diag(eps, length(x))
-}
-
-
-generate_2DGP_chronecker = function(x_1, x_2, l){
-  Sigma_1 <- square_exponential_1D(x_1,l=l)
-  Sigma_2 <- square_exponential_1D(x_2,l=l)
-  Sigma <- kronecker(Sigma_1, Sigma_2)
-  
-  y <- MASS::mvrnorm(1,rep(0,dim(Sigma)[1]), Sigma) 
-  return(y)
-}
-
-add_noise_2D = function(y, sigma){
-  return(rnorm(y + rnorm(length(y), 0, sigma)))
 }
 
 find_count_2D = function(mean, nu){
-
+  
   stan_generating_model = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'rnbinom.stan') )
   stan_data = list(mu = mean, n = length(mean), nu = nu)
   fit <- rstan::sampling(stan_generating_model,data=stan_data,iter=1, chains = 1, algorithm = "Fixed_param", verbose =F)
   y = as.vector(extract(fit)$y)
-
+  
   return(y)
+  
+}
+
+simulate_data <- function(X, l, nu, indir){
+  
+  file = file.path(indir, 'simulations', 'data', paste0('simulated_data_', lab, '.rds'))
+  
+  if(file.exists(file)){
+    tmp = readRDS(file)
+    y <<- tmp[[1]]
+    y_mean <<- tmp[[2]]
+  }else{
+    y_mean <<- exp( generate_2DGP(X, lengthscales[i]) )
+    y <<- find_count_2D(mean = y_mean, nu = nus[i])
+    saveRDS(list(y, y_mean), file)
+  }
 
 }
+
 
 
 run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, method, stan_model, outdir, overwrite = F, 

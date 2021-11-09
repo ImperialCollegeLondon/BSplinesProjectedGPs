@@ -3,7 +3,6 @@ library(rstan)
 library(ggplot2)
 library(data.table)
 library(gridExtra)
-library("plgp")
 library(dplyr)
 library(loo)
 
@@ -51,7 +50,7 @@ spline_degree = 3
 nus = c(0.1, 0.1, 0.01)
 for(i in 1:length(lengthscales)){
   
-  # i = 2
+  # i = 1
   cat('\n Running simulation with lengthscale ', lengthscales[i], '\n')
   
   # lab
@@ -59,10 +58,9 @@ for(i in 1:length(lengthscales)){
   
   # simulate data 
   set.seed(28)
-  y_mean = exp( generate_2DGP(X, lengthscales[i]) )
-  y = find_count_2D(mean = y_mean, nu = nus[i])
+  simulate_data(X, lengthscales[i], nus[i], indir)
   coordinates_training = X_index[sample(1:nrow(X), size = round(prop_training*nrow(X))),]
-  
+
   # fit
   cat('\n Using a Gaussian Process \n')
   assign(paste0('GP_2D_', i), run_spatial_model_2D(x_1 = x, x_2 = x, 
