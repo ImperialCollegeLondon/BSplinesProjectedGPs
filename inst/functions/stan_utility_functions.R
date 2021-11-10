@@ -672,7 +672,6 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   tmp2 = select(tmp2, code, week_index, weekly.deaths)
   tmp2 = subset(tmp2, !is.na(weekly.deaths))
   tmp2[weekly.deaths<0, weekly.deaths := 0]
-  tmp2[is.na(weekly.deaths)]
   tmp2[, dummy := 1:nrow(tmp2)]
   tmp2[, smooth.weekly.deaths := ma(weekly.deaths, 4), by = c('code')]
   tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
@@ -682,9 +681,11 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   # find start resurgence
   tmp2 = merge(tmp2, df_week, by = 'week_index')
   tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
+  tmp4 <- tmp2[change.smooth.weekly.deaths < 0 & date >= as.Date('2021-08-01'), list(stop_resurgence = min(date) -7), by = c('code')]
   
   # find stop resurgence
-  max_resurgence_period = as.numeric(max(deathByAge$date) - max(tmp3$start_resurgence)) / 7
+  tmp4 = merge(tmp3, tmp4, by = 'code')
+  max_resurgence_period = tmp4[, min(stop_resurgence - start_resurgence)] / 7
   tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
 
   stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
