@@ -681,7 +681,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   # find start resurgence
   tmp2 = merge(tmp2, df_week, by = 'week_index')
   tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
-  tmp4 <- tmp2[change.smooth.weekly.deaths < 0 & date >= as.Date('2021-08-01'), list(stop_resurgence = min(date) -7), by = c('code')]
+  tmp4 <- tmp2[change.smooth.weekly.deaths < 0.05 & date >= as.Date('2021-08-01'), list(stop_resurgence = min(date) -7), by = c('code')]
   
   # find stop resurgence
   tmp4 = merge(tmp3, tmp4, by = 'code')
