@@ -39,4 +39,3 @@ all(na.omit(subset(deathByAge_res, date == "2020-06-27")$weekly.deaths == 0))
 deathByAge_res = subset(deathByAge_res, !date %in% c(as.Date("2020-07-04"), as.Date("2020-06-27")))
 
 saveRDS(deathByAge_res, file.path(outdir, paste0('CDC-data_', last.week, '.rds')))
-

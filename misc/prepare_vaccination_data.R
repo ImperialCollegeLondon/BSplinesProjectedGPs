@@ -5,7 +5,7 @@ indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 indir2 ="~/git/BSplinesProjectedGPs/misc" # path to the repo
 
 # data for location name
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-29.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-25.rds"))
 locname_data = unique(select(readRDS(path.to.CDC.data), loc_label, code)) # cdc data 
 
 # population data
@@ -14,7 +14,7 @@ pop_data = readRDS(path.to.popdata)
 pop_data = as.data.table(select(reshape2::melt(pop_data, id.vars = c('Region', 'code')), -Region))
 
 # vaccination data
-path.to.data = file.path(indir2, "data-vaccination", paste0("COVID-19_Vaccinations_in_the_United_States_Jurisdiction_210930.csv"))
+path.to.data = file.path(indir2, "data-vaccination", paste0("COVID-19_Vaccinations_in_the_United_States_Jurisdiction_211109.csv"))
 data = as.data.table(read.csv(path.to.data)) 
 
 data[, date := as.Date(Date, '%m/%d/%Y')]
@@ -60,9 +60,9 @@ data[age.group == '18', age.group := '18-64']
 data[age.group == '65', age.group := '65+']
 
 # take rolling average
-ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
-data[, prop := ma(prop, 7), by = c('code', 'age.group')]
-data = data[!is.na(prop)]
+# ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
+# data[, prop := ma(prop, 7), by = c('code', 'age.group')]
+# data = data[!is.na(prop)]
 
 # add young age group
 tmp = unique(select(data, date, code))
@@ -106,7 +106,9 @@ nrow(data) == length(unique(data$date)) * length(unique(data$code)) * length(uni
 start_date = data[prop > 0, min(date) ]
 data = data[date >= start_date]
 
+data[date <= max(deathByAge$date) + 7]
+
 # save
-saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-10-14.rds")))
+saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-09-25.rds")))
 
         
