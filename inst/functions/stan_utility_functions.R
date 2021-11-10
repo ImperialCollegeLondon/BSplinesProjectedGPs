@@ -655,6 +655,8 @@ add_vaccine_date <- function(stan_data){
   return(stan_data)
 }
 
+lag_neg <- function(x) sapply(1:(length(x)-1), function(i) min(which(x[i:length(x)] <= 0)) - 1)
+
 find_resurgence_dates <- function(JHUData, deathByAge, Code){
   
   ma <- function(x, n = 5){as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))}
@@ -680,13 +682,17 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   
   # find start resurgence
   tmp2 = merge(tmp2, df_week, by = 'week_index')
-  tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
-  tmp4 <- tmp2[change.smooth.weekly.deaths < 0.05 & date >= as.Date('2021-08-01'), list(stop_resurgence = min(date) -7), by = c('code')]
-  
+  tmp2[is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := NA_real_, by = c('code')]
+  tmp2[!is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := c(lag_neg(diff.smooth.weekly.deaths), NA_real_), by = c('code')]
+  tmp3 <- tmp2[date >= as.Date('2021-07-01'), list(start_resurgence = date[which.max(number.positive.days.ahead)] ), by = c('code')]
+
+  # subset(tmp2, code == 'CA')
   # find stop resurgence
-  tmp4 = merge(tmp3, tmp4, by = 'code')
-  max_resurgence_period = tmp4[, min(stop_resurgence - start_resurgence)] / 7
-  tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
+  # tmp4 = merge(tmp3, tmp4, by = 'code')
+  # max_resurgence_period = tmp4[, min(stop_resurgence - start_resurgence)] / 7
+  # max_resurgence_period = (max(deathByAge$date) - tmp3[, max(start_resurgence)] )/ 7
+  max_resurgence_period = min(tmp2[date >= as.Date('2021-07-01'), list(resurgence_period = max(na.omit(number.positive.days.ahead))), by = c('code')]$resurgence_period)
+  tmp3[, stop_resurgence := start_resurgence + 7*(max_resurgence_period + 1)]
 
   stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
   
