@@ -7,8 +7,8 @@ library(jcolors)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('CA,FL,NY,TX',',')[[1]]
-stan_model = "211031b1"
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+stan_model = "211031b1_cmdstan"
 JOBID = 3541
 
 if(0)
@@ -58,6 +58,7 @@ outdir.fit = file.path(outdir, run_tag, "fits")
 outdir.data = file.path(outdir, run_tag, "data")
 outdir.fig = file.path(outdir, run_tag, "figure", run_tag)
 if(!dir.exists(outdir.fit)) dir.create( outdir.fit, recursive = T)
+if(!dir.exists(outdir.data)) dir.create( outdir.data, recursive = T)
 if(!dir.exists( dirname(outdir.fig)) ) dir.create( dirname(outdir.fig), recursive = T)
 print(outdir.fit)
 print(outdir.data)
@@ -93,7 +94,7 @@ cat("Location ", as.character(loc_name), "\n")
 
 
 # plot data 
-if(1){
+if(0){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
@@ -157,27 +158,28 @@ save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
 # stan_init$intercept_resurgence0 <- rep(0, stan_data$C)
 # stan_init$slope_resurgence0 <- rep(0, stan_data$C)
 
+cat("\n Write data file \n")
+# write data file
+rstan::stan_rdump( names(stan_data), file=file.path(outdir.fit, paste0('cmdstanin.R')), envir=list2env(stan_data))  	
 
-# fit 
-cat("\n Start sampling \n")
-model = rstan::stan_model(path.to.stan.model)
 
 if(0){
+  # fit 
+  cat("\n Start sampling \n")
+  model = rstan::stan_model(path.to.stan.model)
   
   fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+
+  # fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
+  #                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+  
+  # save
+  file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
+  cat('\n Save file', file, '\n')
+  while(!file.exists(file)){
+    tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
+  }
 }
-
-
-fit_cum <- rstan::sampling(model,data=stan_data,iter=2500,warmup=500,chains=8,
-                           seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
-
-# save
-file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
-cat('\n Save file', file, '\n')
-while(!file.exists(file)){
-  tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
-}
-
 
 
