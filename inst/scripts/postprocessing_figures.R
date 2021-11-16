@@ -13,9 +13,9 @@ library(jcolors)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
-states = strsplit("CA,FL,NY,TX",',')[[1]]
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 stan_model = "211031b1"
-JOBID = 775
+JOBID = 9934
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -157,7 +157,8 @@ if(!is.null(stan_data$prop_vac)){
   
   E_pdeaths_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_resurgence_cumulative', outdir.table)
   E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
-  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_resurgence_cumulative, resurgence_dates, 'cumulative', 'cumulative_rperiod', outdir.fig)
+  plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
+                                             subset(E_pdeaths_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
   plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
                                       subset(E_pdeaths_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
   
@@ -176,8 +177,8 @@ if(!is.null(stan_data$prop_vac)){
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig)
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig, 'selected_states')
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, 'selected_states')
+  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig, '_selected_states')
+  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
   
   if(length(Code) > 6){
     plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
@@ -210,7 +211,6 @@ compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedD
                                    var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
 compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
 compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
-
 
 # make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'

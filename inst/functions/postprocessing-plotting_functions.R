@@ -474,7 +474,8 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   # death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-  colfunc <- jcolors("pal8")[1:length(unique(death$code))]
+  colfunc <- jcolors("pal8")[1:length(locs)]
+  colfunc <- colfunc[which(locs %in% unique(death$code))]
   
   death[, `Age group` := age]
   
@@ -504,8 +505,8 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
           linetype = '', col = '', fill = '') + 
     scale_shape_manual(values = 16) +
     scale_linetype_manual(values = 2) + 
-    scale_color_jcolors("pal8") + 
-    scale_fill_jcolors("pal8") + 
+    scale_color_manual(values = as.character(colfunc)) + 
+    scale_fill_manual(values = as.character(colfunc)) + 
     guides(shape = guide_legend(override.aes = list(size=1, stroke =1.5), order = 2),
            linetype = guide_legend(order = 3), 
            col = guide_legend(order = 1),
@@ -574,7 +575,7 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   }
   
   p = ggarrange(plotlist = p, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.1, 1.1))
-  ggsave(p, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 6 + length(unique(data_res1$code))/6, h = 4 + 2*(length(unique(data_res1$code))/4))
+  ggsave(p, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 6 + length(unique(data_res1$code))/6, h = 5 + 2*(length(unique(data_res1$code))/4))
   
 }
   
@@ -895,11 +896,11 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_v
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_blank(),
-          legend.spacing.x = unit(0.3, "cm"), 
+          axis.title.x = element_blank(),
+          legend.spacing.x = unit(0.5, "cm"), 
           legend.position = 'bottom',
           legend.key.width = unit(1 , "cm")) +
+    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
     scale_x_continuous(breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)),
                           limits = range(prop_vac_init$prop_1_init)) + 
@@ -917,14 +918,13 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_v
     # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
     # scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     scale_x_continuous( breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_y_continuous( limits =range(data_res$M)) +
-    
+    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
           axis.title.x = element_text(size = rel(0.9)),
           axis.title.y = element_text(size = rel(1)),
-          legend.spacing.x = unit(0.3, "cm"), 
+          legend.spacing.x = unit(0.5, "cm"), 
           legend.position = 'bottom') +
     scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)), 
                           limits = range(prop_vac_init$prop_1_init)) + 
@@ -958,9 +958,10 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_v
           legend.title = element_text(size = rel(0.85)),
           axis.title.x = element_blank(),
           axis.title.y = element_text(size = rel(1)),
-          legend.spacing.x = unit(0.3, "cm"), 
+          legend.spacing.x = unit(0.5, "cm"), 
           legend.position = 'bottom',
           legend.key.width = unit(1 , "cm")) +
+    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
     scale_x_continuous(breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     scale_color_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)),
                           limits = range(prop_vac_init$prop_2_init)) + 
@@ -978,14 +979,13 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_v
     # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
     # scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     scale_x_continuous( breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_y_continuous( limits =range(data_res$M)) +
-    
+    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
           axis.title.x = element_text(size = rel(0.9)),
           axis.title.y = element_text(size = rel(1)),
-          legend.spacing.x = unit(0.3, "cm"), 
+          legend.spacing.x = unit(0.5, "cm"), 
           legend.position = 'bottom') +
     scale_color_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)), 
                           limits = range(prop_vac_init$prop_2_init)) + 
@@ -1165,7 +1165,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, resurgence_dat
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) +
     labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
-         col = "Age group", fill = "Age group", x = 'Date\n',
+         col = "Age group", fill = "Age group", x = 'Date',
          shape = 'Beginning of Summer 2021 resurgence period') + 
     scale_shape_manual(values = 4)+ 
     scale_x_date(expand = c(0,0), breaks = '3 months', date_labels = "%b-%y") 
@@ -1182,7 +1182,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, resurgence_dat
     theme(legend.position = 'bottom', 
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) +
-    labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
+    labs(y = paste0(""), 
          x = 'Proportion of fully vaccinated individuals',
          col = "Age group", fill = "Age group",
          shape = 'Beginning of Summer 2021 resurgence period') + 

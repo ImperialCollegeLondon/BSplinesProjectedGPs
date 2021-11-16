@@ -82,6 +82,8 @@ for(i in seq_along(locs)){
 }
 death3 = do.call('rbind', death3)
 plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates,'selectedStates', outdir.fig)
+plot_mortality_all_states(subset(death3, !code %in% selected_codes), resurgence_dates,'otherStates', outdir.fig)
+
 if(length(locs) > 6){
   mid_locs = floor(length(locs) / 2)
   
