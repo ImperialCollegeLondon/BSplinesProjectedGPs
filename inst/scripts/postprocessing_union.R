@@ -55,6 +55,9 @@ region_name = data.table(loc_label = loc_name, code = locs, state_index = 1:leng
 load(file.path(outdir.data, paste0("stanin_",run_tag,".RData")))
 outdir.fig = outdir.fig.post
 
+# 4 states
+selected_codes = c('CA', 'FL', 'NY', 'TX')
+
 # date 
 start_vaccine = vaccine_data[prop > 0 & date %in% df_week$date, min(date)]
 
@@ -78,7 +81,16 @@ for(i in seq_along(locs)){
   death3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
 death3 = do.call('rbind', death3)
-plot_mortality_all_states(death3, resurgence_dates, outdir.fig)
+plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates,'selectedStates', outdir.fig)
+if(length(locs) > 6){
+  mid_locs = floor(length(locs) / 2)
+  
+  plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
+  plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
+  
+} else{
+  plot_mortality_all_states(death3, resurgence_dates, outdir.fig)
+}
 
 
 #
@@ -99,7 +111,11 @@ if(!is.null(stan_data$prop_vac)){
     contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
   }
   contribution = do.call('rbind', contribution)
-  plot_contribution_vaccine(contribution, vaccine_data, resurgence_dates, outdir.fig)
+  
+  mid_code = round(length(locs) / 2)
+  plot_contribution_vaccine(subset(contribution, code %in% locs[1:mid_code]), vaccine_data, resurgence_dates, 'part_1', outdir.fig)
+  plot_contribution_vaccine(subset(contribution, code %in% locs[(mid_code+1):(mid_code*2)]), vaccine_data, resurgence_dates,  'part_2',outdir.fig)
+  
   find_regime_state(contribution, vaccine_data, resurgence_dates, start_vaccine, outdir.table)
 }
 

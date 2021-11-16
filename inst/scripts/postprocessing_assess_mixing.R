@@ -206,7 +206,7 @@ if(any(names %in% names_samples)){
   
   math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vac"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vac"*""')
   groups = c('slope', 'slope', 'vaccination effect\nslope', 'intercept', 'intercept', 'vaccination effect\nintercept')
-  groups_levels = c('intercept', 'vaccination effect\nintercept', 'slope', 'vaccination effect\nslope')
+  groups_levels = c('intercept', 'slope', 'vaccination effect\nintercept', 'vaccination effect\nslope')
   
   
   tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
