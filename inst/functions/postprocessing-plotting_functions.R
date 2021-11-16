@@ -199,6 +199,12 @@ plot_mortality_rate = function(mortality_rate_table, outdir)
 compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.deaths.CDC, outdir, overall = F)
 {
   
+  if('GA' %in% Code){
+    scraped_data_ga <- reduce_agebands_scrapedData_GA(subset(scraped_data, code == 'GA'))
+    scraped_data = rbind(subset(scraped_data, code != 'GA'), scraped_data_ga)
+  }
+  
+  
   scraped_data = select(as.data.table(scraped_data), code, date, age, cum.deaths)
   scraped_data = subset(scraped_data, code %in% Code)
   scraped_data[, date := as.Date(date)]
@@ -206,6 +212,7 @@ compare_CDCestimation_DoH_age_plot = function(CDC_data, scraped_data, var.cum.de
   scraped_data[, CU := NA]
   scraped_data = merge(scraped_data, unique(select(CDC_data, code, loc_label)), by = 'code')
   scraped_data = scraped_data[order(loc_label, code, age, date)]
+
 
   # age sorted
   ages = unique(select(CDC_data, age))
