@@ -1,33 +1,37 @@
 functions {
-    matrix kron_mvprod(matrix A, matrix B, matrix V) 
-    {
-        return transpose(A*transpose(B*V));
-    }
+  /**
+  * From https://github.com/mbjoseph/CARstan
+  * Return the log probability of a proper conditional autoregressive (CAR) prior 
+  * with a sparse representation for the adjacency matrix
+  *
+  * @param phi Vector containing the parameters with a CAR prior
+  * @param tau Precision parameter for the CAR prior (real)
+  * @param alpha Dependence (usually spatial) parameter for the CAR prior (real)
+  * @param W_sparse Sparse representation of adjacency matrix (int array)
+  * @param n Length of phi (int)
+  * @param W_n Number of adjacent pairs (int)
+  * @param D_sparse Number of neighbors for each location (vector)
+  * @param lambda Eigenvalues of D^{-1/2}*W*D^{-1/2} (vector)
+  *
+  * @return Log probability density of CAR prior up to additive constant
+  */
+  real sparse_car_lpdf(vector phi, real tau, real alpha, 
+    int[,] W_sparse, vector D_sparse, vector lambda, int n, int W_n) {
+      row_vector[n] phit_D; // phi' * D
+      row_vector[n] phit_W; // phi' * W
+      vector[n] ldet_terms;
     
-  matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
-            real delta0,
-            real alpha_gp1, real alpha_gp2, 
-            real rho_gp1, real rho_gp2,
-            matrix z1)
-  {
+      phit_D = (phi .* D_sparse)';
+      phit_W = rep_row_vector(0, n);
+      for (i in 1:W_n) {
+        phit_W[W_sparse[i, 1]] = phit_W[W_sparse[i, 1]] + phi[W_sparse[i, 2]];
+        phit_W[W_sparse[i, 2]] = phit_W[W_sparse[i, 2]] + phi[W_sparse[i, 1]];
+      }
     
-    matrix[N_rows,N_columns] GP;
-    
-    matrix[N_rows, N_rows] K1;
-    matrix[N_rows, N_rows] L_K1;
-    
-    matrix[N_columns, N_columns] K2;
-    matrix[N_columns, N_columns] L_K2;
-    
-    K1 = cov_exp_quad(rows_idx, alpha_gp1, rho_gp1) + diag_matrix(rep_vector(delta0, N_rows));
-    K2 = cov_exp_quad(columns_index, alpha_gp2, rho_gp2) + diag_matrix(rep_vector(delta0, N_columns));
-
-    L_K1 = cholesky_decompose(K1);
-    L_K2 = cholesky_decompose(K2);
-    
-    GP = kron_mvprod(L_K2, L_K1, z1);
-
-    return(GP);
+      for (i in 1:n) ldet_terms[i] = log1m(alpha * lambda[i]);
+      return 0.5 * (n * log(tau)
+                    + sum(ldet_terms)
+                    - tau * (phit_D * phi - alpha * (phit_W * phi)));
   }
 }
 
@@ -69,9 +73,10 @@ data{
   matrix[num_basis_rows, A] BASIS_ROWS; 
   matrix[num_basis_columns, W] BASIS_COLUMNS; 
   
-  // GP
-  real IDX_BASIS_ROWS[num_basis_rows];
-  real IDX_BASIS_COLUMNS[num_basis_columns];
+  // CAR model
+  int K; // n *m
+  matrix<lower = 0, upper = 1>[K,K] Adj; // adjacency matrix
+  int Adj_n;                // number of adjacent region pairs
 
   // vaccine effect
   int<lower=1,upper=W> w_stop_resurgence[M]; // index of the week when Summer 2021 resurgences stop
@@ -89,8 +94,33 @@ data{
 
 transformed data
 {   
-    real delta0 = 1e-9;  
-    int N_log_lik = 0;
+  int N_log_lik = 0;
+  int Adj_sparse[Adj_n, 2];   // adjacency pairs
+  vector[K] D_sparse;     // diagonal of D (number of neigbors for each site)
+  vector[K] egv;       // eigenvalues of invsqrtD * Adj * invsqrtD
+  { // generate sparse representation for Ajd
+    int counter;
+    counter = 1;
+    // loop over upper triangular part of Adj to identify neighbor pairs
+      for (i in 1:(K - 1)) {
+        for (j in (i + 1):K) {
+          if (Adj[i, j] == 1) {
+            Adj_sparse[counter, 1] = i;
+            Adj_sparse[counter, 2] = j;
+            counter = counter + 1;
+          }
+        }
+      }
+  }
+  
+  for (i in 1:K) D_sparse[i] = sum(Adj[i]);
+  {
+    vector[K] invsqrtD;  
+    for (i in 1:K) {
+      invsqrtD[i] = 1 / sqrt(D_sparse[i]);
+    }
+    egv = eigenvalues_sym(quad_form(Adj, diag_matrix(invsqrtD)));
+  }
     
   for(m in 1:M){
     for(w in 1:W_OBSERVED){
@@ -110,17 +140,14 @@ transformed data
      }
     }
   }
-
 }
 
 parameters {
   real<lower=0> nu_unscaled[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
-  matrix[num_basis_rows,num_basis_columns] z1[M];
-  real<lower=0> alpha_gp1[M];
-  real<lower=0> alpha_gp2[M];
-  real<lower=0> rho_gp1[M]; 
-  real<lower=0> rho_gp2[M];
+  vector[K] beta_raw[M]; 
+  real<lower = 0> tau[M];
+  real<lower = 0, upper = 1> p[M];
 
   real intercept_resurgence0[C];
   row_vector[M] intercept_resurgence_re[C];
@@ -156,8 +183,7 @@ transformed parameters {
     nu[m] = (1/nu_unscaled[m])^2;
     theta[m] = (1 / nu[m]);
 
-    beta[m] = gp(num_basis_rows, num_basis_columns, IDX_BASIS_ROWS, IDX_BASIS_COLUMNS, delta0,
-              alpha_gp1[m], alpha_gp2[m], rho_gp1[m],  rho_gp2[m], z1[m]);
+    beta[m] = to_matrix(beta_raw[m], num_basis_rows,num_basis_columns); 
 
     f[m] = (BASIS_ROWS') * beta[m] * BASIS_COLUMNS;
 
@@ -209,10 +235,7 @@ model {
   
   nu_unscaled ~ normal(0,1);
 
-  alpha_gp1 ~ cauchy(0,1);
-  alpha_gp2 ~ cauchy(0,1);
-  rho_gp1 ~ inv_gamma(5, 5);
-  rho_gp2 ~ inv_gamma(5, 5);
+  tau ~ gamma(1, 0.001);
 
   intercept_resurgence0 ~ normal(0,0.5);
   sigma_intercept_resurgence ~ cauchy(0,1);
@@ -225,16 +248,11 @@ model {
     vaccine_effect_intercept[c,:] ~ normal(0,0.5);
     vaccine_effect_slope[c,:] ~ normal(0,0.5);
   }
-
-  for(i in 1:num_basis_rows){
-    for(j in 1:num_basis_columns){
-      z1[:,i,j] ~ normal(0,1);
-    }
-  }
   
 
   for(m in 1:M){
     
+    beta_raw[m] ~ sparse_car(tau[m], p[m], Adj_sparse, D_sparse, egv, K, Adj_n);
     lambda_raw[m] ~ gamma( lambda_prior_parameters[m][1,:],lambda_prior_parameters[m][2,:]);
 
 
@@ -360,6 +378,7 @@ generated quantities {
   }
 
 }
+
 
 
 

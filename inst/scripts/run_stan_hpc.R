@@ -4,11 +4,13 @@ library(dplyr)
 library(foreach)
 library(doParallel)
 library(jcolors)
+library(gridExtra)
+library(ggpubr)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "211031b1_cmdstan"
+stan_model = "211031e2"
 JOBID = 3541
 
 if(0)
@@ -94,7 +96,7 @@ cat("Location ", as.character(loc_name), "\n")
 
 
 # plot data 
-if(0){
+if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
@@ -109,20 +111,19 @@ if(0){
 ref_date = as.Date('2020-12-05')
 cat("The reference date is", as.character(ref_date), "\n")
 
-
 # Prepare stan data
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211014|211019|211020|211025|211026|211027|211029|211030|211031|211102', stan_model)){
+if(grepl('211031b|211031d|211031e', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
 }
-if(grepl('211015', stan_model)){
+if(grepl('211031e', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
-if(grepl('211014b|211019|211020|211025|211026|211027|211029|211030|211031|211102', stan_model)){
+if(1){
   cat("\n With vaccine effects \n")
   resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
   stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
@@ -132,16 +133,6 @@ if(grepl('211014b|211019|211020|211025|211026|211027|211029|211030|211031|211102
 if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
-}
-if(grepl('211019b6a|211019b6b|211019b6a|211027b2|211027b|211029b', stan_model)){
-  cutoff_1864 = round(mean(range(stan_data$prop_vac_start[[1]])), 2)
-  cutoff_65p =  round(mean(range(stan_data$prop_vac_start[[2]])), 2)
-  stan_data = add_vaccine_prop_indicator(stan_data, cutoff_1864, cutoff_65p)
-}
-if(grepl('211025', stan_model)){
-  cat("\n Add sequence of vaccinated \n")
-  stan_data$prop_vac_sequence = seq(0, 1, 0.05)
-  stan_data$P = length(stan_data$prop_vac_sequence)
 }
 
 print("A = 12, W = 10")
@@ -158,7 +149,7 @@ if(1){
   model = rstan::stan_model(path.to.stan.model)
   
   if(0){
-    fit_cum <- rstan::sampling(model,data=stan_data,iter=100,warmup=10,chains=1,
+    fit_cum <- rstan::sampling(model,data=stan_data,iter=40,warmup=10,chains=1,
                                seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
   }
 

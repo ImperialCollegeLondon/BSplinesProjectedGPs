@@ -1,36 +1,3 @@
-functions {
-    matrix kron_mvprod(matrix A, matrix B, matrix V) 
-    {
-        return transpose(A*transpose(B*V));
-    }
-    
-  matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
-            real delta0,
-            real alpha_gp1, real alpha_gp2, 
-            real rho_gp1, real rho_gp2,
-            matrix z1)
-  {
-    
-    matrix[N_rows,N_columns] GP;
-    
-    matrix[N_rows, N_rows] K1;
-    matrix[N_rows, N_rows] L_K1;
-    
-    matrix[N_columns, N_columns] K2;
-    matrix[N_columns, N_columns] L_K2;
-    
-    K1 = cov_exp_quad(rows_idx, alpha_gp1, rho_gp1) + diag_matrix(rep_vector(delta0, N_rows));
-    K2 = cov_exp_quad(columns_index, alpha_gp2, rho_gp2) + diag_matrix(rep_vector(delta0, N_columns));
-
-    L_K1 = cholesky_decompose(K1);
-    L_K2 = cholesky_decompose(K2);
-    
-    GP = kron_mvprod(L_K2, L_K1, z1);
-
-    return(GP);
-  }
-}
-
 data{
   int<lower=1> W; // number of weeks 
   int<lower=1> M; // number of states 
@@ -89,7 +56,6 @@ data{
 
 transformed data
 {   
-    real delta0 = 1e-9;  
     int N_log_lik = 0;
     
   for(m in 1:M){
@@ -116,11 +82,8 @@ transformed data
 parameters {
   real<lower=0> nu_unscaled[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
-  matrix[num_basis_rows,num_basis_columns] z1[M];
-  real<lower=0> alpha_gp1[M];
-  real<lower=0> alpha_gp2[M];
-  real<lower=0> rho_gp1[M]; 
-  real<lower=0> rho_gp2[M];
+  matrix[num_basis_rows,num_basis_columns] beta[M];
+  real<lower=0> alpha_gp[M];
 
   real intercept_resurgence0[C];
   row_vector[M] intercept_resurgence_re[C];
@@ -140,7 +103,6 @@ transformed parameters {
   matrix[B,W] phi_reduced[M];
   matrix[C,W] phi_reduced_vac[M];
   matrix[B,W] alpha_reduced[M];
-  matrix[num_basis_rows,num_basis_columns] beta[M]; 
   matrix[A, W] f[M];
   row_vector[M] intercept_resurgence[C];
   row_vector[M] slope_resurgence[C];
@@ -155,9 +117,6 @@ transformed parameters {
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
     nu[m] = (1/nu_unscaled[m])^2;
     theta[m] = (1 / nu[m]);
-
-    beta[m] = gp(num_basis_rows, num_basis_columns, IDX_BASIS_ROWS, IDX_BASIS_COLUMNS, delta0,
-              alpha_gp1[m], alpha_gp2[m], rho_gp1[m],  rho_gp2[m], z1[m]);
 
     f[m] = (BASIS_ROWS') * beta[m] * BASIS_COLUMNS;
 
@@ -209,10 +168,7 @@ model {
   
   nu_unscaled ~ normal(0,1);
 
-  alpha_gp1 ~ cauchy(0,1);
-  alpha_gp2 ~ cauchy(0,1);
-  rho_gp1 ~ inv_gamma(5, 5);
-  rho_gp2 ~ inv_gamma(5, 5);
+  alpha_gp ~ cauchy(0,1);
 
   intercept_resurgence0 ~ normal(0,0.5);
   sigma_intercept_resurgence ~ cauchy(0,1);
@@ -228,7 +184,7 @@ model {
 
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
-      z1[:,i,j] ~ normal(0,1);
+      beta[:,i,j] ~ normal(0,alpha_gp);
     }
   }
   
@@ -360,6 +316,7 @@ generated quantities {
   }
 
 }
+
 
 
 
