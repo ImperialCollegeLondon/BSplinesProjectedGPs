@@ -1217,9 +1217,9 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
   
   dataa = copy(data)
   
-  for(Code in unique(tmp2$code)){
+  for(Code in unique(tmp22$code)){
     
-    tmp = subset(tmp, code == Code)
+    tmp = subset(tmpp, code == Code)
     tmp2 = subset(tmp22, code == Code)
     tmp3 = subset(tmp33, code == Code)
     data = subset(dataa, code == Code)
