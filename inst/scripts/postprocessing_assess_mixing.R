@@ -13,9 +13,9 @@ library(scales)
 
 indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'
-states = strsplit('CA,TX',',')[[1]]
-stan_model = "211014b"
-JOBID = 7259
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+stan_model = "211031b1"
+JOBID = 9934
 
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
@@ -69,7 +69,7 @@ fit_cum <- readRDS(file=file)
 
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")
-summary <- make_convergence_diagnostics_stats(fit_cum, outdir.table)
+summary  <- make_convergence_diagnostics_stats(fit_cum, outdir.table)
 
 # Make predictive checks table
 cat("\nMake posterior predictive checks table \n")
@@ -205,10 +205,16 @@ if(any(names %in% names_samples)){
   df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
   
   math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vac"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vac"*""')
-  groups = c('slope', 'slope', 'vaccination effect\nslope', 'intercept', 'intercept', 'vaccination effect\nintercept')
-  groups_levels = c('intercept', 'slope', 'vaccination effect\nintercept', 'vaccination effect\nslope')
+  groups = c('slope', 'slope', 'vaccination\neffect\nslope', 'intercept', 'intercept', 'vaccination\neffect\nintercept')
+  groups_levels = c('intercept', 'slope', 'vaccination\neffect\nintercept', 'vaccination\neffect\nslope')
   
+  summary <- rstan::summary(fit_cum)$summary
+  summary[1,]
+  rownames(summary)[1]
   
+  samples <- extract(fit_cum)
+  tmp <- reshape2::melt(samples[['nu_unscaled']])
+  quantile(subset(tmp, Var2 == 1)$value, probs = c(0.5, 0.975, 0.025))
   tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
   plot_forest_plot(tmp, outdir.fig)
 
