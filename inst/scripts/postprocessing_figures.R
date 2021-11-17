@@ -147,20 +147,20 @@ if(!is.null(stan_data$prop_vac)){
   
   make_var_by_age_by_state_table(fit_cum, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
   
-  E_pdeaths_cum = make_var_cum_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths', outdir.table)
-  E_pdeaths_cum_counterfactual = make_var_cum_by_age_table_counterfactual(fit_cum, df_week, df_week2, resurgence_dates, df_age_vaccination2, c('E_pdeaths', 'E_pdeaths_counterfactual'), outdir.table)
-  plot_vaccine_effects_counterfactual(E_pdeaths_cum_counterfactual, E_pdeaths_cum, resurgence_dates, 'cumulative', 'cumulative', outdir.fig)
+  E_pdeaths_cum_predict = make_var_cum_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths_predict', outdir.table)
+  E_pdeaths_cum_counterfactual = make_var_cum_by_age_table_counterfactual(fit_cum, df_week, df_week2, resurgence_dates, df_age_vaccination2, c('E_pdeaths_predict', 'E_pdeaths_counterfactual'), outdir.table)
+  plot_vaccine_effects_counterfactual(E_pdeaths_cum_counterfactual, E_pdeaths_cum_predict, resurgence_dates, 'cumulative', 'cumulative', outdir.fig)
   
-  E_pdeaths = make_var_by_age_by_state_table(fit_cum, df_week, df_age_vaccination2, df_state, 'E_pdeaths', outdir.table)
+  E_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week, df_age_vaccination2, df_state, 'E_pdeaths_predict', outdir.table)
   E_pdeaths_counterfactual = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual', outdir.table)
-  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths, resurgence_dates, 'weekly', 'weekly', outdir.fig)
+  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths_predict, resurgence_dates, 'weekly', 'weekly', outdir.fig)
   
-  E_pdeaths_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_resurgence_cumulative', outdir.table)
+  E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
   E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
   plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
-                                             subset(E_pdeaths_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
+                                             subset(E_pdeaths_predict_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
   plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
-                                      subset(E_pdeaths_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
+                                      subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
   
   diff_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual_all', outdir.table)
   perc_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'perc_E_pdeaths_counterfactual_all', outdir.table)
@@ -186,6 +186,7 @@ if(!is.null(stan_data$prop_vac)){
   
   log_r_pdeaths = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'log_r_pdeaths', outdir.table)
   log_r_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'log_r_pdeaths_predict', outdir.table)
+  
   r_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'r_pdeaths_predict', outdir.table)
   if(length(Code) > 6){
     mid_code = round(length(Code) / 2)
