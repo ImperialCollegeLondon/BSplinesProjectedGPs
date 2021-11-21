@@ -1195,8 +1195,8 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, resurgence_dat
 }
 
 
-plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data, 
-                                                          selected_method, model_name, show.method = T, heights= c(0.4,0.6), outdir){
+plot_contribution_continuous_comparison_method_with_data = function(tab_cc, tab_d, data, 
+                                                          selected_method, model_name, show.method = T, heights= c(0.4,0.6), outdir = NULL){
   
   dates = unique(tab_cc$date)
   dates = dates[seq(3, length(dates)-3, length.out =3)]
@@ -1323,10 +1323,47 @@ plot_contribution_continuous_comparison_method = function(tab_cc, tab_d, data,
     p = grid.arrange(p1, p2, p3, layout_matrix = rbind(c(3,2), c(1,1)), heights = heights)
     # ggsave(p, file = '~/Downloads/figure4.png', w = 9, h = 10)
     
-    ggsave(p, file = paste0(outdir, '-panel_plot_1_', Code, '.png'), w = 9, h = 7)
+    if(!is.null(outdir))
+      ggsave(p, file = paste0(outdir, '-panel_plot_1_', Code, '.png'), w = 9, h = 7)
   }
   
   return(p)
+  
+}
+
+
+plot_contribution_continuous_comparison_method = function(tab_cc, selected_method, model_name){
+  
+  dates = unique(tab_cc$date)
+  dates = dates[seq(3, length(dates)-3, length.out =3)]
+  
+  plot_labels <- format(dates,  "%d-%b-%y")
+  
+  tmp2 = subset(tab_cc, date %in% dates)
+  tmp2[, age_c := as.numeric(age)]
+  tmp2[, method := factor(method,  model_name)]
+  tmp2[, date_name := format(date, c("%B %d, %Y"))]
+  
+  limit_SE = range(subset(tmp2, method == selected_method)$CL, subset(tmp2, method == selected_method)$CU)
+  
+  p1 = ggplot(tmp2, aes(x = age_c)) + 
+    geom_line(aes(y = M)) +
+    geom_ribbon(aes(ymin= CL, ymax = CU), alpha = 0.5) +
+    theme_bw() +
+    labs(y = 'Estimated age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
+    facet_grid(date_name~method) +
+    coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
+    scale_y_continuous(expand = c(0,0)) + 
+    scale_x_continuous(expand = c(0,0)) + 
+    theme(panel.border = element_rect(colour = "black", fill = NA), 
+          # legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white"), 
+          panel.grid.major = element_blank(),
+          axis.title.y = element_text(size = rel(1.1)), 
+          plot.margin = unit(c(5.5,5.5,25,5.5), "pt"), 
+          legend.position = 'none')
+  
+  return(p1)
   
 }
 
