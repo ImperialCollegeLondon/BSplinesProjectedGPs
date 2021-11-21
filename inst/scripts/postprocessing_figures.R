@@ -13,9 +13,10 @@ library(jcolors)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
-states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "211031b1"
-JOBID = 9934
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+states = strsplit('CA,FL,NY,TX',',')[[1]]
+stan_model = "211031d2"
+JOBID = 20145
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -157,10 +158,13 @@ if(!is.null(stan_data$prop_vac)){
   
   E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
   E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
-  plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
-                                             subset(E_pdeaths_predict_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
   plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
                                       subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
+  if(any(!Code %in% selected_code)){
+    plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
+                                        subset(E_pdeaths_predict_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
+    
+  }
   
   diff_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual_all', outdir.table)
   perc_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'perc_E_pdeaths_counterfactual_all', outdir.table)
@@ -216,7 +220,7 @@ compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
 # make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'
 deatht$method = 'GP-BS-SE'
-p2=plot_contribution_continuous_comparison_method(copy(age_contribution_continuous_table), copy(deatht), copy(data),
+p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contribution_continuous_table), copy(deatht), copy(data),
                                                   'GP-BS-SE', 'GP-BS-SE',
                                                   show.method = F,
                                                   heights = c(1,1), outdir.fig)
