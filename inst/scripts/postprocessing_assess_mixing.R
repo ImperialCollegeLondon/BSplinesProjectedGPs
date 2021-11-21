@@ -208,19 +208,10 @@ if(any(names %in% names_samples)){
   groups = c('slope', 'slope', 'vaccination\neffect\nslope', 'intercept', 'intercept', 'vaccination\neffect\nintercept')
   groups_levels = c('intercept', 'slope', 'vaccination\neffect\nintercept', 'vaccination\neffect\nslope')
   
-  summary <- rstan::summary(fit_cum)$summary
-  summary[1,]
-  rownames(summary)[1]
-  
-  samples <- extract(fit_cum)
-  tmp <- reshape2::melt(samples[['nu_unscaled']])
-  quantile(subset(tmp, Var2 == 1)$value, probs = c(0.5, 0.975, 0.025))
   tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
   plot_forest_plot(tmp, outdir.fig)
 
 }
-
-
 
 
 cat("\n End postprocessing_assess_mixing.R \n")
