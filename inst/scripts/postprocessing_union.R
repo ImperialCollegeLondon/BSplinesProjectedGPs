@@ -92,7 +92,7 @@ if(length(locs) > 6){
   plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
   
 } else{
-  plot_mortality_all_states(death3, resurgence_dates, outdir.fig)
+  plot_mortality_all_states(death3, resurgence_dates, 'allStates', outdir.fig)
 }
 
 
