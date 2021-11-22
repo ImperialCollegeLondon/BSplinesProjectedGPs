@@ -1,33 +1,7 @@
 functions {
-    matrix kron_mvprod(matrix A, matrix B, matrix V) 
-    {
-        return transpose(A*transpose(B*V));
-    }
-    
-  matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
-            real delta0,
-            real alpha_gp, 
-            real rho_gp1, real rho_gp2,
-            matrix z1)
-  {
-    
-    matrix[N_rows,N_columns] GP;
-    
-    matrix[N_rows, N_rows] K1;
-    matrix[N_rows, N_rows] L_K1;
-    
-    matrix[N_columns, N_columns] K2;
-    matrix[N_columns, N_columns] L_K2;
-    
-    K1 = cov_exp_quad(rows_idx, sqrt(alpha_gp), rho_gp1) + diag_matrix(rep_vector(delta0, N_rows));
-    K2 = cov_exp_quad(columns_index, sqrt(alpha_gp), rho_gp2) + diag_matrix(rep_vector(delta0, N_columns));
-
-    L_K1 = cholesky_decompose(K1);
-    L_K2 = cholesky_decompose(K2);
-    
-    GP = kron_mvprod(L_K2, L_K1, z1);
-
-    return(GP);
+  real icar_normal_lpdf(vector phi, int N, int[] node1, int[] node2){
+    return -0.5 * dot_self(phi[node1] - phi[node2])
+      + normal_lpdf(sum(phi) | 0, 0.001 * N);
   }
 }
 
@@ -69,9 +43,11 @@ data{
   matrix[num_basis_rows, A] BASIS_ROWS; 
   matrix[num_basis_columns, W] BASIS_COLUMNS; 
   
-  // GP
-  real IDX_BASIS_ROWS[num_basis_rows];
-  real IDX_BASIS_COLUMNS[num_basis_columns];
+  // ICAR model
+  int<lower=1> K;
+  int<lower=1> N_edges;
+  int<lower=1, upper=K> node1[N_edges];
+  int<lower=1, upper=K> node2[N_edges];
 
   // vaccine effect
   int<lower=1,upper=W> w_stop_resurgence[M]; // index of the week when Summer 2021 resurgences stop
@@ -89,9 +65,8 @@ data{
 
 transformed data
 {   
-    real delta0 = 1e-9;  
-    int N_log_lik = 0;
-    
+  int N_log_lik = 0;
+
   for(m in 1:M){
     for(w in 1:W_OBSERVED){
       for(i in idx_non_missing[m][1:N_idx_non_missing[m][w],w]){
@@ -110,16 +85,12 @@ transformed data
      }
     }
   }
-
 }
 
 parameters {
   real<lower=0> nu_unscaled[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
-  matrix[num_basis_rows,num_basis_columns] z1[M];
-  real<lower=0> alpha_gp[M];
-  real<lower=0> rho_gp1[M]; 
-  real<lower=0> rho_gp2[M];
+  vector[K] beta_raw[M]; 
 
   real intercept_resurgence0[C];
   row_vector[M] intercept_resurgence_re[C];
@@ -155,8 +126,7 @@ transformed parameters {
     nu[m] = (1/nu_unscaled[m])^2;
     theta[m] = (1 / nu[m]);
 
-    beta[m] = gp(num_basis_rows, num_basis_columns, IDX_BASIS_ROWS, IDX_BASIS_COLUMNS, delta0,
-              alpha_gp[m], rho_gp1[m],  rho_gp2[m], z1[m]);
+    beta[m] = to_matrix(beta_raw[m], num_basis_rows,num_basis_columns); 
 
     f[m] = (BASIS_ROWS') * beta[m] * BASIS_COLUMNS;
 
@@ -208,10 +178,6 @@ model {
   
   nu_unscaled ~ normal(0,1);
 
-  alpha_gp ~ cauchy(0,1);
-  rho_gp1 ~ inv_gamma(5, 5);
-  rho_gp2 ~ inv_gamma(5, 5);
-
   intercept_resurgence0 ~ normal(0,0.5);
   sigma_intercept_resurgence ~ cauchy(0,1);
   slope_resurgence0 ~ normal(0,0.5);
@@ -223,16 +189,11 @@ model {
     vaccine_effect_intercept[c,:] ~ normal(0,0.5);
     vaccine_effect_slope[c,:] ~ normal(0,0.5);
   }
-
-  for(i in 1:num_basis_rows){
-    for(j in 1:num_basis_columns){
-      z1[:,i,j] ~ normal(0,1);
-    }
-  }
   
 
   for(m in 1:M){
     
+    beta_raw[m] ~ icar_normal_lpdf(K, node1, node2);
     lambda_raw[m] ~ gamma( lambda_prior_parameters[m][1,:],lambda_prior_parameters[m][2,:]);
 
 
@@ -308,14 +269,15 @@ generated quantities {
     for(m in 1:M){
 
         for(c in 1:C){
-          
             r_pdeaths_predict[m][c,:] = to_row_vector( gamma_rng(square(xi[c][:,m] / sigma_r_pdeaths[m]), xi[c][:,m] ./ rep_vector(square(sigma_r_pdeaths[m]), T)  ) );
             log_r_pdeaths_predict[m][c,:] = log( r_pdeaths_predict[m][c,:] );
+
+            r_pdeaths_counterfactual[m][c,:] = to_row_vector( gamma_rng( square(xi_counterfactual[c][:,m] / sigma_r_pdeaths[m]), xi_counterfactual[c][:,m] ./ rep_vector(square(sigma_r_pdeaths[m]), T)) );
+            log_r_pdeaths_counterfactual[m][c,:] = log( r_pdeaths_counterfactual[m][c,:] );
+
             E_pdeaths_predict[m][c,:] = rep_row_vector(max(E_pdeaths[m][c,1:(w_start_resurgence[m] - 1)]), T) .* r_pdeaths_predict[m][c,:] ;
             E_pdeaths_predict_resurgence_cumulative[m][c,:] = cumulative_sum(E_pdeaths_predict[m][c,:]);
             
-            r_pdeaths_counterfactual[m][c,:] = to_row_vector( gamma_rng( square(xi_counterfactual[c][:,m] / sigma_r_pdeaths[m]), xi_counterfactual[c][:,m] ./ rep_vector(square(sigma_r_pdeaths[m]), T)) );
-            log_r_pdeaths_counterfactual[m][c,:] = log( r_pdeaths_counterfactual[m][c,:] );
             E_pdeaths_counterfactual[m][c,:] = rep_row_vector(max(E_pdeaths[m][c,1:(w_start_resurgence[m] - 1)]), T) .* r_pdeaths_counterfactual[m][c,:] ;
             E_pdeaths_counterfactual_resurgence_cumulative[m][c,:] = cumulative_sum(E_pdeaths_counterfactual[m][c,:]);
             
@@ -327,20 +289,6 @@ generated quantities {
             diff_E_pdeaths_counterfactual_all[c,:] += diff_E_pdeaths_counterfactual[m][c,:];
             E_pdeaths_resurgence_cumulative_all[c,:] += E_pdeaths_predict_resurgence_cumulative[m][c,:];
             
-            if(m == 3){
-              if (c == 2){
-                
-                print("xi[c][:,m]", xi[c][:,m]);
-                print("gamma_rng", gamma_rng(square(xi[c][:,m] / sigma_r_pdeaths[m]), xi[c][:,m] ./ rep_vector(square(sigma_r_pdeaths[m]), T)  ));
-                print("r_pdeaths_predict[m][c,:]", r_pdeaths_predict[m][c,:]);
-                print("r_pdeaths_counterfactual[m][c,:]", r_pdeaths_counterfactual[m][c,:]);
-                print("E_pdeaths_predict_resurgence_cumulative[m][c,:]", E_pdeaths_predict_resurgence_cumulative[m][c,:]);
-                print("E_pdeaths_counterfactual_resurgence_cumulative[m][c,:]", E_pdeaths_counterfactual_resurgence_cumulative[m][c,:]);
-                print("diff_E_pdeaths_counterfactual[m][c,:]", diff_E_pdeaths_counterfactual[m][c,:]);
-                print("perc_E_pdeaths_counterfactual[m][c,:]", perc_E_pdeaths_counterfactual[m][c,:]);
-                
-              }
-            }
         }
 
         for(w in 1:W){
@@ -375,15 +323,7 @@ generated quantities {
     perc_E_pdeaths_counterfactual_all = diff_E_pdeaths_counterfactual_all ./ E_pdeaths_resurgence_cumulative_all;
 
   }
-  
-        //print("r_pdeaths_predict", r_pdeaths_predict[3,2,:]);
-        //print("r_pdeaths_counterfactual", r_pdeaths_counterfactual[3,2,:]);
-        //print("E_pdeaths_predict", E_pdeaths_predict[3,2,:]);
-        //print("E_pdeaths_counterfactual", E_pdeaths_counterfactual[3,2,:]);
-        //print("diff_E_pdeaths_counterfactual", diff_E_pdeaths_counterfactual[3,2,:]);
-        //print("perc_E_pdeaths_counterfactual", perc_E_pdeaths_counterfactual[3,2,:]);
-    
-    
+
 }
 
 

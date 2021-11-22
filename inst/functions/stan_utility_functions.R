@@ -378,6 +378,18 @@ add_adjacency_matrix_stan_data = function(stan_data, n, m)
   return(stan_data)
 }
 
+add_nodes_stan_data = function(stan_data)
+{
+  tmp = reshape2::melt( stan_data$Adj )
+  tmp = subset(tmp, value == 1)
+  
+  stan_data$node1 = tmp$Var2
+  stan_data$node2 = tmp$Var1
+  stan_data$N_edges = nrow(tmp)
+  
+  return(stan_data)
+}
+
 find_adjacency_matrix = function(n,m){
   N = n * m
   

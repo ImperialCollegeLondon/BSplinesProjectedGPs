@@ -1238,7 +1238,7 @@ plot_contribution_continuous_comparison_method_with_data = function(tab_cc, tab_
       theme_bw() +
       labs(y = 'Estimated age-specific contribution\nto COVID-19 weekly deaths', x = "Age") + 
       facet_grid(method~date) +
-      coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
+      # coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
       scale_y_continuous(expand = c(0,0)) + 
       scale_x_continuous(expand = c(0,0)) + 
       theme(panel.border = element_rect(colour = "black", fill = NA), 
@@ -1352,7 +1352,7 @@ plot_contribution_continuous_comparison_method = function(tab_cc, selected_metho
     theme_bw() +
     labs(y = 'Estimated age-specific contribution to COVID-19 weekly deaths', x = "Age") + 
     facet_grid(date_name~method) +
-    coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
+    # coord_cartesian(ylim = limit_SE, xlim = range(tmp2$age_c)) +
     scale_y_continuous(expand = c(0,0)) + 
     scale_x_continuous(expand = c(0,0)) + 
     theme(panel.border = element_rect(colour = "black", fill = NA), 
