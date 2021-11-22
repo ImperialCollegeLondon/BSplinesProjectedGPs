@@ -12,7 +12,7 @@ The COVID-19 pandemic has caused severe public health consequences in the United
 | inst | Reproduce the result of the "Real data analysis" section  |
 | simulations      | Reproduce the result of the "Simulations" section |
 | predictions | Reproduce the results of the "Real world benchmarks" |
-| documents | paper |
+| results | Median and 95\% credible interval of the age-specific COVID-19 attributable deaths predicted by our approach |
 
 
 ## System Requirements
