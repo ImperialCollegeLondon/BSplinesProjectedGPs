@@ -7,7 +7,7 @@ library(loo)
 
 indir = "~/git/BSplinesProjectedGPs" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
-model = 'GP-B-SPLINES'
+model = 'P-SPLINES'
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -15,11 +15,6 @@ rstan_options(auto_write = TRUE)
 # load data
 training = read.csv(file.path(indir, 'predictions', 'data', 'training.csv'))
 test = read.csv(file.path(indir, 'predictions', 'data', 'prediction.csv'))
-
-if(0) { # for dvp
-  training = subset(training, x > 40 & y > 0)
-  test = subset(test, x > 40 & y > 0)
-}
 
 # load functions
 source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
@@ -36,6 +31,13 @@ if(model == 'P-SPLINES') # Bayesian P-splines
 n_knots_x = 125
 n_knots_y = 125
 spline_degree = 3
+
+if(0) { # for dvp
+  training = subset(training, x > 40 & y > 0)
+  test = subset(test, x > 40 & y > 0)
+  n_knots_x = 10
+  n_knots_y = 10
+}
 
 
 #
@@ -82,9 +84,9 @@ grid = merge(grid, y_grid, by = 'y_index')
 value.coordinates = select(training, x_index, y_index)
 
 # adjacent matrix for p-splines
+K = num_basis_rows * num_basis_columns
 A = find_adjacency_matrix(num_basis_rows, num_basis_columns)
-Adj_n = sum(A) / 2
-K = num_basis_rows*num_basis_columns
+tmp = subset(reshape2::melt( A ), value == 1)
 
 
 
@@ -100,7 +102,7 @@ stan_data = list(n = n, m = m, N = nrow(training),
                  num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
                  BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
                  IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS,
-                 Adj = A, Adj_n = Adj_n, K = K)
+                 K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp))
 
 file= file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds'))
 if(!file.exists(file)){
