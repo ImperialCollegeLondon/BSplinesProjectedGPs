@@ -115,11 +115,11 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211031b|211031d|211031e|211121a|211031f', stan_model)){
+if(grepl('211031b|211031d|211031e|211121a|211031f|211031g', stan_model)){
   cat("\n Using 2D splines \n")
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
 }
-if(grepl('211031e|211031f', stan_model)){
+if(grepl('211031e|211031f|211031g', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
 }
