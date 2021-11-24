@@ -1,6 +1,7 @@
 functions {
-  real icar_normal_lpdf(vector phi, int N, int[] node1, int[] node2){
-    return -0.5 * dot_self(phi[node1] - phi[node2])
+  real icar_normal_lpdf(vector phi, int N, int[] node1, int[] node2, real inv_tau_squared){
+    return - inv_tau_squared * 0.5 * dot_self(phi[node1] - phi[node2])
+      + (N-1) * 0.5 * log(inv_tau_squared)
       + normal_lpdf(sum(phi) | 0, 0.001 * N);
   }
 }
@@ -28,10 +29,13 @@ data {
 
 parameters {
   real<lower=0> sigma;
+  real<lower=0> tau;
   vector[K] beta_raw; 
 }
 
 transformed parameters {
+  real<lower=0> inv_tau_squared = 1/(tau^2);
+  
   matrix[num_basis_rows,num_basis_columns] beta = to_matrix(beta_raw, num_basis_rows,num_basis_columns); 
                                                      
   matrix[n,m] f = (BASIS_ROWS') * beta * BASIS_COLUMNS;
@@ -39,8 +43,9 @@ transformed parameters {
 
 model {
   sigma ~ cauchy(0,1);
+  tau ~ cauchy(0,1);
 
-  beta_raw ~ icar_normal_lpdf(K, node1, node2);
+  beta_raw ~ icar_normal_lpdf(K, node1, node2, inv_tau_squared);
   
   for(i in 1:N){
         y[i] ~ normal(f[coordinates[i,1],coordinates[i,2]], sigma);
