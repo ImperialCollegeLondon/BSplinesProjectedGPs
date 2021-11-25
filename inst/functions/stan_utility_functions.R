@@ -529,17 +529,23 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
   tmp[, prop := prop - pre_prop]
   tmp = tmp[order(code)]
   
-  prop_vac = list(); prop_vac_start = list()
+  prop_vac = list(); prop_vac_start = list(); prop_vac_start_counterfactual = list()
   for(i in 1:length(unique(tmp$age_index))){
     tmp1 = subset(tmp, age_index == unique(tmp$age_index)[i])
     
     prop_vac[[i]] = as.matrix( reshape2::dcast(tmp1, idx.resurgence.date ~ code, value.var = 'prop')[,-1] )
     prop_vac_start[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
+    prop_vac_start_counterfactual[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
+    
+    if(i == 1){
+      prop_vac_start_counterfactual[[i]] = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      
+    }
   }
 
   stan_data[['prop_vac']] = prop_vac
   stan_data[['prop_vac_start']] = prop_vac_start
-  stan_data[['c_counterfactual']] = df_age_vaccination[age == '65+']$age_index - age_index_min + 1
+  stan_data[['prop_vac_start_counterfactual']] = prop_vac_start_counterfactual
   stan_data[['age_from_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_from
   stan_data[['age_to_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_to
   stan_data[['C']] = nrow(df_age_vaccination[age_index >= age_index_min])
