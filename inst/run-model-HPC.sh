@@ -17,8 +17,8 @@ cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF
 module load anaconda3/personal
   
 JOB_TEMP=\${EPHEMERAL}/\${PBS_JOBID}
-mkdir -p $JOB_TEMP
-cd $JOB_TEMP  
+mkdir -p \$JOB_TEMP
+cd \$JOB_TEMP  
 PWD=\$(pwd)
 CWD=$CWD
 INDIR=$INDIR/inst
