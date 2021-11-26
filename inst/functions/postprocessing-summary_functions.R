@@ -30,7 +30,7 @@ make_predictive_checks_table = function(fit, df_week, df_state_age, data, deaths
     
   }
 
-  dir = gsub('(.+)/results/.*', '\\1', outdir.table), 'results/', 'predictions')
+  dir = file.path(gsub('(.+)/results/.*', '\\1', outdir.table), 'results', 'predictions')
   dir.create(dir)
   saveRDS(tmp1, file = file.path(dir, 'predicted_weekly_deaths.rds'))
   
