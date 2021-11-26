@@ -326,21 +326,7 @@ generated quantities {
             
             diff_E_pdeaths_counterfactual_all[c,:] += diff_E_pdeaths_counterfactual[m][c,:];
             E_pdeaths_resurgence_cumulative_all[c,:] += E_pdeaths_predict_resurgence_cumulative[m][c,:];
-            
-            if(m == 3){
-              if (c == 2){
-                
-                print("xi[c][:,m]", xi[c][:,m]);
-                print("gamma_rng", gamma_rng(square(xi[c][:,m] / sigma_r_pdeaths[m]), xi[c][:,m] ./ rep_vector(square(sigma_r_pdeaths[m]), T)  ));
-                print("r_pdeaths_predict[m][c,:]", r_pdeaths_predict[m][c,:]);
-                print("r_pdeaths_counterfactual[m][c,:]", r_pdeaths_counterfactual[m][c,:]);
-                print("E_pdeaths_predict_resurgence_cumulative[m][c,:]", E_pdeaths_predict_resurgence_cumulative[m][c,:]);
-                print("E_pdeaths_counterfactual_resurgence_cumulative[m][c,:]", E_pdeaths_counterfactual_resurgence_cumulative[m][c,:]);
-                print("diff_E_pdeaths_counterfactual[m][c,:]", diff_E_pdeaths_counterfactual[m][c,:]);
-                print("perc_E_pdeaths_counterfactual[m][c,:]", perc_E_pdeaths_counterfactual[m][c,:]);
-                
-              }
-            }
+
         }
 
         for(w in 1:W){
@@ -376,14 +362,7 @@ generated quantities {
 
   }
   
-        //print("r_pdeaths_predict", r_pdeaths_predict[3,2,:]);
-        //print("r_pdeaths_counterfactual", r_pdeaths_counterfactual[3,2,:]);
-        //print("E_pdeaths_predict", E_pdeaths_predict[3,2,:]);
-        //print("E_pdeaths_counterfactual", E_pdeaths_counterfactual[3,2,:]);
-        //print("diff_E_pdeaths_counterfactual", diff_E_pdeaths_counterfactual[3,2,:]);
-        //print("perc_E_pdeaths_counterfactual", perc_E_pdeaths_counterfactual[3,2,:]);
-    
-    
+
 }
 
 
