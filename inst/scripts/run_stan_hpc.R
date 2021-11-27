@@ -142,32 +142,24 @@ tmp <- names(.GlobalEnv)
 tmp <- tmp[!grepl('^.__|^\\.|^model$',tmp)]
 save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
 
-if(1){
-  
-  # fit 
-  cat("\n Start sampling \n")
-  model = rstan::stan_model(path.to.stan.model)
-  
-  if(0){
-    fit_cum <- rstan::sampling(model,data=stan_data,iter=40,warmup=10,chains=1,
-                               seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
-  }
-
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
-                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
-  
-  # save
-  file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
-  
-  cat('\n Save file', file, '\n')
-  while(!file.exists(file)){
-    tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
-  }
-  
-}
+# fit 
+cat("\n Start sampling \n")
+model = rstan::stan_model(path.to.stan.model)
 
 if(0){
-  cat("\n Write data file \n")
-  # write data file
-  rstan::stan_rdump( names(stan_data), file=file.path(outdir.fit, paste0('cmdstanin.R')), envir=list2env(stan_data))  	
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=40,warmup=10,chains=1,
+                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
+
+fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
+                           seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+
+# save
+file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
+
+cat('\n Save file', file, '\n')
+while(!file.exists(file)){
+  tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
+}
+
+
