@@ -77,8 +77,9 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
   if(grepl('P-SPLINE', method)){
     K = num_basis_rows * num_basis_columns
     A = find_adjacency_matrix(num_basis_rows, num_basis_columns)
-    Adj_n = sum(A) / 2
-    stan_data = c(stan_data, list(K = K, Adj = A, Adj_n = Adj_n))
+    tmp = subset(reshape2::melt( A ), value == 1)
+    
+    stan_data = c(stan_data, list(K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp)))
   }
   
   file = file.path(outdir, paste0(method, '_', lab, '_nknots_', n_knots, '.rds'))

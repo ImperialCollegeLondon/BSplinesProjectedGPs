@@ -31,12 +31,12 @@ model_GPBS = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', '
 ## tuning parameters
 
 # number of samples
-n <- 40
+n <- 50
 x <- seq(0,1,length=n)
 X <- expand.grid(x, x)
 X_index <- expand.grid(1:n, 1:n)
 X_index$index = 1:nrow(X_index)
-lengthscales = c(0.05, 0.1, 1)
+lengthscales = c(0.05, 0.25, 1)
 
 # percentage of data included in training
 prop_training = 0.4
@@ -49,15 +49,15 @@ spline_degree = 3
 ## Run simulations
 nus = c(0.1, 0.1, 0.01)
 for(i in 1:length(lengthscales)){
-  
-  # i = 1
+
+  # i = 3
   cat('\n Running simulation with lengthscale ', lengthscales[i], '\n')
   
   # lab
   lab = paste0('count_lengthscale_', lengthscales[i])
   
   # simulate data 
-  set.seed(28)
+  set.seed(65)
   simulate_data(X, lengthscales[i], nus[i], indir)
   coordinates_training = X_index[sample(1:nrow(X), size = round(prop_training*nrow(X))),]
 
@@ -99,7 +99,8 @@ for(i in 1:length(lengthscales)){
                                 outdir = outdir, overwrite = F))
     
   }
-}
+
+  }
 
 
 
@@ -130,7 +131,6 @@ tmp[!grepl('knots', method), n_knots := 0]
 
 ## Convergence disagnostics
 range(tmp[,'min_neff'])
-
 
 ## plot results
 variables = c('y_hat', 'f')
@@ -219,7 +219,7 @@ for(l in lengthscales){
                    size = 0.5, alpha = 0.5) +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean)), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp1$y_mean)), begin = 0.1) +
       labs(x = '', y= '') + 
       facet_wrap(.~method2, scale = 'free_y') +
       # ggtitle(paste0('Standard 2D GP')) + 
@@ -247,7 +247,7 @@ for(l in lengthscales){
       coord_equal() +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean )), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp1$y_mean )), begin = 0.1) +
       # ggtitle(paste0('Standard B-splines surface\n',prediction_names)) +
       ggtitle(paste0('Standard B-splines surface')) +
       facet_grid(method2~n_knots2) +
@@ -271,7 +271,7 @@ for(l in lengthscales){
       coord_equal() +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean)), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp1$y_mean)), begin = 0.1) +
       # ggtitle(paste0('Bayesian P-splines\n',prediction_names)) +
       ggtitle(paste0('Bayesian P-splines')) +
       facet_grid(method2~n_knots2) +
@@ -293,7 +293,7 @@ for(l in lengthscales){
       coord_equal() +
       scale_x_continuous(expand=c(0,0), breaks = c(0.25, 0.5, 0.75, 1)) +
       scale_y_continuous(expand=c(0,0)) +
-      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp$y_mean)), begin = 0.1) +
+      scale_fill_viridis_c(option = 'viridis', limits = range(c(tmp1$M, tmp1$y_mean)), begin = 0.1) +
       ggtitle(paste0('Regularised B-splines projected 2D GP')) +
       # ggtitle(paste0('Regularised B-splines projected 2D GP\n',prediction_names)) +
       facet_grid(method2~n_knots2) +
@@ -323,6 +323,7 @@ for(l in lengthscales){
 ## extract statistics for the paper
 
 # time of execution 
+tmp[, time := time / 3]
 time_all = list()
 for(i in seq_along(lengthscales)){
   
@@ -351,26 +352,45 @@ time_GPSE[[1]] = paste0(round(min_GPSE_1/ 60), ' minutes')
 time_GPSE[[2]] = paste0(round(min_GPSE_2/ 60), ' minutes')
 time_GPSE[[3]] = paste0(round(min_GPSE_3/ 60), ' minutes')
 
-avg_red = paste0(round(mean(1- (c(min_GPSE_1/min_GP[1], min_GPSE_2/min_GP[2], min_GPSE_3/min_GP[3] ))* 100), digits = 2) , '\\%')
+avg_red = paste0(round(mean(1- c(min_GPSE_1/min_GP[1], min_GPSE_2/min_GP[2], min_GPSE_3/min_GP[3] ))* 100, digits = 2) , '\\%')
 
 saveRDS(list(time_GP, time_GPSE, avg_red, time_all), file = file.path(outdir, paste0('v2_time_execution_count.rds')))
 
 
-# compare MSE
+# compare MSE and whether the prediction is inside the credible interval
+tmp[, inside.CI := y <= CU & y >= CL]
 tmp[, SE := (M - y_mean)^2]
 tmp[, AE := abs(M - y_mean)]
-MAE1 <- subset(tmp, variable == 'f'  & lengthscale == lengthscales[1])[, list(mean = format(round(mean(AE), 2), nsmall = 2),
-                                                                              sd = format(round(sd(AE), 2), nsmall = 2)), by = c('method')]
-MAE2 <- subset(tmp, variable == 'f'  & lengthscale == lengthscales[2])[, list(mean = format(round(mean(AE), 2), nsmall = 2), 
-                                                                              sd = format(round(sd(AE), 2), nsmall = 2)), by = c('method')]
-MAE3 <- subset(tmp, variable == 'f'  & lengthscale == lengthscales[3])[, list(mean = format(round(mean(AE), 2), nsmall = 2), 
-                                                                              sd = format(round(sd(AE), 2), nsmall = 2)), by = c('method')]
+
+# mean surface 
+tmp1 <- tmp[variable == 'f' & is.na(y_training)]
+MAE1 <- subset(tmp1, lengthscale == lengthscales[1])[, list(mean = format(round(mean(SE), 2), nsmall = 2), 
+                                                            sd = format(round(sd(SE), 2), nsmall = 2)), by = c('method')]
+MAE2 <- subset(tmp1, lengthscale == lengthscales[2])[, list(mean = format(round(mean(SE), 2), nsmall = 2), 
+                                                            sd = format(round(sd(SE), 2), nsmall = 2)), by = c('method')]
+MAE3 <- subset(tmp1, lengthscale == lengthscales[3])[, list(mean = format(round(mean(SE), 2), nsmall = 2), 
+                                                            sd = format(round(sd(SE), 2), nsmall = 2)), by = c('method')]
+# data surface
+tmp1 <- tmp[variable == 'y_hat' & is.na(y_training)]
+ICI1 <- subset(tmp1, lengthscale == lengthscales[1])[, list(mean = format(round(mean(inside.CI)*100, 2), nsmall = 2), 
+                                                            sd = format(round(sd(inside.CI), 2), nsmall = 2)), by = c('method')]
+ICI2 <- subset(tmp1, lengthscale == lengthscales[2])[, list(mean = format(round(mean(inside.CI)*100, 2), nsmall = 2), 
+                                                            sd = format(round(sd(inside.CI), 2), nsmall = 2)), by = c('method')]
+ICI3 <- subset(tmp1, lengthscale == lengthscales[3])[, list(mean = format(round(mean(inside.CI)*100, 2), nsmall = 2), 
+                                                            sd = format(round(sd(inside.CI), 2), nsmall = 2)), by = c('method')]
 
 MAE1[order(mean)]
 MAE2[order(mean)]
 MAE3[order(mean)]
 
+ICI1[order(mean)]
+ICI2[order(mean)]
+ICI3[order(mean)]
+
 saveRDS(list(MAE1, MAE2, MAE3), file = file.path(outdir, paste0('v2_MAE_count.rds')))
+
+saveRDS(list(ICI1, ICI2, ICI3), file = file.path(outdir, paste0('v2_ICI_count.rds')))
+
 
 
 ## compare loo
