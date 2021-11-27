@@ -1,10 +1,14 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="211031b1"
+STAN_MODEL="211125a"
 CWD="/Users/melodiemonod/git/BSplinesProjectedGPs/inst/results-try/"
 INDIR="/Users/melodiemonod/git/BSplinesProjectedGPs/"
-STATES='CA,FL,NY,TX'
+
+# reproduce complete analysis
+STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI'
+# or use only four states
+#STATES='CA,FL,NY,TX'
 
 mkdir $CWD
   

@@ -1,13 +1,12 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="211121a1"
+STAN_MODEL="211125a"
 CWD="/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/"
 INDIR="/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/"
 #STATES='CA,FL,NY,TX'
 STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI'
-#STATES='CA,FL,IL,GA,OH,MI,NC,NY,PA,TX,NJ,VA,WA,AZ,MA,TN,IN,MD,MO'
-  
+
 mkdir $CWD
 
 cat > $CWD/bash_$STAN_MODEL-$JOBID.pbs <<EOF
