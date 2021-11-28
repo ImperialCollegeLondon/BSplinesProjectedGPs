@@ -517,7 +517,7 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
 
 plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence_dates, var, lab, outdir){
   
-  dummies = c('Counterfactual analysis with proportion of\nvaccinated in age group 18-64 in all\nstates set to be the same as the maximum\nproportion across states', 
+  dummies = c('Counterfactual analysis with higher vaccine\ncoverage in individuals aged 18-64', 
               'Fit to observed data')
   
   data_res1[, dummy := dummies[1]]
