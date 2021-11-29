@@ -293,7 +293,7 @@ generated quantities {
 
     for(c in 1:C){
         intercept_resurgence_counterfactual[c] = rep_row_vector(intercept_resurgence0[c], M) + intercept_resurgence_re[c];
-        slope_resurgence_counterfactual[c] = rep_row_vector(slope_resurgence0[c], M) ;
+        slope_resurgence_counterfactual[c] = rep_row_vector(slope_resurgence0[c], M) + slope_resurgence_re[c];
 
         for(c_prime in 1:C){
             intercept_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c_prime] .* rep_row_vector(vaccine_effect_intercept[c,c_prime], M);

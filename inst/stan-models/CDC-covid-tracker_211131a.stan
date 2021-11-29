@@ -121,9 +121,11 @@ parameters {
   real<lower=0> rho_gp2[M];
 
   real intercept_resurgence0[C];
-  row_vector[M] intercept_resurgence_re[C];
-  real<lower=0> sigma_intercept_resurgence[C];
   real slope_resurgence0[C];
+  row_vector[M] intercept_resurgence_re[C];
+  row_vector[M] slope_resurgence_re[C];
+  real<lower=0> sigma_intercept_resurgence[C];
+  real<lower=0> sigma_slope_resurgence[C];
   real vaccine_effect_intercept[C,C];
   real vaccine_effect_slope[C,C];
   real vaccine_effect_intercept_diagonal;
@@ -192,7 +194,7 @@ transformed parameters {
   
   for(c in 1:C){
     intercept_resurgence[c] = rep_row_vector(intercept_resurgence0[c], M) + intercept_resurgence_re[c];
-    slope_resurgence[c] = rep_row_vector(slope_resurgence0[c], M) ;
+    slope_resurgence[c] = rep_row_vector(slope_resurgence0[c], M) + slope_resurgence_re[c];
 
     for(c_prime in 1:C){
       intercept_resurgence[c] += prop_vac_start[c_prime] .* rep_row_vector(vaccine_effect_intercept[c,c_prime], M);
@@ -222,11 +224,13 @@ model {
   vaccine_effect_slope_diagonal ~ normal(0,0.5);
 
   sigma_intercept_resurgence ~ cauchy(0,1);
+  sigma_slope_resurgence ~ cauchy(0,1);
   sigma_r_pdeaths ~ cauchy(0,1);
 
   for(c in 1:C){
     intercept_resurgence_re[c] ~ normal(0,sigma_intercept_resurgence[c]);
-
+    slope_resurgence_re[c] ~ normal(0,sigma_slope_resurgence[c]);
+  
     vaccine_effect_intercept[c,:] ~ normal(0,0.5);
     vaccine_effect_slope[c,:] ~ normal(0,0.5);
   }
@@ -298,7 +302,7 @@ generated quantities {
 
     for(c in 1:C){
         intercept_resurgence_counterfactual[c] = rep_row_vector(intercept_resurgence0[c], M) + intercept_resurgence_re[c];
-        slope_resurgence_counterfactual[c] = rep_row_vector(slope_resurgence0[c], M) ;
+        slope_resurgence_counterfactual[c] = rep_row_vector(slope_resurgence0[c], M) + slope_resurgence_re[c];
 
         for(c_prime in 1:C){
             intercept_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c_prime] .* rep_row_vector(vaccine_effect_intercept[c,c_prime], M);
