@@ -1749,7 +1749,9 @@ find_vaccine_effects_old <- function(weekly_deaths, vaccine_data, start_resurgen
 }
 
 make_forest_plot_table <- function(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels){
+  
   tmp <- summary[ grepl(paste(paste0('^',names),collapse = '|'),rownames(summary)) ,]
+  tmp <- tmp[!grepl('diagonal', rownames(tmp)),]
   
   variables <- rownames(tmp); group = c()
   for(x in 1:length(variables)) group[x] = groups[which(grepl(gsub('(.+)\\[.*', '\\1', variables[x]), names))]
@@ -1780,6 +1782,43 @@ make_forest_plot_table <- function(summary, df_age_vaccination2, df_state, names
   setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
   
 }
+
+make_forest_plot_table2 <- function(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels){
+  
+  tmp <- summary[ grepl(paste(paste0('^',names),collapse = '|'),rownames(summary)) ,]
+  tmp <- tmp[!grepl('diagonal', rownames(tmp)),]
+  
+  variables <- rownames(tmp); group = c()
+  for(x in 1:length(variables)) group[x] = groups[which(grepl(gsub('(.+)\\[.*', '\\1', variables[x]), names))]
+  for(x in 1:length(names)) variables = gsub(names[x], math_name[x], variables)
+  for(x in df_age_vaccination2$age_index) variables = gsub(paste0('\\[',x), paste0('\\["', df_age_vaccination2$age[x], '"'), variables) 
+  for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables) & !grepl(', ', variables)] = sub(paste0('\\[\"',df_age_vaccination2$age[x]), paste0('\\[\"', df_age_vaccination2$age[-x],', ',df_age_vaccination2$age[x]), variables[grepl('vac', variables) & !grepl(', ', variables)])
+  for(x in df_state$state_index) variables[!grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_state$loc_label[x], '"\\]'), variables[!grepl('vac', variables)]) 
+  
+  variables = gsub('\\+\\+', '\\+', variables)
+  variables = gsub('\\+', 'plus', variables)
+  
+  age1 = gsub('(.+),.*', '\\1', gsub('.*\\["(.+)','\\1', variables))
+  loc1 = gsub('.*, (.+)"\\]','\\1', variables)
+  idx.swap = which(!grepl('\\]', age1) & !grepl('[0-9]', loc1))
+  
+  for(x in 1:length(idx.swap)){
+    
+    variables[idx.swap[x]] = gsub(age1[idx.swap[x]],paste0(age1[idx.swap[x]], '1'), variables[idx.swap[x]])
+    variables[idx.swap[x]] = gsub(loc1[idx.swap[x]],age1[idx.swap[x]], variables[idx.swap[x]])
+    variables[idx.swap[x]] = gsub(paste0(age1[idx.swap[x]], '1'),loc1[idx.swap[x]], variables[idx.swap[x]])
+    
+  }
+  
+  variables = gsub('plus', '+', variables)
+  
+  tmp <- as.data.table(tmp)
+  tmp[, variable := variables]
+  tmp[, group := factor(group, levels = groups_levels)]
+  setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
+  
+}
+
 
 find_vaccine_effects <- function(weekly_deaths, vaccine_data, start_resurgence, pick_resurgence)
 {

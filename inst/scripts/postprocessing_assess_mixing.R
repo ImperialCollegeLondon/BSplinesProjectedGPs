@@ -200,19 +200,43 @@ if(any(c('intercept_resurgence0', 'vaccine_effect_intercept') %in% names_samples
 
 names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept')
 if(any(names %in% names_samples)){
+  
   min_age_index_vac = 3
   df_age_vaccination2 = df_age_vaccination[age_index >= 3]
   df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
   
-  math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vac"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vac"*""')
+  math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vacc"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc"*""')
   groups = c('slope', 'slope', 'vaccination\neffect\nslope', 'intercept', 'intercept', 'vaccination\neffect\nintercept')
   groups_levels = c('intercept', 'slope', 'vaccination\neffect\nintercept', 'vaccination\neffect\nslope')
   
-  tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
-  plot_forest_plot(tmp, outdir.fig)
+  if(!('vaccine_effect_intercept_cross' %in% names_samples)){
 
+    tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
+
+    
+  } else{
+    names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept_cross')
+    
+    tmp <- make_forest_plot_table2(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
+
+  }
+  
+  forest_plot <- plot_forest_plot(tmp, outdir.fig)
+  
 }
 
+names = c('vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
+if(any(names %in% names_samples)){
+
+  math_name = c('chi^"vacc-cross"*""', 'psi^"vacc-cross"*""')
+
+  tmp <- as.data.table(summary[ grepl(paste(paste0('^',names),collapse = '|'),rownames(summary)) ,])
+  setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
+  tmp[, variable := math_name]
+  
+  plot_forest_plot_with_common_effect(forest_plot, tmp, outdir.fig)
+
+}
 
 cat("\n End postprocessing_assess_mixing.R \n")
 

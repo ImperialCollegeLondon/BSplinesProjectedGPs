@@ -630,8 +630,9 @@ plot_forest_plot <- function(tmp, outdir){
           axis.title.y = element_blank(),
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
-          title = element_text(size = rel(0.8))) +
-  ggtitle("Effects on the relative rates among 18-64")
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5)) +
+  ggtitle("Effects on the relative rates\namong 18-64")
   
   tmp1 = subset(tmp, grepl('\\["65', variable) | (grepl('65\\+"\\]', variable) & !grepl('\\["18-64', variable)))
   p2 <- ggplot(tmp1, aes(y = variable)) + 
@@ -645,11 +646,38 @@ plot_forest_plot <- function(tmp, outdir){
           axis.title.y = element_blank(),
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
-          title = element_text(size = rel(0.8)))+
-    ggtitle("Effects on the relative rates among 65+")
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5))+
+    ggtitle("Effects on the relative rates\namong 65+")
   
   p <- ggarrange(p1, p2, ncol = 2)
   ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 7)
+  
+  return(p)
+}
+
+plot_forest_plot_with_common_effect <- function(forest_plot_without_common_effect, tmp, outdir){
+  
+  p1 <- ggplot(tmp, aes(y = variable)) + 
+    geom_point(aes(x = M)) + 
+    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed') + 
+    scale_y_discrete(labels = label_parse(), limits=rev) + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5))+
+    ggtitle("Common effects on the relative rates\nacross 18-64 and 65+")
+  
+  p2 <- grid.arrange(forest_plot_without_common_effect, p1, 
+                     layout_matrix = rbind(c(1, 1, 1),
+                                           c(NA, 2, NA)),
+                     heights = c(1, 0.2))
+  ggsave(p2, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 8)
+  
   
 }
 
