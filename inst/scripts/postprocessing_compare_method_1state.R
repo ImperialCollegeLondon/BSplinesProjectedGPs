@@ -7,8 +7,8 @@ library(ggpubr)
 
 indir = "~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = '~/git/BSplinesProjectedGPs/inst/results'
-stan_model = c('211031c2', '211031d2', '211031e2', '211031b2')
-JOBID = c(20426, 20145, 19986, 4715)
+stan_model = c('211031c2', '211125c', '211125d', '211125a')
+JOBID = c(20426, 2224, 12164, 11969)
 model_name = c('Standard 2D GP', 'Standard B-splines\nsurface', 'P-splines surface', 'Regularised B-splines\nprojected 2D GP')
 
 # load functions
@@ -100,11 +100,12 @@ for(i in seq_along(JOBID)){
   LOO[[i]] = readRDS( paste0(outdir[i], "-LOO.rds") )
 }
 
-loo_compare(LOO)
-
-tmp = loo_compare(LOO[[1]], LOO[[4]])
+tmp = loo_compare(LOO)
 tmp = gsub(" ", "", format( round(tmp, digits = 2), nsmall = 2) )
-saveRDS(tmp, file = paste0(outdir[4], "-LOO_comp.rds"))
+tmp1 = data.table(tmp)
+tmp1[, model_idx := as.numeric(gsub('model(.+)', '\\1', rownames(tmp)))]
+tmp1 = tmp1[ order(model_idx)]
+saveRDS(tmp1, file = paste0(outdir[4], "-LOO_comp.rds"))
 
 #
 # time of execution
@@ -116,5 +117,5 @@ time = do.call('rbind', time)
 time = data.table(time = round(time[,1] / time[4,1], 2), method = model_name)
 saveRDS(time, file = paste0(outdir[4], "-time_execution_com.rds"))
 
-time[,1] / 60 / 60 / 8
+
 
