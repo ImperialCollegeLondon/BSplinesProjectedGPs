@@ -82,7 +82,6 @@ parameters {
   real<lower=0> nu_unscaled[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
   matrix[num_basis_rows,num_basis_columns] beta[M];
-  real<lower=0> alpha_gp[M];
 
   real intercept_resurgence0[C];
   row_vector[M] intercept_resurgence_re[C];
@@ -167,8 +166,6 @@ model {
   
   nu_unscaled ~ normal(0,1);
 
-  alpha_gp ~ cauchy(0,1);
-
   intercept_resurgence0 ~ normal(0,0.5);
   sigma_intercept_resurgence ~ cauchy(0,1);
   slope_resurgence0 ~ normal(0,0.5);
@@ -183,7 +180,7 @@ model {
 
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
-      beta[:,i,j] ~ normal(0,alpha_gp);
+      beta[:,i,j] ~ normal(0,1);
     }
   }
   
