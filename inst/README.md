@@ -37,7 +37,7 @@ Note the correspondence between the stan model ID and the model,
 |-----------|------------------------------------------------------|
 | 210429h1   | Standard Gaussian Process |
 | 210529d     | Standard B-splines |
-| 210529b | Gaussian Process projected by regularized B-splines  |
+| 210529b | Regularised B-splines projected Gaussian Process  |
 
 For example, if you wish to use a standard Gaussian Process, specify
 ```bash

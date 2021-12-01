@@ -23,7 +23,7 @@ Please note the correspondence between the model ID and the method used
 |-----------|------------------------------------------------------|
 | B-SPLINES_2D   | Standard B-splines |
 | P-SPLINES_2D  | Bayesian P-splines |
-| GP-B-SPLINES_2D     | Gaussian Process projected by regularized B-splines  |
+| GP-B-SPLINES_2D     | Regularised B-splines projected Gaussian Process  |
 
 For example, if you wish to use standard B-splines specify, 
 ```R
