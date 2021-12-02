@@ -206,8 +206,8 @@ if(any(names %in% names_samples)){
   df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
   
   math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vacc"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc"*""')
-  groups = c('slope', 'slope', 'vaccination\neffect\nslope', 'intercept', 'intercept', 'vaccination\neffect\nintercept')
-  groups_levels = c('intercept', 'slope', 'vaccination\neffect\nintercept', 'vaccination\neffect\nslope')
+  groups = c('slope', 'slope', 'vaccine\neffect\nslope', 'baseline', 'baseline', 'vaccine\neffect\nintercept')
+  groups_levels = c('baseline', 'slope', 'vaccine\neffect\nintercept', 'vaccine\neffect\nslope')
   
   if(!('vaccine_effect_intercept_cross' %in% names_samples)){
 
@@ -216,6 +216,7 @@ if(any(names %in% names_samples)){
     
   } else{
     names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept_cross')
+    math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vacc-cross"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc-cross"*""')
     
     tmp <- make_forest_plot_table2(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
 
@@ -228,7 +229,7 @@ if(any(names %in% names_samples)){
 names = c('vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
 if(any(names %in% names_samples)){
 
-  math_name = c('chi^"vacc-cross"*""', 'psi^"vacc-cross"*""')
+  math_name = c('chi^"vacc"*""', 'psi^"vacc"*""')
 
   tmp <- as.data.table(summary[ grepl(paste(paste0('^',names),collapse = '|'),rownames(summary)) ,])
   setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
