@@ -205,7 +205,7 @@ if(any(names %in% names_samples)){
   df_age_vaccination2 = df_age_vaccination[age_index >= 3]
   df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
   
-  math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vacc"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc"*""')
+  math_name = c('psi^"base"*""', 'psi^"state"*""', 'psi^"vacc"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc"*""')
   groups = c('slope', 'slope', 'vaccine\neffect\nslope', 'baseline', 'baseline', 'vaccine\neffect\nintercept')
   groups_levels = c('baseline', 'slope', 'vaccine\neffect\nintercept', 'vaccine\neffect\nslope')
   
@@ -216,7 +216,7 @@ if(any(names %in% names_samples)){
     
   } else{
     names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept_cross')
-    math_name = c('psi^"base"*""', 'psi^"state"""*', 'psi^"vacc-cross"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc-cross"*""')
+    math_name = c('psi^"base"*""', 'psi^"state"*""', 'psi^"vacc-cross"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc-cross"*""')
     
     tmp <- make_forest_plot_table2(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
 
