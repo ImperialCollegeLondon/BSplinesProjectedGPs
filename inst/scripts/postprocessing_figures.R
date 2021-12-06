@@ -169,8 +169,7 @@ if(length(Code) > 6){
   mid_code = round(length(Code) / 2)
   plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[1:mid_code]), subset(r_pdeaths_predict, code %in% Code[1:mid_code]), '_part_1', outdir.fig)
   plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[(1+mid_code):(mid_code*2)]), subset(r_pdeaths_predict, code %in% Code[(1+mid_code):(mid_code*2)]), '_part_2', outdir.fig)
-}
-else{
+} else{
   plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
 }
 
