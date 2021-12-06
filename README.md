@@ -1,9 +1,11 @@
-# Regularised B-splines projected Gaussian Process priors to estimate the age profile of COVID-19 deaths before and after vaccine roll-out
+# Regularised B-splines projected Gaussian Process priors to estimate time-trends of age-specific COVID-19 deaths related to vaccine roll-out
 
-Mélodie Monod, Alexandra Blenkinsop, Andrea Brizzi, Yu Chen, Vidoushee Jogarah, Yuanrong Wang, Samir Bhatt and Oliver Ratmann (2021). Regularised B-splines projected Gaussian Process priors to estimate the age profile of COVID-19 deaths before and after vaccine roll-out, http://arxiv.org/abs/2106.12360.
+Mélodie Monod, Alexandra Blenkinsop, Andrea Brizzi, Yu Chen, Vidoushee Jogarah, Yuanrong Wang, Samir Bhatt and Oliver Ratmann (2021). Regularised B-splines projected Gaussian Process priors to estimate time-trends of age-specific COVID-19 deaths related to vaccine roll-out, http://arxiv.org/abs/2106.12360.
 
 ## Abstract
-The COVID-19 pandemic has caused severe public health consequences in the United States. The United States began a vaccination campaign at the end of 2020 targeting primarily elderly residents before extending access to younger individuals. With both COVID-19 infection fatality ratios and vaccine uptake being heterogeneous across ages, an important consideration is whether the age contribution to deaths shifted over time towards younger age groups. In this study, we use a Bayesian non-parametric spatial approach to estimate the age-specific contribution to COVID-19 attributable deaths over time. The proposed spatial approach is a low-rank Gaussian Process projected by regularised B-splines. Simulation analyses and benchmark results show that the spatial approach performs better than a standard B-splines approach and equivalently well as a standard Gaussian Process, for considerably lower runtimes. We find that COVID-19 has been especially deadly in the United States. The mortality rates among individuals aged 85+ ranged from 1\% to 5\% across the US states. Since the beginning of the vaccination campaign, the number of weekly deaths reduced in every US state with a faster decrease among individuals aged 75+ than individuals aged 0-74. Simultaneously to this reduction, the contribution of individuals age 75+ to deaths decreased, with important disparities in the timing and rapidity of this decrease across the country.
+The COVID-19 pandemic has caused severe public health consequences in the United States.
+In this study, we use a hierarchical Bayesian model to estimate the age-specific COVID-19 attributable deaths over time in the United States. The model is specified by a novel non-parametric spatial approach, a low-rank Gaussian Process (GP) projected by regularised B-splines. We show that this projection defines a new GP with attractive smoothness and computational efficiency properties, derive its kernel function, and discuss the penalty terms induced by the projected GP. Simulation analyses and benchmark results show that the spatial approach performs better than standard B-splines and Bayesian P-splines and equivalently well as a standard GP, for considerably lower runtimes. The B-splines projected GP priors that we develop are likely an appealing addition to the arsenal of Bayesian regularising priors.
+We apply the model to weekly, age-stratified COVID-19 attributable deaths reported by the US Centers for Disease Control, which are subject to censoring and reporting biases. Using the B-splines projected GP, we can estimate longitudinal trends in COVID-19 associated deaths across the US by 1-year age bands. These estimates are instrumental to calculate age-specific mortality rates, describe variation in age-specific deaths across the US, and for fitting epidemic models. Here, we couple the model with age-specific vaccination rates to show that lower vaccination rates in younger adults aged 18-64 are associated with significantly stronger resurgences in COVID-19 deaths, especially in Florida and Texas. These results underscore the critical importance of medically able individuals of all ages to be vaccinated against COVID-19 in order to limit fatal outcomes. 
 
 ## About this repository
 | Folder    | Description |
@@ -12,7 +14,7 @@ The COVID-19 pandemic has caused severe public health consequences in the United
 | inst | Reproduce the result of the "Real data analysis" section  |
 | simulations      | Reproduce the result of the "Simulations" section |
 | predictions | Reproduce the results of the "Real world benchmarks" |
-| results | Median and 95\% credible interval of the age-specific COVID-19 attributable deaths predicted by our approach |
+| inst/results | Median and 95\% credible interval of the age-specific COVID-19 attributable deaths predicted by our approach |
 
 
 
@@ -36,4 +38,4 @@ Imperial makes no representation or warranty about the accuracy or completeness 
 ## Cite
 
 Please cite 
-* M Monod et al. Regularised B-splines to quantify population-level trends in the age composition of COVID-19 attributable deaths before and after the 2021 vaccine drive in the United States.
+* M Monod et al. Regularised B-splines projected Gaussian Process priors to estimate time-trends of age-specific COVID-19 deaths related to vaccine roll-out. (2021)
