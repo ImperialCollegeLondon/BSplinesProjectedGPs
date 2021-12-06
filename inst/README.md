@@ -35,13 +35,14 @@ STAN_MODEL="stanmodelid"
 Note the correspondence between the stan model ID and the model, 
 | stan model id    | Model |
 |-----------|------------------------------------------------------|
-| 210429h1   | Standard Gaussian Process |
-| 210529d     | Standard B-splines |
-| 210529b | Regularised B-splines projected Gaussian Process  |
+| 211201a | Regularised B-splines projected Gaussian Process  |
+| 211201b   | Standard Gaussian Process |
+| 211201c     | Standard B-splines |
+| 211201d     | Bayesian P-splines |
 
 For example, if you wish to use a standard Gaussian Process, specify
 ```bash
-STAN_MODEL="210429h1"
+STAN_MODEL="211201b"
 ```
 
 ### Usage on a laptop
