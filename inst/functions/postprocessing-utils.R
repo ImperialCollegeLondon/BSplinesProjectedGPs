@@ -7,7 +7,7 @@ check_all_diagnostics <- function(fit, outdir) {
   
   cat('\nn_div',n_div, '\n' )
   cat('\nn_treedepth',n_treedepth, '\n' )
-  saveRDS(list(n_div,n_treedepth), file=paste0(outdir,'-diagnostics_', Code, '.rds'))
+  saveRDS(list(n_div,n_treedepth), file=paste0(outdir,'-diagnostics.rds'))
 }
 
 check_treedepth <- function(fit, max_depth = 10) {

@@ -1,8 +1,7 @@
-library(rstan)
 library(data.table)
 library(dplyr)
 
-indir = "~/git/covid19Vaccination" # path to the repo
+indir = "~/git/BSplinesProjectedGPs" # path to the repo
 outdir = file.path(indir, 'inst', "data")
 
 # load functions
@@ -35,8 +34,8 @@ deathByAge_res[!is.na(weekly.deaths), sum.weekly.deaths := NA]
 
 # all weekly deaths are 0 on 2020-06-27 --> repeated update
 # 2020-07-04 and 2020-06-27 are missing
+# deathByAge_res[, list(sum(na.omit(weekly.deaths))), by = 'date']
 all(na.omit(subset(deathByAge_res, date == "2020-06-27")$weekly.deaths == 0))
 deathByAge_res = subset(deathByAge_res, !date %in% c(as.Date("2020-07-04"), as.Date("2020-06-27")))
 
 saveRDS(deathByAge_res, file.path(outdir, paste0('CDC-data_', last.week, '.rds')))
-

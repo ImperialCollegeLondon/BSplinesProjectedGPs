@@ -5,32 +5,35 @@
 | data      | Training and test datasets  |
 
 
-## System Requirements
-- [R](https://www.r-project.org/) version >= 3.6.1
-
-
 ## Instruction 
 
 ### Header
-In ```run_predictions.R```, specify the repository directory, the directory to store the results and the model under
-```bash
+In the Rscript ```run_predictions.R```, specify 
+* the repository directory ```indir```, 
+* the directory to store the results ```outdir``` and,
+* the model ID ```model``` 
+with
+```R
 indir = "repositorydirectory" 
 outdir = "resultsdirectory"
 model = "modelid"
 ```
-Please note the correspondence between the model ID and the the model
-| Model ID    | Mode |
+Please note the correspondence between the model ID and the method used
+| Model ID    | Method |
 |-----------|------------------------------------------------------|
-| BS-GP-I   | Standard B-splines |
-| BS-GP-SE      | Gaussian Process projected by regularized B-splines  |
+| B-SPLINES_2D   | Standard B-splines |
+| P-SPLINES_2D  | Bayesian P-splines |
+| GP-B-SPLINES_2D     | Regularised B-splines projected Gaussian Process  |
 
-For example, if you want to use standard B-splines, please specify, 
-```bash
-model = "BS-GP-I"
+For example, if you wish to use standard B-splines specify, 
+```R
+model = "B-SPLINES_2D"
 ```
 
 ### Usage
-To run the predictions, from the command line use
+From the repository directory, on the terminal console execute, 
 ```bash
+$ source activate BSplinesProjectedGPs
+$ cd predictions/
 $ Rscript run_predictions.R
 ``` 

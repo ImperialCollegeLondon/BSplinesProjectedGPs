@@ -1,6 +1,7 @@
 
-statistics_contributionref_all_states = function(contribution_ref_adj){
+statistics_contributionref_all_states = function(contribution_ref_adj, outdir){
   
+
   tmp = copy( subset(contribution_ref_adj, !code %in% c('HI', 'VT', 'AK')))
   tmp = tmp[order(M, decreasing = T)]
   statemax80 = tmp[age == '85+', list(loc_label = loc_label, 
@@ -36,16 +37,7 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
   average2554 = tmp[age == '25-54',list(paste0(round(mean(M)*100, 2), '\\%'), 
                                         paste0(round(mean(CL)*100, 2), '\\%'),
                                         paste0(round(mean(CU)*100, 2), '\\%'))]
-  
-  tmp = contribution_ref_adj[, list(M = mean(M), CL = mean(CL), CU = mean(CU)), by = c('age', 'division')]
-  
-  tmp = tmp[order(M, decreasing = T)]
-  divisionmax80 = tmp[age == '85+',division][1:2]
-  divisionmax5574 = tmp[age == '55-74',division][1:2]
-  
-  tmp = tmp[order(M, decreasing = F)]
-  divisionmin80 = tmp[age == '85+',division][1:2]
-  divisionmin5574 = tmp[age == '55-74',division][1:2]
+
 
   
   contribution_baseline = list(statemax85 = statemax80, statemin85 = statemin80, 
@@ -53,66 +45,55 @@ statistics_contributionref_all_states = function(contribution_ref_adj){
                                average85 = average80, average7584 = average7584, average5574 = average5574, 
                                average2554 = average2554, average024 = average024)
   
-  return(contribution_baseline)
+  saveRDS(contribution_baseline, file = paste0(outdir, '-contribution_ref_adj_stats.rds'))
+  
+  # return(contribution_baseline)
 }
 
-find_regime_state = function(contribution75, vaccinedata_state, rm_states, outdir){
+find_regime_state = function(contribution75, vaccine_data, resurgence_dates, date_before_vaccine, outdir){
   
-  locs = unique(contribution75$code)
-  
-  tmp = merge(vaccinedata_state, contribution75, by = c('date', 'loc_label'))
-  
-  date_break= as.Date('2021-05-01')
-  date_before_vaccine = min(tmp$date)
+  delay = 2*7
   
   contribution_stats = list()
+  
   contribution_stats[['date_before']] = format(date_before_vaccine,  '%B %d, %Y')
-  contribution_stats[['date_break']] = format(date_break,  '%B %d, %Y')
+  contribution_stats[['start_resurgence']] = format(min(resurgence_dates$start_resurgence),  '%B %d, %Y')
   
-  # find states slow, fast, plateau
-  beta = vector(mode = 'list', length = length(locs))
-  for(i in seq_along(locs)){
-    y = subset(contribution75, code == locs[i] & date >= date_before_vaccine & date < date_break)$M
-    x = 1:length(y)
-    fit1 = lm(y ~ x)
-    
-    y = subset(contribution75, code == locs[i] & date >= date_break)$M
-    x = 1:length(y)
-    fit2 = lm(y ~ x)
-    
-    beta[[i]] = data.table(code = locs[i], loc_label = region_name[code == locs[i], loc_label],
-                           betatot = fit1$coefficients[2],  betalast = fit2$coefficients[2])
-  }
-  beta = do.call('rbind', beta)
-  beta =  subset(beta, !code %in% rm_states)
-  
-  plateau = beta[betalast > 0, loc_label]
-  beta = beta[order(betatot, decreasing = T)]
-  slowd = beta[betatot > summary(beta$betatot)[5],  loc_label][1:5]
-  beta = beta[order(betatot)]
-  fastd = beta[betatot < summary(beta$betatot)[2],  loc_label][1:5]
-  
-  contribution_stats[['plateau']] = paste0(paste0(plateau[-length(plateau)], collapse = ', '), ' and ', plateau[length(plateau)])
-  contribution_stats[['slowd']] = paste0(paste0(slowd[-length(slowd)], collapse = ', '), ' and ', slowd[length(slowd)])
-  contribution_stats[['fastd']] = paste0(paste0(fastd[-length(fastd)], collapse = ', '), ' and ', fastd[length(fastd)])
+  contribution75 = merge(contribution75, resurgence_dates, by = 'code')
   
   con_bv = contribution75[date == date_before_vaccine, list(paste0(round(mean(M)*100, 2), '\\%'), 
                                                    paste0(round(mean(CL)*100, 2), '\\%'),
-                                                   paste0(round(mean(CU)*100, 2), '\\%'))]
+                                                   paste0(round(mean(CU)*100, 2), '\\%')), by = 'age']
   
-  con_a = contribution75[date == date_break, list(paste0(round(mean(M)*100, 2), '\\%'), 
+  con_a = contribution75[date == start_resurgence-delay, list(paste0(round(mean(M)*100, 2), '\\%'), 
                                                    paste0(round(mean(CL)*100, 2), '\\%'),
-                                                   paste0(round(mean(CU)*100, 2), '\\%'))]
+                                                   paste0(round(mean(CU)*100, 2), '\\%')), by = 'age']
   contribution_stats[['con_bv']] = con_bv
   contribution_stats[['con_a']] = con_a
   
-  tmp = tmp[date <= date_break]
-  fit = lm(M ~ prop_vaccinated_1dosep, data = tmp)
-  coefficients = fit$coefficients
-  coefficients = c(coefficients, rev(confint(fit, 'prop_vaccinated_1dosep', level=0.95)))
   
-  contribution_stats[['date_vacs']] = format(min(tmp$date),  '%B %d, %Y')
-  contribution_stats[['beta']] = -round(coefficients, digits =2)
+  # find vaccine effect
+  vaccine_data_sum = vaccine_data[age >= 18, list(prop = mean(prop)), by = c('code', 'date')]
+  vaccine_data_sum[, date := date + delay]
+  contribution75 = merge(contribution75, vaccine_data_sum, by = c('code', 'date'))
+  
+  beta = contribution75[, {
+    M100 = M * 100
+    prop100 = prop* 100
+    fit1 <- lm(M100 ~ prop100)
+    list(betap = fit1$coefficients[2])}, by = c('code', 'loc_label', 'age')]
+  
+  beta1 = beta[, list(beta_M = median(betap), 
+                     beta_CL = quantile(betap, probs = 0.025), 
+                     beta_CU = quantile(betap, probs = 0.975)), by = 'age']
+  
+  beta2 = beta[, list(min_state = loc_label[betap == min(betap)],
+                      max_state = loc_label[betap == max(betap)]), by = 'age']
+  
+  contribution_stats[['beta']] = beta1[age == '65+', list(beta_M = -round(beta_M*10,2),
+                                                         beta_CL = -round(beta_CU*10,2),
+                                                         beta_CU = -round(beta_CL*10, 2))]
+  contribution_stats[['state_r']] = beta2
   
   saveRDS(contribution_stats, file = paste0(outdir, '-contribution_vaccination_stats.rds'))
   
@@ -212,5 +193,103 @@ find_statistics_weekly_deaths = function(death, propdeath, deathpost, deathpost2
   saveRDS(death_stats, file = paste0(outdir, '-absolutedeaths.rds'))
   
   return(death_stats)
+}
+
+find_statistics_mortality_rate <- function(mortality_rate, outdir){
+  max_date = format(unique(mortality_rate$date), '%B %d, %Y')
+  dold2p = mortality_rate[age == '85+' & M > 0.025, loc_label]
+  dold2p_n = paste0(paste0(dold2p[-length(dold2p)], collapse = ', '), ' and ', dold2p[length(dold2p)])
+  state_max = mortality_rate[age == '85+',]
+  state_max = state_max[order(M, decreasing = T)]
+  state_max = state_max[,loc_label][1]
+  # state_max = paste0(paste0(state_max[-length(state_max)], collapse = ', '), ' and ', state_max[length(state_max)])
+  
+  d5574 = mortality_rate[age == '55-74',paste0(round((median(M)*100),2),'\\%')]
+  d7584 = mortality_rate[age == '75-84',paste0(round((median(M)*100),0),'\\%')]
+  
+  mortality_stats = list(max_date = max_date, nstates2p = length(dold2p), dold2p_n,
+                         state_max, d5574, d7584)
+  saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
+}
+
+find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res4, prop_vac, resurgence_dates, outdir){
+  
+  data_res1 = merge(data_res1, resurgence_dates, by = 'code')
+  prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
+  data_res2 = merge(data_res2, resurgence_dates, by = 'code')
+  
+  stat = list(format(c(min(resurgence_dates$start_resurgence), max(resurgence_dates$stop_resurgence)),  '%B %d, %Y'),
+              subset(data_res1, date == stop_resurgence)[, list(M = round(M), 
+                                                                CL = round(CU), 
+                                                                CU = round(CL)), by = c('age', 'loc_label')],
+              subset(prop_vac, date == start_resurgence)[, list(min_3 = paste0(round(min(prop_1*100), 2), '\\%'),
+                                                                                                   max_3 = paste0(round(max(prop_1*100), 2), '\\%'),
+                                                                                                   min_4 = paste0(round(min(prop_2*100), 2), '\\%'),
+                                                                                                   max_4 = paste0(round(max(prop_2*100), 2), '\\%'))],
+              subset(data_res2, date == stop_resurgence)[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round(CU*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('age', 'loc_label')],
+              subset(data_res3, week_index == max(week_index))[, list(M = round(M), 
+                                                                CL = round(CU), 
+                                                                CU = round(CL)), by = c('age')],
+              subset(data_res4, week_index == max(week_index))[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round(CU*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('age')]
+              
+              )
+  saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
+  
+  return(stat)
+}
+
+find_stats_vaccine_effects_old <- function(data_res1, data_res2, prop_vac, resurgence_dates, outdir){
+  
+  data_res1 = merge(data_res1, resurgence_dates, by = 'code')
+  prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
+  data_res2 = merge(data_res2, resurgence_dates, by = 'code')
+  
+  stat = list(format(c(min(resurgence_dates$start_resurgence), max(resurgence_dates$stop_resurgence)),  '%B %d, %Y'),
+              subset(data_res1, date == stop_resurgence)[, list(M = round(M), 
+                                                                CL = round(CU), 
+                                                                CU = round(CL)), by = c('age', 'loc_label')],
+              subset(prop_vac, date == start_resurgence)[, list(min_3 = paste0(round(min(prop_1*100), 2), '\\%'),
+                                                                max_3 = paste0(round(max(prop_1*100), 2), '\\%'),
+                                                                min_4 = paste0(round(min(prop_2*100), 2), '\\%'),
+                                                                max_4 = paste0(round(max(prop_2*100), 2), '\\%'))],
+              subset(data_res2, date == stop_resurgence)[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round(CU*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('age', 'loc_label')]
+              
+  )
+  saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
+  
+  return(stat)
+}
+
+
+find_prop_deaths_vaccine_statistics <- function(propdeath3, start_vaccine, start_resurgence, outdir){
+  
+  dmean75 = propdeath3[age == '75+', list(M = paste0(format(round((- mean(M))*100, 2), nsmall = 2), '\\%'), 
+                                          CL = paste0(format(round((-mean(CU))*100, 2), nsmall = 2), '\\%'),
+                                          CU = paste0(format(round((-mean(CL))*100, 2), nsmall = 2), '\\%'))]
+  dmean5574 = propdeath3[age == '55-74', list(M = paste0(format(round((- mean(M))*100, 2), nsmall = 2), '\\%'), 
+                                              CL = paste0(format(round((-mean(CU))*100, 2), nsmall = 2), '\\%'),
+                                              CU = paste0(format(round((-mean(CL))*100, 2), nsmall = 2), '\\%'))]
+  dmean054 = propdeath3[age == '0-54', list(M = paste0(format(round((- mean(M))*100, 2), nsmall = 2), '\\%'), 
+                                            CL = paste0(format(round((-mean(CU))*100, 2), nsmall = 2), '\\%'),
+                                            CU = paste0(format(round((-mean(CL))*100, 2), nsmall = 2), '\\%'))]
+  # state fastest and slowest
+  sf75 = propdeath3[order(M, decreasing = T) & age == '75+', list(loc_label = loc_label, 
+                                                                  M = paste0(format(round((- M)*100, 2), nsmall = 2), '\\%'), 
+                                                                  CL = paste0(format(round((-CU)*100, 2), nsmall = 2), '\\%'),
+                                                                  CU = paste0(format(round((-CL)*100, 2), nsmall = 2), '\\%')), by = 'loc_label'][c(1,length(locs))]
+  
+  
+  tmp <- list(format(c(start_vaccine, start_resurgence-7),  '%B %d, %Y'), 
+              as.numeric( (start_resurgence-7 - start_vaccine) / 7 - 1 ),
+              list(dmean75, dmean5574, dmean054), 
+              sf75)
+  
+  saveRDS(tmp, paste0(outdir, '-prop_red_deaths_vaccine.rds'))
 }
 
