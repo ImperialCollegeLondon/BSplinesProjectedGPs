@@ -14,9 +14,9 @@ library(jcolors)
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-states = strsplit('CA,FL,NY,TX',',')[[1]]
-stan_model = "211031d2"
-JOBID = 20145
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+stan_model = "211201a"
+JOBID = 2047
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -127,96 +127,90 @@ make_weekly_death_rate_other_source(fit_cum, df_week, JHUData,  'alpha', df_age_
                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
 
-# vaccine effect
-if(!is.null(stan_data$prop_vac)){
-  
-  min_age_index_vac = 3
-  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
-  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
-  
-  df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
-  df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
-  df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
-  df_week2[, week_index := 1:length(date), by = 'code']
-  df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
-  df_week2 = df_week2[order(code)]
-  df_week = select(df_week, -dummy)
-  # df_state =  select(df_state, -dummy)
-  
-  stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-  prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2)
-  
-  make_var_by_age_by_state_table(fit_cum, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
-  
-  E_pdeaths_cum_predict = make_var_cum_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths_predict', outdir.table)
-  E_pdeaths_cum_counterfactual = make_var_cum_by_age_table_counterfactual(fit_cum, df_week, df_week2, resurgence_dates, df_age_vaccination2, c('E_pdeaths_predict', 'E_pdeaths_counterfactual'), outdir.table)
-  plot_vaccine_effects_counterfactual(E_pdeaths_cum_counterfactual, E_pdeaths_cum_predict, resurgence_dates, 'cumulative', 'cumulative', outdir.fig)
-  
-  E_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week, df_age_vaccination2, df_state, 'E_pdeaths_predict', outdir.table)
-  E_pdeaths_counterfactual = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual', outdir.table)
-  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths_predict, resurgence_dates, 'weekly', 'weekly', outdir.fig)
-  
-  E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
-  E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
-  plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
-                                      subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
-  if(any(!Code %in% selected_code)){
-    plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
-                                        subset(E_pdeaths_predict_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
-    
-  }
-  
-  
-  E_pdeaths_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_resurgence_cumulative', outdir.table)
-  plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
-                                      subset(E_pdeaths_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_real_rperiod_selected_states', outdir.fig)
-  if(any(!Code %in% selected_code)){
-    plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
-                                        subset(E_pdeaths_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_real_rperiod', outdir.fig)
-    
-  }
-  
-  diff_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual_all', outdir.table)
-  perc_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'perc_E_pdeaths_counterfactual_all', outdir.table)
-  
-  diff_E_pdeaths_counterfactual = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'diff_E_pdeaths_counterfactual', outdir.table)
-  perc_E_pdeaths_counterfactual = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'perc_E_pdeaths_counterfactual', outdir.table)
-  plot_vaccine_effects_counterfactual_stat(diff_E_pdeaths_counterfactual, resurgence_dates, 'difference', outdir.fig)
-  plot_vaccine_effects_counterfactual_stat(perc_E_pdeaths_counterfactual, resurgence_dates, 'percentage', outdir.fig)
-  find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all, prop_vac, resurgence_dates, outdir.table)
-  
-  r_pdeaths = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
-  plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
-  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig)
-  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig)
-  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig, '_selected_states')
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
-  
-  if(length(Code) > 6){
-    plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
-  }
-  
-  log_r_pdeaths = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'log_r_pdeaths', outdir.table)
-  log_r_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'log_r_pdeaths_predict', outdir.table)
-  
-  r_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'r_pdeaths_predict', outdir.table)
-  if(length(Code) > 6){
-    mid_code = round(length(Code) / 2)
-    plot_PPC_relative_resurgence(subset(log_r_pdeaths, code %in% Code[1:mid_code]), subset(log_r_pdeaths_predict, code %in% Code[1:mid_code]), '_log_part_1', outdir.fig)
-    plot_PPC_relative_resurgence(subset(log_r_pdeaths, code %in% Code[(1+mid_code):(mid_code*2)]), subset(log_r_pdeaths_predict, code %in% Code[(1+mid_code):(mid_code*2)]), '_log_part_2', outdir.fig)
-    plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[1:mid_code]), subset(r_pdeaths_predict, code %in% Code[1:mid_code]), '_part_1', outdir.fig)
-    plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[(1+mid_code):(mid_code*2)]), subset(r_pdeaths_predict, code %in% Code[(1+mid_code):(mid_code*2)]), '_part_2', outdir.fig)
-  }
-  else{
-    plot_PPC_relative_resurgence(log_r_pdeaths, log_r_pdeaths_predict, '_log', outdir.fig)
-    plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
-  }
+# p-value vaccine effects
+names = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
+save_p_value_vaccine_effects(fit_cum, names, outdir.table)
 
-  plot_slope_by_prop(log_r_pdeaths, prop_vac, outdir.fig)
+# table for plotting vaccine effects
+min_age_index_vac = 3
+df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+
+df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
+df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
+df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
+df_week2[, week_index := 1:length(date), by = 'code']
+df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
+df_week2 = df_week2[order(code)]
+df_week = select(df_week, -dummy)
+
+stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
+prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2)
+
+# phi during vaccine 
+make_var_by_age_by_state_table(fit_cum, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
+
+# plot resurgence
+r_pdeaths = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
+plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
+plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig)
+plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
+plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig)
+plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
+plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, T, outdir.fig, '_selected_states')
+plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
+
+if(length(Code) > 6){
+  plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
 }
 
+r_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'r_pdeaths_predict', outdir.table)
+if(length(Code) > 6){
+  mid_code = round(length(Code) / 2)
+  plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[1:mid_code]), subset(r_pdeaths_predict, code %in% Code[1:mid_code]), '_part_1', outdir.fig)
+  plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[(1+mid_code):(mid_code*2)]), subset(r_pdeaths_predict, code %in% Code[(1+mid_code):(mid_code*2)]), '_part_2', outdir.fig)
+}
+else{
+  plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
+}
+
+  
+# plot counterfactual analysis
+E_pdeaths_cum_predict = make_var_cum_by_age_table(fit_cum, df_week, df_age_vaccination2, 'E_pdeaths_predict', outdir.table)
+E_pdeaths_cum_counterfactual = make_var_cum_by_age_table_counterfactual(fit_cum, df_week, df_week2, resurgence_dates, df_age_vaccination2, c('E_pdeaths_predict', 'E_pdeaths_counterfactual'), outdir.table)
+plot_vaccine_effects_counterfactual(E_pdeaths_cum_counterfactual, E_pdeaths_cum_predict, resurgence_dates, 'cumulative', 'cumulative', outdir.fig)
+
+E_pdeaths_predict = make_var_by_age_by_state_table(fit_cum, df_week, df_age_vaccination2, df_state, 'E_pdeaths_predict', outdir.table)
+E_pdeaths_counterfactual = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual', outdir.table)
+plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual, E_pdeaths_predict, resurgence_dates, 'weekly', 'weekly', outdir.fig)
+
+E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
+E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
+plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
+                                    subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
+if(any(!Code %in% selected_code)){
+  plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
+                                      subset(E_pdeaths_predict_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
+  
+}
+
+E_pdeaths_resurgence_cumulative = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_resurgence_cumulative', outdir.table)
+plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
+                                    subset(E_pdeaths_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_real_rperiod_selected_states', outdir.fig)
+if(any(!Code %in% selected_code)){
+  plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
+                                      subset(E_pdeaths_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_real_rperiod', outdir.fig)
+  
+}
+
+diff_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+perc_E_pdeaths_counterfactual_all <- make_var_by_age_table(fit_cum, df_week2, df_age_vaccination2, 'perc_E_pdeaths_counterfactual_all', outdir.table)
+
+diff_E_pdeaths_counterfactual = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'diff_E_pdeaths_counterfactual', outdir.table)
+perc_E_pdeaths_counterfactual = make_var_by_age_by_state_table(fit_cum, df_week2, df_age_vaccination2, df_state, 'perc_E_pdeaths_counterfactual', outdir.table)
+plot_vaccine_effects_counterfactual_stat(diff_E_pdeaths_counterfactual, resurgence_dates, 'difference', outdir.fig)
+plot_vaccine_effects_counterfactual_stat(perc_E_pdeaths_counterfactual, resurgence_dates, 'percentage', outdir.fig)
+find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all, prop_vac, resurgence_dates, outdir.table)
 
 
 # compare to DoH data

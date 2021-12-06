@@ -2196,3 +2196,35 @@ prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
   return(prop_vac)
 }
 
+
+save_p_value_vaccine_effects <- function(fit, names, outdir){
+  samples <- extract(fit)
+  
+  names_fit <- names(samples)
+  names <- names_fit[ grepl(paste(paste0('^',names),collapse = '|'),names_fit) ]
+  
+  tmp <- lapply(names, function(x) find_p_value_vaccine_effect(samples[[x]], x))
+  tmp <- do.call('rbind', tmp)
+  
+  saveRDS(tmp, paste0(outdir.table, '-p_value_vaccine_effects.rds'))
+  
+}
+
+find_p_value_vaccine_effect <- function(sample, name){
+  
+  tmp <- as.data.table( reshape2::melt(sample) )
+  tmp[, value := value >= 0]
+  
+  if(ncol(tmp) == 2){
+    tmp = tmp[, list(M= mean(value)*100)]	
+    tmp[, name := name]
+  } else if(ncol(tmp) == 3){
+    tmp = tmp[, list(M= mean(value)*100),
+              by=c('Var2')]	
+    tmp[, name := paste0(name, '_', Var2)]
+    
+  }
+  
+  tmp <- tmp[, .(name, M)]
+  return(tmp)
+}
