@@ -9,7 +9,8 @@ library(ggpubr)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+states = strsplit('CA',',')[[1]]
 stan_model = "211201a"
 JOBID = 3541
 
@@ -117,7 +118,8 @@ stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
 if(grepl('211201a|211202a|211201c|211201d', stan_model)){
   cat("\n Using 2D splines \n")
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
+  knots_rows = round(df_age_reporting[, median_age := median(c(age_from, age_to)), by = 'age_from']$median_age)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 10, knots_rows = knots_rows)
 }
 if(grepl('211201d', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")

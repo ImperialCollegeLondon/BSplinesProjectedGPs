@@ -258,11 +258,21 @@ add_1D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
   return(stan_data)
 }
 
-add_2D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8)
+add_2D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8, 
+                                    knots_rows = NULL, knots_columns = NULL)
 {
   
-  knots_rows = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots_rows)] 
-  knots_columns = (1:stan_data$W)[seq(1, stan_data$W, length.out = n_knots_columns)]
+  if(is.null(knots_rows)){
+    knots_rows = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots_rows)] 
+  }
+  if(is.null(knots_columns)){
+    knots_columns = (1:stan_data$W)[seq(1, stan_data$W, length.out = n_knots_columns)]
+  }
+  
+  cat('Knots on the age dimension ', knots_rows, '\n')
+  cat('Knots on the week dimension ',  knots_columns, '\n')
+  cat('Number of knots on the age dimension: ', length(knots_rows), '\n')
+  cat('Number of knots on the week dimension: ', length(knots_columns),'\n')
   
   stan_data$num_basis_rows = length(knots_rows) + spline_degree - 1
   stan_data$num_basis_columns = length(knots_columns) + spline_degree - 1
