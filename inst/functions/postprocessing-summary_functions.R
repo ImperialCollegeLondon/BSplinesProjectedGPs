@@ -1346,7 +1346,7 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state){
                         q_label=p_labs), 
                by=c('state_index', 'variable_name')]	
   tmp1 = dcast(tmp1, state_index + variable_name ~ q_label, value.var = "q")
-  tmp1
+
   # prior alpha
   tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'alpha_gp')
   tmp2 <- tmp2[, list( 	q= extraDistr::qhcauchy(ps,  1),

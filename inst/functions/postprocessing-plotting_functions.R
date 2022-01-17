@@ -1642,8 +1642,8 @@ plot_lambda_table <- function(lambda_table, outdir){
     tmp <- subset(lambda_table, state_index %in% state_indices_list[[i]])
     # tmp <- subset(tmp, date < as.Date('2020-12-01'))
     p <- ggplot(tmp, aes(x = date, col = type)) + 
-      geom_point(aes(y = M), position = position_dodge(6), size = 0.5) + 
-      geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(6), width = 0) + 
+      geom_point(aes(y = M), position = position_dodge(5), size = 0.75) + 
+      geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(5), width = 0) + 
       facet_grid(loc_label~., scales = 'free_y') + 
       theme_bw() +
       labs(y = expression(lambda[wm]), col = '') +
