@@ -1324,7 +1324,7 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state){
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
   
-  math_name = c('nu', 'gamma^1', 'gamma^2', 'zeta')
+  math_name = c('nu', 'gamma[1]', 'gamma[2]', 'zeta')
   variable_name <- c('nu', 'rho_gp1', 'rho_gp2', 'alpha_gp')
   df_variable_name <- data.table(variable_name = variable_name, math_name = math_name)
 
