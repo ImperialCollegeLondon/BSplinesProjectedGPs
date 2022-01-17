@@ -2245,7 +2245,7 @@ make_lambda_table <- function(summary, stan_data, df_week, df_state){
   tmp[, type := 'posterior']
   
   tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
-  setnames(tmp1, c('Var2', 'L1'), c('state_index', 'week_index_womissing'))
+  setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
   tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
   tmp1 <- tmp1[, list( 	q= qgamma(ps, alpha, beta),
                         q_label=p_labs), 

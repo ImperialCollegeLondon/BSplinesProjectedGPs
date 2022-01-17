@@ -1631,18 +1631,28 @@ plot_vaccine_effects2 <- function(vaccine_effects, phi, phi_wo_vaccine, lab, out
 
 plot_lambda_table <- function(lambda_table, outdir){
   
-  p <- ggplot(lambda_table, aes(x = date, col = type)) + 
-    geom_point(aes(y = M), position = position_dodge(0.5)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5)) + 
-    facet_grid(loc_label~.) + 
-    theme_bw() +
-    labs(y = expression(lambda[wm]), col = '') +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 70, hjust =1), 
-          strip.background = element_blank(), 
-          axis.title.x = element_blank()) 
-  ggsave(p, file = paste0(outdir, '-lambda_prior_posterior.png'), w = 9, h = 9)
+  state_indices = unique(lambda_table$state_index)
+  mid_point = length(state_indices) / 2
+  state_indices_list = list(state_indices[1:mid_point], 
+                            state_indices[(mid_point+1):length(state_indices)])
+  
+  for(i in 1:2){
+    tmp <- subset(lambda_table, state_index %in% state_indices_list[[i]])
+    # tmp <- subset(tmp, date < as.Date('2020-12-01'))
+    p <- ggplot(tmp, aes(x = date, col = type)) + 
+      geom_point(aes(y = M), position = position_dodge(5)) + 
+      geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(5)) + 
+      facet_grid(loc_label~., scales = 'free_y') + 
+      theme_bw() +
+      labs(y = expression(lambda[wm]), col = '') +
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      theme(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 70, hjust =1), 
+            strip.background = element_blank(), 
+            axis.title.x = element_blank()) 
+    ggsave(p, file = paste0(outdir, '-lambda_prior_posterior_part', i, '.png'), w = 10, h = 8)
+  }
+
   
 }
 
