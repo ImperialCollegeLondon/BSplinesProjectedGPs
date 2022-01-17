@@ -104,9 +104,9 @@ names_samples <- names(samples)
 names_fit <- names(fit_cum)
 
 ## base model
-lambda_table <- make_lambda_table(summary, stan_data, df_week, df_state)
+lambda_table <- make_lambda_table(fit_samples, stan_data, df_week, df_state)
 plot_lambda_table(lambda_table, outdir.fig)
-var_base_model_table <- make_var_base_model_table(summary, stan_data, df_state)
+var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_state)
 plot_var_base_model_table(var_base_model_table, outdir.fig)
 
 ## vaccination model parameters
