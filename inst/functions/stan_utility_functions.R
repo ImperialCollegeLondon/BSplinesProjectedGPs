@@ -510,7 +510,23 @@ add_resurgence_period = function(stan_data, df_week, resurgence_dates){
   T = sapply(1:length( stan_data[['w_start_resurgence']]), function(x)  stan_data[['w_stop_resurgence']][[x]] - stan_data[['w_start_resurgence']][[x]] + 1)
   stan_data[['T']] = unique(unlist(T))
   stopifnot(length(stan_data[['T']]) == 1)
-
+  
+  stan_data[['week_indices_resurgence']] = 0:(stan_data[['T']]-1)
+  
+  return(stan_data)
+}
+add_resurgence_period_by_state = function(stan_data, df_week, resurgence_dates){
+  
+  resurgence_dates = resurgence_dates[order(code)]
+  
+  stan_data[['w_start_resurgence']] = sapply(resurgence_dates$start_resurgence, function(x) df_week[date == x]$week_index)
+  stan_data[['w_stop_resurgence']] = sapply(resurgence_dates$stop_resurgence, function(x) df_week[date == x]$week_index)
+  
+  T_m = sapply(1:length( stan_data[['w_start_resurgence']]), function(x)  stan_data[['w_stop_resurgence']][[x]] - stan_data[['w_start_resurgence']][[x]] + 1)
+  stan_data[['T_m']] = (unlist(T_m))
+  stan_data[['T']] = max(stan_data[['T_m']])
+  stopifnot(length(stan_data[['T']]) == 1)
+  
   stan_data[['week_indices_resurgence']] = 0:(stan_data[['T']]-1)
   
   return(stan_data)
@@ -714,7 +730,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   # tmp2[is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := NA_real_, by = c('code')]
   # tmp2[!is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := c(lag_neg(diff.smooth.weekly.deaths), NA_real_), by = c('code')]
   # tmp3 <- tmp2[date >= as.Date('2021-07-01'), list(start_resurgence = date[which.max(number.positive.days.ahead)] ), by = c('code')]
-
+  
   # subset(tmp2, code == 'CA')
   # find stop resurgence
   # tmp4 = merge(tmp3, tmp4, by = 'code')
@@ -722,6 +738,68 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   max_resurgence_period = (max(deathByAge$date) - tmp3[, max(start_resurgence)] )/ 7
   # max_resurgence_period = min(tmp2[date >= as.Date('2021-07-01'), list(resurgence_period = max(na.omit(number.positive.days.ahead))), by = c('code')]$resurgence_period)
   tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
+  
+  stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
+  
+  
+  if(0){ #plot
+    ggplot(subset(tmp2, date >= as.Date('2021-04-01')), aes(x = date)) + 
+      geom_line(aes(y = weekly.deaths), col = 'red')+ 
+      geom_line(aes(y = smooth.weekly.deaths), col = 'blue') + 
+      facet_wrap(~code, nrow = length(Code), scale = 'free') + 
+      geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
+      geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
+      theme_bw()
+    ggsave('~/Downloads/file.png', h= 30, w =5) 
+  }
+  
+  tmp3 <- tmp3[order(code)]
+  
+  return(tmp3)
+}
+
+
+find_resurgence_dates_by_state <- function(JHUData, deathByAge, Code){
+  
+  ma <- function(x, n = 5){as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))}
+  
+  JHUData = as.data.table(JHUData)
+  JHUData = subset(JHUData, code %in% Code)
+  JHUData[, date := as.Date(date)]
+  tmp2 = JHUData[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
+  tmp2 = tmp2[order(code, date)]
+  tmp2[, cum.death := cumsum(daily_deaths)]
+  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
+  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
+  tmp2 = merge(tmp2, df_week, by = 'date')
+  tmp2 = select(tmp2, code, week_index, weekly.deaths)
+  tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths<0, weekly.deaths := 0]
+  tmp2[, dummy := 1:nrow(tmp2)]
+  tmp2[, smooth.weekly.deaths := ma(weekly.deaths, 4), by = c('code')]
+  tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
+  tmp2[, lag.smooth.weekly.deaths := (shift(smooth.weekly.deaths)), by = c('code')]
+  tmp2[, change.smooth.weekly.deaths := diff.smooth.weekly.deaths / lag.smooth.weekly.deaths]
+  
+  # find start resurgence
+  tmp2 = merge(tmp2, df_week, by = 'week_index')
+  tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
+  tmp2 <- merge(tmp3, tmp2, by = 'code')
+  tmp4 <- tmp2[date > start_resurgence + 7 & change.smooth.weekly.deaths < 0, list(stop_resurgence = min(date) - 7 ), by = c('code')]
+  tmp3 <- merge(tmp3, tmp4, by = 'code', all.x = TRUE)
+
+  # tmp2[is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := NA_real_, by = c('code')]
+  # tmp2[!is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := c(lag_neg(diff.smooth.weekly.deaths), NA_real_), by = c('code')]
+  # tmp3 <- tmp2[date >= as.Date('2021-07-01'), list(start_resurgence = date[which.max(number.positive.days.ahead)] ), by = c('code')]
+
+  # subset(tmp2, code == 'CA')
+  # find stop resurgence
+  # tmp4 = merge(tmp3, tmp4, by = 'code')
+  # max_resurgence_period = tmp4[, min(stop_resurgence - start_resurgence)] / 7
+  # max_resurgence_period = (max(deathByAge$date) - tmp3[, max(start_resurgence)] )/ 7
+  # max_resurgence_period = min(tmp2[date >= as.Date('2021-07-01'), list(resurgence_period = max(na.omit(number.positive.days.ahead))), by = c('code')]$resurgence_period)
+  tmp3[is.na(stop_resurgence), stop_resurgence := max(deathByAge$date) - 2*7]
 
   stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
   
