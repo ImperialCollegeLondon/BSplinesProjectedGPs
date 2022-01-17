@@ -1646,7 +1646,7 @@ plot_lambda_table <- function(lambda_table, outdir){
       geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(5), width = 0) + 
       facet_grid(loc_label~., scales = 'free_y') + 
       theme_bw() +
-      labs(y = expression(lambda[wm]), col = '') +
+      labs(y = expression(lambda), col = '') +
       scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
       theme(legend.position = 'bottom',
             axis.text.x = element_text(angle = 70, hjust =1), 
