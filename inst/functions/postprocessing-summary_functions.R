@@ -2228,3 +2228,99 @@ find_p_value_vaccine_effect <- function(sample, name){
   tmp <- tmp[, .(name, M)]
   return(tmp)
 }
+
+make_lambda_table <- function(summary, stan_data, df_week, df_state){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp <- summary[ grepl(paste(paste0('^','lambda_raw'),collapse = '|'),rownames(summary)) ,]
+  variables <- rownames(tmp); 
+  tmp <- as.data.table(tmp)
+  tmp[, variable := variables]
+  tmp[, state_index := as.numeric(gsub('lambda_raw\\[(.+),.*', '\\1', variable))]
+  tmp[, week_index_womissing := as.numeric(gsub('lambda_raw\\[.*,(.+)\\]', '\\1', variable))]
+  setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
+  tmp <- tmp[, .(M, CL, CU, state_index, week_index_womissing)]
+  tmp[, type := 'posterior']
+  
+  tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
+  setnames(tmp1, c('Var2', 'L1'), c('state_index', 'week_index_womissing'))
+  tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
+  tmp1 <- tmp1[, list( 	q= qgamma(ps, alpha, beta),
+                        q_label=p_labs), 
+               by=c('state_index', 'week_index_womissing')]	
+  tmp1 = dcast(tmp1, state_index + week_index_womissing ~ q_label, value.var = "q")
+  tmp1[, type := 'prior']
+  
+  tmp <- rbind(tmp, tmp1)
+  tmp[, type :=factor(type, levels = c('prior', 'posterior'))]
+  
+  df_week_womissing <- copy(df_week[stan_data$IDX_WEEKS_OBSERVED,])
+  df_week_womissing[, week_index_womissing:= 1:nrow(df_week_womissing)]
+  tmp <- merge(tmp, df_week_womissing, by = 'week_index_womissing')
+  tmp <- merge(tmp, df_state, by = 'state_index')
+  
+  return(tmp)
+}
+
+make_var_base_model_table <- function(summary, stan_data, df_state){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  math_name = c('nu', 'gamma^1', 'gamma^2', 'zeta')
+  variable_name <- c('nu', 'rho_gp1', 'rho_gp2', 'alpha_gp')
+  df_variable_name <- data.table(variable_name = variable_name, math_name = math_name)
+  
+  tmp <- summary[ grepl(paste(paste0('^',variable_name),collapse = '|'),rownames(summary)) ,]
+  variables <- rownames(tmp); 
+  tmp <- as.data.table(tmp)
+  tmp[, variable := variables]
+  tmp[, variable_name := gsub('(.+)\\[.*', '\\1', variable)]
+  tmp[, state_index := as.numeric(gsub(paste0(variable_name, '\\[(.+)\\]'), '\\1', variable)), by = 'variable_name']
+  setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
+  tmp <- tmp[, .(M, CL, CU, state_index, variable_name)]
+  tmp[, type := 'posterior']
+  
+  # prior rho
+  tmp1 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = c('rho_gp1', 'rho_gp2')))
+  tmp1 <- tmp1[, list( 	q= invgamma::qinvgamma(ps, 5, 5),
+                        q_label=p_labs), 
+               by=c('state_index', 'variable_name')]	
+  tmp1 = dcast(tmp1, state_index + variable_name ~ q_label, value.var = "q")
+  
+  # prior alpha
+  tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'alpha_gp')
+  tmp2 <- tmp2[, list( 	q= extraDistr::qhcauchy(ps,  1),
+                        q_label=p_labs), 
+               by=c('state_index', 'variable_name')]	
+  tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
+  tmp1 <- rbind(tmp1, tmp2)
+  
+  # prior nu 
+  tmp2 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = 'nu',
+                                 samples_nu_unscaled = truncnorm::rtruncnorm(10000, a=0,  mean = 0, sd = 1)))
+  tmp2[, samples_nu := (1/samples_nu_unscaled)]
+  tmp2 <- tmp2[, list( 	q= quantile(samples_nu, prob=ps, na.rm = T),
+                        q_label=p_labs), 
+               by=c('state_index', 'variable_name')]	
+  tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
+  tmp1 <- rbind(tmp1, tmp2)
+  
+  tmp1[, type := 'prior']
+  
+  tmp <- rbind(tmp, tmp1)
+  tmp[, type :=factor(type, levels = c('prior', 'posterior'))]
+  
+  tmp <- merge(tmp, df_variable_name, by = 'variable_name')
+  tmp <- merge(tmp, df_state, by = 'state_index')
+  
+  tmp[, math_name := factor(math_name, levels = c('nu', 'gamma^1', 'gamma^2', 'zeta'))]
+  # tmp[, math_name := paste0(math_name, '\\["', loc_label, '"\\]')]
+  
+  return(tmp)
+  
+}
+
+
