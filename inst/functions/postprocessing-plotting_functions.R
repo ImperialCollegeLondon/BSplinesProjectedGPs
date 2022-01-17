@@ -1640,8 +1640,8 @@ plot_lambda_table <- function(lambda_table, outdir){
     tmp <- subset(lambda_table, state_index %in% state_indices_list[[i]])
     # tmp <- subset(tmp, date < as.Date('2020-12-01'))
     p <- ggplot(tmp, aes(x = date, col = type)) + 
-      geom_point(aes(y = M), position = position_dodge(5)) + 
-      geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(5)) + 
+      geom_point(aes(y = M), position = position_dodge(6), size = 0.5) + 
+      geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(6), width = 0) + 
       facet_grid(loc_label~., scales = 'free_y') + 
       theme_bw() +
       labs(y = expression(lambda[wm]), col = '') +
@@ -1650,7 +1650,7 @@ plot_lambda_table <- function(lambda_table, outdir){
             axis.text.x = element_text(angle = 70, hjust =1), 
             strip.background = element_blank(), 
             axis.title.x = element_blank()) 
-    ggsave(p, file = paste0(outdir, '-lambda_prior_posterior_part', i, '.png'), w = 10, h = 8)
+    ggsave(p, file = paste0(outdir, '-lambda_prior_posterior_part', i, '.png'), w = 9, h = 8)
   }
 
   
@@ -1660,16 +1660,16 @@ plot_var_base_model_table <- function(loc_label, outdir){
   
   p <- ggplot(var_base_model_table, aes(x = loc_label, col = type)) + 
     geom_point(aes(y = M), position = position_dodge(0.5)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5)) + 
-    facet_grid(math_name~., labeller = label_parsed) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5), width = 0) + 
+    facet_grid(math_name~., labeller = label_parsed, scales = 'free_y') + 
     theme_bw() +
-    labs(y = 'value', col = '') +
+    labs(y = '', col = '') +
     theme(legend.position = 'bottom',
           axis.text.x = element_text(angle = 70, hjust =1), 
           strip.background = element_blank(), 
-          axis.title.x = element_blank()) 
+          axis.title.x = element_blank(), axis.title.y = element_blank()) 
   scale_y_discrete(labels = label_parse(), limits=rev) 
-  ggsave(p, file = paste0(outdir, '-var_base_model_table_prior_posterior.png'), w = 7, h = 5)
+  ggsave(p, file = paste0(outdir, '-var_base_model_table_prior_posterior.png'), w = 6, h = 6)
   
 }
 
