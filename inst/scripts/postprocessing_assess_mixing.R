@@ -14,9 +14,8 @@ library(scales)
 indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "211031b1"
-JOBID = 9934
-
+stan_model = "211201a"
+JOBID = 2047
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -65,15 +64,15 @@ outdir.fit = outdir.fit.post
 cat("Load fits \n")
 file = file.path(outdir.fit.post, paste0("fit_cumulative_deaths_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
-
+fit_samples <- rstan::extract(fit_cum)
 
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")
-summary  <- make_convergence_diagnostics_stats(fit_cum, outdir.table)
+summary  <- make_convergence_diagnostics_stats(fit_cum, fit_samples, outdir.table)
 
 # Make predictive checks table
 cat("\nMake posterior predictive checks table \n")
-predictive_checks_table = make_predictive_checks_table(fit_cum, df_week, df_age_reporting, 
+predictive_checks_table = make_predictive_checks_table(fit_cum, fit_samples, df_week, df_age_reporting, 
                                                        data, 'deaths_predict_state_age_strata', outdir.table)
 
 # plot predictive checks table
@@ -84,10 +83,10 @@ plot_posterior_predictive_checks(predictive_checks_table,
 
 # plot predictive check cumulative
 cat("\nMake posterior predictive checks cumulative plots \n")
-tmp1 = find_cumsum_nonr_deaths_state_age(fit_cum, df_week, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
+tmp1 = find_cumsum_nonr_deaths_state_age(fit_samples, df_week, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict')
 plot_sum_missing_deaths(tmp1, outdir.fig)
 
-tmp1 = find_sum_nonr_deaths_state_age(fit_cum, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict', outdir.table)
+tmp1 = find_sum_nonr_deaths_state_age(fit_samples, df_age_continuous, unique(df_age_reporting$age), stan_data, 'deaths_predict', outdir.table)
 plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
 # trace and paris plots
@@ -99,10 +98,18 @@ cat("\n Pairs plot weekly deaths params \n")
 p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
 
+# forest plots
 samples <- rstan::extract(fit_cum)
 names_samples <- names(samples)
 names_fit <- names(fit_cum)
 
+## base model
+lambda_table <- make_lambda_table(summary, stan_data, df_week, df_state)
+plot_lambda_table(lambda_table, outdir.fig)
+var_base_model_table <- make_var_base_model_table(summary, stan_data, df_state)
+plot_var_base_model_table(var_base_model_table, outdir.fig)
+
+## vaccination model parameters
 if(any(c('varphi', 'psi', 'chi', 'kappa') %in% names_samples)){
 
   cat("\n Trace plot vaccination params \n")
@@ -239,6 +246,10 @@ if(any(names %in% names_samples)){
 
 }
 
+
+
+  
+  
 cat("\n End postprocessing_assess_mixing.R \n")
 
 

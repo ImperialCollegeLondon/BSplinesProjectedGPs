@@ -819,9 +819,11 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   data_res[, `Age group` := age]
   # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
 
-  data_res = merge(data_res, resurgence_dates, by = 'code')
+  data_res = as.data.table( merge(data_res, resurgence_dates, by = 'code') )
   
-  data_text = subset(data_res, week_index == max(week_index))
+  data_res[, max_week_index := max(week_index), by = 'code']
+  data_text = data_res[ week_index == max_week_index]
+  data_text[, week_index := max(week_index)]
   data_text[code == 'CA' & age == '18-64', M := M + 0.1]
   data_text[code == 'CA' & age == '65+', M := M + 0.05]
   
