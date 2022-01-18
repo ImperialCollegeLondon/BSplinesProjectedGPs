@@ -1324,9 +1324,9 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state){
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
   
-  math_name = c('nu', 'gamma[1]', 'gamma[2]', 'zeta^2')
+  .math_name = c('nu', 'gamma[1]', 'gamma[2]', 'zeta')
   variable_name <- c('nu', 'rho_gp1', 'rho_gp2', 'alpha_gp')
-  df_variable_name <- data.table(variable_name = variable_name, math_name = math_name)
+  df_variable_name <- data.table(variable_name = variable_name, math_name = .math_name)
 
   tmp <- lapply(variable_name, function(x){
     tmp <- as.data.table(reshape2::melt(fit_samples[[x]]))
@@ -1372,7 +1372,7 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state){
   tmp <- merge(tmp, df_variable_name, by = 'variable_name')
   tmp <- merge(tmp, df_state, by = 'state_index')
   
-  tmp[, math_name := factor(math_name, levels = c('nu', 'gamma^1', 'gamma^2', 'zeta'))]
+  tmp[, math_name := factor(math_name, levels = .math_name)]
   # tmp[, math_name := paste0(math_name, '\\["', loc_label, '"\\]')]
   
   return(tmp)
