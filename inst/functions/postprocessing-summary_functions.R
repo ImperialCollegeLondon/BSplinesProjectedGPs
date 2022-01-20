@@ -121,6 +121,40 @@ make_var_by_age_by_state_table = function(fit_samples, df_week, df_state_age, df
   return(tmp1)
 }
 
+make_var_by_age_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_state, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+
 make_var_by_age_table = function(fit_samples, df_week, df_state_age, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -143,6 +177,28 @@ make_var_by_age_table = function(fit_samples, df_week, df_state_age, var_name, o
   return(tmp1)
 }
 
+make_var_by_age_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('counterfactual_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1,counterfactual_index +week_index + age_index ~ q_label, value.var = "q")
+  # tmp1 = merge(tmp1, df_week, by = 'week_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 <- merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesTable.rds'))
+  
+  
+  return(tmp1)
+}
 
 make_var_cum_by_age_table = function(fit_samples, df_week, df_state_age, var_name, outdir){
   
@@ -176,7 +232,7 @@ make_var_cum_by_age_table = function(fit_samples, df_week, df_state_age, var_nam
   return(tmp1)
 }
 
-make_var_cum_by_age_table_counterfactual = function(fit_samples, df_week, df_week_counterfactual, resurgence_dates, df_state_age, var_name, outdir){
+make_var_cum_by_age_table_counterfactual = function(fit_samples, df_week, df_week_counterfactual, df_counterfactual, resurgence_dates, df_state_age, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -194,18 +250,22 @@ make_var_cum_by_age_table_counterfactual = function(fit_samples, df_week, df_wee
   setnames(tmp1, 2:4, c('state_index', 'age_index','week_index'))
   tmp1 = merge(tmp1, select(df_week3, state_index, week_index, after_resurgence), by = c('state_index', 'week_index'))
   tmp1 = tmp1[(!after_resurgence)]
-  tmp1 = select(tmp1, -after_resurgence)
+  tmp1[, dummy := 1]; df_counterfactual[, dummy := 1]
+  tmp1 <- merge(tmp1, df_counterfactual[, .(counterfactual_index, dummy)], by = 'dummy', allow.cartesian=TRUE)
+  
+  tmp1 = select(tmp1, -after_resurgence, -dummy)
+  df_counterfactual <- select(df_counterfactual, -dummy)
   
   tmp2 = as.data.table( reshape2::melt(fit_samples[[var_name[2]]]) )
-  setnames(tmp2, 2:4, c('state_index', 'age_index','week_index_resurgence'))
+  setnames(tmp2, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index_resurgence'))
   tmp2 = merge(tmp2, select(df_week_counterfactual, state_index, week_index, week_index_resurgence), by = c('state_index', 'week_index_resurgence'))
   tmp2 = select(tmp2,  -week_index_resurgence)
 
   tmp1 <- rbind(tmp1, tmp2)
-  tmp1[, value := cumsum(value), by = c('state_index', 'age_index', 'iterations')]
+  tmp1[, value := cumsum(value), by = c('state_index', 'age_index', 'counterfactual_index', 'iterations')]
   
-  tmp1 = tmp1[, list(q=quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'age_index', 'week_index')]	
-  tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
+  tmp1 = tmp1[, list(q=quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'age_index', 'week_index', 'counterfactual_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + state_index + week_index + age_index ~ q_label, value.var = "q")
   
   tmp1 = merge(tmp1, select(df_state, loc_label, code, state_index), by = 'state_index')
   
@@ -218,6 +278,7 @@ make_var_cum_by_age_table_counterfactual = function(fit_samples, df_week, df_wee
   tmp1[, age := df_state_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_state_age$age)]
   
+  tmp1 <- merge(tmp1, df_counterfactual, by = 'counterfactual_index')
   for(Code in unique(tmp1$code)){
     saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name[2],  'CumTable_', Code, '.rds'))
     

@@ -555,26 +555,42 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
   tmp[, prop := prop - pre_prop]
   tmp = tmp[order(code)]
   
-  prop_vac = list(); prop_vac_start = list(); prop_vac_start_counterfactual = list()
+  prop_vac = list(); prop_vac_start = list(); 
+  N_COUNTERFACTUAL = 3; prop_vac_start_counterfactual = list()
   for(i in 1:length(unique(tmp$age_index))){
+    
     tmp1 = subset(tmp, age_index == unique(tmp$age_index)[i])
     
     prop_vac[[i]] = as.matrix( reshape2::dcast(tmp1, idx.resurgence.date ~ code, value.var = 'prop')[,-1] )
     prop_vac_start[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
-    prop_vac_start_counterfactual[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
+    prop_vac_start_counterfactual[[i]] = prop_vac_start[[i]]
     
     if(i == 1){
-      prop_vac_start_counterfactual[[i]] = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      values = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values), 
+                                                  c(values, prop_vac_start[[i]], values), byrow = T)
+      
+    }
+    
+    if(i == 2){
+      values = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values), 
+                                                  c(prop_vac_start[[i]], values, values), byrow = T)
       
     }
   }
 
-  stan_data[['prop_vac']] = prop_vac
-  stan_data[['prop_vac_start']] = prop_vac_start
-  stan_data[['prop_vac_start_counterfactual']] = prop_vac_start_counterfactual
   stan_data[['age_from_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_from
   stan_data[['age_to_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_to
   stan_data[['C']] = nrow(df_age_vaccination[age_index >= age_index_min])
+  
+  stan_data[['prop_vac']] = prop_vac
+  stan_data[['prop_vac_start']] = prop_vac_start
+  
+  stan_data[['N_COUNTERFACTUAL']] = N_COUNTERFACTUAL
+  stan_data[['prop_vac_start_counterfactual']] = prop_vac_start_counterfactual
+  
+
   
   return(stan_data)
 }
