@@ -1286,7 +1286,7 @@ find_p_value_vaccine_effect <- function(sample, name){
   return(tmp)
 }
 
-make_lambda_table <- function(fit_samples, stan_data, df_week, df_state){
+make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir){
   
   ps <- c(0.5, 0.1, 0.9)
   p_labs <- c('M','CL','CU')
@@ -1316,10 +1316,12 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state){
   tmp <- merge(tmp, df_week_womissing, by = 'week_index_womissing')
   tmp <- merge(tmp, df_state, by = 'state_index')
   
+  saveRDS(tmp, paste0(outdir, '-lambda_prior_posterior.rds'))
+  
   return(tmp)
 }
 
-make_var_base_model_table <- function(fit_samples, stan_data, df_state){
+make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -1334,24 +1336,18 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state){
     tmp[, variable_name := x]
     })
   tmp <- do.call('rbind', tmp)
-  tmp = tmp[, list(q= quantile(value, prob=ps, na.rm = T),
-                   q_label=p_labs), 
-            by=c('state_index', 'variable_name')]
+  tmp = tmp[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'variable_name')]
   tmp = dcast(tmp, state_index + variable_name ~ q_label, value.var = "q")
   tmp[, type := 'posterior']
   
   # prior rho
   tmp1 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = c('rho_gp1', 'rho_gp2')))
-  tmp1 <- tmp1[, list( 	q= invgamma::qinvgamma(ps, 2, 2),
-                        q_label=p_labs), 
-               by=c('state_index', 'variable_name')]	
+  tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 2, 2), q_label=p_labs),by=c('state_index', 'variable_name')]	
   tmp1 = dcast(tmp1, state_index + variable_name ~ q_label, value.var = "q")
 
   # prior alpha
   tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'alpha_gp')
-  tmp2 <- tmp2[, list( 	q= extraDistr::qhcauchy(ps,  1),
-                        q_label=p_labs), 
-               by=c('state_index', 'variable_name')]	
+  tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  1), q_label=p_labs), by=c('state_index', 'variable_name')]	
   tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
   tmp1 <- rbind(tmp1, tmp2)
   
@@ -1359,9 +1355,7 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state){
   tmp2 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = 'nu',
                                  samples_nu_unscaled = truncnorm::rtruncnorm(10000, a=0,  mean = 0, sd = 5)))
   tmp2[, samples_nu := (1/samples_nu_unscaled)]
-  tmp2 <- tmp2[, list( 	q= quantile(samples_nu, prob=ps, na.rm = T),
-                        q_label=p_labs), 
-               by=c('state_index', 'variable_name')]	
+  tmp2 <- tmp2[, list(q= quantile(samples_nu, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'variable_name')]	
   tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
   tmp1 <- rbind(tmp1, tmp2)
   tmp1[, type := 'prior']
@@ -1374,6 +1368,8 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state){
   
   tmp[, math_name := factor(math_name, levels = .math_name)]
   # tmp[, math_name := paste0(math_name, '\\["', loc_label, '"\\]')]
+  
+  saveRDS(tmp, paste0(outdir, '-var_base_model_prior_posterior.rds'))
   
   return(tmp)
   

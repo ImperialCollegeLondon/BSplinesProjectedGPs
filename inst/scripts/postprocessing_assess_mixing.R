@@ -13,9 +13,10 @@ library(scales)
 
 indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'
-states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "211201a"
-JOBID = 2047
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+states = strsplit('CA,FL,NY,TX',',')[[1]]
+stan_model = "220120a"
+JOBID = 2455
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -104,9 +105,9 @@ names_samples <- names(samples)
 names_fit <- names(fit_cum)
 
 ## base model
-lambda_table <- make_lambda_table(fit_samples, stan_data, df_week, df_state)
+lambda_table <- make_lambda_table(fit_samples, stan_data, df_week, df_state, outdir.table)
 plot_lambda_table(lambda_table, outdir.fig)
-var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_state)
+var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_state, outdir.table)
 plot_var_base_model_table(var_base_model_table, outdir.fig)
 
 ## vaccination model parameters

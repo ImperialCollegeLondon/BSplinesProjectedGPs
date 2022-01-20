@@ -1661,8 +1661,8 @@ plot_lambda_table <- function(lambda_table, outdir){
 plot_var_base_model_table <- function(loc_label, outdir){
   
   p <- ggplot(var_base_model_table, aes(x = loc_label, col = type)) + 
-    geom_point(aes(y = M), position = position_dodge(0.5)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5), width = 0) + 
+    geom_point(aes(y = M), position = position_dodge(0.5), size = 0.75) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5), width = 0.1) + 
     facet_grid(math_name~., labeller = label_parsed, scales = 'free_y') + 
     theme_bw() +
     labs(y = '', col = '') +
@@ -1671,7 +1671,7 @@ plot_var_base_model_table <- function(loc_label, outdir){
           strip.background = element_blank(), 
           axis.title.x = element_blank(), axis.title.y = element_blank()) 
   scale_y_discrete(labels = label_parse(), limits=rev) 
-  ggsave(p, file = paste0(outdir, '-var_base_model_table_prior_posterior.png'), w = 6, h = 6)
+  ggsave(p, file = paste0(outdir, '-var_base_model_prior_posterior.png'), w = 6, h = 6)
   
 }
 
