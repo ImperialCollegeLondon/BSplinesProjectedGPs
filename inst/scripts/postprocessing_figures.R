@@ -79,8 +79,14 @@ fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 # selected states
 selected_code = c('CA', 'FL', 'NY', 'TX')
 
-####
+### temporary
+if('Total' %in% colnames(pop_data)){
+  path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
+  pop_data = as.data.table( read.csv(path.to.pop.data) )
+  setnames(pop_data, 'location', 'loc_label')
+}
 
+####
 
 # Plots continuous and aggregated age distribution phi
 age_contribution_continuous_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'phi', outdir.table)
@@ -110,9 +116,11 @@ find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_
 
 
 # mortality rate
-mortality_rate_table = make_mortality_rate_table(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
+mortality_rate_table = make_mortality_rate_table_discrete(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
                                                  JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
-plot_mortality_rate(mortality_rate_table, outdir.fig)
+mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_samples, date_10thcum, df_week, pop_data,
+                                                          JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
+plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)
 
 
 # predicted weekly deaths by various age groups 

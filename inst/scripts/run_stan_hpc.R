@@ -46,8 +46,8 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-25.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-09-25.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-09-25.rds"))
-path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
+path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-01-20.rds"))
+path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
@@ -79,8 +79,8 @@ scrapedData = read.csv(path_to_scraped_data)
 vaccine_data = readRDS(path_to_vaccine_data)
 
 # load population count 
-pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
-setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
+pop_data = as.data.table( read.csv(path.to.pop.data) )
+setnames(pop_data, 'location', 'loc_label')
 
 # Create age maps
 age_max = 105

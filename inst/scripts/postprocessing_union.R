@@ -62,7 +62,7 @@ selected_codes = c('CA', 'FL', 'NY', 'TX')
 start_vaccine = vaccine_data[prop > 0 & date %in% df_week$date, min(date)]
 
 #
-# mortality rate over time
+# mortality rate over time discrete
 mortality_rate = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
@@ -72,6 +72,19 @@ mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 
 plot_mortality_rate_all_states(mortality_rate, outdir.fig)
 find_statistics_mortality_rate(mortality_rate, outdir.table)
+
+
+#
+# mortality rate over time continuous
+mortality_rate = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateContinuousTable_', locs[i], '.rds'))
+}
+mortality_rate = do.call('rbind', mortality_rate)
+mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
+
+plot_mortality_rate_continuous_all_states(mortality_rate, outdir.fig)
+
 
 
 #

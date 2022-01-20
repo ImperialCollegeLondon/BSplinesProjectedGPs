@@ -400,10 +400,8 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
 
   
   # population count
-  df_age_close_vaccination = data.table(age = unique(pop_data$age))
-  df_age_close_vaccination[, age_index :=  c(1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4)]
-  df_pop_data = merge(df_age_close_vaccination, pop_data, by = 'age')
-  df_pop_data = df_pop_data[, list(pop_adj = sum(pop)), by = c('code', 'age_index')]
+  pop_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
+  df_pop_data = pop_data[, list(pop_adj = sum(pop)), by = c('code', 'age_index')]
   
   # deaths
   df_age_close_vaccination = copy(df_age_reporting)

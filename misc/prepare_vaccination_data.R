@@ -7,11 +7,12 @@ indir2 ="~/git/BSplinesProjectedGPs/misc" # path to the repo
 # data for location name
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-25.rds"))
 locname_data = unique(select(readRDS(path.to.CDC.data), loc_label, code)) # cdc data 
+deathByAge = readRDS(path.to.CDC.data) # cdc data 
 
 # population data
-path.to.popdata = file.path(indir, "data", paste0("us_population_withnyc.rds"))
-pop_data = readRDS(path.to.popdata)
-pop_data = as.data.table(select(reshape2::melt(pop_data, id.vars = c('Region', 'code')), -Region))
+path.to.popdata = file.path(indir, "data", paste0("us_population.csv"))
+pop_data = as.data.table( read.csv(path.to.popdata) )
+pop_data = select(pop_data, code, age, pop)
 
 # vaccination data
 path.to.data = file.path(indir2, "data-vaccination", paste0("COVID-19_Vaccinations_in_the_United_States_Jurisdiction_211109.csv"))
@@ -70,17 +71,6 @@ tmp[, age.group := '0-11']
 tmp[, prop := 0]
 data = rbind(data, tmp)
 
-# find pop
-pop_data = subset(pop_data, variable != 'Total')
-pop_data[, variable := gsub('\\+', '-105', variable)]
-tmp = unique(select(pop_data, variable))
-tmp = tmp[, age.min := gsub('(.+)\\-(.*)', '\\1', variable), by = 'variable']
-tmp = tmp[, age.max := gsub(paste0(age.min, '\\-(.+)'), '\\1', variable), by = 'age.min']
-tmp = tmp[, list(age = age.min:age.max), by = 'variable']
-pop_data = merge(pop_data, tmp, by = 'variable', allow.cartesian=TRUE)
-pop_data[, pop := value / length(value), by = c('variable', 'code')]
-pop_data = select(pop_data, code, age, pop)
-
 # enlarge by 1-y age band
 tmp = unique(select(data, age.group))
 tmp[, age.group := gsub('\\+', '-105', age.group)]
@@ -106,9 +96,7 @@ nrow(data) == length(unique(data$date)) * length(unique(data$code)) * length(uni
 start_date = data[prop > 0, min(date) ]
 data = data[date >= start_date]
 
-data[date <= max(deathByAge$date) + 7]
-
 # save
-saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2021-09-25.rds")))
+saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2022-01-20.rds")))
 
         
