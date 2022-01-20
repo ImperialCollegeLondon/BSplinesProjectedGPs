@@ -795,7 +795,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   p1 <- ggplot(data_res, aes(x = week_index)) + 
     geom_line(aes(y = M, col = prop_1_init, group = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_1_init, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~., label = 'label_both', scale = 'free_y') +
+    facet_grid(`Age group`~., label = 'label_both') +
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
          x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
          col = lab('18-64'), fill = lab('18-64')) + 
@@ -817,7 +817,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   p2 <- ggplot(data_res, aes(x = week_index)) + 
     geom_line(aes(y = M, col = prop_2_init, group = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_2_init, group = loc_label), alpha = 0.5, width = 0.1) +
-    facet_grid(`Age group`~., label = 'label_both', scale = 'free_y') +
+    facet_grid(`Age group`~., label = 'label_both') +
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
          x = 'Week index of Summer 2021 resurgence period', shape = 'Beginning of Summer 2021 resurgence period', 
          col = lab('65+'), fill = lab('65+')) + 
