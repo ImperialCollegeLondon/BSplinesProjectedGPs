@@ -136,6 +136,23 @@ make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_
                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
 
+# compare to DoH data
+tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous, 
+                                                                      scrapedData, 'cum.deaths', Code, outdir.table)
+compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
+                                   var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
+compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
+compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
+
+# make panel figure
+age_contribution_continuous_table$method = 'GP-BS-SE'
+deatht$method = 'GP-BS-SE'
+p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contribution_continuous_table), copy(deatht), copy(data),
+                                                            'GP-BS-SE', 'GP-BS-SE',
+                                                            show.method = F,
+                                                            heights = c(1,1), outdir.fig)
+
+
 # p-value vaccine effects
 names = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
 save_p_value_vaccine_effects(fit_samples, names, outdir.table)
@@ -204,24 +221,6 @@ diff_E_pdeaths_counterfactual = make_var_by_age_by_state_by_counterfactual_table
 perc_E_pdeaths_counterfactual = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
 
 find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all, prop_vac, resurgence_dates, outdir.table)
-
-
-# compare to DoH data
-tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous, 
-                                                                           scrapedData, 'cum.deaths', Code, outdir.table)
-compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
-                                   var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
-compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
-compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
-
-# make panel figure
-age_contribution_continuous_table$method = 'GP-BS-SE'
-deatht$method = 'GP-BS-SE'
-p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contribution_continuous_table), copy(deatht), copy(data),
-                                                  'GP-BS-SE', 'GP-BS-SE',
-                                                  show.method = F,
-                                                  heights = c(1,1), outdir.fig)
-
 
 
 cat("\n End postprocessing_figures.R \n")
