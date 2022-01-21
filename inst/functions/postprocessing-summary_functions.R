@@ -1126,7 +1126,7 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   
   # find mortality rate
   tmp1 = merge(tmp1, pop_data1, by = c('age_index', 'code'))
-  # tmp1[, value := value / pop]
+  tmp1[, value := value / pop]
   
   # quantiles
   tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
