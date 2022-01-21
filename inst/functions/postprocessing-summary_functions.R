@@ -1034,7 +1034,8 @@ make_mortality_rate_table_discrete = function(fit_samples, fouragegroups, date_1
   return(tmp1)
 }
 
-make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_week, pop_data, data_comp, df_age_continuous, cum.death.var, outdir){
+make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_week, pop_data, 
+                                                data_comp, df_age_continuous, cum.death.var, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -1049,16 +1050,21 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   df_week1[, keep := month %in% min(df_week1$month):(min(df_week1$month) + 2), by = 'code']
   df_week1 = df_week1[keep == T]
   
+  # group 85+ together
+  df_age <- copy(df_age_continuous)
+  df_age[age >= 85, age_index := age_index[age == 85]]
+  
   # find population proportion
   pop_data1 = copy(pop_data)
-
   tmp <- pop_data1[, list(Total = sum(pop)), by = 'code']
   pop_data1 <- merge(pop_data1, tmp, by = 'code')
   pop_data1[, pop_prop := pop / Total]
+  pop_data1 <- merge(pop_data1, df_age, by = 'age')
+  pop_data1 <- pop_data1[, list(pop = sum(pop), 
+                                age = min(age)), by = c('age_index', 'code')]
   tmp = pop_data1[, list(pop = sum(pop)), by = 'age']
   tmp[, pop_prop_US := pop / sum(pop_data$pop)]
-  tmp[, age_index := 1:nrow(tmp)]
-  pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US, age_index), by = 'age')
+  pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
   pop_data1 = subset(pop_data1, code %in% df_state$code)
   
   # week index
@@ -1094,6 +1100,12 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   tmp1 = as.data.table( reshape2::melt(fit_samples['alpha']) )
   setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
 
+  # aggregate 85+
+  tmp1 <- merge(tmp1, df_age_continuous, by = 'age_index')
+  tmp1 <- select(tmp1, -age_index)
+  tmp1 <- merge(tmp1, df_age, by = 'age')
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'state_index', 'age_index','week_index')]
+  
   # find value from weeks before 10th date
   df_week1 = merge(df_week1, df_state, by = 'code')
   tmp3 = merge(tmp1, select(df_week1, week_index, state_index), by = c('state_index', 'week_index'))
@@ -1114,7 +1126,7 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   
   # find mortality rate
   tmp1 = merge(tmp1, pop_data1, by = c('age_index', 'code'))
-  tmp1[, value := value / pop]
+  # tmp1[, value := value / pop]
   
   # quantiles
   tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
@@ -1124,7 +1136,8 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
 
   tmp1 = merge(tmp1, df_state, by = 'state_index')
   
-  tmp1 = merge(tmp1, df_age_continuous, by = 'age_index')
+  df_age <- df_age[, list(age_from = min(age_from), age_to = max(age_to), age = min(age)), by = 'age_index']
+  tmp1 = merge(tmp1, df_age, by = 'age_index')
   
   for(Code in unique(tmp1$code)){
     saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'MortalityRateContinuous', 'Table_', Code, '.rds'))

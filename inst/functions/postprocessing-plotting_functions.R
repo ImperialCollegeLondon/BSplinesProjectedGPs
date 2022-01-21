@@ -180,6 +180,8 @@ plot_sum_bounded_missing_deaths = function(tmp, outdir)
 
 plot_mortality_rate = function(mortality_rate_table, mortality_rate_table_continuous, outdir)
 {
+  mortality_rate_table_continuous[, age_cat := as.character(age)]
+  mortality_rate_table_continuous[age_cat == '85', age_cat := '85+']
   
   for(Code in unique(mortality_rate_table$code)){
     p = ggplot(subset(mortality_rate_table, code == Code), aes(x = date)) + 
@@ -193,15 +195,33 @@ plot_mortality_rate = function(mortality_rate_table, mortality_rate_table_contin
       theme_bw()
     ggsave(p, file = paste0(outdir, '-MortalityRate_', Code, '.png'), w = 7, h =7, limitsize = F)
     
-    
-    p = ggplot(subset(mortality_rate_table_continuous, code == Code & date == max(date)), aes(x = age)) + 
+    tmp <- subset(mortality_rate_table_continuous, code == Code & date == max(date))
+    p = ggplot(subset(tmp, age != '85'), aes(x = age)) + 
       geom_line(aes(y = M)) +
       geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
-      labs(x = 'age', y = 'COVID-19 mortality rate', col = '', fill = '') + 
+      labs(y = 'COVID-19 mortality rate', col = '', fill = '') +
+      theme_bw() +
       scale_x_continuous(expand = c(0,0)) +
-      theme(legend.position = 'bottom',
-            axis.text.x = element_text(angle = 90))  +
-      theme_bw()
+      scale_y_continuous(expand = c(0,0), limits = range(c(tmp$CL, tmp$CU + 0.001)), breaks = seq(0, max(c( tmp$CU)), 0.01), labels = scales::percent) +
+      theme(axis.title.x = element_blank(),
+            plot.margin=unit(c(5.5, 0, 5.5, 5.5), "pt")) 
+    
+    
+    p1 <- ggplot(subset(tmp, age == '85'), aes(x = age_cat)) + 
+      theme_bw() + 
+      geom_point(aes(y = M)) +
+      geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, width = 0) +
+      labs(x = 'age', y = 'COVID-19 mortality rate', col = '', fill = '') + 
+      scale_x_discrete(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0), limits = range(c(tmp$CL, tmp$CU + 0.001)), breaks = seq(0, max(c( tmp$CU)), 0.01), labels = scales::percent) +
+      theme(axis.title.x = element_blank(), 
+            axis.title.y = element_blank(), 
+            axis.ticks.y = element_blank(), 
+            axis.text.y = element_blank(),
+            plot.margin=unit(c(5.5, 5.5, 5.5, 0), "pt")) 
+    
+    p <- grid.arrange(p, p1, nrow = 1, widths = c(1, 0.1), bottom = 'Age')
+
     ggsave(p, file = paste0(outdir, '-MortalityRateContinuous_', Code, '.png'), w = 7, h =7, limitsize = F)
   }
 
@@ -428,31 +448,66 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
 {
   
   mortality_rate[, age := as.numeric(age)]
+  mortality_rate[, age_cat := as.character(age)]
+  mortality_rate[age_cat == '85', age_cat := '85+']
   
   tmp <- subset(mortality_rate, code %in% selected_codes)
-  ggplot(tmp, aes(x=age)) + 
+  
+  p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
     geom_line(aes(y = M, col = loc_label)) +
     geom_ribbon(aes(ymin=CL, ymax=CU, fill = loc_label), alpha = 0.4) + 
     theme_bw() +
     theme(legend.position = 'bottom', 
           panel.grid.major= element_blank(), 
           strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) + 
+          panel.border = element_rect(colour = "black", fill = NA), 
+          plot.margin = unit(c(5.5,0,5.5,5.5), "pt")) + 
     scale_color_jcolors('pal8') + 
     scale_fill_jcolors('pal8') + 
-    scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
+                       breaks = seq(0, max(tmp$CU), 0.01)) +
     scale_x_continuous(expand = c(0,0)) +
     labs(y = paste0('Predicted COVID-19 attributable mortality\nrates among individuals as of ', format(unique(mortality_rate$date), '%b %Y')),
          col = '', fill = '', x = 'Age')
+  
+  p1 <- ggplot(subset(tmp, age == '85'), aes(x=age_cat)) + 
+    geom_point(aes(y = M, col = loc_label)) +
+    geom_errorbar(aes(ymin=CL, ymax=CU), width = 0) + 
+    theme_bw() +
+    theme(
+          panel.grid.major= element_blank(), 
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.title.x = element_blank(), 
+          axis.ticks.y = element_blank(), 
+          axis.title.y = element_blank(), 
+          axis.text.y = element_blank(), 
+          plot.margin = unit(c(5.5,5.5,18,0), "pt"),
+          legend.position = 'none',
+          ) + 
+    scale_color_jcolors('pal8') + 
+    scale_fill_jcolors('pal8') + 
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
+                       breaks = seq(0, max(tmp$CU), 0.01)) +
+    scale_x_discrete(expand = c(0,0)) +
+    labs(y = paste0('Predicted COVID-19 attributable mortality\nrates among individuals as of ', format(unique(mortality_rate$date), '%b %Y')),
+         col = '')
+  
+  ggarrange(p, p1, nrow = 1, common.legend = T, legend = 'bottom', widths = c(1, 0.1))
   ggsave(paste0(outdir, paste0('-MortalityRateContinuous_allages_selectedstates.png')), w = 7, h = 5)
   
-  ggplot(mortality_rate, aes(x=age)) + 
+  
+  
+  ########
+  
+  p <- ggplot(subset(mortality_rate, age != 85), aes(x=age)) + 
     geom_line(aes(y = M, col = loc_label)) +
     geom_ribbon(aes(ymin=CL, ymax=CU, fill = loc_label), alpha = 0.4) + 
     theme_bw() +
     theme(legend.position = 'bottom', 
           panel.grid.major= element_blank(), 
           strip.background = element_blank(),
+          strip.text = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_color_jcolors('pal8') + 
     scale_fill_jcolors('pal8') + 
@@ -461,6 +516,32 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     scale_x_continuous(expand = c(0,0)) +
     labs(y = paste0('Predicted COVID-19 attributable mortality\nrates among individuals as of ', format(unique(mortality_rate$date), '%b %Y')),
          col = '', fill = '', x = 'Age')
+  
+  p1 <- ggplot(subset(tmp, age == 85), aes(x=age_cat)) + 
+    geom_point(aes(y = M, col = loc_label)) +
+    geom_errorbar(aes(ymin=CL, ymax=CU), width = 0) + 
+    theme_bw() +
+    theme(
+      panel.grid.major= element_blank(), 
+      strip.background = element_blank(),
+      panel.border = element_rect(colour = "black", fill = NA), 
+      axis.title.x = element_blank(), 
+      axis.ticks.y = element_blank(), 
+      axis.title.y = element_blank(), 
+      axis.text.y = element_blank(), 
+      plot.margin = unit(c(5.5,5.5,18,0), "pt"),
+      legend.position = 'none',
+    ) + 
+    facet_grid(loc_label~.) +
+    scale_color_jcolors('pal8') + 
+    scale_fill_jcolors('pal8') + 
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
+                       breaks = seq(0, max(tmp$CU), 0.01)) +
+    scale_x_discrete(expand = c(0,0)) +
+    labs(y = paste0('Predicted COVID-19 attributable mortality\nrates among individuals as of ', format(unique(mortality_rate$date), '%b %Y')),
+         col = '')
+  
+  ggarrange(p, p1, nrow = 1, common.legend = T, legend = 'bottom', widths = c(1, 0.1))
   ggsave(paste0(outdir, paste0('-MortalityRateContinuous_allages.png')), w = 7, h = 5 + 2*(length(unique(mortality_rate$code))/4))
   
 }
