@@ -556,7 +556,7 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
   tmp = tmp[order(code)]
   
   prop_vac = list(); prop_vac_start = list(); 
-  N_COUNTERFACTUAL = 3; prop_vac_start_counterfactual = list()
+  N_COUNTERFACTUAL = 6; prop_vac_start_counterfactual = list()
   for(i in 1:length(unique(tmp$age_index))){
     
     tmp1 = subset(tmp, age_index == unique(tmp$age_index)[i])
@@ -566,16 +566,20 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
     prop_vac_start_counterfactual[[i]] = prop_vac_start[[i]]
     
     if(i == 1){
-      values = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
-      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values), 
-                                                  c(values, prop_vac_start[[i]], values), byrow = T)
+      values_max = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      values_min = rep(min(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values_max), 
+                                                  c(values_max, prop_vac_start[[i]], values_max,
+                                                    values_min, prop_vac_start[[i]], values_min), byrow = T)
       
     }
     
     if(i == 2){
-      values = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
-      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values), 
-                                                  c(prop_vac_start[[i]], values, values), byrow = T)
+      values_max = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      values_min = rep(min(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values_max), 
+                                                  c(prop_vac_start[[i]], values_max, values_max,
+                                                    prop_vac_start[[i]], values_min, values_min), byrow = T)
       
     }
   }

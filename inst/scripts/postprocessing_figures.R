@@ -15,8 +15,8 @@ indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "211201a"
-JOBID = 2047
+stan_model = "220122a"
+JOBID = 13395
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -93,7 +93,6 @@ age_contribution_continuous_table = make_var_by_age_by_state_table(fit_samples, 
 plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
 age_contribution_discrete_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
-
 
 # baseline contribution adjusted and non-adjusted for population composition
 make_contribution_ref(fit_samples, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
@@ -175,6 +174,12 @@ prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2)
 
 df_counterfactual = data.table(counterfactual_index = 1:3, 
                                label_counterfactual = paste0('Counterfactual analysis with higher vaccine coverage\namong individuals aged ', c('18-64', '65+', '18-64 and 65+')))
+
+if(stan_data$N_COUNTERFACTUAL == 6){
+  df_counterfactual <- rbind(df_counterfactual, 
+                             data.table(counterfactual_index = 4:6, 
+                                        label_counterfactual = paste0('Counterfactual analysis with lower vaccine coverage\namong individuals aged ', c('18-64', '65+', '18-64 and 65+'))))
+}
 
 # phi during vaccine 
 make_var_by_age_by_state_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)

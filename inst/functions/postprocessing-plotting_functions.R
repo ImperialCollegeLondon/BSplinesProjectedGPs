@@ -720,12 +720,16 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   tmp1 <- merge(tmp, tmp1, by = 'code')
   tmp1 <- tmp1[date == max_date]
   
+  tmp2 <- subset(tmp1, label_counterfactual == label_fit)
+  tmp2 <- select(tmp2, -label_counterfactual)
   p = list()
   for(i in 1:length(ages)){
     # i = 1
     Age = ages[i]
     
+    
     p[[i]] =  ggplot(subset(tmp1, age == Age), aes(x = label_counterfactual)) + 
+      geom_hline(data = subset(tmp2, age == Age), aes(yintercept=M), col = cols[1], linetype = 'dashed') +
       geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
       geom_point(aes(y = M, col = label_counterfactual)) + 
       facet_grid(loc_label~age) +
@@ -739,7 +743,8 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
             axis.title.x = element_blank()) + 
       labs(col = '', y = paste0('Predicted age-specific ',var,' COVID-19 attributable weekly deaths\nat the end of the resurgence period'),
            fill = '', linetype = '') +
-      guides(fill=guide_legend(nrow=4,byrow=TRUE, order =1), col=guide_legend(nrow=4,byrow=TRUE, order =1), 
+      guides(fill=guide_legend(nrow=1 + stan_data$N_COUNTERFACTUAL,byrow=TRUE, order =1), 
+             col=guide_legend(nrow=1 + stan_data$N_COUNTERFACTUAL,byrow=TRUE, order =1), 
              linetype = guide_legend(order=2)) 
     
     if(i != length(ages)){
@@ -753,7 +758,7 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   }
   
   p = ggarrange(plotlist = p, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.1, 1.05))
-  ggsave(p, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 4 + length(unique(data_res1$code))/6, h = 5 + 2*(length(unique(data_res1$code))/4))
+  ggsave(p, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 5, h = 5 + 2*(length(unique(data_res1$code))/4))
   
 }
   
