@@ -116,17 +116,17 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211201a|211202a|211201c|211201d|220117a|220118a|220119a|220120a|220121a|220122a|220123a|220124a', stan_model)){
+if(grepl('211201a|211202a|211201c|211201d|220117a|220118a|220119a|220120a|220121a|220122a|220123a|220124a|220125a', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 11, knots_rows = knots_rows)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 9, knots_rows = knots_rows)
 }
 if(grepl('211201d', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
   stan_data = add_nodes_stan_data(stan_data)
 }
-if(grepl('220119a|220120a|220121a|220122a|220123a|220124a', stan_model)){
+if(grepl('220119a|220120a|220121a|220122a|220123a|220124a|220125a', stan_model)){
   cat("\n With vaccine effects \n")
   resurgence_dates <- find_resurgence_dates_by_state(JHUData, deathByAge, Code)
   stan_data = add_resurgence_period_by_state(stan_data, df_week, resurgence_dates)
