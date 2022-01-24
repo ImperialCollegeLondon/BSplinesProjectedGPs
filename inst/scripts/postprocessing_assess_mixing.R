@@ -206,6 +206,7 @@ if(any(c('intercept_resurgence0', 'vaccine_effect_intercept') %in% names_samples
 
 }
 
+
 names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept')
 if(any(names %in% names_samples)){
   
@@ -214,8 +215,8 @@ if(any(names %in% names_samples)){
   df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
   
   math_name = c('psi^"base"*""', 'psi^"state"*""', 'psi^"vacc"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc"*""')
-  groups = c('slope', 'slope', 'vaccine\neffect\nslope', 'baseline', 'baseline', 'vaccine\neffect\nintercept')
-  groups_levels = c('baseline', 'slope', 'vaccine\neffect\nintercept', 'vaccine\neffect\nslope')
+  groups = c('slope', 'slope', 'indirect\nvaccine\neffects', 'baseline', 'baseline', 'indirect\nvaccine\neffects')
+  groups_levels = c('baseline', 'slope', 'indirect\nvaccine\neffects')
   
   if(!('vaccine_effect_intercept_cross' %in% names_samples)){
 
