@@ -722,7 +722,11 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   tmp1 <- tmp1[date == max_date]
   
   tmp2 <- subset(tmp1, label_counterfactual == label_fit)
-  tmp2 <- select(tmp2, -label_counterfactual)
+  setnames(tmp2, c('M', 'CL', 'CU'), c('M_fit', 'CL_fit', "CU_fit"))
+  tmp1 <- merge(tmp1, tmp2[, .(M_fit, CL_fit, CU_fit, code, age_index)], by = c('code', 'age_index'))
+
+# tmp1[, CU := CU + M*2]
+# tmp1[, CL := CL - M*2]
   p = list()
   for(i in 1:length(ages)){
     # i = 1
@@ -730,7 +734,8 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
     
     
     p[[i]] =  ggplot(subset(tmp1, age == Age), aes(x = label_counterfactual)) + 
-      geom_hline(data = subset(tmp2, age == Age), aes(yintercept=M), col = cols[1], linetype = 'dashed') +
+      geom_hline(aes(yintercept=M_fit), col = cols[1], linetype = 'dashed') +
+      geom_rect( aes(ymin = CL_fit, ymax = CU_fit), xmin = -Inf, xmax = Inf, fill = cols[1], alpha = 0.05) +
       geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
       geom_point(aes(y = M, col = label_counterfactual)) + 
       facet_grid(loc_label~age) +
