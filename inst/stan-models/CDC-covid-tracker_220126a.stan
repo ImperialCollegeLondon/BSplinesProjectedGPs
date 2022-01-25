@@ -203,8 +203,8 @@ transformed parameters {
         intercept_resurgence[c] += prop_vac_start[c] .* rep_row_vector(vaccine_effect_intercept_diagonal, M);
         slope_resurgence[c] += prop_vac_start[c] .* rep_row_vector(vaccine_effect_slope_diagonal, M);
       } else{
-        intercept_resurgence[c] += prop_vac_start[c_prime] .* rep_row_vector(vaccine_effect_intercept_cross[c_prime], M);
-        slope_resurgence[c] += prop_vac_start[c_prime] .* rep_row_vector(vaccine_effect_slope_cross[c_prime], M);
+        intercept_resurgence[c] += prop_vac_start[c_prime] .* rep_row_vector(vaccine_effect_intercept_cross[c], M);
+        slope_resurgence[c] += prop_vac_start[c_prime] .* rep_row_vector(vaccine_effect_slope_cross[c], M);
       }
     }
     
@@ -369,8 +369,8 @@ generated quantities {
           intercept_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c][n,:] .* rep_row_vector(vaccine_effect_intercept_diagonal, M);
           slope_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c][n,:] .* rep_row_vector(vaccine_effect_slope_diagonal, M);
         } else{
-          intercept_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c_prime][n,:] .* rep_row_vector(vaccine_effect_intercept_cross[c_prime], M);
-          slope_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c_prime][n,:] .* rep_row_vector(vaccine_effect_slope_cross[c_prime], M);
+          intercept_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c_prime][n,:] .* rep_row_vector(vaccine_effect_intercept_cross[c], M);
+          slope_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c_prime][n,:] .* rep_row_vector(vaccine_effect_slope_cross[c], M);
         }
       }
       log_xi_counterfactual[c] = rep_matrix(intercept_resurgence_counterfactual[c], T) +

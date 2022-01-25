@@ -1324,8 +1324,8 @@ make_forest_plot_table2 <- function(summary, df_age_vaccination2, df_state, name
   for(x in 1:length(variables)) group[x] = groups[which(grepl(gsub('(.+)\\[.*', '\\1', variables[x]), names))]
   for(x in 1:length(names)) variables = gsub(names[x], math_name[x], variables)
   for(x in df_age_vaccination2$age_index) variables = gsub(paste0('\\[',x), paste0('\\["', df_age_vaccination2$age[x], '"'), variables) 
-  for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables) & !grepl(', ', variables)] = sub(paste0('\\[\"',df_age_vaccination2$age[x]), paste0('\\[\"', df_age_vaccination2$age[-x],', ',df_age_vaccination2$age[x]), variables[grepl('vac', variables) & !grepl(', ', variables)])
-  for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables)] = gsub('(.+),.*', '\\1"\\]', variables[grepl('vac', variables)])
+  # for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables) & !grepl(', ', variables)] = sub(paste0('\\[\"',df_age_vaccination2$age[x]), paste0('\\[\"', df_age_vaccination2$age[-x],', ',df_age_vaccination2$age[x]), variables[grepl('vac', variables) & !grepl(', ', variables)])
+  # for(x in df_age_vaccination2$age_index) variables[grepl('vac', variables)] = gsub('(.+),.*', '\\1"\\]', variables[grepl('vac', variables)])
   
   for(x in df_state$state_index) variables[!grepl('vac', variables)] = gsub(paste0('\",', x, '\\]'), paste0(', ',df_state$loc_label[x], '"\\]'), variables[!grepl('vac', variables)]) 
   
