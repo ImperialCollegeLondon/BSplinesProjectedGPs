@@ -85,6 +85,10 @@ if('Total' %in% colnames(pop_data)){
   pop_data = as.data.table( read.csv(path.to.pop.data) )
   setnames(pop_data, 'location', 'loc_label')
 }
+if('age_index' %in% colnames(pop_data)){
+  pop_data = select( pop_data, - age_index)
+}
+
 
 ####
 
