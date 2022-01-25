@@ -138,6 +138,8 @@ if(any(c('slope_resurgence0', 'vaccine_effect_slope') %in% names_samples)){
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_slope_1864_parameters.png'), h = 20, w = 20, limitsize = F)
   p <- bayesplot::mcmc_pairs(fit_cum, pars = tmp[grepl('\\[2', name)]$name)
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_slope_65p_parameters.png'), h = 20, w = 20, limitsize = F)
+  p <- bayesplot::mcmc_pairs(fit_cum, pars = tmp$name)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_slope_parameters.png'), h = 20, w = 20, limitsize = F)
   
   ## interval plots
   cat("\n Interval plot vaccination slope params \n")
@@ -180,7 +182,9 @@ if(any(c('intercept_resurgence0', 'vaccine_effect_intercept') %in% names_samples
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_intercept_1864_parameters.png'), h = 20, w = 20, limitsize = F)
   p <- bayesplot::mcmc_pairs(fit_cum, pars = tmp[grepl('\\[2', name)]$name)
   ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_intercept_65p_parameters.png'), h = 20, w = 20, limitsize = F)
-
+  p <- bayesplot::mcmc_pairs(fit_cum, pars = tmp$name)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_vaccine_intercept_parameters.png'), h = 20, w = 20, limitsize = F)
+  
   ## interval plots
   cat("\n Interval plot vaccination intercept params \n")
   names_var = c('intercept_resurgence0', 'intercept_resurgence_re', 'intercept_resurgence', 'vaccine_effect_intercept')
