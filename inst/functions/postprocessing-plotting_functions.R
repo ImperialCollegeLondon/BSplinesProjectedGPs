@@ -1919,7 +1919,6 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
   
   
   ###################################
-  data_res <- copy(perc_E_pdeaths_counterfactual)
   prop_vac_counterfactual_df <- copy(prop_vac_counterfactual)
   
   prop_vac_counterfactual_df <- as.data.table( reshape2::dcast(prop_vac_counterfactual_df, counterfactual_index + state_index ~ age_index, value.var = 'diff_value'))
