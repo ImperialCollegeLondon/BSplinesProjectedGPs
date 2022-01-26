@@ -1834,7 +1834,6 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
   label_higher <- function(age) paste0('Counterfactual analysis with higher vaccine coverage\namong individuals aged ', age)
   label_lower <- function(age) paste0('Counterfactual analysis with lower vaccine coverage\namong individuals aged ', age)
   
-  
   prop_vac_counterfactual_df <- copy(prop_vac_counterfactual)
   setnames(prop_vac_counterfactual_df, 'age_index', 'age_index_counterfactual')
   df <- copy(df_age_vaccination2[, .(age, age_index)])
@@ -1861,7 +1860,7 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
     facet_grid(loc_label~age) +
     scale_color_manual(values = cols) + 
     scale_fill_manual(values = cols) + 
-    scale_x_continuous(labels = scales::percent) +
+    # scale_x_continuous(labels = scales::percent) +
     scale_y_continuous(labels = scales::percent) +
     theme_bw() +
     theme(strip.background = element_blank(),
@@ -1882,7 +1881,7 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
     facet_grid(loc_label~age) +
     scale_color_manual(values = cols) + 
     scale_fill_manual(values = cols) + 
-    scale_x_continuous(labels = scales::percent) +
+    # scale_x_continuous(labels = scales::percent) +
     scale_y_continuous(labels = scales::percent) +
     theme_bw() +
     theme(strip.background = element_blank(),
@@ -1904,7 +1903,7 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
     facet_grid(loc_label~age) +
     scale_color_manual(values = cols) + 
     scale_fill_manual(values = cols) + 
-    scale_x_continuous(labels = scales::percent) +
+    # scale_x_continuous(labels = scales::percent) +
     scale_y_continuous(labels = scales::percent) +
     theme_bw() +
     theme(strip.background = element_blank(),
@@ -1949,7 +1948,7 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
     facet_grid(loc_label~age) +
     scale_color_manual(values = cols) +
     scale_fill_manual(values = cols) +
-    scale_x_continuous(labels = scales::percent) +
+    # scale_x_continuous(labels = scales::percent) +
     scale_y_continuous(labels = scales::percent) +
     theme_bw() +
     theme(strip.background = element_blank(),

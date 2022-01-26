@@ -122,7 +122,7 @@ mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_sampl
 plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)
 
 
-# predicted weekly deaths by various age groups 
+# predicted weekly deaths by various age groups
 deatht = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
 tmp = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
@@ -136,7 +136,7 @@ make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_
                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
 
 # compare to DoH data
-tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous, 
+tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous,
                                                                       scrapedData, 'cum.deaths', Code, outdir.table)
 compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
                                    var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
@@ -218,15 +218,16 @@ perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit
 
 diff_E_pdeaths_counterfactual = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
 perc_E_pdeaths_counterfactual = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
+perc_inv_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_inv_E_pdeaths_counterfactual', outdir.table)
 
 plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
                                     subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
-plot_vaccine_effects_counterfactual_perc(subset(perc_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', outdir.fig)
+plot_vaccine_effects_counterfactual_perc(subset(perc_inv_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', outdir.fig)
 
 if(any(!Code %in% selected_code)){
   plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
                                       subset(E_pdeaths_predict_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
-  plot_vaccine_effects_counterfactual_perc(subset(perc_E_pdeaths_counterfactual, !code %in% selected_code), prop_vac_counterfactual, '', outdir.fig)
+  plot_vaccine_effects_counterfactual_perc(subset(perc_inv_E_pdeaths_counterfactual, !code %in% selected_code), prop_vac_counterfactual, '', outdir.fig)
   
 }
 
@@ -235,6 +236,6 @@ find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counter
 
 
 cat("\n End postprocessing_figures.R \n")
-
-
+stan_data$prop_vac_start_counterfactual
+subset(prop_vac_counterfactual, state_index == 1)
 
