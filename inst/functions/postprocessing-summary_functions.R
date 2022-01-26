@@ -181,7 +181,7 @@ make_inv_var_by_age_by_state_by_counterfactual_table = function(fit_samples, df_
   tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
   
   for(Code in unique(tmp1$code)){
-    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-inv_', var_name,  'Table_', Code, '.rds'))
     
   }
   
