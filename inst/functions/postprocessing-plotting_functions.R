@@ -1828,19 +1828,20 @@ plot_var_base_model_table <- function(loc_label, outdir){
 }
 
 
-plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterfactual, lab, outdir){
-  setnames(prop_vac_counterfactual, 'age_index', 'age_index_counterfactual')
+plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterfactual_df, lab, outdir){
+  
+  setnames(prop_vac_counterfactual_df, 'age_index', 'age_index_counterfactual')
   df <- copy(df_age_vaccination2[, .(age, age_index)])
   setnames(df, 1:2, c('age_counterfactual', 'age_index_counterfactual'))
-  prop_vac_counterfactual <- merge(prop_vac_counterfactual, df, by = 'age_index_counterfactual')
+  prop_vac_counterfactual_df <- merge(prop_vac_counterfactual_df, df, by = 'age_index_counterfactual')
   
   tmp1 <- data_res[, list(max_date = max(date)), by = 'code']
   tmp1 <- merge(data_res, tmp1, by = 'code')
   tmp1 <- tmp1[date == max_date]
   
-  tmp1 <- merge(tmp1, prop_vac_counterfactual, by = c('state_index', 'counterfactual_index'))
+  tmp1 <- merge(tmp1, prop_vac_counterfactual_df, by = c('state_index', 'counterfactual_index'))
   tmp1[, age_counterfactual2 := gsub('.* aged (.+)', '\\1', label_counterfactual)]
-  tmp1[, label_age_counterfactual := paste0('Counterfactual analysis with change vaccine coverage\namong individuals aged ', age_counterfactual)]
+  tmp1[, label_age_counterfactual := paste0('Counterfactual analysis with a change in the\nvaccine coverage among individuals aged ', age_counterfactual)]
   
   tmp1 <- tmp1[age_counterfactual2 != '18-64 and 65+']
   tmp1 <- tmp1[age_counterfactual == age_counterfactual2]
@@ -1866,8 +1867,50 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
     guides(fill=guide_legend(nrow=2,byrow=TRUE, order =1), 
            col=guide_legend(nrow=2,byrow=TRUE, order =1), 
            linetype = guide_legend(order=2)) 
+  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 7.5, h = 5 + 2*(length(unique(data_res$code))/4))
   
-  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 7, h = 5 + 2*(length(unique(data_res$code))/4))
+  p <- ggplot(tmp1, aes(x = diff_value)) + 
+    geom_hline(aes(yintercept=0), linetype = 'dashed') +
+    geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
+    geom_point(aes(y = M, col = label_age_counterfactual)) + 
+    facet_grid(loc_label~age) +
+    scale_color_manual(values = cols) + 
+    scale_fill_manual(values = cols) + 
+    scale_x_continuous(labels = scales::percent) +
+    scale_y_continuous(labels = scales::percent) +
+    theme_bw() +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'bottom') + 
+    labs(col = '', y = paste0('Change in age-specific COVID-19 attributable weekly deaths\nat the end of the resurgence period'),
+         fill = '', linetype = '', 
+         x = 'Change in vaccination coverage') +
+    guides(fill=guide_legend(nrow=1,byrow=TRUE, order =1), 
+           col=guide_legend(nrow=1,byrow=TRUE, order =1), 
+           linetype = guide_legend(order=2)) 
+  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '2.png'), w = 7, h = 5 + 2*(length(unique(data_res$code))/4))
+  
+  p <- ggplot(tmp1, aes(x = diff_value)) + 
+    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
+    geom_point(aes(y = M, col = label_age_counterfactual)) + 
+    facet_grid(loc_label~age) +
+    scale_color_manual(values = cols) + 
+    scale_fill_manual(values = cols) + 
+    scale_x_continuous(labels = scales::percent) +
+    scale_y_continuous(labels = scales::percent) +
+    theme_bw() +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'bottom') + 
+    labs(col = '', y = paste0('Change in age-specific COVID-19 attributable weekly deaths\nat the end of the resurgence period'),
+         fill = '', linetype = '', 
+         x = 'Change in vaccination coverage') +
+    guides(fill=guide_legend(nrow=1,byrow=TRUE, order =1), 
+           col=guide_legend(nrow=1,byrow=TRUE, order =1), 
+           linetype = guide_legend(order=2)) 
+  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '3.png'), w = 7, h = 5 + 2*(length(unique(data_res$code))/4))
   
 }
 
