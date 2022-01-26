@@ -1414,6 +1414,36 @@ prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
 }
 
 
+prepare_prop_vac_counterfactual_table <- function(stan_data, df_state, df_age_vaccination2, df_counterfactual){
+  tmp <- lapply(1:length(stan_data$prop_vac_start_counterfactual), function(x){
+    tmp <- as.data.table( reshape2::melt(stan_data$prop_vac_start_counterfactual[[x]]) )
+    tmp$age_index <- x
+    tmp
+  })
+  tmp <- do.call('rbind', tmp)
+  setnames(tmp, 1:2, c('counterfactual_index', 'state_index'))
+  
+  tmp1 <- lapply(1:length(stan_data$prop_vac_start), function(x){
+    tmp <- as.data.table( reshape2::melt(stan_data$prop_vac_start[[x]]) )
+    tmp$state_index <- 1:nrow(tmp)
+    tmp$age_index <- x
+    tmp
+  })
+  tmp1 <- do.call('rbind', tmp1)
+  setnames(tmp1, 'value', 'value_true')
+  
+  tmp <- merge(tmp, tmp1, by = c('age_index', 'state_index'))
+  tmp[, diff_value := value - value_true]
+  
+  # tmp <- merge(tmp, df_state, by = 'state_index')
+  # tmp <- merge(tmp, df_counterfactual, by = 'counterfactual_index')
+  # tmp <- merge(tmp, df_age_vaccination2, by = 'age_index')
+  
+  return(tmp)
+}
+
+
+
 save_p_value_vaccine_effects <- function(samples, names, outdir){
   
   names_fit <- names(samples)
