@@ -1828,8 +1828,9 @@ plot_var_base_model_table <- function(loc_label, outdir){
 }
 
 
-plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterfactual_df, lab, outdir){
+plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterfactual, lab, outdir){
   
+  prop_vac_counterfactual_df <- copy(prop_vac_counterfactual)
   setnames(prop_vac_counterfactual_df, 'age_index', 'age_index_counterfactual')
   df <- copy(df_age_vaccination2[, .(age, age_index)])
   setnames(df, 1:2, c('age_counterfactual', 'age_index_counterfactual'))
