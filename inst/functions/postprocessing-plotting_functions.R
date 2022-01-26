@@ -1854,7 +1854,7 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
   cols <- viridisLite::viridis(length(unique(tmp1$label_counterfactual)) , direction = -1, begin = 0.1)
   
   p <- ggplot(tmp1, aes(x = diff_value)) + 
-    geom_hline(aes(yintercept=0), linetype = 'dashed') +
+    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
     geom_point(aes(y = M, col = label_counterfactual)) + 
     facet_grid(loc_label~age) +
@@ -1875,7 +1875,7 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
   ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 7.5, h = 5 + 2*(length(unique(data_res$code))/4))
   
   p <- ggplot(tmp1, aes(x = diff_value)) + 
-    geom_hline(aes(yintercept=0), linetype = 'dashed') +
+    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
     geom_point(aes(y = M, col = label_age_counterfactual)) + 
     facet_grid(loc_label~age) +
