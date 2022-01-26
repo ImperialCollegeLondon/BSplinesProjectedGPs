@@ -1846,7 +1846,7 @@ plot_vaccine_effects_counterfactual_perc <- function(data_res, prop_vac_counterf
   tmp1 <- tmp1[age_counterfactual2 != '18-64 and 65+']
   tmp1 <- tmp1[age_counterfactual == age_counterfactual2]
   
-  cols <- viridisLite::viridis(length(unique(tmp$label_counterfactual)) , direction = -1, begin = 0.1)
+  cols <- viridisLite::viridis(length(unique(tmp1$label_counterfactual)) , direction = -1, begin = 0.1)
   
   p <- ggplot(tmp1, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=0), linetype = 'dashed') +
