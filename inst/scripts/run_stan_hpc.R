@@ -11,7 +11,7 @@ indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('CA,FL,NY,TX',',')[[1]]
-stan_model = "220128a"
+stan_model = "220129c"
 JOBID = 3541
 
 if(0)
@@ -116,7 +116,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211201a|211202a|211201c|211201d|220117a|220118a|220119a|220120a|220121a|220122a|220123a|220124a|220125a|220126a|220127a|220128a|220129a|220130a', stan_model)){
+if(grepl('211201a|211202a|211201c|211201d|220117a|220118a|220119a|220120a|220121a|220122a|220123a|220124a|220125a|220126a|220127a|220128a|220129a|220129c|220129d|220130a', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 9, knots_rows = knots_rows)
