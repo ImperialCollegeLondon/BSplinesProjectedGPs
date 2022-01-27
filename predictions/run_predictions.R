@@ -7,7 +7,7 @@ library(loo)
 
 indir = "~/git/BSplinesProjectedGPs" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
-model = 'P-SPLINES'
+model = 'GP-B-SPLINES'
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -18,6 +18,8 @@ test = read.csv(file.path(indir, 'predictions', 'data', 'prediction.csv'))
 
 # load functions
 source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
+source(file.path(indir, 'inst', "functions", "postprocessing-summary_functions.R"))
+source(file.path(indir, 'inst', "functions", "postprocessing-utils.R"))
 
 # compile stan models
 if(model == 'GP-B-SPLINES') # regularised B-splines projected GP
@@ -113,6 +115,26 @@ if(!file.exists(file)){
   fit <- readRDS(file)
 }
 
+cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
+
+samples = extract(fit)
+
+#
+#
+### Convergence diagnostics ### 
+#
+#
+
+summary <- make_convergence_diagnostics_stats(fit, samples, 
+                                              file.path(outdir, paste0(model, '_nknots_', n_knots_x)))
+p <- bayesplot::mcmc_trace(fit, 
+                           regex_pars = c('nu', 'alpha_gp', 'rho_1', 'rho_2', 'sigma'))
+ggsave(p, file = file.path(outdir, paste0('mcmc_trace_parameters_', model, '_nknots_', n_knots_x, '.png')),
+       h = 10, w = 10, limitsize = F)
+p <- bayesplot::mcmc_pairs(fit, regex_pars = c('nu', 'alpha_gp', 'rho_1', 'rho_2', 'sigma'))
+ggsave(p, file = file.path(outdir, paste0('mcmc_pairs_parameters_', model, '_nknots_', n_knots_x, '.png')),
+       h = 10, w = 10, limitsize = F)
+
 
 #
 #
@@ -120,12 +142,10 @@ if(!file.exists(file)){
 #
 #
 
-cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
 
 ps <- c(0.5, 0.025, 0.975)
 p_labs = c('M', 'CL', 'CU', 'mean')
 
-samples = extract(fit)
 
 # predict on test coordinates
 
