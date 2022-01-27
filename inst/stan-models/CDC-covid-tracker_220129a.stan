@@ -221,7 +221,7 @@ model {
   rho_gp1 ~ inv_gamma(2, 2);
   rho_gp2 ~ inv_gamma(2, 2);
 
-  intercept_resurgence0 ~ normal(-0.69,5);
+  intercept_resurgence0 ~ normal(-1.6,5);
   slope_resurgence0 ~ normal(0,5);
   
   vaccine_effect_intercept_diagonal ~ normal(0,1);
