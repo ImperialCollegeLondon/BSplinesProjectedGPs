@@ -1,0 +1,10 @@
+Rplots.pdf
+inst/.DS_Store
+simulations/.DS_Store
+melodie/
+predictions/compare_methods.R
+predictions/results/
+simulations/results/
+deprecated/
+inst/.DS_Store
+Rplots.pdf
