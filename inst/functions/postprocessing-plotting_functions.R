@@ -766,6 +766,70 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   p = ggarrange(plotlist = p, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.1, 1.05))
   ggsave(p, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 5, h = 5 + 2*(length(unique(data_res1$code))/4))
   
+  
+  #####################################
+  prop_vac_counterfactual_df <- copy(prop_vac_counterfactual)
+  
+  label <- function(age) paste0('Counterfactual analysis with a change in the\nvaccine coverage among individuals aged ', age)
+
+  setnames(prop_vac_counterfactual_df, 'age_index', 'age_index_counterfactual')
+  df <- copy(df_age_vaccination2[, .(age, age_index)])
+  setnames(df, 1:2, c('age_counterfactual', 'age_index_counterfactual'))
+  prop_vac_counterfactual_df <- merge(prop_vac_counterfactual_df, df, by = 'age_index_counterfactual')
+  df <- unique(prop_vac_counterfactual_df[diff_value == 0, .(value_true, value, diff_value, age_counterfactual, age_index_counterfactual, state_index)])
+  df[, counterfactual_index:=0]
+  prop_vac_counterfactual_df <- rbind(prop_vac_counterfactual_df, df)
+  
+  tmp1 <- tmp[, list(max_date = max(date)), by = 'code']
+  tmp1 <- merge(tmp, tmp1, by = 'code')
+  tmp1 <- tmp1[date == max_date]
+  
+  df <- rbind(df_counterfactual, data.table(counterfactual_index = 0, label_counterfactual = label_fit))
+  tmp1 <- merge(tmp1, df, by = 'label_counterfactual')
+  tmp1 <- merge(tmp1, prop_vac_counterfactual_df, by = c('state_index', 'counterfactual_index'))
+  
+  tmp1[, age_counterfactual2 := gsub('.* aged (.+)', '\\1', label_counterfactual)]
+  tmp1[, label_age_counterfactual := label(age_counterfactual2)]
+  tmp2 <- tmp1[age_counterfactual2 != '18-64 and 65+']
+  tmp2 <- tmp2[age_counterfactual == age_counterfactual2 | label_counterfactual == label_fit]
+  
+  tmp2[, label_counterfactual := factor(label_counterfactual, 
+                                        levels = c(label_fit, 
+                                                   df_counterfactual[!grepl('18-64 and 65+', label_counterfactual), label_counterfactual]))]
+  tmp2 <- tmp2[diff_value != 0 | label_counterfactual == label_fit]
+  # df <- subset(tmp2, label_counterfactual == label_fit)
+  # setnames(df, c('M', 'CL', 'CU'), c('M_fit', 'CL_fit', "CU_fit"))
+  # tmp2 <- merge(tmp2, unique(df[, .(M_fit, CL_fit, CU_fit, code, age_index)]), by = c('code', 'age_index'))
+  # 
+  # 
+  cols <- viridisLite::viridis(length(unique(tmp1$label_counterfactual)) , direction = -1, begin = 0.1)
+  
+  p <- ggplot(tmp2, aes(x = diff_value)) + 
+    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
+    geom_point(aes(y = M, col = label_counterfactual, pch = loc_label)) + 
+    facet_grid(.~age) +
+    # scale_color_manual(values = cols) + 
+    # scale_fill_manual(values = cols) + 
+    ggsci::scale_colour_npg() + 
+    # scale_x_continuous(labels = scales::percent) +
+    # scale_y_continuous(labels = scales::percent) +
+    theme_bw() +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'bottom'
+          # legend.box="vertical",
+          # legend.spacing.y = unit(-0, "cm")
+    ) + 
+    labs(col = '', y = paste0('Change in age-specific COVID-19 attributable\nweekly deaths at the end of the resurgence period'),
+         fill = '', linetype = '', 
+         x = 'Change in vaccination coverage', pch = '') +
+    guides(fill=guide_legend(nrow=5,byrow=TRUE, order =2), 
+           col=guide_legend(nrow=5,byrow=TRUE, order =2), 
+           pch = guide_legend(order=1,nrow=4,byrow=TRUE)) 
+  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_abs.png'), w = 7.5, h = 3.5 + 2*(length(unique(data_res$code))/4))
+  
 }
   
 plot_forest_plot <- function(tmp, outdir){
