@@ -828,7 +828,7 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
     guides(fill=guide_legend(nrow=5,byrow=TRUE, order =2), 
            col=guide_legend(nrow=5,byrow=TRUE, order =2), 
            pch = guide_legend(order=1,nrow=4,byrow=TRUE)) 
-  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_abs.png'), w = 7.5, h = 3.5 + 2*(length(unique(data_res$code))/4))
+  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_abs.png'), w = 7.5, h = 3.5 + 2*(length(unique(tmp2$code))/4))
   
   p <- ggplot(tmp2, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
@@ -854,7 +854,7 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
     guides(fill=guide_legend(nrow=5,byrow=TRUE, order =2), 
            col=guide_legend(nrow=5,byrow=TRUE, order =2), 
            pch = guide_legend(order=1,nrow=4,byrow=TRUE)) 
-  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_abs_pl.png'), w = 7.5, h = 3.5 + 2*(length(unique(data_res$code))/4))
+  ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_abs_pl.png'), w = 7.5, h = 3.5 + 2*(length(unique(tmp2$code))/4))
   
 }
   
