@@ -62,7 +62,7 @@ parameters {
 }
 
 transformed parameters {
-  real<lower=0> nu = (1/nu_unscaled)^2;
+  real<lower=0> nu = (1/nu_unscaled);
   real<lower=0> theta = (1 / nu);
   matrix[num_basis_rows,num_basis_columns] beta = gp(num_basis_rows, num_basis_columns, 
                                                      IDX_BASIS_ROWS, IDX_BASIS_COLUMNS,
@@ -76,10 +76,10 @@ transformed parameters {
 }
 
 model {
-  nu_unscaled ~ normal(0,1);
+  nu_unscaled ~ normal(0,5);
   
-  rho_1 ~ inv_gamma(5, 5);
-  rho_2 ~ inv_gamma(5, 5);
+  rho_1 ~ inv_gamma(2,2);
+  rho_2 ~ inv_gamma(2,2);
   alpha_gp ~ cauchy(0,1);
   
   for(i in 1:num_basis_rows){
