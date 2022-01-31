@@ -90,69 +90,69 @@ if('age_index' %in% colnames(pop_data)){
 }
 
 ####
-
-# Plots continuous and aggregated age distribution phi
-age_contribution_continuous_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'phi', outdir.table)
-plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
-age_contribution_discrete_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
-plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
-
-# baseline contribution adjusted and non-adjusted for population composition
-make_contribution_ref(fit_samples, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
-make_contribution_ref_adj(fit_samples, date_10thcum, fiveagegroups, df_week, pop_data, outdir.table)
-
-
-# contribution over time per age groups
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '0-64', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '0-54', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '20-64', date_10thcum, pop_data, data, outdir.table, with_empirical = F)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '55-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '65-79', date_10thcum, pop_data, data, outdir.table)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '65-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '75-84', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '65+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '75+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '80+', date_10thcum, pop_data, data, outdir.table)
-find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '85+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
-
-
-# mortality rate
-mortality_rate_table = make_mortality_rate_table_discrete(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
-                                                 JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
-mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_samples, date_10thcum, df_week, pop_data,
-                                                          JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
-plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)
-
-
-# predicted weekly deaths by various age groups
-deatht = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
-tmp = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
-make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                    age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
-                                    reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
-make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                    age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
-                                    reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
-make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
-                                    age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
-                                    reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
-
-# compare to DoH data
-tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous,
-                                                                      scrapedData, 'cum.deaths', Code, outdir.table)
-compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
-                                   var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
-compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
-compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
-
-# make panel figure
-age_contribution_continuous_table$method = 'GP-BS-SE'
-deatht$method = 'GP-BS-SE'
-p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contribution_continuous_table), copy(deatht), copy(data),
-                                                            'GP-BS-SE', 'GP-BS-SE',
-                                                            show.method = F,
-                                                            heights = c(1,1), outdir.fig)
+# 
+# # Plots continuous and aggregated age distribution phi
+# age_contribution_continuous_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'phi', outdir.table)
+# plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
+# age_contribution_discrete_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
+# plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
+# 
+# # baseline contribution adjusted and non-adjusted for population composition
+# make_contribution_ref(fit_samples, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
+# make_contribution_ref_adj(fit_samples, date_10thcum, fiveagegroups, df_week, pop_data, outdir.table)
+# 
+# 
+# # contribution over time per age groups
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '0-64', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '0-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '0-54', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '20-64', date_10thcum, pop_data, data, outdir.table, with_empirical = F)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '55-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '65-79', date_10thcum, pop_data, data, outdir.table)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '65-74', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '75-84', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '65+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '75+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '80+', date_10thcum, pop_data, data, outdir.table)
+# find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '85+', date_10thcum, pop_data, data, outdir.table, with_empirical = T)
+# 
+# 
+# # mortality rate
+# mortality_rate_table = make_mortality_rate_table_discrete(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
+#                                                  JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
+# mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_samples, date_10thcum, df_week, pop_data,
+#                                                           JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
+# plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)
+# 
+# 
+# # predicted weekly deaths by various age groups
+# deatht = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
+# tmp = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
+# make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+#                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T,
+#                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
+# make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+#                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T,
+#                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
+# make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
+#                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F,
+#                                     reduction = c(vaccine_data[date %in% df_week$date & prop > 0, min(date)], min(resurgence_dates$start_resurgence)-7))
+# 
+# # compare to DoH data
+# tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous,
+#                                                                       scrapedData, 'cum.deaths', Code, outdir.table)
+# compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
+#                                    var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
+# compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
+# compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
+# 
+# # make panel figure
+# age_contribution_continuous_table$method = 'GP-BS-SE'
+# deatht$method = 'GP-BS-SE'
+# p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contribution_continuous_table), copy(deatht), copy(data),
+#                                                             'GP-BS-SE', 'GP-BS-SE',
+#                                                             show.method = F,
+#                                                             heights = c(1,1), outdir.fig)
 
 
 # p-value vaccine effects
@@ -177,12 +177,12 @@ prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2)
 prop_vac_counterfactual <- prepare_prop_vac_counterfactual_table(stan_data1, df_state, df_age_vaccination2, df_counterfactual)
 
 df_counterfactual = data.table(counterfactual_index = 1:3, 
-                               label_counterfactual = paste0('Counterfactual analysis with higher vaccine coverage\namong individuals aged ', c('18-64', '65+', '18-64 and 65+')))
+                               label_counterfactual = paste0('Counterfactual analysis with higher vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+')))
 
 if(stan_data$N_COUNTERFACTUAL == 6){
   df_counterfactual <- rbind(df_counterfactual, 
                              data.table(counterfactual_index = 4:6, 
-                                        label_counterfactual = paste0('Counterfactual analysis with lower vaccine coverage\namong individuals aged ', c('18-64', '65+', '18-64 and 65+'))))
+                                        label_counterfactual = paste0('Counterfactual analysis with lower vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+'))))
 }
 
 # phi during vaccine 
@@ -215,24 +215,43 @@ if(length(Code) > 6){
 # plot counterfactual analysis
 E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
 E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
+diff_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
+perc_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
 
+# aggregate across states
 diff_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
 perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'perc_E_pdeaths_counterfactual_all', outdir.table)
 
-diff_E_pdeaths_counterfactual = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
-perc_E_pdeaths_counterfactual = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
-perc_inv_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
+# aggregate across ages
+diff_E_pdeaths_counterfactual_allages = make_var_inv_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
+E_pdeaths_counterfactual_resurgence_cumulative_allages = make_var_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
+E_pdeaths_predict_resurgence_cumulative_allages = make_var_by_state_table(fit_samples, df_week2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
+perc_E_pdeaths_counterfactual_allages = make_inv_ratio_vars_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, c('diff_E_pdeaths_counterfactual', 'E_pdeaths_counterfactual_resurgence_cumulative'), outdir.table)
 
 plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
                                     subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
-plot_vaccine_effects_counterfactual_perc(subset(perc_inv_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', outdir.fig)
+plot_vaccine_effects_counterfactual_change(subset(perc_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', outdir.fig)
+plot_vaccine_effects_counterfactual_change(subset(diff_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
+
+plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, code %in% selected_code), 
+                                            subset(E_pdeaths_predict_resurgence_cumulative_allages, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
+plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', outdir.fig)
+plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
+
 
 if(any(!Code %in% selected_code)){
   plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
                                       subset(E_pdeaths_predict_resurgence_cumulative, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
-  plot_vaccine_effects_counterfactual_perc(subset(perc_inv_E_pdeaths_counterfactual, !code %in% selected_code), prop_vac_counterfactual, '', outdir.fig)
+  plot_vaccine_effects_counterfactual_change(subset(perc_E_pdeaths_counterfactual, !code %in% selected_code), prop_vac_counterfactual, '', 'percChange', outdir.fig)
+  plot_vaccine_effects_counterfactual_change(subset(diff_E_pdeaths_counterfactual, !code %in% selected_code), prop_vac_counterfactual, '', 'diffChange', outdir.fig)
+  
+  plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, !code %in% selected_code), 
+                                              subset(E_pdeaths_predict_resurgence_cumulative_allages, !code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
+  plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, !code %in% selected_code), prop_vac_counterfactual, '', 'percChange', outdir.fig)
+  plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, !code %in% selected_code), prop_vac_counterfactual, '', 'diffChange', outdir.fig)
   
 }
+
 
 
 find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all, prop_vac, resurgence_dates, outdir.table)
