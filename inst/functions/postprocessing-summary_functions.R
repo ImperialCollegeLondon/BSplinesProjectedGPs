@@ -271,8 +271,6 @@ make_ratio_vars_by_state_by_counterfactual_table = function(fit_samples, df_week
   tmp1 <- merge(tmp1, tmp2,  by = c('iterations', 'state_index','week_index'))
   tmp1[, value := value / value_denominator]
   
-  tmp1[, value := -value]
-  
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
               by=c('counterfactual_index', 'state_index', 'week_index')]	
