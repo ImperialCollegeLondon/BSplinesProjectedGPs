@@ -255,7 +255,7 @@ make_var_inv_by_state_by_counterfactual_table = function(fit_samples, df_week, d
 }
 
 
-make_inv_ratio_vars_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state, df_counterfactual, vars_name, outdir){
+make_ratio_vars_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state, df_counterfactual, vars_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')

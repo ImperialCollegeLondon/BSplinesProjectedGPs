@@ -2148,7 +2148,7 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
   
 }
 
-plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_vac_counterfactual, lab, namevar, outdir){
+plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_vac_counterfactual, lab, namevar, outdir, yintercept = 0){
   
   prop_vac_counterfactual_df <- copy(prop_vac_counterfactual)
   
@@ -2175,7 +2175,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   cols <- viridisLite::viridis(length(unique(tmp1$label_counterfactual)) , direction = -1, begin = 0.1)
   
   p <- ggplot(tmp2, aes(x = diff_value)) + 
-    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
     geom_point(aes(y = M, col = label_counterfactual, shape = loc_label)) + 
@@ -2199,14 +2199,14 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
            pch = guide_legend(order=2,nrow=4,byrow=TRUE)) 
   
   if(grepl('perc', namevar)){
-    p <- p + scale_y_continuous(labels = scales::percent) 
+    p <- p + scale_y_log10(labels = scales::percent)  
   }
   
   ggsave(p, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, 'AllAges.png'), w = 5.5, h = 3.5 + 2*(length(unique(data_res$code))/4))
   
   
   p <- ggplot(tmp2, aes(x = diff_value)) + 
-    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
     geom_point(aes(y = M, col = label_counterfactual)) + 
@@ -2229,7 +2229,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
            col=guide_legend(nrow=2,byrow=TRUE, order =1)) 
   
   if(grepl('perc', namevar)){
-    p <- p + scale_y_continuous(labels = scales::percent) 
+    p <- p + scale_y_log10(labels = scales::percent)  
   }
   
   ggsave(p, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, '2AllAges.png'), w = 7, h = 5 + 2*(length(unique(data_res$code))/4))
