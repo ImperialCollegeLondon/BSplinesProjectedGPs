@@ -246,7 +246,7 @@ if(any(!Code %in% selected_code)){
   plot_vaccine_effects_counterfactual_change(subset(diff_E_pdeaths_counterfactual, !code %in% selected_code), prop_vac_counterfactual, '', 'diffChange', outdir.fig)
   
   plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, !code %in% selected_code), 
-                                              subset(E_pdeaths_predict_resurgence_cumulative_allages, !code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
+                                              subset(E_pdeaths_predict_resurgence_cumulative_allages, !code %in% selected_code), subset(resurgence_dates, !code %in% selected_code), 'cumulative', 'cumulative_rperiod', outdir.fig)
   plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, !code %in% selected_code), prop_vac_counterfactual, '', 'percChange', outdir.fig)
   plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, !code %in% selected_code), prop_vac_counterfactual, '', 'diffChange', outdir.fig)
   

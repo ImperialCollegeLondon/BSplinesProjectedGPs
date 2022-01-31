@@ -979,7 +979,7 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
     # scale_color_manual(values = cols) + 
     # scale_fill_manual(values = cols) + 
     ggsci::scale_colour_npg() +
-    scale_shape_manual(values = c(15, 17, 20, 4)) + 
+    scale_shape_manual(values = c(15, 17, 20, 4, 3, 10)[1:length(tmp2$code)]) + 
     # scale_color_jcolors(palette = "pal8") + 
     # scale_x_continuous(labels = scales::percent) +
     # scale_y_continuous(labels = scales::percent) +
@@ -2190,7 +2190,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
           # legend.box="vertical",
           # legend.spacing.y = unit(-0, "cm")
     ) + 
-    scale_shape_manual(values = c(15, 17, 20, 4)) + 
+    scale_shape_manual(values = c(15, 17, 20, 4, 3, 10)[1:length(tmp2$code)]) + 
     labs(col = '', y = paste0('Change in COVID-19 attributable weekly deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
          x = 'Change in vaccination coverage', pch = '') +
