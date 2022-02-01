@@ -2174,6 +2174,8 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   
   cols <- viridisLite::viridis(length(unique(tmp1$label_counterfactual)) , direction = -1, begin = 0.1)
   
+  tmp2 <- tmp2[diff_value != 0]
+  
   p <- ggplot(tmp2, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
@@ -2204,6 +2206,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   
   ggsave(p, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, 'AllAges.png'), w = 5.5, h = 3.5 + 2*(length(unique(data_res$code))/4))
   
+  tmp2 <- tmp2[diff_value != 0]
   
   p <- ggplot(tmp2, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
