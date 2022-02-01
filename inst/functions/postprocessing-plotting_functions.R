@@ -2180,7 +2180,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
-    geom_point(aes(y = M, col = label_counterfactual, shape = loc_label), size = 1.5) + 
+    geom_point(aes(y = M, col = label_counterfactual, shape = loc_label), size = 2) + 
     # scale_color_manual(values = cols) + 
     # scale_fill_manual(values = cols) + 
     ggsci::scale_colour_npg() + 
@@ -2212,7 +2212,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
-    geom_point(aes(y = M, col = label_counterfactual), size = 1.5) + 
+    geom_point(aes(y = M, col = label_counterfactual), size = 2) + 
     facet_grid(loc_label~.) +
     # scale_color_manual(values = cols) + 
     # scale_fill_manual(values = cols) + 
