@@ -228,7 +228,7 @@ save_resurgence_dates <- function(resurgence_dates, outdir){
   resurgence_dates[,start_resurgence_name := format(start_resurgence, '%d %b, %Y')]
   resurgence_dates[,stop_resurgence_name := format(stop_resurgence, '%d %b, %Y')]
   
-  tmp <- merge(resurgence_dates, df_state, by = 'code')[, .(loc_label, start_resurgence, stop_resurgence)]
+  tmp <- merge(resurgence_dates, df_state, by = 'code')[, .(loc_label, start_resurgence_name, stop_resurgence_name)]
   
   saveRDS(tmp, paste0(outdir, '-resurgence_dates.rds'))
 }
