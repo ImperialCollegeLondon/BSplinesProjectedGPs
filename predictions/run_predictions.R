@@ -28,6 +28,8 @@ if(model == 'B-SPLINES') # standard B-splines
   model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'B-SPLINES_2D.stan') )
 if(model == 'P-SPLINES') # Bayesian P-splines
   model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'P-SPLINES_2D.stan') )
+if(model == 'ICAR') # ICAR
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'ICAR_2D.stan') )
 
 # tune 
 n_knots_x = 125
@@ -85,12 +87,32 @@ grid = merge(grid, y_grid, by = 'y_index')
 # find coordinates with training observations
 value.coordinates = select(training, x_index, y_index)
 
+stan_data = list(n = n, m = m, N = nrow(training),
+                 y = training$obs, 
+                 coordinates = value.coordinates,
+                 num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
+                 BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
+                 IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS)
+
+
 # adjacent matrix for p-splines
-K = num_basis_rows * num_basis_columns
-A = find_adjacency_matrix(num_basis_rows, num_basis_columns)
-tmp = subset(reshape2::melt( A ), value == 1)
+if(model == 'P-SPLINES'){
+  K = num_basis_rows * num_basis_columns
+  A = find_adjacency_matrix(num_basis_rows, num_basis_columns)
+  tmp = subset(reshape2::melt( A ), value == 1)
+  
+  stan_data <- c(stan_data, 
+                 list(K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp)))
+}
 
-
+if(model == 'ICAR'){
+  K = n * m
+  A = find_adjacency_matrix(n, m)
+  tmp = subset(reshape2::melt( A ), value == 1)
+  
+  stan_data <- c(stan_data, 
+                 list(K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp)))
+}
 
 #
 #
@@ -98,13 +120,6 @@ tmp = subset(reshape2::melt( A ), value == 1)
 #
 #
 
-stan_data = list(n = n, m = m, N = nrow(training),
-                 y = training$obs, 
-                 coordinates = value.coordinates,
-                 num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
-                 BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
-                 IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS,
-                 K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp))
 
 file= file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds'))
 if(!file.exists(file)){
