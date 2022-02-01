@@ -30,6 +30,8 @@ if(model == 'P-SPLINES') # Bayesian P-splines
   model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'P-SPLINES_2D.stan') )
 if(model == 'ICAR') # ICAR
   model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'ICAR_2D.stan') )
+if(model == 'CAR') # ICAR
+  model_stan = rstan::stan_model( file.path(indir, 'predictions', 'stan-models', 'CAR_2D.stan') )
 
 # tune 
 n_knots_x = 125
@@ -112,6 +114,14 @@ if(model == 'ICAR'){
   
   stan_data <- c(stan_data, 
                  list(K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp)))
+}
+
+if(model == 'CAR'){
+  K = n * m
+  A = find_adjacency_matrix(n, m)
+  
+  stan_data <- c(stan_data, 
+                 list(K = K, Adj = A, Adj_n = sum(A) / 2))
 }
 
 #
