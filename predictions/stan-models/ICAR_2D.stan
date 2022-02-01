@@ -37,6 +37,9 @@ model {
   sigma ~ cauchy(0,1);
   tau ~ cauchy(0,1);
   
+  f_raw ~ icar_normal_lpdf(K, node1, node2, inv_tau_squared);
+
+
   for(i in 1:N){
         y[i] ~ normal(f[coordinates[i,1],coordinates[i,2]], sigma);
   }
