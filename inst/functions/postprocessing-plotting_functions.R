@@ -534,7 +534,6 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
       plot.margin = unit(c(5.5,5.5,18,0), "pt"),
       legend.position = 'none',
     ) + 
-    facet_grid(loc_label~.) +
     scale_color_jcolors('pal8') + 
     scale_fill_jcolors('pal8') + 
     scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
@@ -544,7 +543,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
          col = '')
   
   ggarrange(p, p1, nrow = 1, common.legend = T, legend = 'bottom', widths = c(1, 0.1))
-  ggsave(paste0(outdir, paste0('-MortalityRateContinuous_allages.png')), w = 6, h = 4)
+  ggsave(paste0(outdir, paste0('-MortalityRateContinuous_allages.png')), w = 6, h = 5)
   
 }
 
