@@ -1054,7 +1054,7 @@ plot_forest_plot_with_common_effect <- function(forest_plot_without_common_effec
           panel.border = element_rect(colour = "black", fill = NA), 
           title = element_text(size = rel(0.8)),
           plot.title = element_text(hjust = 0.5))+
-    ggtitle("Common vaccine effects on the relative\nrates across 18-64 and 65+")
+    ggtitle("Direct vaccine effects on the relative\nrates across 18-64 and 65+")
   
   p2 <- grid.arrange(forest_plot_without_common_effect, p1, 
                      layout_matrix = rbind(c(1, 1, 1),
