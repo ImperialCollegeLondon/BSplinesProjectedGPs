@@ -862,7 +862,6 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
   # values_col = c('grey50', 'darkorchid4', )
   
   cols <- viridisLite::viridis(length(unique(tmp$label_counterfactual)), direction = -1, begin = 0.1)
-  ages = unique(tmp$age)
   
   for(j in df_counterfactual$counterfactual_index){
     
@@ -896,6 +895,30 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
     
   }
   
+  ################################
+  tmp1 <- subset(tmp, code == "FL" & label_counterfactual != label_fit)
+  dummy.dt1 <- subset(dummy.dt, code == 'FL')
+  
+  p_FL <- ggplot(tmp1, aes(x = date)) + 
+    geom_line(aes(y = M, col = label_counterfactual)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha = 0.25) + 
+    scale_x_date(expand = expansion(mult = c(0.05,0)), date_labels = c("%b-%y"), breaks = '1 month') + 
+    theme_bw() + 
+    geom_vline(data = dummy.dt1, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'none', 
+          axis.text.x = element_text(angle = 70, hjust = 1),
+          axis.title.x = element_blank()) + 
+    ggsci::scale_colour_npg(guide = 'none')  + 
+    ggsci::scale_fill_npg(guide = 'none') +
+    scale_linetype_manual(values = 'dashed') +
+    labs(col = '', y = paste0('Predicted weekly COVID-19\nattributable weekly deaths\namong 18+ in Florida'),
+         fill = '', linetype = '') 
+  
+  ggsave(p_FL, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual', '_FL', '_', lab, 'AllAges.png'), w = 4, h = 3.5)
+  
+  #############################################
   tmp1 <- tmp[, list(max_date = max(date)), by = 'code']
   tmp1 <- merge(tmp, tmp1, by = 'code')
   tmp1 <- tmp1[date == max_date]
@@ -997,6 +1020,7 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
            pch = guide_legend(order=2,nrow=4,byrow=TRUE)) 
   ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_absAggAges.png'), w = 7, h = 4.5 + 2*(length(unique(tmp2$code))/4))
   
+  return(p_FL)
 }
 
 
@@ -2208,7 +2232,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   
   tmp2 <- tmp2[diff_value != 0]
   
-  p <- ggplot(tmp2, aes(x = diff_value)) + 
+  p2 <- ggplot(tmp2, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.9, width = 0, col = 'grey40') + 
@@ -2232,10 +2256,11 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
            col=guide_legend(nrow=2,byrow=TRUE, order =1)) 
   
   if(grepl('perc', namevar)){
-    p <- p + scale_y_log10(labels = scales::percent)  
+    p2 <- p2 + scale_y_log10(labels = scales::percent)  
   }
   
-  ggsave(p, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, '2AllAges.png'), w = 7, h = 5 + 2*(length(unique(data_res$code))/4))
+  ggsave(p2, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, '2AllAges.png'), w = 7, h = 5 + 2*(length(unique(data_res$code))/4))
   
+  return(p)
 }
 
