@@ -212,6 +212,28 @@ find_statistics_mortality_rate <- function(mortality_rate, outdir){
   saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
 }
 
+save_p_value_vaccine_effects <- function(samples, names, outdir){
+  
+  names_fit <- names(samples)
+  names <- names_fit[ grepl(paste(paste0('^',names),collapse = '|'),names_fit) ]
+  
+  tmp <- lapply(names, function(x) find_p_value_vaccine_effect(samples[[x]], x))
+  tmp <- do.call('rbind', tmp)
+  
+  saveRDS(tmp, paste0(outdir.table, '-p_value_vaccine_effects.rds'))
+  
+}
+
+save_resurgence_dates <- function(resurgence_dates, outdir){
+  resurgence_dates[,start_resurgence_name := format(start_resurgence, '%d %b, %Y')]
+  resurgence_dates[,stop_resurgence_name := format(stop_resurgence, '%d %b, %Y')]
+  
+  tmp <- merge(resurgence_dates, df_state, by = 'code')[, .(loc_label, start_resurgence, stop_resurgence)]
+  
+  saveRDS(tmp, paste0(outdir, '-resurgence_dates.rds'))
+}
+
+
 find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res4, prop_vac, resurgence_dates, outdir){
   
   data_res1 = merge(data_res1, resurgence_dates, by = 'code')

@@ -1618,17 +1618,6 @@ prepare_prop_vac_counterfactual_table <- function(stan_data, df_state, df_age_va
 
 
 
-save_p_value_vaccine_effects <- function(samples, names, outdir){
-  
-  names_fit <- names(samples)
-  names <- names_fit[ grepl(paste(paste0('^',names),collapse = '|'),names_fit) ]
-  
-  tmp <- lapply(names, function(x) find_p_value_vaccine_effect(samples[[x]], x))
-  tmp <- do.call('rbind', tmp)
-  
-  saveRDS(tmp, paste0(outdir.table, '-p_value_vaccine_effects.rds'))
-  
-}
 
 find_p_value_vaccine_effect <- function(sample, name){
   
