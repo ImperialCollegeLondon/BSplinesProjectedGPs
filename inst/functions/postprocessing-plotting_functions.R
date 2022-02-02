@@ -896,12 +896,12 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
   }
   
   ################################
-  tmp1 <- subset(tmp, code == "FL" & label_counterfactual != label_fit)
+  tmp1 <- subset(tmp, code == "FL" & label_counterfactual != label_fit & !grepl('18-64 and 65+', label_counterfactual))
   dummy.dt1 <- subset(dummy.dt, code == 'FL')
   
   p_FL <- ggplot(tmp1, aes(x = date)) + 
     geom_line(aes(y = M, col = label_counterfactual)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha = 0.25) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha = 0.15) + 
     scale_x_date(expand = expansion(mult = c(0.05,0)), date_labels = c("%b-%y"), breaks = '1 month') + 
     theme_bw() + 
     geom_vline(data = dummy.dt1, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
