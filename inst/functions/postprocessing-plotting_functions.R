@@ -913,10 +913,10 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
     ggsci::scale_colour_npg(guide = 'none')  + 
     ggsci::scale_fill_npg(guide = 'none') +
     scale_linetype_manual(values = 'dashed') +
-    labs(col = '', y = paste0('Predicted weekly COVID-19\nattributable weekly deaths\namong 18+ in Florida'),
+    labs(col = '', y = paste0('Predicted COVID-19 attributable\ndeaths among 18+ in Florida'),
          fill = '', linetype = '') 
   
-  ggsave(p_FL, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual', '_FL', '_', lab, 'AllAges.png'), w = 3, h = 2.5)
+  ggsave(p_FL, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual', '_FL', '_', lab, 'AllAges.png'), w = 3, h = 2.65)
   
   #############################################
   tmp1 <- tmp[, list(max_date = max(date)), by = 'code']
