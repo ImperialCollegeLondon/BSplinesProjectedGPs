@@ -916,7 +916,7 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
     labs(col = '', y = paste0('Predicted weekly COVID-19\nattributable weekly deaths\namong 18+ in Florida'),
          fill = '', linetype = '') 
   
-  ggsave(p_FL, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual', '_FL', '_', lab, 'AllAges.png'), w = 4, h = 3.5)
+  ggsave(p_FL, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual', '_FL', '_', lab, 'AllAges.png'), w = 3, h = 2.5)
   
   #############################################
   tmp1 <- tmp[, list(max_date = max(date)), by = 'code']
@@ -1020,7 +1020,6 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
            pch = guide_legend(order=2,nrow=4,byrow=TRUE)) 
   ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_absAggAges.png'), w = 7, h = 4.5 + 2*(length(unique(tmp2$code))/4))
   
-  return(p_FL)
 }
 
 
@@ -2261,6 +2260,5 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   
   ggsave(p2, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, '2AllAges.png'), w = 7, h = 5 + 2*(length(unique(data_res$code))/4))
   
-  return(p)
 }
 
