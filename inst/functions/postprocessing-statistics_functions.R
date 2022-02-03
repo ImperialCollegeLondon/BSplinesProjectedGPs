@@ -240,6 +240,8 @@ find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res
   data_res1 = merge(data_res1, resurgence_dates, by = 'code')
   prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
   data_res2 = merge(data_res2, resurgence_dates, by = 'code')
+  data_res5 = merge(data_res5, resurgence_dates, by = 'code')
+  data_res6 = merge(data_res6, resurgence_dates, by = 'code')
   
   stat = list(format(c(min(resurgence_dates$start_resurgence), max(resurgence_dates$stop_resurgence)),  '%B %d, %Y'),
               subset(data_res1, date == stop_resurgence)[, list(M = round(M), 
@@ -258,10 +260,10 @@ find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res
               subset(data_res4, week_index == max(week_index))[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
                                                                       CL = format(round(CU*100, digits = 2), nsmall = 2), 
                                                                       CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'age')],
-              subset(data_res5, week_index == max(week_index))[, list(M = round(M), 
+              subset(data_res5, date == stop_resurgence)[, list(M = round(M), 
                                                                 CL = round(CU), 
                                                                 CU = round(CL)), by = c('counterfactual_index', 'loc_label')],
-              subset(data_res6, week_index == max(week_index))[, list(M = format(round((M-1)*100, digits = 2), nsmall = 2), 
+              subset(data_res6, date == stop_resurgence)[, list(M = format(round((M-1)*100, digits = 2), nsmall = 2), 
                                                                       CL = format(round((CU-1)*100, digits = 2), nsmall = 2), 
                                                                       CU = format(round((CL-1)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'loc_label')],
               subset(data_res7, week_index == max(week_index))[, list(M = round(M), 
