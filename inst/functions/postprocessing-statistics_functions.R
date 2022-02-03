@@ -234,7 +234,7 @@ save_resurgence_dates <- function(resurgence_dates, outdir){
 }
 
 
-find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res4, prop_vac, resurgence_dates, outdir){
+find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res4, data_res5, data_res6, data_res7, data_res8, prop_vac, resurgence_dates, outdir){
   
   data_res1 = merge(data_res1, resurgence_dates, by = 'code')
   prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
@@ -254,11 +254,21 @@ find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res
               subset(data_res3, week_index == max(week_index))[, list(M = round(M), 
                                                                 CL = round(CU), 
                                                                 CU = round(CL)), by = c('counterfactual_index', 'age')],
-              subset(data_res4, week_index == max(week_index))[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
-                                                                CL = format(round(CU*100, digits = 2), nsmall = 2), 
-                                                                CU = format(round(CL*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'age')]
+              subset(data_res5, week_index == max(week_index))[, list(M = round(M), 
+                                                                CL = round(CU), 
+                                                                CU = round(CL)), by = c('counterfactual_index', 'loc_label')],
+              subset(data_res6, week_index == max(week_index))[, list(M = format(round((M-1)*100, digits = 2), nsmall = 2), 
+                                                                      CL = format(round((CU-1)*100, digits = 2), nsmall = 2), 
+                                                                      CU = format(round((CL-1)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'loc_label')],
+              subset(data_res7, week_index == max(week_index))[, list(M = round(M), 
+                                                                      CL = round(CU), 
+                                                                      CU = round(CL)), by = c('counterfactual_index')],
+              subset(data_res8, week_index == max(week_index))[, list(M = format(round((M-1)*100, digits = 2), nsmall = 2), 
+                                                                      CL = format(round((CU-1)*100, digits = 2), nsmall = 2), 
+                                                                      CU = format(round((CL-1)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index')]
               
-              )
+              
+            )
   saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
   
   return(stat)

@@ -10,6 +10,7 @@ library(cowplot)
 library(extraDistr)
 library(bayesplot)
 library(jcolors)
+library(magick)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
@@ -155,7 +156,7 @@ p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contributio
                                                             heights = c(1,1), outdir.fig)
 
 
-# p-value vaccine effects
+# # p-value vaccine effects
 names = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
 save_p_value_vaccine_effects(fit_samples, names, outdir.table)
 
@@ -231,20 +232,34 @@ E_pdeaths_counterfactual_resurgence_cumulative_allages = make_var_by_state_by_co
 E_pdeaths_predict_resurgence_cumulative_allages = make_var_by_state_table(fit_samples, df_week2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
 perc_E_pdeaths_counterfactual_allages = make_ratio_vars_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
 
+# aggregate across states and ages 
+diff_E_pdeaths_counterfactual_allstatesages <- make_var_by_counterfactual_table(fit_samples, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+perc_E_pdeaths_counterfactual_allstatesages <- make_ratio_vars_by_counterfactual_table(fit_samples, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
+
+# plot
 plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
                                     subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
 plot_vaccine_effects_counterfactual_change(subset(perc_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', outdir.fig)
 plot_vaccine_effects_counterfactual_change(subset(diff_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
 
-p_FL <- plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, code %in% selected_code), 
+plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, code %in% selected_code), 
                                             subset(E_pdeaths_predict_resurgence_cumulative_allages, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
-p_all <- plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', yintercept = 1, outdir.fig)
+plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', yintercept = 1, outdir.fig)
 plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
 
-p <- grid.arrange(p_FL, p_all, layout_matrix = rbind(c(NA, 2), 
-                                            c(1, 2), 
-                                            c(NA, 2)), heights = c(1, 0.5, 0.3), widths = c(0.4, 1))
-ggsave(p, file = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), w = 9, h = 7)
+p_all <- image_read( paste0(outdir.fig, '-predicted_percChange_weekly_deaths_vaccine_coverage_selected_statesAllAges.png'))
+p_FL <- image_read( paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_FL_cumulative_rperiod_selected_statesAllAges.png')) 
+
+p <- image_composite(image_scale(p_all, "x2500"), image_scale(p_FL, "x700"), offset = "+325+1025")
+image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), format = "png")
+
+p <- image_composite(image_scale(image_border(p_all, "white", "400x200"), "x2500"), image_scale(p_FL, "x800"), offset = "+0+1700")
+image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), format = "png")
+
+p <- image_composite(image_scale(image_border(p_all, "white", "690x0"), "x2500"), image_scale(p_FL, "x950"), offset = "+0+1550")
+image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot3.png'), format = "png")
+
+
 
 if(any(!Code %in% selected_code)){
   plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
@@ -261,7 +276,11 @@ if(any(!Code %in% selected_code)){
 
 
 
-find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all, prop_vac, resurgence_dates, outdir.table)
+find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, 
+                           diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all,
+                           diff_E_pdeaths_counterfactual_allages, perc_E_pdeaths_counterfactual_allages,
+                           diff_E_pdeaths_counterfactual_allstatesages, perc_E_pdeaths_counterfactual_allstatesages,
+                           prop_vac, resurgence_dates, outdir.table)
 
 
 cat("\n End postprocessing_figures.R \n")
