@@ -226,6 +226,7 @@ perc_E_pdeaths_counterfactual_2 <- make_ratio_vars_by_age_state_by_counterfactua
 # aggregate across states
 diff_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
 perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'perc_E_pdeaths_counterfactual_all', outdir.table)
+perc_E_pdeaths_counterfactual_all_2 <- make_ratio_vars_by_age_by_counterfactual_table(fit_samples, df_age_vaccination2, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
 
 # aggregate across ages
 diff_E_pdeaths_counterfactual_allages = make_var_inv_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
@@ -278,7 +279,7 @@ if(any(!Code %in% selected_code)){
 
 
 find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual_2, 
-                           diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all,
+                           diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all_2,
                            diff_E_pdeaths_counterfactual_allages, perc_E_pdeaths_counterfactual_allages,
                            diff_E_pdeaths_counterfactual_allstatesages, perc_E_pdeaths_counterfactual_allstatesages,
                            prop_vac, resurgence_dates, outdir.table)
