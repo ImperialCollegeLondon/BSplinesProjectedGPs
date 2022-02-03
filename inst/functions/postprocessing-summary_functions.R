@@ -478,6 +478,33 @@ make_var_by_age_by_counterfactual_table = function(fit_samples, df_week, df_stat
   return(tmp1)
 }
 
+make_inv_var_by_age_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  
+  tmp1[, value := - value]
+  
+  setnames(tmp1, 2:4, c('counterfactual_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1,counterfactual_index +week_index + age_index ~ q_label, value.var = "q")
+  # tmp1 = merge(tmp1, df_week, by = 'week_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 <- merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesTable.rds'))
+  
+  
+  return(tmp1)
+}
+
+
 make_var_by_counterfactual_table = function(fit_samples, df_counterfactual, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
@@ -500,6 +527,29 @@ make_var_by_counterfactual_table = function(fit_samples, df_counterfactual, var_
   return(tmp1)
 }
 
+make_inv_var_by_counterfactual_table = function(fit_samples, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('counterfactual_index', 'age_index','week_index'))
+  
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('counterfactual_index', 'iterations','week_index')]
+  
+  tmp1[, value := - value]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'week_index')]	
+  tmp1 = dcast(tmp1,counterfactual_index +week_index  ~ q_label, value.var = "q")
+  
+  tmp1 <- merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesAllAgesTable.rds'))
+  
+  
+  return(tmp1)
+}
 
 make_var_cum_by_age_table = function(fit_samples, df_week, df_state_age, var_name, outdir){
   
