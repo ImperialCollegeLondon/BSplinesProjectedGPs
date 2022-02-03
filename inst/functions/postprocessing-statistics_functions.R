@@ -263,15 +263,15 @@ find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res
               subset(data_res5, date == stop_resurgence)[, list(M = round(M), 
                                                                 CL = round(CU), 
                                                                 CU = round(CL)), by = c('counterfactual_index', 'loc_label')],
-              subset(data_res6, date == stop_resurgence)[, list(M = format(round((M-1)*100, digits = 2), nsmall = 2), 
-                                                                      CL = format(round((CU-1)*100, digits = 2), nsmall = 2), 
-                                                                      CU = format(round((CL-1)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'loc_label')],
+              subset(data_res6, date == stop_resurgence)[, list(M = format(round((M)*100, digits = 2), nsmall = 2), 
+                                                                      CL = format(round((CU)*100, digits = 2), nsmall = 2), 
+                                                                      CU = format(round((CL)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'loc_label')],
               subset(data_res7, week_index == max(week_index))[, list(M = round(M), 
                                                                       CL = round(CU), 
                                                                       CU = round(CL)), by = c('counterfactual_index')],
-              subset(data_res8, week_index == max(week_index))[, list(M = format(round((M-1)*100, digits = 2), nsmall = 2), 
-                                                                      CL = format(round((CU-1)*100, digits = 2), nsmall = 2), 
-                                                                      CU = format(round((CL-1)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index')]
+              subset(data_res8, week_index == max(week_index))[, list(M = format(round((M)*100, digits = 2), nsmall = 2), 
+                                                                      CL = format(round((CU)*100, digits = 2), nsmall = 2), 
+                                                                      CU = format(round((CL)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index')]
               
               
             )

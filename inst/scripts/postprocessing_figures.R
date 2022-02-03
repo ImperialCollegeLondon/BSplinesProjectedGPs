@@ -154,7 +154,7 @@ p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contributio
                                                             'GP-BS-SE', 'GP-BS-SE',
                                                             show.method = F,
                                                             heights = c(1,1), outdir.fig)
-
+# 
 
 # # p-value vaccine effects
 names = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
@@ -221,6 +221,7 @@ E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_table(fit_sam
 E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
 diff_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
 perc_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
+perc_E_pdeaths_counterfactual_2 <- make_ratio_vars_by_age_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
 
 # aggregate across states
 diff_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
@@ -276,7 +277,7 @@ if(any(!Code %in% selected_code)){
 
 
 
-find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual, 
+find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual_2, 
                            diff_E_pdeaths_counterfactual_all, perc_E_pdeaths_counterfactual_all,
                            diff_E_pdeaths_counterfactual_allages, perc_E_pdeaths_counterfactual_allages,
                            diff_E_pdeaths_counterfactual_allstatesages, perc_E_pdeaths_counterfactual_allstatesages,

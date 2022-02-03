@@ -254,6 +254,45 @@ make_var_inv_by_state_by_counterfactual_table = function(fit_samples, df_week, d
   return(tmp1)
 }
 
+make_ratio_vars_by_age_state_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_age, df_counterfactual, vars_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[vars_name[1]]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[vars_name[2]]]) )
+  setnames(tmp2, 2:5, c('state_index', 'age_index','week_index', 'value_denominator'))
+
+  tmp1 <- merge(tmp1, tmp2,  by = c('iterations', 'age_index', 'state_index','week_index'))
+  tmp1[, value := value / value_denominator]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'age_index', 'state_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + age_index + state_index + week_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', vars_name[1], 'RatioTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
 
 make_ratio_vars_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state, df_counterfactual, vars_name, outdir){
   
