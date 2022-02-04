@@ -1274,8 +1274,8 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   data_text = data_res[ week_index == max_week_index]
   data_text[, week_index := max(week_index)]
   data_text[code == 'CA' & age == '18-64', M := M + 0.1]
-  data_text[code == 'CA' & age == '65+', M := M + 0.11]
-  data_text[code == 'TX' & age == '65+', M := M + 0.05]
+  data_text[code == 'CA' & age == '65+', M := M + 0.13]
+  data_text[code == 'TX' & age == '65+', M := M + 0.07]
   
   lab = function(Age) paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before\nthe beginning of Summer 2021\nresurgence period')
   
