@@ -255,7 +255,7 @@ image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_cover
 p <- image_composite(image_scale(image_border(p_all, "white", "400x200"), "x2500"), image_scale(p_FL, "x800"), offset = "+0+1700")
 image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), format = "png")
 
-p <- image_composite(image_scale(image_border(p_all, "white", "550x0"), "x2500"), image_scale(p_FL, "x950"), offset = "+0+1550")
+p <- image_composite(image_scale(image_border(p_all, "white", "630x10"), "x2500"), image_scale(p_FL, "x950"), offset = "+0+1550")
 image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot3.png'), format = "png")
 
 
