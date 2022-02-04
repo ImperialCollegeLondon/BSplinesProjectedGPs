@@ -875,7 +875,7 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
     ) + 
     labs(col = '', y = paste0('Change in age-specific COVID-19 attributable\nweekly deaths at the end of the resurgence period'),
          fill = '', linetype = '', 
-         x = 'Change in vaccination coverage', pch = '') +
+         x = 'Change in vaccination rate', pch = '') +
     guides(col=guide_legend(nrow=4,byrow=TRUE, order =2), 
            pch = guide_legend(order=1,nrow=3,byrow=TRUE)) 
   ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_abs.png'), w = 7.5, h = 3.5 + 2*(length(unique(tmp2$code))/4))
@@ -1057,7 +1057,7 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
     ) + 
     labs(col = '', y = paste0('Change in age-specific COVID-19 attributable weekly deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
-         x = 'Change in vaccination coverage', pch = '') +
+         x = 'Change in vaccination rate', pch = '') +
     guides(col=guide_legend(nrow=5,byrow=TRUE, order =1), 
            pch = guide_legend(order=2,nrow=4,byrow=TRUE)) 
   ggsave(p, file = paste0(outdir, '-predicted_change_weekly_deaths_vaccine_coverage_', lab, '_absAggAges.png'), w = 7, h = 4.5 + 2*(length(unique(tmp2$code))/4))
@@ -2171,7 +2171,7 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
           ) + 
     labs(col = '', y = paste0('Change in age-specific COVID-19 attributable\nweekly deaths at the end of the resurgence period'),
          fill = '', linetype = '', 
-         x = 'Change in vaccination coverage', pch = '') +
+         x = 'Change in vaccination rate', pch = '') +
     guides(fill=guide_legend(nrow=4,byrow=TRUE, order =2), 
            col=guide_legend(nrow=4,byrow=TRUE, order =2), 
            pch = guide_legend(order=1,nrow=4,byrow=TRUE)) 
@@ -2202,7 +2202,7 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
     ) + 
     labs(col = '', y = paste0('Change in age-specific COVID-19 attributable\nweekly deaths at the end of the resurgence period'),
          fill = '', linetype = '', 
-         x = 'Change in vaccination coverage', pch = '') +
+         x = 'Change in vaccination rate', pch = '') +
     guides(fill=guide_legend(nrow=2,byrow=TRUE, order =1), 
            col=guide_legend(nrow=2,byrow=TRUE, order =1)) 
   
