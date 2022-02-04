@@ -344,7 +344,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
     
     p1 <- ggplot(subset(tmp, code %in% Code[1:mid_code] & age_index >2), aes(date, prop)) +
       geom_hline(yintercept = 0.5, linetype = 'dashed', col = 'grey50') + 
-      geom_line(aes(col = loc_label)) + 
+      geom_line(aes(col = `Age group`)) + 
       theme_bw()+ 
       labs( y = '', col = '') + 
       theme(legend.key = element_blank(), 
@@ -353,7 +353,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
             legend.position = 'bottom',
             axis.text.x = element_blank(), 
             axis.title.x = element_blank()) + 
-      scale_color_jcolors('pal8') + 
+      scale_color_viridis_d(option = 'B', begin = 0.1, end = 0.9) + 
       facet_grid(`Age group`~loc_label) +
       scale_y_continuous(labels = scales::percent)+ 
       scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
@@ -361,7 +361,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
     
     p2 <- ggplot(subset(tmp, code %in% Code[(mid_code + 1):(mid_code*2)] & age_index >2), aes(date, prop)) +
       geom_hline(yintercept = 0.5, linetype = 'dashed', col = 'grey50') + 
-      geom_line(aes(col = loc_label)) + 
+      geom_line(aes(col = `Age group`)) + 
       theme_bw()+ 
       labs( y = '', col = '') + 
       theme(legend.key = element_blank(), 
@@ -370,12 +370,12 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
             legend.position = 'bottom',
             axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
             axis.title.x = element_blank()) + 
-      scale_color_jcolors('pal8') + 
+      scale_color_viridis_d(option = 'B', begin = 0.1, end = 0.9) + 
       facet_grid(`Age group`~loc_label) +
       scale_y_continuous(labels = scales::percent)+ 
       scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
     
-    p <- ggarrange(p1, p2, nrow = 2,  common.legend = T, legend = 'bottom')
+    p <- ggarrange(p1, p2, nrow = 2,  common.legend = T, legend = 'none')
     grid.arrange(p, left = 'Proportion of fully vaccinated individuals')
     ggsave(paste0(outdir, '-proportion_vaccine_age_code_all_states.png'), w = 8, h = 6)
     
