@@ -673,6 +673,48 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   cols <- viridisLite::viridis(length(unique(tmp$label_counterfactual)), direction = -1, begin = 0.1)
   ages = unique(tmp$age)
   
+  p = list()
+  tmp1 <- subset(tmp, label_counterfactual == label_fit)
+  
+  for(i in 1:length(ages)){
+    # i = 1
+    Age = ages[i]
+    
+    p[[i]] = ggplot(subset(tmp1, age == Age), aes(x = date)) + 
+      geom_line(aes(y = M, col = label_counterfactual)) + 
+      geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha = 0.5) + 
+      facet_grid(loc_label~age) + 
+      scale_x_date(expand = expansion(mult = c(0.05,0)), date_labels = c("%b-%y"), breaks = '1 month') + 
+      theme_bw() + 
+      geom_vline(data = dummy.dt, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
+      theme(strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA), 
+            legend.position = 'bottom', 
+            axis.text.x = element_text(angle = 70, hjust = 1),
+            axis.title.x = element_blank()) + 
+      scale_color_manual(values = 'black')) + 
+      scale_fill_manual(values = 'black')) + 
+      labs(col = '', y = paste0('Predicted age-specific ',var,' COVID-19 attributable weekly deaths'),
+           fill = '', linetype = '') +
+      scale_linetype_manual(values = 2) +
+      guides(fill=guide_legend(nrow=2,byrow=TRUE, order =1), col=guide_legend(nrow=2,byrow=TRUE, order =1), 
+             linetype = guide_legend(order=2))
+    
+    if(i != length(ages)){
+      p[[i]] = p[[i]] + theme(strip.text.y = element_blank())
+    }
+    
+    if(i != 1){
+      p[[i]] = p[[i]] + theme(axis.title.y = element_blank())
+    }
+  }
+  
+  p = ggarrange(plotlist = p, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.1, 1.1))
+  ggsave(p, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_observed_', lab, '.png'), w = 6 + length(unique(data_res1$code))/6, h = 5 + 2*(length(unique(data_res1$code))/4))
+  
+  
+  #######
+  
   for(j in df_counterfactual$counterfactual_index){
     tmp1 <- subset(tmp, label_counterfactual %in% c(label_fit, df_counterfactual[counterfactual_index == j, label_counterfactual]))
     
