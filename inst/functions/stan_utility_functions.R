@@ -594,7 +594,10 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
   stan_data[['N_COUNTERFACTUAL']] = N_COUNTERFACTUAL
   stan_data[['prop_vac_start_counterfactual']] = prop_vac_start_counterfactual
   
-
+  # substract mean to remove correlations between intercept and vaccine effects parameters
+  means <- sapply(stan_data[['prop_vac_start']], mean)
+  stan_data[['prop_vac_start']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start']][[x]] - means[x])
+  stan_data[['prop_vac_start_counterfactual']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start_counterfactual']][[x]] - means[x])
   
   return(stan_data)
 }
