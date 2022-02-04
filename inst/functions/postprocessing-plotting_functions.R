@@ -692,8 +692,8 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
             legend.position = 'bottom', 
             axis.text.x = element_text(angle = 70, hjust = 1),
             axis.title.x = element_blank()) + 
-      scale_color_manual(values = 'black')) + 
-      scale_fill_manual(values = 'black')) + 
+      scale_color_manual(values = 'black') + 
+      scale_fill_manual(values = 'black') + 
       labs(col = '', y = paste0('Predicted age-specific ',var,' COVID-19 attributable weekly deaths'),
            fill = '', linetype = '') +
       scale_linetype_manual(values = 2) +
@@ -2254,12 +2254,15 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     theme_bw() +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
-          legend.position = 'bottom'
+          legend.position = 'bottom', 
+          axis.title = element_text(size =rel(1.1)),
+          axis.text= element_text(size =rel(1.1)),
+          legend.text = element_text(size =rel(1.1))
           # legend.box="vertical",
           # legend.spacing.y = unit(-0, "cm")
     ) + 
     scale_shape_manual(values = c(15, 17, 20, 4, 3, 10)[1:length(tmp2$code)]) + 
-    labs(col = '', y = paste0('Change in COVID-19 attributable weekly deaths\namong 18+ at the end of the resurgence period'),
+    labs(col = '', y = paste0('Relative change in COVID-19 attributable deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
          x = 'Change in vaccination rate', pch = '') +
     guides(fill=guide_legend(nrow=4,byrow=TRUE, order =1), 
@@ -2291,7 +2294,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
           # legend.box="vertical",
           # legend.spacing.y = unit(-0, "cm")
     ) + 
-    labs(col = '', y = paste0('Change in COVID-19 attributable weekly deaths\namong 18+ at the end of the resurgence period'),
+    labs(col = '', y = paste0('Relative change in COVID-19 attributable deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
          x = 'Change in vaccination rate', pch = '') +
     guides(fill=guide_legend(nrow=2,byrow=TRUE, order =1), 

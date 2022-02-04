@@ -180,14 +180,10 @@ stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence
 prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2)
 prop_vac_counterfactual <- prepare_prop_vac_counterfactual_table(stan_data1, df_state, df_age_vaccination2, df_counterfactual)
 
-df_counterfactual = data.table(counterfactual_index = 1:3, 
-                               label_counterfactual = paste0('Counterfactual analysis with higher vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+')))
-
-if(stan_data$N_COUNTERFACTUAL == 6){
-  df_counterfactual <- rbind(df_counterfactual, 
-                             data.table(counterfactual_index = 4:6, 
-                                        label_counterfactual = paste0('Counterfactual analysis with lower vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+'))))
-}
+df_counterfactual = data.table(counterfactual_index = 1:6, 
+                               label_counterfactual = c(paste0('Counterfactual analysis with higher vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+')),
+                                                        paste0('Counterfactual analysis with lower vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+')))
+)
 
 # phi during vaccine 
 make_var_by_age_by_state_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
@@ -229,7 +225,6 @@ perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit
 diff_E_pdeaths_counterfactual_all_2 <- make_inv_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
 perc_E_pdeaths_counterfactual_all_2 <- make_ratio_vars_by_age_by_counterfactual_table(fit_samples, df_age_vaccination2, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
 
-
 # aggregate across ages
 diff_E_pdeaths_counterfactual_allages = make_var_inv_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
 E_pdeaths_counterfactual_resurgence_cumulative_allages = make_var_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
@@ -260,7 +255,7 @@ image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_cover
 p <- image_composite(image_scale(image_border(p_all, "white", "400x200"), "x2500"), image_scale(p_FL, "x800"), offset = "+0+1700")
 image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), format = "png")
 
-p <- image_composite(image_scale(image_border(p_all, "white", "690x0"), "x2500"), image_scale(p_FL, "x950"), offset = "+0+1550")
+p <- image_composite(image_scale(image_border(p_all, "white", "550x0"), "x2500"), image_scale(p_FL, "x950"), offset = "+0+1550")
 image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot3.png'), format = "png")
 
 
