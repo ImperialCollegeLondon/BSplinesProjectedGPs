@@ -2267,7 +2267,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
          x = 'Change in vaccination rate', pch = '') +
     guides(fill=guide_legend(nrow=4,byrow=TRUE, order =1), 
            col=guide_legend(nrow=4,byrow=TRUE, order =1), 
-           pch = guide_legend(order=2,nrow=length(tmp2$code),byrow=TRUE)) 
+           pch = guide_legend(order=2,nrow=length(unique(tmp2$code)),byrow=TRUE)) 
   
   if(grepl('perc', namevar)){
     p <- p + scale_y_log10(labels = scales::percent)  
