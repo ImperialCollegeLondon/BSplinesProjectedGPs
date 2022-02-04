@@ -2261,7 +2261,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     scale_shape_manual(values = c(15, 17, 20, 4, 3, 10)[1:length(tmp2$code)]) + 
     labs(col = '', y = paste0('Change in COVID-19 attributable weekly deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
-         x = 'Change in vaccination coverage', pch = '') +
+         x = 'Change in vaccination rate', pch = '') +
     guides(fill=guide_legend(nrow=4,byrow=TRUE, order =1), 
            col=guide_legend(nrow=4,byrow=TRUE, order =1), 
            pch = guide_legend(order=2,nrow=4,byrow=TRUE)) 
@@ -2293,7 +2293,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     ) + 
     labs(col = '', y = paste0('Change in COVID-19 attributable weekly deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
-         x = 'Change in vaccination coverage', pch = '') +
+         x = 'Change in vaccination rate', pch = '') +
     guides(fill=guide_legend(nrow=2,byrow=TRUE, order =1), 
            col=guide_legend(nrow=2,byrow=TRUE, order =1)) 
   
