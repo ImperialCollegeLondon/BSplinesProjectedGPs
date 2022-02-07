@@ -43,10 +43,10 @@ rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-25.rds"))
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-09-25.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-01-20.rds"))
+path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds"))
 path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
 
 # load functions

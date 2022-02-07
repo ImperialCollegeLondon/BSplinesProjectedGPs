@@ -763,7 +763,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   # find stop resurgence
   # tmp4 = merge(tmp3, tmp4, by = 'code')
   # max_resurgence_period = tmp4[, min(stop_resurgence - start_resurgence)] / 7
-  max_resurgence_period = (max(deathByAge$date) - tmp3[, max(start_resurgence)] )/ 7
+  max_resurgence_period = (as.Date("2021-09-25") - tmp3[, max(start_resurgence)] )/ 7
   # max_resurgence_period = min(tmp2[date >= as.Date('2021-07-01'), list(resurgence_period = max(na.omit(number.positive.days.ahead))), by = c('code')]$resurgence_period)
   tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
   

@@ -5,7 +5,7 @@ indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 indir2 ="~/git/BSplinesProjectedGPs/misc" # path to the repo
 
 # data for location name
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-25.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
 locname_data = unique(select(readRDS(path.to.CDC.data), loc_label, code)) # cdc data 
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
 
@@ -15,7 +15,7 @@ pop_data = as.data.table( read.csv(path.to.popdata) )
 pop_data = select(pop_data, code, age, pop)
 
 # vaccination data
-path.to.data = file.path(indir2, "data-vaccination", paste0("COVID-19_Vaccinations_in_the_United_States_Jurisdiction_211109.csv"))
+path.to.data = file.path(indir2, "data-vaccination", paste0("COVID-19_Vaccinations_in_the_United_States_Jurisdiction_220206.csv"))
 data = as.data.table(read.csv(path.to.data)) 
 
 data[, date := as.Date(Date, '%m/%d/%Y')]
@@ -96,7 +96,10 @@ nrow(data) == length(unique(data$date)) * length(unique(data$code)) * length(uni
 start_date = data[prop > 0, min(date) ]
 data = data[date >= start_date]
 
+# keep date before max date of deathByAge
+data <- data[date <= max(deathByAge$date) + 7]
+
 # save
-saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2022-01-20.rds")))
+saveRDS(data, file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds")))
 
         
