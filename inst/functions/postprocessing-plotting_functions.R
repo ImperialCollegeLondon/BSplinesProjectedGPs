@@ -623,7 +623,7 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
     facet_grid(loc_label~`Age group`, scale = 'free') +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-    scale_y_continuous(expand = c(0,0)) + 
+    scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + 
     theme_bw() + 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
