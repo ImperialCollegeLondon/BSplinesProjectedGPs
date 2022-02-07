@@ -458,7 +458,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     geom_ribbon(aes(ymin=CL, ymax=CU, fill = loc_label), alpha = 0.4) + 
     theme_bw() +
     theme(legend.position = 'bottom', 
-          panel.grid.major= element_blank(), 
+          panel.grid.minor= element_blank(), 
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           plot.margin = unit(c(5.5,0,5.5,5.5), "pt")) + 
@@ -475,7 +475,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     geom_point(aes(y = M, col = loc_label)) +
     theme_bw() +
     theme(
-          panel.grid.major= element_blank(), 
+      panel.grid.minor= element_blank(), 
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           axis.title.x = element_blank(), 
@@ -507,7 +507,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     geom_ribbon(aes(ymin=CL, ymax=CU, fill = loc_label), alpha = 0.4) + 
     theme_bw() +
     theme(legend.position = 'bottom', 
-          panel.grid.major= element_blank(), 
+          panel.grid.minor= element_blank(), 
           strip.background = element_blank(),
           strip.text = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) + 
@@ -524,7 +524,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     geom_point(aes(y = M, col = loc_label)) +
     theme_bw() +
     theme(
-      panel.grid.major= element_blank(), 
+      panel.grid.minor= element_blank(), 
       strip.background = element_blank(),
       panel.border = element_rect(colour = "black", fill = NA), 
       axis.title.x = element_blank(), 
