@@ -154,13 +154,13 @@ if(any(c('slope_resurgence0', 'vaccine_effect_slope') %in% names_samples)){
     geom_vline(xintercept = 0, linetype = 'dashed', col = 'grey50')
   ggsave(p, file = paste0(outdir.fig, '-mcmc_interval_vaccine_slope_65p_parameters.png'), h = 6, w = 4, limitsize = F)
   
-  names_var = c('sigma_slope_resurgence')
+  names_var = c('sigma_slope_resurgence', 'sigma_r_pdeaths')
   tmp <- data.table(name= names_fit[ grepl(paste(paste0('^',names_var),collapse = '|'),names_fit) ])
   if(nrow(tmp) > 0){
     p <- bayesplot::mcmc_intervals(fit_cum, pars=tmp$name,prob = .95, prob_outer = 0.95)+
       theme_bw() + 
       geom_vline(xintercept = 0, linetype = 'dashed', col = 'grey50')
-    ggsave(p, file = paste0(outdir.fig, '-mcmc_interval_vaccine_parameters_var_slope.png'), h = 6, w = 4, limitsize = F)
+    ggsave(p, file = paste0(outdir.fig, '-mcmc_interval_vaccine_parameters_var_slope.png'), h = 10, w = 4, limitsize = F)
     
   }
 

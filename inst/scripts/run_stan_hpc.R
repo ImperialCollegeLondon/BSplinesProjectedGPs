@@ -116,7 +116,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('220207a|220131a|220131c|220131d', stan_model)){
+if(grepl('220207a|220208a|220131a|220131c|220131d', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 9, knots_rows = knots_rows)
