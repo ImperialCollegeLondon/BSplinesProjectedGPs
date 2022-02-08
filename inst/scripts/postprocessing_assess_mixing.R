@@ -253,9 +253,6 @@ if(any(names %in% names_samples)){
 }
 
 
-
-  
-  
 cat("\n End postprocessing_assess_mixing.R \n")
 
 

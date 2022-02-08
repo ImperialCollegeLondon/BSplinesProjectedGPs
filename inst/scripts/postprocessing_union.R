@@ -61,6 +61,10 @@ selected_codes = c('CA', 'FL', 'NY', 'TX')
 # date 
 start_vaccine = vaccine_data[prop > 0 & date %in% df_week$date, min(date)]
 
+if(is.null(stan_data[['week_indices_resurgence']])){
+  resurgence_dates = NULL
+}
+  
 #
 # mortality rate over time discrete
 mortality_rate = vector(mode = 'list', length = length(locs))
@@ -111,17 +115,16 @@ if(length(locs) > 6){
 
 #
 # proportion weekly deaths after vaccine
-propdeath3 = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  propdeath3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeprop_Table_3agegroups_', locs[i], '.rds'))
-}
-propdeath3 = do.call('rbind', propdeath3)
-find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, min(resurgence_dates$start_resurgence), outdir.table)
-
+if(!is.null(resurgence_dates)){
+  propdeath3 = vector(mode = 'list', length = length(locs))
+  for(i in seq_along(locs)){
+    propdeath3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeprop_Table_3agegroups_', locs[i], '.rds'))
+  }
+  propdeath3 = do.call('rbind', propdeath3)
+  find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, min(resurgence_dates$start_resurgence), outdir.table)
 
 # 
 # vaccination effect on contribution
-if(!is.null(stan_data$prop_vac)){
   contribution = vector(mode = 'list', length = length(locs))
   for(i in seq_along(locs)){
     contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
