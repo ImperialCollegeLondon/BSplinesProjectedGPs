@@ -13,9 +13,9 @@ library(jcolors)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
-states = strsplit('CA,FL',',')[[1]]
-stan_model = "211014b"
-JOBID = 7259
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+stan_model = "220131a"
+JOBID = 30502
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -74,8 +74,9 @@ for(i in seq_along(locs)){
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 
-plot_mortality_rate_all_states(mortality_rate, outdir.fig)
+p <- plot_mortality_rate_all_states(mortality_rate, outdir.fig)
 find_statistics_mortality_rate(mortality_rate, outdir.table)
+limits_mortality_rate <- range(c(mortality_rate$CL, mortality_rate$CU))
 
 
 #
@@ -86,9 +87,18 @@ for(i in seq_along(locs)){
 }
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
+p_NY <- plot_mortality_rate_continuous_all_states(mortality_rate, limits_mortality_rate, outdir.fig)
 
-plot_mortality_rate_continuous_all_states(mortality_rate, outdir.fig)
+# make panel mortaliry
+p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1.07, label.x = 0.05) 
+p <- ggarrange(p, labels = 'B')
 
+panel <- grid.arrange(grobs = list(p_NY, p), widths = c(0.5, 1), heights = c(0.1, 0.9, 0.7), 
+                      layout_matrix = rbind(c(1, NA),
+                                            c(1, 2),
+                                            c(NA, 2)),
+                      top = paste0('Predicted COVID-19 attributable mortality rates as of ', format(unique(mortality_rate$date), '%B %Y')))
+ggsave(panel, file = paste0(outdir.fig, '-MortalityRate_panel_plot.png'), w = 9, h = 4.5)
 
 
 #

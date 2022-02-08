@@ -532,7 +532,7 @@ add_resurgence_period_by_state = function(stan_data, df_week, resurgence_dates){
   return(stan_data)
 }
 
-add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_dates){
+add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_dates, substract_mean = T){
   
   delay = 2*7
   
@@ -599,10 +599,12 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
   cat('Minimum vaccine coverage among 65+', min(stan_data[['prop_vac_start']][[2]]), ' in ', Code[which.min(stan_data[['prop_vac_start']][[2]])], '\n')
   cat('Maximum vaccine coverage among 65+', max(stan_data[['prop_vac_start']][[2]]), ' in ', Code[which.max(stan_data[['prop_vac_start']][[2]])], '\n\n')
   
-  # substract mean to remove correlations between intercept and vaccine effects parameters
-  means <- sapply(stan_data[['prop_vac_start']], mean)
-  stan_data[['prop_vac_start']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start']][[x]] - means[x])
-  stan_data[['prop_vac_start_counterfactual']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start_counterfactual']][[x]] - means[x])
+  if(substract_mean){
+    # substract mean to remove correlations between intercept and vaccine effects parameters
+    means <- sapply(stan_data[['prop_vac_start']], mean)
+    stan_data[['prop_vac_start']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start']][[x]] - means[x])
+    stan_data[['prop_vac_start_counterfactual']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start_counterfactual']][[x]] - means[x])
+  }
   
   return(stan_data)
 }
