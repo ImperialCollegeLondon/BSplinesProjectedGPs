@@ -335,7 +335,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
           axis.title.x = element_blank()) + 
     scale_color_jcolors('pal8') + 
     scale_y_continuous(labels = scales::percent)+ 
-    scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+    scale_x_date(date_labels = c("%b-%y"), breaks = '2 months', expand = c(0,0)) 
   ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.75)
   
   if(length(Code) > 6){
@@ -356,7 +356,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
       scale_color_viridis_d(option = 'B', begin = 0.1, end = 0.9) + 
       facet_grid(`Age group`~loc_label) +
       scale_y_continuous(labels = scales::percent)+ 
-      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months', expand = c(0,0)) 
       
     
     p2 <- ggplot(subset(tmp, code %in% Code[(mid_code + 1):(mid_code*2)] & age_index >2), aes(date, prop)) +
@@ -373,7 +373,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
       scale_color_viridis_d(option = 'B', begin = 0.1, end = 0.9) + 
       facet_grid(`Age group`~loc_label) +
       scale_y_continuous(labels = scales::percent)+ 
-      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months', expand = c(0,0)) 
     
     p <- ggarrange(p1, p2, nrow = 2,  common.legend = T, legend = 'none')
     grid.arrange(p, left = 'Proportion of fully vaccinated individuals')
@@ -394,7 +394,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
       scale_color_jcolors('pal8') + 
       facet_grid(`Age group`~loc_label) +
       scale_y_continuous(labels = scales::percent)+ 
-      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months', expand = c(0,0)) 
     ggsave(paste0(outdir, '-proportion_vaccine_age_code_all_states.png'), w = 8, h = 3)
   }
 
