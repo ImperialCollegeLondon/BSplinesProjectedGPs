@@ -9,10 +9,10 @@ library(ggpubr)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 # states = strsplit('CA,FL,NY,TX',',')[[1]]
-states = strsplit('FL',',')[[1]]
-stan_model = "220209a"
+# states = strsplit('FL',',')[[1]]
+stan_model = "220208a"
 JOBID = 3541
 
 if(0)
@@ -117,12 +117,12 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('220209a|220209c|220209d', stan_model)){
+if(grepl('220208a|220209a|220209c|220209d', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 11, knots_rows = knots_rows)
 }
-if(grepl('220209d', stan_model)){
+if(grepl('220208a|220209d', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
   stan_data = add_nodes_stan_data(stan_data)
