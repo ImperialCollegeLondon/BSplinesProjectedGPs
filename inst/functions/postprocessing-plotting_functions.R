@@ -1014,6 +1014,7 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
     labs(col = '', y = paste0('Predicted COVID-19 attributable\ndeaths among 18+ in Florida'),
          fill = '', linetype = '') 
   
+  p_FL <- ggarrange(p_FL, labels = 'B', label.x = 0.14, label.y = 1.02, font.label = list(size = 18))
   ggsave(p_FL, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual', '_FL', '_', lab, 'AllAges.png'), w = 3, h = 2.65)
   
   #############################################
@@ -2333,6 +2334,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     p <- p + scale_y_log10(labels = scales::percent)  
   }
   
+  p <- ggarrange(p, labels = 'A', font.label = list(size = 18))
   ggsave(p, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, 'AllAges.png'), w = 6.5, h = 4 + 2*6/4)
   
   tmp2 <- tmp2[diff_value != 0]
