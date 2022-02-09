@@ -1622,18 +1622,18 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, resurg
   tmp[, same_age := factor(same_age, levels_ages)]
   
   p <- ggplot(tmp, aes(x = value)) + 
-    geom_point(aes(y = M, col = same_age, shape = loc_label), size = 2) + 
+    geom_point(aes(y = M, col = age, shape = loc_label), size = 2) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, col = 'black') +
-    labs(x = 'Pre-resurgence vaccination rate',
-         col = '', shape = '') + 
+    labs(x = 'Pre-resurgence vaccination rate                                  Pre-resurgence vaccination rate\namong 18-64                                                              among 65+',
+         col = 'Resurgence in age group', shape = '', 
+         y = 'Relative COVID-19 attributable weekly deaths') + 
     theme_bw() +
     # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
     # scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
+          # legend.title = element_text(size = rel(0.85)),
           axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_blank(),
           strip.text = element_blank(),
           legend.spacing.y = unit(-0, "cm"), 
           legend.position = 'bottom') +
