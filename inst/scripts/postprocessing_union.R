@@ -93,10 +93,10 @@ p_NY <- plot_mortality_rate_continuous_all_states(mortality_rate, limits_mortali
 p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1.07, label.x = 0.05) 
 p <- ggarrange(p, labels = 'B')
 
-panel <- grid.arrange(grobs = list(p_NY, p), widths = c(0.5, 1), heights = c(0.1, 0.9, 0.7), 
-                      layout_matrix = rbind(c(1, NA),
-                                            c(1, 2),
-                                            c(NA, 2)),
+panel <- grid.arrange(grobs = list(p_NY, p), widths = c(0.5, 0.05, 1), heights = c(0.1, 0.9, 0.7), 
+                      layout_matrix = rbind(c(1, NA, NA),
+                                            c(1, NA, 2),
+                                            c(NA, NA, 2)),
                       top = paste0('Predicted COVID-19 attributable mortality rates as of ', format(unique(mortality_rate$date), '%B %Y')))
 ggsave(panel, file = paste0(outdir.fig, '-MortalityRate_panel_plot.png'), w = 9, h = 4.5)
 

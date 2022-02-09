@@ -558,7 +558,8 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
   p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
     geom_line(aes(y = M)) +
     geom_ribbon(aes(ymin=CL, ymax=CU), alpha = 0.4) + 
-    theme_bw() +
+    theme_bw() + 
+    facet_wrap(~loc_label) +
     theme(legend.position = 'bottom', 
           # axis.title = element_text(size = rel(1.2)),
           # axis.text = element_text(size = rel(1.1)),
@@ -568,8 +569,8 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
           plot.margin = unit(c(5.5,0,5.5,5.5), "pt")) + 
     scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = limits) +
     scale_x_continuous(expand = c(0,0)) +
-    labs(y = 'By 1-year age band\nin New York',
-         x = 'Age')
+    labs(y = 'By 1-year age band',
+         x = 'Age') 
   
   # p1 <- ggplot(subset(tmp, age == '85'), aes(x=age_cat)) + 
   #   geom_errorbar(aes(ymin=CL, ymax=CU), width = 0) + 
