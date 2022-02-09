@@ -90,7 +90,7 @@ mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 p_NY <- plot_mortality_rate_continuous_all_states(mortality_rate, limits_mortality_rate, outdir.fig)
 
 # make panel mortaliry
-p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1.07, label.x = 0.05) 
+p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1, label.x = 0.05) 
 p <- ggarrange(p, labels = 'B')
 
 panel <- grid.arrange(grobs = list(p_NY, p), widths = c(0.5, 0.05, 1), heights = c(0.1, 0.9, 0.7), 
