@@ -2377,7 +2377,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     p <- p + scale_y_log10(labels = scales::percent)  
   }
   
-  p <- ggarrange(p, labels = 'A', font.label = list(size = 18))
+  p <- ggarrange(p, labels = 'A', font.label = list(size = 20))
   ggsave(p, file = paste0(outdir, '-predicted_', namevar, '_weekly_deaths_vaccine_coverage_', lab, 'AllAges.png'), w = 6.5, h = 4 + 2*6/4)
   
   tmp2 <- tmp2[diff_value != 0]
