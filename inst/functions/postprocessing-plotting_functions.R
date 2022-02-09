@@ -1608,6 +1608,48 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, resurg
   
   ggsave(p, file =file, w = 7.5, h = 5)
   
+  
+  tmp <- as.data.table(reshape2::melt(prop_vac_init, id.vars = c('code')))
+  tmp[, age_index := as.numeric(gsub('prop_(.+)_init', '\\1', variable))]
+  tmp <- merge(tmp, df_age_vaccination2, by = 'age_index')
+  setnames(tmp, 'age', 'age_vaccination')
+  
+  levels_ages <- c('Same age group', 'Other age group')
+  tmp <- merge(data_res, tmp[, .(value, code, age_vaccination)], by = 'code', allow.cartesian=TRUE)
+  tmp[, same_age_indicator := age == age_vaccination]
+  tmp[same_age_indicator == T, same_age := levels_ages[1]]
+  tmp[same_age_indicator == F, same_age := levels_ages[2]]
+  tmp[, same_age := factor(same_age, levels_ages)]
+  
+  p <- ggplot(tmp, aes(x = value)) + 
+    geom_point(aes(y = M, col = same_age, shape = loc_label), size = 2) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, col = 'black') +
+    labs(x = 'Pre-resurgence vaccination rate',
+         col = '', shape = '') + 
+    theme_bw() +
+    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
+    # scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
+          legend.title = element_text(size = rel(0.85)),
+          axis.title.x = element_text(size = rel(0.9)),
+          axis.title.y = element_blank(),
+          strip.text = element_blank(),
+          legend.spacing.y = unit(-0, "cm"), 
+          legend.position = 'bottom') +
+    scale_shape_manual(values = c(15, 17, 3, 10, 11, 12, 20, 13, 14, 4)) 
+  
+  if(log_transform){
+    p = p + scale_y_log10()
+  }
+  
+  if(log_transform){
+    file =  paste0(outdir, '-log_relative_deaths_vaccine_coverage_no_time2.png')
+  } else{
+    file =  paste0(outdir, '-relative_deaths_vaccine_coverage_no_time2.png')
+  }
+  
+  ggsave(p, file =file, w = 6, h = 5)
 }
 
 
