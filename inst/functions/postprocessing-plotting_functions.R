@@ -1358,8 +1358,8 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, resurgence_da
           axis.title.y = element_text(size = rel(1)),
            legend.spacing.x = unit(0.3, "cm"), 
           legend.position = 'bottom') +
-    scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init))) + 
-    scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)))
+    scale_color_gradient2(low = 'darkred', high = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init))) + 
+    scale_fill_gradient2(low = 'darkred', high = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)))
   
   tmp <- subset(data_res, age == '65+')
   tmp1 <- subset(data_text, age == '65+')
