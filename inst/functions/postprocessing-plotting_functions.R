@@ -1561,10 +1561,10 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, resurg
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, col = 'black') +
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
          x = 'Pre-resurgence vaccination rate among 18-64', 
-         col = 'In age group', shape = '') + 
+         col = 'Resurgence in age group', shape = '') + 
     theme_bw() +
     # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
+    # scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
@@ -1579,10 +1579,10 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, resurg
     geom_point(aes(y = M, col = age, shape = loc_label), size = 2) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, col = 'black') +
     labs(x = 'Pre-resurgence vaccination rate among 65+',
-         col = 'In age group', shape = '') + 
+         col = 'Resurgence in age group', shape = '') + 
     theme_bw() +
     # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
+    # scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
