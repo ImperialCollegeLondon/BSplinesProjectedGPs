@@ -15,8 +15,8 @@ indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "220124a"
-JOBID = 22372
+stan_model = "220131a"
+JOBID = 30502
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -207,8 +207,6 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   # plot estimate relative deaths
   r_pdeaths = make_var_by_age_by_state_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, resurgence_dates, outdir.fig)
-  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
-  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
   p <- plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
   plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, T, outdir.fig, '_selected_states')
@@ -259,15 +257,9 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
   
   p_FL <- plot_vaccine_effects_counterfactual_allages_FL(E_pdeaths_counterfactual_resurgence_cumulative_allages, E_pdeaths_predict_resurgence_cumulative_allages, resurgence_dates)
-  
-
   p <- ggarrange(p_FL, p_all, labels = c('A', 'B'), nrow = 1, common.legend = T, legend = 'bottom', widths = c(0.75, 1), label.x = 0.05)
   ggsave(p, file = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), w = 9.5, h = 6.5)
-  
-  ggarrange(p, grob_legend = get_legend(p), legend = 'bottom')
 
-  ggsave(file = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot3.png'),  w = 9, h = 6)
-  
   
   if(any(!Code %in% selected_code)){
     plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, !code %in% selected_code), 
