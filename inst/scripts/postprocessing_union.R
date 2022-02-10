@@ -90,15 +90,15 @@ mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 p_NY <- plot_mortality_rate_continuous_all_states(mortality_rate, limits_mortality_rate, outdir.fig)
 
 # make panel mortaliry
-p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1, label.x = 0.05) 
+p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1) #, label.x = 0.03
 p <- ggarrange(p, labels = 'B')
 
-panel <- grid.arrange(grobs = list(p_NY, p), widths = c(0.5, 0.05, 1), heights = c(0.1, 0.9, 0.7), 
-                      layout_matrix = rbind(c(1, NA, NA),
-                                            c(1, NA, 2),
-                                            c(NA, NA, 2)),
-                      top = paste0('Predicted COVID-19 attributable mortality rates as of ', format(unique(mortality_rate$date), '%B %Y')))
-ggsave(panel, file = paste0(outdir.fig, '-MortalityRate_panel_plot.png'), w = 9, h = 4.5)
+panel <- grid.arrange(grobs = list(p_NY, p), widths = c(1, 0.8, 0.7), heights = c(0.8, 0.1, 1.05), 
+                      layout_matrix = rbind(c(1, 1, NA),
+                                            c(NA, NA, NA),
+                                            c(2, 2, 2)),
+                      left = paste0('Predicted COVID-19 attributable mortality rates\nas of ', format(unique(mortality_rate$date), '%B %Y')))
+ggsave(panel, file = paste0(outdir.fig, '-MortalityRate_panel_plot.png'), w = 7, h = 6)
 
 
 #

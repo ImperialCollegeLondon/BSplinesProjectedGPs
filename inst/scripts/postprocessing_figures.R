@@ -10,7 +10,6 @@ library(cowplot)
 library(extraDistr)
 library(bayesplot)
 library(jcolors)
-library(magick)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
@@ -193,10 +192,14 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2, outdir.table)
   prop_vac_counterfactual <- prepare_prop_vac_counterfactual_table(stan_data1, df_state, df_age_vaccination2, df_counterfactual)
   
+  prop_vac_start <- prop_vac[, list(prop_1 = round(prop_1[date == min(date)]*100), 
+                                    prop_2 = round(prop_2[date == min(date)]*100)), by = 'code']
+  prop_vac_start <- prop_vac_start[, list(prop_1_min = min(prop_1), prop_2_min = min(prop_2), prop_1_max = max(prop_1), prop_2_max = max(prop_2))]
   df_counterfactual = data.table(counterfactual_index = 1:6, 
-                                 label_counterfactual = c(paste0('Counterfactual analysis with higher vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+')),
-                                                          paste0('Counterfactual analysis with lower vaccine\ncoverage among individuals aged ', c('18-64', '65+', '18-64 and 65+')))
+                                 label_counterfactual = c(paste0('Hypothesized vaccination rate of ', c(prop_vac_start$prop_1_min, prop_vac_start$prop_2_min, 'higher'), '% in ', c('18-64', '65+', '18-64 and 65+')),
+                                                          paste0('Hypothesized vaccination rate of ',  c(prop_vac_start$prop_1_max, prop_vac_start$prop_2_max, 'lower'), '% in ', c('18-64', '65+', '18-64 and 65+')))
   )
+  
   
   # phi during vaccine 
   make_var_by_age_by_state_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
@@ -207,23 +210,19 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
-  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
+  p <- plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
   plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, T, outdir.fig, '_selected_states')
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, F, outdir.fig, '_selected_states')
-
+  p2 <- plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, F, outdir.fig, '_selected_states')
+  ggarrange(p2, p, labels = c('A', 'B'), nrow = 2, heights = c(0.74, 1), label.x = 0.03)
+  ggsave(paste0(outdir.fig, '-panel_relative_deaths_vaccine_coverage.png'), w = 8, h = 8)
+  
   if(length(Code) > 6){
     plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
   }
   
   # plot predicted relative deaths
   r_pdeaths_predict = make_var_by_age_by_state_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths_predict', outdir.table)
-  if(length(Code) > 6){
-    mid_code = round(length(Code) / 2)
-    plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[1:mid_code]), subset(r_pdeaths_predict, code %in% Code[1:mid_code]), '_part_1', outdir.fig)
-    plot_PPC_relative_resurgence(subset(r_pdeaths, code %in% Code[(1+mid_code):(mid_code*2)]), subset(r_pdeaths_predict, code %in% Code[(1+mid_code):(mid_code*2)]), '_part_2', outdir.fig)
-  } else{
-    plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
-  }
+  plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
   
   # plot counterfactual analysis
   E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
@@ -256,20 +255,18 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   
   plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, code %in% selected_code), 
                                               subset(E_pdeaths_predict_resurgence_cumulative_allages, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
-  plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', yintercept = 1, outdir.fig)
+  p_all <- plot_vaccine_effects_counterfactual_change_allages(perc_E_pdeaths_counterfactual_allages, prop_vac_counterfactual, 'selected_states', 'percChange', yintercept = 1, outdir.fig)
   plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
   
-  p_all <- image_read( paste0(outdir.fig, '-predicted_percChange_weekly_deaths_vaccine_coverage_selected_statesAllAges.png'))
-  p_FL <- image_read( paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_FL_cumulative_rperiod_selected_statesAllAges.png')) 
+  p_FL <- plot_vaccine_effects_counterfactual_allages_FL(E_pdeaths_counterfactual_resurgence_cumulative_allages, E_pdeaths_predict_resurgence_cumulative_allages, resurgence_dates)
   
-  p <- image_composite(image_scale(p_all, "x2500"), image_scale(p_FL, "x700"), offset = "+325+1025")
-  image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), format = "png")
+
+  p <- ggarrange(p_FL, p_all, labels = c('A', 'B'), nrow = 1, common.legend = T, legend = 'bottom', widths = c(0.75, 1), label.x = 0.05)
+  ggsave(p, file = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), w = 9.5, h = 6.5)
   
-  p <- image_composite(image_scale(image_border(p_all, "white", "400x200"), "x2500"), image_scale(p_FL, "x800"), offset = "+0+1700")
-  image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), format = "png")
-  
-  p <- image_composite(image_scale(image_border(p_all, "white", "630x10"), "x2500"), image_scale(p_FL, "x950"), offset = "+0+1550")
-  image_write(p, path = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot3.png'), format = "png")
+  ggarrange(p, grob_legend = get_legend(p), legend = 'bottom')
+
+  ggsave(file = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot3.png'),  w = 9, h = 6)
   
   
   if(any(!Code %in% selected_code)){
