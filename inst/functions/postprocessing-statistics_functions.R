@@ -225,12 +225,19 @@ save_p_value_vaccine_effects <- function(samples, names, outdir){
 }
 
 save_resurgence_dates <- function(resurgence_dates, outdir){
+  
+  for(Code in unique(resurgence_dates$code)){
+    saveRDS(subset(resurgence_dates, code == Code), paste0(outdir, '-resurgence_dates_', Code, '.rds'))
+    
+  }
+  
   resurgence_dates[,start_resurgence_name := format(start_resurgence, '%d %b, %Y')]
   resurgence_dates[,stop_resurgence_name := format(stop_resurgence, '%d %b, %Y')]
   
   tmp <- merge(resurgence_dates, df_state, by = 'code')[, .(loc_label, start_resurgence_name, stop_resurgence_name)]
   
   saveRDS(tmp, paste0(outdir, '-resurgence_dates.rds'))
+  
 }
 
 

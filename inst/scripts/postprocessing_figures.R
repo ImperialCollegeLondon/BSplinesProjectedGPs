@@ -187,8 +187,10 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   df_week2 = df_week2[order(code)]
   df_week = select(df_week, -dummy)
   
+  # temp
+  source(file.path(indir, "functions", "stan_utility_functions.R"))
   stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates, F)
-  prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2)
+  prop_vac = prepare_prop_vac_table(stan_data1, df_week2, df_age_vaccination2, outdir.table)
   prop_vac_counterfactual <- prepare_prop_vac_counterfactual_table(stan_data1, df_state, df_age_vaccination2, df_counterfactual)
   
   df_counterfactual = data.table(counterfactual_index = 1:6, 
@@ -204,7 +206,7 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, resurgence_dates, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac,  resurgence_dates, T, outdir.fig, '_selected_states')
+  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, T, outdir.fig, '_selected_states')
   plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, F, outdir.fig, '_selected_states')
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)

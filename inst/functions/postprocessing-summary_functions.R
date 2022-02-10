@@ -1740,17 +1740,20 @@ summary_death_all_states = function(death2, rm_states){
   return(tmp1)
 }
 
-prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
+prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2, outdir){
   
   prop_vac = data.table( do.call('rbind', stan_data$prop_vac) ) 
   prop_vac[, age := rep(df_age_vaccination2$age, each = nrow(stan_data$prop_vac[[1]]))]
   prop_vac[, week_index := rep(1:nrow(stan_data$prop_vac[[1]]), length(stan_data$prop_vac))]
   prop_vac = data.table(reshape2::melt(prop_vac, id.vars = c('age', 'week_index')))
   setnames(prop_vac, c('variable', 'value'), c('code', 'prop'))
+  if(length(Code) == 1) prop_vac$code = Code
   prop_vac = merge(prop_vac, df_week2, by = c('week_index', 'code'))
   
+  col_names <- colnames(stan_data$prop_vac[[1]])
+  if(length(Code) == 1) col_names = Code
   prop_vac_start = data.table( do.call('rbind', stan_data$prop_vac_start) ) 
-  colnames(prop_vac_start) = colnames(stan_data$prop_vac[[1]])
+  colnames(prop_vac_start) = col_names
   prop_vac_start[, age := df_age_vaccination2$age] 
   prop_vac_start = data.table(reshape2::melt(prop_vac_start, id.vars = c('age')))
   setnames(prop_vac_start, c('variable', 'value'), c('code', 'pre_prop'))
@@ -1761,6 +1764,11 @@ prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
   prop_vac[, cat := paste0('prop_', age_index)]
   prop_vac = data.table(reshape2::dcast(prop_vac, code + date ~ cat, value.var = 'prop'))
   
+  for(Code in unique(prop_vac$code)){
+    saveRDS(subset(prop_vac, code == Code), file= paste0(outdir, '-vaccine_coverage_', Code, '.rds'))
+    
+  }
+
   return(prop_vac)
 }
 
