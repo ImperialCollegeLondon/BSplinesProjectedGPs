@@ -93,7 +93,7 @@ p_NY <- plot_mortality_rate_continuous_all_states(mortality_rate, limits_mortali
 p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1) #, label.x = 0.03
 p <- ggarrange(p, labels = 'B')
 
-panel <- grid.arrange(grobs = list(p_NY, p), widths = c(1, 0.8, 0.7), heights = c(0.8, 0.1, 1.05), 
+panel <- grid.arrange(grobs = list(p_NY, p), widths = c(1, 0.7, 0.7), heights = c(0.8, 0.1, 1.05), 
                       layout_matrix = rbind(c(1, 1, NA),
                                             c(NA, NA, NA),
                                             c(2, 2, 2)),
