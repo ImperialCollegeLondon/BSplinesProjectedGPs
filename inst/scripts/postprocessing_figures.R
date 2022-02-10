@@ -206,10 +206,10 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, resurgence_dates, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, T, outdir.fig, '_selected_states')
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, F, outdir.fig, '_selected_states')
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
   plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
+  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, T, outdir.fig, '_selected_states')
+  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, F, outdir.fig, '_selected_states')
 
   if(length(Code) > 6){
     plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
