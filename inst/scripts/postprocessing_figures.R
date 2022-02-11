@@ -208,12 +208,15 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   # plot estimate relative deaths
   r_pdeaths = make_var_by_age_by_state_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, resurgence_dates, outdir.fig)
-  plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
   p <- plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, T, outdir.fig, '_selected_states')
   p2 <- plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, F, outdir.fig, '_selected_states')
   ggarrange(p2, p, labels = c('A', 'B'), nrow = 2, heights = c(0.74, 1), label.x = 0.03)
   ggsave(paste0(outdir.fig, '-panel_relative_deaths_vaccine_coverage.png'), w = 8, h = 8)
+  
+  p <- plot_relative_resurgence_vaccine_no_time(r_pdeaths, prop_vac, resurgence_dates, T, outdir.fig)
+  p2 <- plot_relative_resurgence_vaccine2(subset(r_pdeaths, code %in% selected_code), prop_vac, resurgence_dates, T, outdir.fig, '_selected_states')
+  ggarrange(p2, p, labels = c('A', 'B'), nrow = 2, heights = c(0.74, 1), label.x = 0.03)
+  ggsave(paste0(outdir.fig, '-panel_relative_deaths_vaccine_coverage_log.png'), w = 8, h = 8)
   
   if(length(Code) > 6){
     plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
