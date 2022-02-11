@@ -14,9 +14,10 @@ library(jcolors)
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "220131a"
-JOBID = 30502
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+states = strsplit('AK',',')[[1]]
+stan_model = "220208a"
+JOBID = 8060
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -196,8 +197,8 @@ if('intercept_resurgence0' %in% names(fit_samples)){
                                     prop_2 = round(prop_2[date == min(date)]*100)), by = 'code']
   prop_vac_start <- prop_vac_start[, list(prop_1_min = min(prop_1), prop_2_min = min(prop_2), prop_1_max = max(prop_1), prop_2_max = max(prop_2))]
   df_counterfactual = data.table(counterfactual_index = 1:6, 
-                                 label_counterfactual = c(paste0('Hypothesized vaccination rate of ', c(prop_vac_start$prop_1_min, prop_vac_start$prop_2_min, 'higher'), '% in ', c('18-64', '65+', '18-64 and 65+')),
-                                                          paste0('Hypothesized vaccination rate of ',  c(prop_vac_start$prop_1_max, prop_vac_start$prop_2_max, 'lower'), '% in ', c('18-64', '65+', '18-64 and 65+')))
+                                 label_counterfactual = c(paste0('Hypothesized vaccination rate of ', c(prop_vac_start$prop_1_max, prop_vac_start$prop_2_max, 'higher'), '% in ', c('18-64', '65+', '18-64 and 65+')),
+                                                          paste0('Hypothesized vaccination rate of ',  c(prop_vac_start$prop_1_min, prop_vac_start$prop_2_min, 'lower'), '% in ', c('18-64', '65+', '18-64 and 65+')))
   )
   
   

@@ -1131,8 +1131,8 @@ plot_vaccine_effects_counterfactual_allages_FL <- function(data_res1, data_res2,
   tmp[, Location := unique(tmp1$loc_label)]
   p_FL <- ggplot(tmp1, aes(x = date)) + 
     geom_line(aes(y = M, col = label_counterfactual)) + 
-    geom_point(data = subset(tmp, !grepl('18-64 and 65+', label_counterfactual) & week_index == 1), aes(y = M, col = label_counterfactual, shape = loc_label), alpha = 0) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha = 0.15) + 
+    geom_point(data = subset(tmp, !grepl('18-64 and 65+', label_counterfactual) & week_index == 1), aes(y = M, col = label_counterfactual, shape = loc_label), alpha = 0, size = 2.5) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha = 0.1) + 
     scale_x_date(expand = expansion(mult = c(0.05,0)), date_labels = c("%b-%y"), breaks = '1 month') + 
     theme_bw() + 
     facet_grid(.~Location, label = 'label_both') +
@@ -1151,7 +1151,7 @@ plot_vaccine_effects_counterfactual_allages_FL <- function(data_res1, data_res2,
     scale_fill_manual(values = colors) +
     scale_linetype_manual(values = 'dashed', guide = 'none') +
     scale_shape_manual(values = c(15, 17, 3, 10, 11, 12, 20, 13, 14, 4)) + 
-    labs(col = '', y = paste0('Predicted cumulative COVID-19 attributable\ndeaths among 18+'),
+    labs(col = '', y = paste0('Predicted cumulative COVID-19\nattributable deaths among 18+'),
          fill = '', linetype = '', shape = '')  +
     guides(col = guide_legend(nrow=length(unique(tmp1$label_counterfactual)),byrow=TRUE, order =1),
            fill =guide_legend(nrow=length(unique(tmp1$label_counterfactual)),byrow=TRUE, order =1),
