@@ -120,7 +120,7 @@ stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 if(grepl('220208a|220209a|220209c|220209d', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 11, knots_rows = knots_rows)
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 16, knots_rows = knots_rows)
 }
 if(grepl('220208a|220209d', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
