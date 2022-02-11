@@ -178,9 +178,10 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     labs(x = '', y = 'Age group',
          fill = "Value sum of covid-19 weekly deaths", title = 'exact sum')
   
-  p = ggpubr::ggarrange(p1, p2, p3,  common.legend = T, legend = 'bottom')
-  ggsave(p, file = paste0(outdir, '-deathByAge_boundaries.png'), w = 20, h = 25)
+  p_all = ggpubr::ggarrange(p1, p2, p3,  common.legend = T, legend = 'bottom')
+  ggsave(p_all, file = paste0(outdir, '-deathByAge_boundaries.png'), w = 20, h = 25)
   
+  return(p)
 }
 
 plot_data_one_state = function(tmp)
@@ -322,7 +323,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
   ggsave(paste0(outdir, '-proportion_vaccine_age_code.png'), w = 9, h = 8)
   
   tmp[, `Age group` := age]
-  ggplot(subset(tmp, code %in% c('CA', 'FL', 'NY', 'TX') & age_index >2), aes(date, prop)) +
+  p <- ggplot(subset(tmp, code %in% c('CA', 'FL', 'NY', 'TX') & age_index >2), aes(date, prop)) +
     geom_line(aes(col = loc_label)) + 
     facet_wrap(~`Age group`, label = 'label_both') + 
     theme_bw()+ 
@@ -336,7 +337,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
     scale_color_jcolors('pal8') + 
     scale_y_continuous(labels = scales::percent)+ 
     scale_x_date(date_labels = c("%b-%y"), breaks = '2 months', expand = c(0,0)) 
-  ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.75)
+  ggsave(p, file = paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.75)
   
   if(length(Code) > 6){
     
@@ -375,8 +376,8 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
       scale_y_continuous(labels = scales::percent)+ 
       scale_x_date(date_labels = c("%b-%y"), breaks = '2 months', expand = c(0,0)) 
     
-    p <- ggarrange(p1, p2, nrow = 2,  common.legend = T, legend = 'none')
-    grid.arrange(p, left = 'Proportion of fully vaccinated individuals')
+    p_all <- ggarrange(p1, p2, nrow = 2,  common.legend = T, legend = 'none')
+    grid.arrange(p_all, left = 'Proportion of fully vaccinated individuals')
     ggsave(paste0(outdir, '-proportion_vaccine_age_code_all_states.png'), w = 8, h = 6)
     
     
@@ -481,5 +482,14 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
           strip.background = element_rect(colour="black", fill="white"))
   ggsave(paste0(outdir, '-weekly_deaths_4states.png'), w = 6, h = 4)
   
+  return(p)
 }
 
+save_deathByAge_vaccineByAge_panel <- function(plot_deathByAge, plot_vaccineByAge, outdir){
+  p1 <- ggarrange(plot_deathByAge, labels = c('A'), label.x = 0.03)
+  p2 <- ggarrange(plot_vaccineByAge, labels = c('B'), label.x = 0.05)
+  
+  p <- grid.arrange(grobs = list(p1, p2), layout_matrix = rbind(c(1, 1), 
+                                                                c(2, NA)), heights = c(1, 1), widths = c(1, 0.5))
+  ggsave(p, file = paste0(outdir, '-deathByAge_proportion_vaccine_panel_selected_states.png'), w = 9,h = 7)
+}

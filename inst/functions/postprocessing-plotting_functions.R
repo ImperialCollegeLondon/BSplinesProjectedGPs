@@ -445,7 +445,7 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
           panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
     coord_cartesian(ylim = c(0,max(tmp$CU)+0.001))  +
-    labs(x = 'Location')
+    labs(x = '')
   # +
   #   labs(y = '')
   ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages.png')), w = 6.5, h = 3.5)
@@ -563,7 +563,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
     geom_line(aes(y = M)) +
     geom_ribbon(aes(ymin=CL, ymax=CU), alpha = 0.4) + 
     theme_bw() + 
-    facet_wrap(~Location, label = 'label_both') +
+    facet_wrap(~Location) +
     theme(legend.position = 'bottom', 
           # axis.title = element_text(size = rel(1.2)),
           # axis.text = element_text(size = rel(1.1)),
