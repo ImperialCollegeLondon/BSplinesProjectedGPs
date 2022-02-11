@@ -2476,6 +2476,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   tmp2 <- tmp2[diff_value != 0]
 
   tmp2[, loc_label := factor(loc_label, levels = df_state$loc_label)]
+  tmp2[, label_counterfactual := factor(label_counterfactual, levels = df_counterfactual$label_counterfactual)]
   
   p <- ggplot(tmp2, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=yintercept), linetype = 'dashed', col = 'grey70') +
