@@ -1830,7 +1830,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   p1 <- ggplot(data_res, aes(x = date)) + 
     geom_line(aes(y = M, col = type)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
-    facet_grid(Location~`Age group`) +
+    facet_grid(Location~`Age group`, scales = 'free_y') +
     labs(y = 'Relative COVID-19 attributable weekly deaths', 
          shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
     theme_bw() +
