@@ -1439,8 +1439,8 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, resurgence_da
                          limits = range(prop_vac_init$prop_2_init))
   
   if(log_transform){
-    p1 = p1 + scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'log relative COVID-19 attributable weekly deaths')
-    p2 = p2 + scale_y_continuous(trans = 'log', breaks = base_breaks()) 
+    p1 = p1 + scale_y_log10(limits = range(c(data_res$CL - 0.01, data_res$CU + 0.01)))
+    p2 = p2 +scale_y_log10(limits = range(c(data_res$CL - 0.01, data_res$CU + 0.01)))
   }
   
   p = ggarrange(p1, p2, ncol = 2, widths = c(1, 0.87), legend = 'none')
