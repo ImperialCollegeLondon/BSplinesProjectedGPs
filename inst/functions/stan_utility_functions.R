@@ -638,6 +638,9 @@ add_JHU_data <- function(stan_data, df_week, Code){
   
   stan_data[['deaths_JHU']] = as.matrix(reshape2::dcast(tmp2, code ~ week_index, value.var = 'weekly.deaths')[,-1])
   
+  if(any(stan_data[['deaths_JHU']]  == 0)){
+    stan_data[['deaths_JHU']][stan_data[['deaths_JHU']] == 0] <- 0.01
+  }
   return(stan_data)
 }
 
