@@ -669,10 +669,10 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
   
   death[, `Age group` := age]
   
-  p <- ggplot(subset(death), aes(x= date) ) +
-    geom_point(data = subset(df), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
-    geom_line(aes(y = M, fill = loc_label), show.legend = F) +
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
+  p <- ggplot(subset(death) ) +
+    geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
+    geom_line(aes(x= date, y = M, fill = loc_label), show.legend = F) +
+    geom_ribbon(aes(x= date, ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
     facet_grid(loc_label~`Age group`, scale = 'free') +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + 
@@ -700,9 +700,11 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
   
   if(!is.null(resurgence_dates)){
     dummy.dt = merge(resurgence_dates, unique(select(death, code, loc_label)), by = 'code')
-    dummy.dt[, text := 'Beginning of Summer 2021 resurgence period']
+    dummy.dt[, text := 'Summer 2021 resurgence period']
     p <- p + 
-      geom_vline(data = dummy.dt, aes(xintercept = start_resurgence, linetype = text), col = 'grey50')
+      geom_rect(data = dummy.dt, aes(xmin=start_resurgence, xmax=stop_resurgence, ymin=-Inf, ymax=Inf, alpha = text)) + 
+      scale_alpha_manual(values = 0.15) + 
+      labs(alpha = '')
       
   }
 
@@ -1136,7 +1138,7 @@ plot_vaccine_effects_counterfactual_allages_FL <- function(data_res1, data_res2,
     scale_x_date(expand = expansion(mult = c(0.05,0)), date_labels = c("%b-%y"), breaks = '1 month') + 
     theme_bw() + 
     facet_grid(.~Location, label = 'label_both') +
-    geom_vline(data = dummy.dt1, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
+    # geom_vline(data = dummy.dt1, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
           legend.position = 'bottom', 
@@ -1149,7 +1151,7 @@ plot_vaccine_effects_counterfactual_allages_FL <- function(data_res1, data_res2,
           plot.margin = unit(c(5.5, 5.5, 90.5, 5.5), "pt")) + 
     scale_color_manual(values = colors) + 
     scale_fill_manual(values = colors) +
-    scale_linetype_manual(values = 'dashed', guide = 'none') +
+    # scale_linetype_manual(values = 'dashed', guide = 'none') +
     scale_shape_manual(values = c(15, 17, 3, 10, 11, 12, 20, 13, 14, 4)) + 
     labs(col = '', y = paste0('Predicted cumulative COVID-19\nattributable deaths among 18+'),
          fill = '', linetype = '', shape = '')  +
