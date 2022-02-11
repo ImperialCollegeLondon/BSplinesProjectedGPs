@@ -563,7 +563,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
     geom_line(aes(y = M)) +
     geom_ribbon(aes(ymin=CL, ymax=CU), alpha = 0.4) + 
     theme_bw() + 
-    facet_wrap(~Location) +
+    facet_wrap(~Location, labels = 'label_both') +
     theme(legend.position = 'bottom', 
           # axis.title = element_text(size = rel(1.2)),
           # axis.text = element_text(size = rel(1.1)),

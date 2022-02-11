@@ -111,27 +111,31 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   p <- ggplot(tmp, aes(x = date, y = age)) +
     geom_raster(aes(fill = weekly.deaths )) +
     theme_bw() +
-    facet_wrap(~loc_label,ncol = 4) + 
+    facet_wrap(.~loc_label, nrow = 4) + 
     scale_fill_viridis_c(trans = 'sqrt',  na.value="grey70", breaks = c(0, 100, 1000,2500),) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     scale_y_discrete(expand = c(0,0)) +
     theme(legend.position = 'bottom',
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = rel(1)),
+          axis.text.y = element_text(size = rel(1)),
           axis.title.x = element_blank(),
+          legend.justification = c(0,1),
           # axis.text.y =  element_text(size = rel(0.8)),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           legend.key = element_blank(),
           legend.title = element_text(size = rel(0.85)),
+          axis.title.y = element_text(size = rel(1.1)),
+          strip.text = element_text(size = rel(0.9)),
           # legend.text = element_text(size = rel(1)),
           strip.background = element_blank(),
           panel.background = element_rect(fill = '#FCB360', colour = 'red')) +
     geom_point(data = df, aes(color = dummy), shape = 15, size = 0) +
     labs(x = '', y = 'Age group', fill = 'Retrievable\nweekly COVID-19\nattributable deaths', col = '') +
     scale_color_manual(values = c('#FCB360', "grey70")) +
-    guides(color = guide_legend(override.aes = list(size=4)), 
-           fill = guide_colorbar(title.position = "right")) 
-  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 8.5, h = 3.5)
+    guides(color = guide_legend(override.aes = list(size=4)),
+           fill = guide_colorbar(title.position = "right", barheight = 0.7))
+  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 4, h = 8)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = min.sum.weekly.deaths )) + 
@@ -325,15 +329,18 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
   tmp[, `Age group` := age]
   p <- ggplot(subset(tmp, code %in% c('CA', 'FL', 'NY', 'TX') & age_index >2), aes(date, prop)) +
     geom_line(aes(col = loc_label)) + 
-    facet_wrap(~`Age group`, label = 'label_both') + 
+    facet_wrap(~`Age group`, label = 'label_both', nrow = 2) + 
     theme_bw()+ 
     labs( y = 'Proportion of fully vaccinated individuals', col = '') + 
     theme(legend.key = element_blank(), 
           strip.background = element_rect(colour="white", fill="white"),
           panel.border = element_rect(colour = "black", fill = NA), 
           legend.position = 'bottom',
-          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
-          axis.title.x = element_blank()) + 
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = rel(1)), 
+          axis.title.x = element_blank(), 
+          axis.text.y = element_text(size = rel(1)), 
+          axis.title.y = element_text(size = rel(1.1)), 
+          strip.text = element_text(size = rel(0.9))) + 
     scale_color_jcolors('pal8') + 
     scale_y_continuous(labels = scales::percent)+ 
     scale_x_date(date_labels = c("%b-%y"), breaks = '2 months', expand = c(0,0)) 
@@ -489,7 +496,7 @@ save_deathByAge_vaccineByAge_panel <- function(plot_deathByAge, plot_vaccineByAg
   p1 <- ggarrange(plot_deathByAge, labels = c('A'), label.x = 0.03)
   p2 <- ggarrange(plot_vaccineByAge, labels = c('B'), label.x = 0.05)
   
-  p <- grid.arrange(grobs = list(p1, p2), layout_matrix = rbind(c(1, 1), 
-                                                                c(2, NA)), heights = c(1, 1), widths = c(1, 0.5))
-  ggsave(p, file = paste0(outdir, '-deathByAge_proportion_vaccine_panel_selected_states.png'), w = 9,h = 7)
+  p <- grid.arrange(grobs = list(p1, p2), layout_matrix = rbind(c(1, 2), 
+                                                                c(1, NA)), heights = c(1, 0.4), widths = c(1, 1))
+  ggsave(p, file = paste0(outdir, '-deathByAge_proportion_vaccine_panel_selected_states.png'), w = 8,h = 8)
 }
