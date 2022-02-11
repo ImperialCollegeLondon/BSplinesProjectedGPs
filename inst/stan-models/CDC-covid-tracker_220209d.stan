@@ -34,9 +34,6 @@ data{
   int<lower=-1> sum_count_censored[M,max(N_missing)]; // sum of the missing deaths over the serie if it ends before the period
   int min_count_censored[M,max(N_missing)]; // range of the censored data if it ends after the period
   int max_count_censored[M,max(N_missing)]; // range of the censored data if it ends after the period
-  
-  // JHU data
-  matrix[M,W] deaths_JHU; // deaths reported by JHU
 
   //splines
   int num_basis_rows;
