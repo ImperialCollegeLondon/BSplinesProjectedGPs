@@ -100,7 +100,7 @@ cat("Location ", as.character(loc_name), "\n")
 if(1){
   plot_deathByAge <- plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccineByAge <- plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
-  save_deathByAge_vaccineByAge_panel(plot_deathByAge, plot_vaccineByAge, outdir)
+  save_deathByAge_vaccineByAge_panel(plot_deathByAge, plot_vaccineByAge, outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                  JHUData = JHUData, 
                                  scrapedData = scrapedData,
