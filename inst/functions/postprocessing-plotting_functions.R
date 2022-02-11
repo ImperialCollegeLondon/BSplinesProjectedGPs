@@ -558,6 +558,9 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
   ###
   
   tmp <- subset(mortality_rate, code == 'NY')
+  if(nrow(tmp) == 0){
+    tmp <- subset(mortality_rate, code == unique(mortality_rate)[1])
+  }
   tmp[, Location := loc_label]
   p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
     geom_line(aes(y = M)) +
@@ -1775,7 +1778,7 @@ plot_relative_resurgence_vaccine_no_time_50states <- function(data_res1, prop_va
     file =  paste0(outdir, '-relative_deaths_vaccine_coverage_no_time.png')
   }
   
-  ggsave(p, file =file, w = 7.5, h = 5)
+  ggsave(p, file =file, w = 7.5, h = 7)
   
   return(p)
 }
