@@ -1635,10 +1635,11 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, resurg
           strip.text = element_text(size = rel(0.9)),
           legend.spacing.y = unit(-0, "cm"), 
           legend.position = 'bottom') +
-    scale_x_continuous(labels = scales::percent_format()) +
+    scale_x_continuous(labels = scales::percent_format(), breaks = c(0.35, 0.4, 0.45)) +
     scale_shape_manual(values = c(15, 17, 3, 10, 11, 12, 20, 13, 14, 4), guide = 'none') + 
     scale_color_gradient2(low = 'darkred', high = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)),
-                          labels = scales::percent_format(), guide = guide_colorbar(barwidth = 8, barheight = 0.8, label.vjust = 0))
+                          labels = scales::percent_format(), guide = guide_colorbar(barwidth = 8.5, barheight = 0.8, label.vjust = 0), 
+                          breaks = c(0.35, 0.4, 0.45))
   
   p2 <- ggplot(subset(data_res, age == '65+'), aes(x = prop_2_init)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU, col = prop_2_init), width = 0) +
@@ -1661,7 +1662,8 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, resurg
     scale_x_continuous(labels = scales::percent_format()) +
     scale_shape_manual(values = c(15, 17, 3, 10, 11, 12, 20, 13, 14, 4), guide = 'none') + 
     scale_color_gradient2(low = 'hotpink2', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)), 
-                          labels = scales::percent_format(), guide = guide_colorbar(barwidth = 8, barheight = 0.8, label.vjust = 0))
+                          labels = scales::percent_format(), guide = guide_colorbar(barwidth = 8.5, barheight = 0.8, label.vjust = 0))
+  
   
 
   # for legend
