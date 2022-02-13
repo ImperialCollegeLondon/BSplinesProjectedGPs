@@ -137,12 +137,14 @@ make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_
                                     age_groups = unique(df_age_vaccination$age), lab = 'vacagegroups', withempirical = F)
 
 # compare to DoH data
-tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous,
-                                                                      scrapedData, 'cum.deaths', Code, outdir.table)
-compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
-                                   var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
-compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
-compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
+if(any(Code %in% unique(scrapedData$code))){
+  tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous,
+                                                                        scrapedData, 'cum.deaths', Code, outdir.table)
+  compare_CDCestimation_DoH_age_plot(CDC_data = copy(tmp), scraped_data = scrapedData,
+                                     var.cum.deaths.CDC = c('M_abs_cum', 'CL_abs_cum', 'CU_abs_cum'), outdir = outdir.fig)
+  compare_CDCestimation_DoH_age_prop_plot(copy(tmp), outdir.fig)
+  compare_CDCestimation_DoH_age_weekly_plot(copy(tmp), outdir.fig)
+}
 
 # make panel figure
 age_contribution_continuous_table$method = 'GP-BS-SE'
