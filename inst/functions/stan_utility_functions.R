@@ -736,6 +736,14 @@ lag_neg <- function(x) sapply(1:(length(x)-1), function(i) min(which(x[i:length(
 
 find_resurgence_dates <- function(JHUData, deathByAge, Code){
   
+  if(length(Code)==1) {
+    # when only one state
+    tmp3 <- find_resurgence_dates(JHUData, deathByAge, locations$code)
+    tmp3 <- tmp3[code == Code]
+    
+    return(tmp3)
+  }
+  
   ma <- function(x, n = 5){as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))}
   
   JHUData = as.data.table(JHUData)
@@ -762,15 +770,9 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
   tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
 
   # find stop resurgence
-  if(length(Code)==1) {
-    # when only one state
-    tmp4 <- tmp2[change.smooth.weekly.deaths < 0.1 & date >= as.Date('2021-09-25'), list(stop_resurgence = min(date) ), by = c('code')]
-    tmp3 <- merge(tmp3, tmp4, by = 'code')
-  } else{
-    max_resurgence_period = (as.Date("2021-09-25") - tmp3[, max(start_resurgence)] )/ 7
-    tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
-  }
-  
+  max_resurgence_period = (as.Date("2021-09-25") - tmp3[, max(start_resurgence)] )/ 7
+  tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
+
   stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
   
   if(0){ #plot
