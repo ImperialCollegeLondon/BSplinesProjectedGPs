@@ -13,9 +13,12 @@ library(jcolors)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
-states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "220131a"
-JOBID = 30502
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+           "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+           "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+stan_model = "220208a"
+JOBID = 4321
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -57,6 +60,7 @@ outdir.fig = outdir.fig.post
 
 # 4 states
 selected_codes = c('CA', 'FL', 'NY', 'TX')
+selected_codes_10 <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
   
 #
 # mortality rate over time discrete
@@ -67,9 +71,12 @@ for(i in seq_along(locs)){
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 
-p <- plot_mortality_rate_all_states(mortality_rate, outdir.fig)
-find_statistics_mortality_rate(mortality_rate, outdir.table)
-limits_mortality_rate <- range(c(mortality_rate$CL, mortality_rate$CU))
+plot_mortality_rate_all_states(mortality_rate, outdir.fig)
+
+mortality_rate_10 <- mortality_rate[code %in% selected_codes_10]
+p <- plot_mortality_rate_all_states(mortality_rate_10, outdir.fig)
+find_statistics_mortality_rate(mortality_rate_10, outdir.table)
+limits_mortality_rate <- range(c(mortality_rate_10$CL, mortality_rate_10$CU))
 
 
 #
@@ -101,38 +108,13 @@ for(i in seq_along(locs)){
   death3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
 death3 = do.call('rbind', death3)
-plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
-if(any(!locs %in% selected_codes))
-  plot_mortality_all_states(subset(death3, !code %in% selected_codes),'otherStates', outdir.fig)
-
-if(length(locs) > 6){
-  mid_locs = floor(length(locs) / 2)
-  
-  plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), 'allStates_part1', outdir.fig)
-  plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), 'allStates_part2', outdir.fig)
-  
-} else{
-  plot_mortality_all_states(death3, 'allStates', outdir.fig)
+if(any(locs %in% selected_codes)){
+  plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
+}
+if(any(locs %in% selected_codes_10)){
+  plot_mortality_all_states(subset(death3, code %in% selected_codes_10),'otherStates', outdir.fig)
 }
 
-
-#
-#  contribution baseline
-contribution_ref = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  contribution_ref[[i]] = readRDS(paste0(outdir.table, '-contribution_refTable_', locs[i], '.rds'))
-}
-contribution_ref = do.call('rbind', contribution_ref)
-
-contribution_ref_adj = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  contribution_ref_adj[[i]] = readRDS(paste0(outdir.table, '-contribution_ref_adjTable_', locs[i], '.rds'))
-}
-contribution_ref_adj = do.call('rbind', contribution_ref_adj)
-
-plot_contribution_ref_all_states(contribution_ref, contribution_ref_adj, outdir.fig)
-
-contribution_baseline = statistics_contributionref_all_states(contribution_ref_adj, outdir.table)
 
 
 cat("\n End postprocessing_union.R \n")

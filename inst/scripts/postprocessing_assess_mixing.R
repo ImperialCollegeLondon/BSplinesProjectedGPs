@@ -15,8 +15,8 @@ indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('CA,FL,NY,TX',',')[[1]]
-stan_model = "220120a"
-JOBID = 2455
+stan_model = "220209a"
+JOBID = 21193
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -100,8 +100,7 @@ p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
 
 # forest plots
-samples <- rstan::extract(fit_cum)
-names_samples <- names(samples)
+names_samples <- names(fit_samples)
 names_fit <- names(fit_cum)
 
 ## base model

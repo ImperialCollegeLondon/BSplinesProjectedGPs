@@ -111,7 +111,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   p <- ggplot(tmp, aes(x = date, y = age)) +
     geom_raster(aes(fill = weekly.deaths )) +
     theme_bw() +
-    facet_wrap(.~loc_label, nrow = 4) + 
+    facet_wrap(.~loc_label, nrow = 2) + 
     scale_fill_viridis_c(trans = 'sqrt',  na.value="grey70", breaks = c(0, 100, 1000,2500),) +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     scale_y_discrete(expand = c(0,0)) +
@@ -135,7 +135,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
     scale_color_manual(values = c('#FCB360', "grey70")) +
     guides(color = guide_legend(override.aes = list(size=4)),
            fill = guide_colorbar(title.position = "right", barheight = 0.7))
-  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 4, h = 8)
+  ggsave(p, file = paste0(outdir, '-deathByAge_selected_states.png'), w = 7, h = 5)
   
   p1 = ggplot(deathByAge, aes(x = date, y = age)) + 
     geom_raster(aes(fill = min.sum.weekly.deaths )) + 
