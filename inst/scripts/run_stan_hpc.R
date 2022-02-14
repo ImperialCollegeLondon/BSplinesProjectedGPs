@@ -47,7 +47,6 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds"))
 path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
 
 # load functions
@@ -76,9 +75,6 @@ deathByAge = readRDS(path.to.CDC.data) # cdc data
 JHUData = readRDS(path.to.JHU.data)
 scrapedData = read.csv(path_to_scraped_data)
 
-# load vaccine data
-vaccine_data = readRDS(path_to_vaccine_data)
-
 # load population count 
 pop_data = as.data.table( read.csv(path.to.pop.data) )
 setnames(pop_data, 'location', 'loc_label')
@@ -98,9 +94,7 @@ cat("Location ", as.character(loc_name), "\n")
 
 # plot data 
 if(1){
-  plot_deathByAge <- plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  plot_vaccineByAge <- plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
-  save_deathByAge_vaccineByAge_panel(plot_deathByAge, plot_vaccineByAge, outdir.fig)
+  plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                  JHUData = JHUData, 
                                  scrapedData = scrapedData,
@@ -117,7 +111,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('220208a|220209a|220209c|220209d', stan_model)){
+if(grepl('220209a|220209c|220209d', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 16, knots_rows = knots_rows)
@@ -126,13 +120,6 @@ if(grepl('220209d', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
   stan_data = add_nodes_stan_data(stan_data)
-}
-if(grepl('220208a', stan_model)){
-  cat("\n With vaccine model \n")
-  resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
-  stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
-  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-  stan_data = add_JHU_data(stan_data, df_week, Code)
 }
 if(1){
   cat("\n With Gamma prior for lambda \n")

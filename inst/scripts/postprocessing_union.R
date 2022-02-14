@@ -57,13 +57,6 @@ outdir.fig = outdir.fig.post
 
 # 4 states
 selected_codes = c('CA', 'FL', 'NY', 'TX')
-
-# date 
-start_vaccine = vaccine_data[prop > 0 & date %in% df_week$date, min(date)]
-
-if(is.null(stan_data[['week_indices_resurgence']])){
-  resurgence_dates = NULL
-}
   
 #
 # mortality rate over time discrete
@@ -108,44 +101,18 @@ for(i in seq_along(locs)){
   death3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
 death3 = do.call('rbind', death3)
-plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates,'selectedStates', outdir.fig)
+plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
 if(any(!locs %in% selected_codes))
-  plot_mortality_all_states(subset(death3, !code %in% selected_codes), resurgence_dates,'otherStates', outdir.fig)
+  plot_mortality_all_states(subset(death3, !code %in% selected_codes),'otherStates', outdir.fig)
 
 if(length(locs) > 6){
   mid_locs = floor(length(locs) / 2)
   
-  plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
-  plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
+  plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), 'allStates_part1', outdir.fig)
+  plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), 'allStates_part2', outdir.fig)
   
 } else{
-  plot_mortality_all_states(death3, resurgence_dates, 'allStates', outdir.fig)
-}
-
-
-#
-# proportion weekly deaths after vaccine
-if(!is.null(resurgence_dates)){
-  propdeath3 = vector(mode = 'list', length = length(locs))
-  for(i in seq_along(locs)){
-    propdeath3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeprop_Table_3agegroups_', locs[i], '.rds'))
-  }
-  propdeath3 = do.call('rbind', propdeath3)
-  find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, min(resurgence_dates$start_resurgence), outdir.table)
-
-# 
-# vaccination effect on contribution
-  contribution = vector(mode = 'list', length = length(locs))
-  for(i in seq_along(locs)){
-    contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
-  }
-  contribution = do.call('rbind', contribution)
-  
-  mid_code = round(length(locs) / 2)
-  plot_contribution_vaccine(subset(contribution, code %in% locs[1:mid_code]), vaccine_data, resurgence_dates, 'part_1', outdir.fig)
-  plot_contribution_vaccine(subset(contribution, code %in% locs[(mid_code+1):(mid_code*2)]), vaccine_data, resurgence_dates,  'part_2',outdir.fig)
-  
-  find_regime_state(contribution, vaccine_data, resurgence_dates, start_vaccine, outdir.table)
+  plot_mortality_all_states(death3, 'allStates', outdir.fig)
 }
 
 

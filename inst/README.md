@@ -11,11 +11,10 @@
 Datasets in ```data/``` generated in ```misc/``` include:
 * All-ages daily deaths reported by JHU, ```JHU_data-$DATE.rds```
 * Age-specific weekly deaths reported by the CDC, ```CDC-data-$DATE.rds```
-* Vaccination data reported by the CDC, ```vaccination-prop-$DATE.rds```
 
 Datasets extracted from other source include:
 * Age-specific daily deaths reported by the DoH and extracted by the [Imperial College COVID-19 Response Team](https://github.com/ImperialCollegeLondon/US-covid19-agespecific-mortality-data), ```DeathsByAge_US_$DATE.csv```
-* Population counts in the United States from the 2018 Census, ```us_population_withnyc.rds```
+* Population counts in the United States from the 2018 Census, ```us_population.csv```
 
 ## instructions 
 The entry point to run the model on a laptop is ```run-model.sh``` and on a high performance computing environment ```run-model-HPC.R```. 
@@ -35,14 +34,14 @@ STAN_MODEL="stanmodelid"
 Note the correspondence between the stan model ID and the model, 
 | stan model id    | Model |
 |-----------|------------------------------------------------------|
-| 211201a | Regularised B-splines projected Gaussian Process  |
-| 211201b   | Standard Gaussian Process |
-| 211201c     | Standard B-splines |
-| 211201d     | Bayesian P-splines |
+| 220209a | Regularised B-splines projected Gaussian Process  |
+| 220209b   | Standard Gaussian Process |
+| 220209c     | Standard B-splines |
+| 220209d     | Bayesian P-splines |
 
 For example, if you wish to use a standard Gaussian Process, specify
 ```bash
-STAN_MODEL="211201b"
+STAN_MODEL="220209b"
 ```
 
 ### Usage on a laptop
