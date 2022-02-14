@@ -17,18 +17,20 @@ Datasets extracted from other source include:
 * Population counts in the United States from the 2018 Census, ```us_population.csv```
 
 ## instructions 
-The entry point to run the model on a laptop is ```run-model.sh``` and on a high performance computing environment ```run-model-HPC.R```. 
+The entry point to run the model on a laptop is ```run-model.sh``` and on a high performance computing environment ```run-model-HPC.sh```. 
 
 ### Header
 In both files, you will need to specify 
 * the repository directory, ```INDIR```
 * the output directory (to store the results), ```CWD``` and, 
 * the stan model ID under ```STAN_MODEL```
+* the US state(s) under ```STATES```
 with,
 ```bash
 INDIR="repositorydirectory"
 CWD="resultsdirectory"
 STAN_MODEL="stanmodelid"
+STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI'
 ```
 
 Note the correspondence between the stan model ID and the model, 
@@ -62,7 +64,7 @@ $ ./$STAN_MODEL-JOBID-postprocessing.sh
 ```
 
 ### Usage in high-throughput computing
-You need to modify the PBS header of ```run-model-HPC.sh``` (i.e., ```#PBS [...]```), l.14-17 and l.46-49. 
+You need to modify the PBS header of ```run-model-HPC.sh``` (i.e., ```#PBS [...]```), l.14-18 and l.50-53. 
 
 From the repository directory, on the terminal console execute, 
 ```bash
