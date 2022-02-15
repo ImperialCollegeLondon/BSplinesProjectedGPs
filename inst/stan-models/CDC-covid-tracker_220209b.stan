@@ -91,7 +91,7 @@ transformed data
 }
 
 parameters {
-  real<lower=0> nu_unscaled[M];
+  real<lower=0> nu_inverse[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
   matrix[W,A] z1[M];
   real<lower=0> alpha_gp[M];
@@ -102,7 +102,6 @@ parameters {
 transformed parameters {
   vector<lower=0>[W] lambda[M];
   real<lower=0> nu[M];
-  real<lower=0> theta[M];
   matrix[A,W] phi[M];
   matrix[A,W] alpha[M];
   matrix[B,W] phi_reduced[M];
@@ -111,8 +110,7 @@ transformed parameters {
 
   for(m in 1:M){
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
-    nu[m] = (1/nu_unscaled[m]);
-    theta[m] = (1 / nu[m]);
+    nu[m] = (1/nu_inverse[m]);
 
     f[m] = (gp(W, A, IDX_WEEKS, age, delta0, alpha_gp[m], rho_gp1[m],  rho_gp2[m], z1[m]))';
     
@@ -130,7 +128,7 @@ transformed parameters {
 
 model {
   
-  nu_unscaled ~ normal(0,5);
+  nu_inverse ~ normal(0,5);
 
   alpha_gp ~ cauchy(0,1);
   rho_gp1 ~ inv_gamma(2, 2);
@@ -148,10 +146,14 @@ model {
     lambda_raw[m] ~ gamma( lambda_prior_parameters[m][1,:],lambda_prior_parameters[m][2,:]);
 
 
+    // Note on the neg bin parametrisation related to the paper:
+    // mean neg_binomial_lpmf is alpha_reduced / nu_inverse = alpha_reduced * nu
+    // var neg_binomial_lpmf is alpha_reduced / nu_inverse^2 * (nu_inverse + 1) = alpha_reduced * nu (1 + nu)
+    
     for(w in 1:W_OBSERVED){
       
       int indx_w_m[N_idx_non_missing[m][w]] = idx_non_missing[m][1:N_idx_non_missing[m][w],w];
-      target += neg_binomial_lpmf(deaths[m][indx_w_m,w] | alpha_reduced[m][indx_w_m, IDX_WEEKS_OBSERVED[w]] , theta[m] );
+      target += neg_binomial_lpmf(deaths[m][indx_w_m,w] | alpha_reduced[m][indx_w_m, IDX_WEEKS_OBSERVED[w]] , nu_inverse[m] );
         
     }
 
@@ -160,11 +162,11 @@ model {
 
       if(!start_or_end_period[m][n])
       {
-        target += neg_binomial_lpmf( sum_count_censored[m][n] | alpha_reduced_missing , theta[m] ) ;
+        target += neg_binomial_lpmf( sum_count_censored[m][n] | alpha_reduced_missing , nu_inverse[m] ) ;
       } 
       else {
        for(i in min_count_censored[m][n]:max_count_censored[m][n])
-          target += neg_binomial_lpmf( i | alpha_reduced_missing , theta[m] ) ;
+          target += neg_binomial_lpmf( i | alpha_reduced_missing , nu_inverse[m] ) ;
       }
     } 
   }
@@ -186,14 +188,14 @@ generated quantities {
 
         for(w in 1:W){
             // predict deaths
-            deaths_predict[m,:,w] = neg_binomial_rng(alpha[m,:,w], theta[m] );
-            deaths_predict_state_age_strata[m,:,w] = neg_binomial_rng(alpha_reduced[m,:,w], theta[m] );
+            deaths_predict[m,:,w] = neg_binomial_rng(alpha[m,:,w], nu_inverse[m] );
+            deaths_predict_state_age_strata[m,:,w] = neg_binomial_rng(alpha_reduced[m,:,w], nu_inverse[m] );
         }
 
         for(w in 1:W_OBSERVED){
             for(i in idx_non_missing[m][1:N_idx_non_missing[m][w],w]){
                 idx_log_lik += 1;
-                log_lik[idx_log_lik] = neg_binomial_lpmf(deaths[m,i,w] | alpha_reduced[m,i, IDX_WEEKS_OBSERVED[w]] , theta[m] );
+                log_lik[idx_log_lik] = neg_binomial_lpmf(deaths[m,i,w] | alpha_reduced[m,i, IDX_WEEKS_OBSERVED[w]] , nu_inverse[m] );
             }
         }
 
@@ -203,11 +205,11 @@ generated quantities {
             if(!start_or_end_period[m][n])
                 {
                 idx_log_lik += 1;
-                log_lik[idx_log_lik] = neg_binomial_lpmf( sum_count_censored[m][n] | alpha_reduced_missing , theta[m] ) ;
+                log_lik[idx_log_lik] = neg_binomial_lpmf( sum_count_censored[m][n] | alpha_reduced_missing , nu_inverse[m] ) ;
             } else {
                 for(i in min_count_censored[m][n]:max_count_censored[m][n]){
                     idx_log_lik += 1;
-                    log_lik[idx_log_lik] = neg_binomial_lpmf( i | alpha_reduced_missing , theta[m] ) ;
+                    log_lik[idx_log_lik] = neg_binomial_lpmf( i | alpha_reduced_missing , nu_inverse[m] ) ;
                 }
             }
         }
