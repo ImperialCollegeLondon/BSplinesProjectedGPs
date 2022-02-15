@@ -467,9 +467,11 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
   ###
   
   tmp <- subset(mortality_rate, code == 'NY')
+  
   if(nrow(tmp) == 0){
     tmp <- subset(mortality_rate, code == unique(mortality_rate)[1])
   }
+  
   tmp[, Location := loc_label]
   p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
     geom_line(aes(y = M)) +
