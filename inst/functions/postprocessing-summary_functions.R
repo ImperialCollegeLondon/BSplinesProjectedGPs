@@ -1245,7 +1245,7 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   p_labs <- c('M','CL','CU')
   
   .math_name = c('nu', 'gamma[1]', 'gamma[2]', 'zeta')
-  variable_name <- c('nu', 'rho_gp1', 'rho_gp2', 'alpha_gp')
+  variable_name <- c('nu', 'gamma_gp1', 'gamma_gp2', 'zeta_gp')
   df_variable_name <- data.table(variable_name = variable_name, math_name = .math_name)
 
   tmp <- lapply(variable_name, function(x){
@@ -1258,13 +1258,13 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   tmp = dcast(tmp, state_index + variable_name ~ q_label, value.var = "q")
   tmp[, type := 'posterior']
   
-  # prior rho
-  tmp1 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = c('rho_gp1', 'rho_gp2')))
+  # prior gamma
+  tmp1 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = c('gamma_gp1', 'gamma_gp2')))
   tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 2, 2), q_label=p_labs),by=c('state_index', 'variable_name')]	
   tmp1 = dcast(tmp1, state_index + variable_name ~ q_label, value.var = "q")
 
   # prior alpha
-  tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'alpha_gp')
+  tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'zeta_gp')
   tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  1), q_label=p_labs), by=c('state_index', 'variable_name')]	
   tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
   tmp1 <- rbind(tmp1, tmp2)

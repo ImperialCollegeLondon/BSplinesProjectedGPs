@@ -92,11 +92,11 @@ plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
 # trace and paris plots
 cat("\n Trace plot weekly deaths params \n")
-p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
+p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 20, limitsize = F)
 
 cat("\n Pairs plot weekly deaths params \n")
-p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'alpha_gp', 'rho_gp'))
+p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
 ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
 
 # forest plots

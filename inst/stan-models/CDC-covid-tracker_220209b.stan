@@ -6,8 +6,8 @@ functions {
     
   matrix gp(int N_rows, int N_columns, real[] rows_idx, real[] columns_index,
             real delta0,
-            real alpha_gp, 
-            real rho_gp1, real rho_gp2,
+            real zeta_gp, 
+            real gamma_gp1, real gamma_gp2,
             matrix z1)
   {
     
@@ -19,8 +19,8 @@ functions {
     matrix[N_columns, N_columns] K2;
     matrix[N_columns, N_columns] L_K2;
     
-    K1 = cov_exp_quad(rows_idx, sqrt(alpha_gp), rho_gp1) + diag_matrix(rep_vector(delta0, N_rows));
-    K2 = cov_exp_quad(columns_index, sqrt(alpha_gp), rho_gp2) + diag_matrix(rep_vector(delta0, N_columns));
+    K1 = cov_exp_quad(rows_idx, sqrt(zeta_gp), gamma_gp1) + diag_matrix(rep_vector(delta0, N_rows));
+    K2 = cov_exp_quad(columns_index, sqrt(zeta_gp), gamma_gp2) + diag_matrix(rep_vector(delta0, N_columns));
 
     L_K1 = cholesky_decompose(K1);
     L_K2 = cholesky_decompose(K2);
@@ -94,9 +94,9 @@ parameters {
   real<lower=0> nu_inverse[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
   matrix[W,A] z1[M];
-  real<lower=0> alpha_gp[M];
-  real<lower=0> rho_gp1[M]; 
-  real<lower=0> rho_gp2[M];
+  real<lower=0> zeta_gp[M];
+  real<lower=0> gamma_gp1[M]; 
+  real<lower=0> gamma_gp2[M];
 }
 
 transformed parameters {
@@ -112,7 +112,7 @@ transformed parameters {
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
     nu[m] = (1/nu_inverse[m]);
 
-    f[m] = (gp(W, A, IDX_WEEKS, age, delta0, alpha_gp[m], rho_gp1[m],  rho_gp2[m], z1[m]))';
+    f[m] = (gp(W, A, IDX_WEEKS, age, delta0, zeta_gp[m], gamma_gp1[m],  gamma_gp2[m], z1[m]))';
     
     for(w in 1:W){
       phi[m][:,w] = softmax( f[m][:,w] ); 
@@ -130,9 +130,9 @@ model {
   
   nu_inverse ~ normal(0,5);
 
-  alpha_gp ~ cauchy(0,1);
-  rho_gp1 ~ inv_gamma(2, 2);
-  rho_gp2 ~ inv_gamma(2, 2);
+  zeta_gp ~ cauchy(0,1);
+  gamma_gp1 ~ inv_gamma(2, 2);
+  gamma_gp2 ~ inv_gamma(2, 2);
   
   for(i in 1:W){
     for(j in 1:A){
