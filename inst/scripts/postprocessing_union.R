@@ -1,7 +1,6 @@
 
 cat("\n Begin postprocessing_union.R \n")
 
-
 library(rstan)
 library(data.table)
 library(dplyr)
@@ -17,8 +16,8 @@ outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst'
 states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
-stan_model = "220208a"
-JOBID = 4321
+stan_model = "220209a"
+JOBID = 2543
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -114,6 +113,22 @@ if(any(locs %in% selected_codes)){
 if(any(locs %in% selected_codes_10)){
   plot_mortality_all_states(subset(death3, code %in% selected_codes_10),'otherStates', outdir.fig)
 }
+
+
+#
+# predictions
+predictions = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  predictions[[i]] = readRDS(paste0(outdir.table, '-predictive_checks_table_', locs[i], '.rds'))
+}
+predictions = do.call('rbind', predictions)
+predictions <- select(predictions, - min.sum.weekly.deaths, - max.sum.weekly.deaths, - sum.weekly.deaths, - weekly.deaths, - inside.CI, 
+                      -state_index, - week_index, - age_index)
+predictions <- predictions[order(loc_label, date, age)]
+
+dir = file.path(gsub('(.+)\\/results.*', '\\1', outdir.table), 'results', 'predictions')
+dir.create(dir)
+saveRDS(predictions, file = file.path(dir, 'predicted_weekly_deaths.rds'))
 
 
 
