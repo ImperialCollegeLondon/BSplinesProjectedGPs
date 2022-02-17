@@ -18,14 +18,14 @@ parameters {
 }
 
 transformed parameters {
-  real<lower=0> nu = (1/nu_unscaled)^2;
+  real<lower=0> nu = (1/nu_unscaled);
   real<lower=0> theta = (1 / nu);
    matrix[n,m] f = exp( (BASIS_ROWS') * beta * BASIS_COLUMNS );
    matrix[n,m] alpha = f / nu;
 }
 
 model {
-  nu_unscaled ~ normal(0, 1);
+  nu_unscaled ~ normal(0, 5);
   
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){

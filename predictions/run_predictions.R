@@ -7,7 +7,7 @@ library(loo)
 
 indir = "~/git/BSplinesProjectedGPs" # path to the repo
 outdir = file.path(indir, 'predictions', 'results')
-model = 'P-SPLINES'
+model = 'GP-B-SPLINES'
 
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -18,6 +18,8 @@ test = read.csv(file.path(indir, 'predictions', 'data', 'prediction.csv'))
 
 # load functions
 source(file.path(indir, 'inst', "functions", "stan_utility_functions.R"))
+source(file.path(indir, 'inst', "functions", "postprocessing-summary_functions.R"))
+source(file.path(indir, 'inst', "functions", "postprocessing-utils.R"))
 
 # compile stan models
 if(model == 'GP-B-SPLINES') # regularised B-splines projected GP
@@ -83,11 +85,23 @@ grid = merge(grid, y_grid, by = 'y_index')
 # find coordinates with training observations
 value.coordinates = select(training, x_index, y_index)
 
-# adjacent matrix for p-splines
-K = num_basis_rows * num_basis_columns
-A = find_adjacency_matrix(num_basis_rows, num_basis_columns)
-tmp = subset(reshape2::melt( A ), value == 1)
+stan_data = list(n = n, m = m, N = nrow(training),
+                 y = training$obs, 
+                 coordinates = value.coordinates,
+                 num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
+                 BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
+                 IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS)
 
+
+# adjacent matrix for p-splines
+if(model == 'P-SPLINES'){
+  K = num_basis_rows * num_basis_columns
+  A = find_adjacency_matrix(num_basis_rows, num_basis_columns)
+  tmp = subset(reshape2::melt( A ), value == 1)
+  
+  stan_data <- c(stan_data, 
+                 list(K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp)))
+}
 
 
 #
@@ -96,13 +110,6 @@ tmp = subset(reshape2::melt( A ), value == 1)
 #
 #
 
-stan_data = list(n = n, m = m, N = nrow(training),
-                 y = training$obs, 
-                 coordinates = value.coordinates,
-                 num_basis_rows = num_basis_rows, num_basis_columns = num_basis_columns,
-                 BASIS_ROWS = BASIS_ROWS, BASIS_COLUMNS = BASIS_COLUMNS,
-                 IDX_BASIS_ROWS = IDX_BASIS_ROWS, IDX_BASIS_COLUMNS = IDX_BASIS_COLUMNS,
-                 K = K, node1 = tmp$Var2, node2 = tmp$Var1, N_edges = nrow(tmp))
 
 file= file.path(outdir, paste0('2D_', model, '_nknots_', n_knots_x, '.rds'))
 if(!file.exists(file)){
@@ -113,6 +120,26 @@ if(!file.exists(file)){
   fit <- readRDS(file)
 }
 
+cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
+
+samples = extract(fit)
+
+#
+#
+### Convergence diagnostics ### 
+#
+#
+
+summary <- make_convergence_diagnostics_stats(fit, samples, 
+                                              file.path(outdir, paste0(model, '_nknots_', n_knots_x)))
+p <- bayesplot::mcmc_trace(fit, 
+                           regex_pars = c('nu', 'alpha_gp', 'rho_1', 'rho_2', 'sigma'))
+ggsave(p, file = file.path(outdir, paste0('mcmc_trace_parameters_', model, '_nknots_', n_knots_x, '.png')),
+       h = 10, w = 10, limitsize = F)
+p <- bayesplot::mcmc_pairs(fit, regex_pars = c('nu', 'alpha_gp', 'rho_1', 'rho_2', 'sigma'))
+ggsave(p, file = file.path(outdir, paste0('mcmc_pairs_parameters_', model, '_nknots_', n_knots_x, '.png')),
+       h = 10, w = 10, limitsize = F)
+
 
 #
 #
@@ -120,12 +147,10 @@ if(!file.exists(file)){
 #
 #
 
-cat('Time of execution is ', max(apply(get_elapsed_time(fit), 1, sum))/60/60, 'hours \n')
 
 ps <- c(0.5, 0.025, 0.975)
 p_labs = c('M', 'CL', 'CU', 'mean')
 
-samples = extract(fit)
 
 # predict on test coordinates
 

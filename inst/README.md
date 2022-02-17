@@ -11,38 +11,39 @@
 Datasets in ```data/``` generated in ```misc/``` include:
 * All-ages daily deaths reported by JHU, ```JHU_data-$DATE.rds```
 * Age-specific weekly deaths reported by the CDC, ```CDC-data-$DATE.rds```
-* Vaccination data reported by the CDC, ```vaccination-prop-$DATE.rds```
 
 Datasets extracted from other source include:
 * Age-specific daily deaths reported by the DoH and extracted by the [Imperial College COVID-19 Response Team](https://github.com/ImperialCollegeLondon/US-covid19-agespecific-mortality-data), ```DeathsByAge_US_$DATE.csv```
-* Population counts in the United States from the 2018 Census, ```us_population_withnyc.rds```
+* Population counts in the United States from the 2018 Census, ```us_population.csv```
 
 ## instructions 
-The entry point to run the model on a laptop is ```run-model.sh``` and on a high performance computing environment ```run-model-HPC.R```. 
+The entry point to run the model on a laptop is ```run-model.sh``` and on a high performance computing environment ```run-model-HPC.sh```. 
 
 ### Header
 In both files, you will need to specify 
 * the repository directory, ```INDIR```
 * the output directory (to store the results), ```CWD``` and, 
 * the stan model ID under ```STAN_MODEL```
+* the US state(s) under ```STATES```
 with,
 ```bash
 INDIR="repositorydirectory"
 CWD="resultsdirectory"
 STAN_MODEL="stanmodelid"
+STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI'
 ```
 
 Note the correspondence between the stan model ID and the model, 
 | stan model id    | Model |
 |-----------|------------------------------------------------------|
-| 211201a | Regularised B-splines projected Gaussian Process  |
-| 211201b   | Standard Gaussian Process |
-| 211201c     | Standard B-splines |
-| 211201d     | Bayesian P-splines |
+| 220209a | Regularised B-splines projected Gaussian Process  |
+| 220209b   | Standard Gaussian Process |
+| 220209c     | Standard B-splines |
+| 220209d     | Bayesian P-splines |
 
 For example, if you wish to use a standard Gaussian Process, specify
 ```bash
-STAN_MODEL="211201b"
+STAN_MODEL="220209b"
 ```
 
 ### Usage on a laptop
@@ -63,7 +64,7 @@ $ ./$STAN_MODEL-JOBID-postprocessing.sh
 ```
 
 ### Usage in high-throughput computing
-You need to modify the PBS header of ```run-model-HPC.sh``` (i.e., ```#PBS [...]```), l.14-17 and l.46-49. 
+You need to modify the PBS header of ```run-model-HPC.sh``` (i.e., ```#PBS [...]```), l.14-18 and l.50-53. 
 
 From the repository directory, on the terminal console execute, 
 ```bash

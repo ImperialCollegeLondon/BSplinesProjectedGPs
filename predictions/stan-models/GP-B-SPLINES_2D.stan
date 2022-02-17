@@ -73,8 +73,8 @@ transformed parameters {
 }
 
 model {
-  rho_1 ~ inv_gamma(5, 5);
-  rho_2 ~ inv_gamma(5, 5);
+  rho_1 ~ inv_gamma(2,2);
+  rho_2 ~ inv_gamma(2,2);
   alpha_gp ~ cauchy(0,1);
   
   sigma ~ cauchy(0,1);

@@ -215,7 +215,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      age_to_state_age_strata = df_state_age_strata$age_to_index,
                      N_idx_non_missing = N_idx_non_missing,
                      idx_non_missing = idx_non_missing,
-                     N_missing = unlist(N_missing),
+                     N_missing = as.array(unlist(N_missing)),
                      start_or_end_period = start_or_end_period,
                      age_missing = age_missing,
                      idx_weeks_missing_min = idx_weeks_missing_min,
@@ -242,27 +242,21 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   return(stan_data)
 }
 
-add_1D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots = 8)
+add_2D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8, 
+                                    knots_rows = NULL, knots_columns = NULL)
 {
   
-  knots = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots)]
-
-  stan_data$num_basis = length(knots) + spline_degree - 1
-
-  stan_data$IDX_BASIS = 1:stan_data$num_basis
+  if(is.null(knots_rows)){
+    knots_rows = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots_rows)] 
+  }
+  if(is.null(knots_columns)){
+    knots_columns = (1:stan_data$W)[seq(1, stan_data$W, length.out = n_knots_columns)]
+  }
   
-  stan_data$BASIS = bsplines(stan_data$age, knots, spline_degree)
-  
-  stopifnot(all( apply(stan_data$BASIS, 1, sum) > 0  ))
-  # B <- t(splines::bs(age, knots=age, degree=spline_degree, intercept = T)) 
-  return(stan_data)
-}
-
-add_2D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots_rows = 8, n_knots_columns = 8)
-{
-  
-  knots_rows = stan_data$age[seq(1, length(stan_data$age), length.out = n_knots_rows)] 
-  knots_columns = (1:stan_data$W)[seq(1, stan_data$W, length.out = n_knots_columns)]
+  cat('Knots on the age dimension ', knots_rows, '\n')
+  cat('Knots on the week dimension ',  knots_columns, '\n')
+  cat('Number of knots on the age dimension: ', length(knots_rows), '\n')
+  cat('Number of knots on the week dimension: ', length(knots_columns),'\n')
   
   stan_data$num_basis_rows = length(knots_rows) + spline_degree - 1
   stan_data$num_basis_columns = length(knots_columns) + spline_degree - 1
@@ -276,28 +270,6 @@ add_2D_splines_stan_data = function(stan_data, spline_degree = 3, n_knots_rows =
   stopifnot(all( apply(stan_data$BASIS_ROWS, 1, sum) > 0  ))
   stopifnot(all( apply(stan_data$BASIS_COLUMNS, 1, sum) > 0  ))
 
-  return(stan_data)
-}
-
-
-add_diff_matrix = function(stan_data, n, m, order = 2)
-{
-  library(Matrix)
-  
-  In <- Diagonal(n)   
-  Im <- Diagonal(m) 
-  
-  # rows difference 
-  D0 <- diff(In, diff = order)  
-  stan_data$D1 <- as.matrix( kronecker(Im, D0) ) 
-  
-  # cols difference 
-  D0 <- diff(Im, diff = order) 
-  stan_data$D2 <- as.matrix( kronecker(D0, In) )
-  
-  stan_data$D1_N = nrow(stan_data$D1)
-  stan_data$D2_N = nrow(stan_data$D2)
-  
   return(stan_data)
 }
 
@@ -378,18 +350,6 @@ add_adjacency_matrix_stan_data = function(stan_data, n, m)
   return(stan_data)
 }
 
-add_nodes_stan_data = function(stan_data)
-{
-  tmp = reshape2::melt( stan_data$Adj )
-  tmp = subset(tmp, value == 1)
-  
-  stan_data$node1 = tmp$Var2
-  stan_data$node2 = tmp$Var1
-  stan_data$N_edges = nrow(tmp)
-  
-  return(stan_data)
-}
-
 find_adjacency_matrix = function(n,m){
   N = n * m
   
@@ -431,7 +391,6 @@ find_adjacency_matrix = function(n,m){
   return(A)
 }
 
-
 add_nodes_stan_data = function(stan_data)
  {
   tmp = reshape2::melt( stan_data$Adj )
@@ -443,7 +402,6 @@ add_nodes_stan_data = function(stan_data)
   
   return(stan_data)
 }
-
 
 add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
 {
@@ -488,248 +446,6 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
   stan_data[['lambda_prior_parameters']] = lambda_prior_parameters
   
   return(stan_data)
-}
-
-add_resurgence_period = function(stan_data, df_week, resurgence_dates){
-  
-  resurgence_dates = resurgence_dates[order(code)]
-  
-  stan_data[['w_start_resurgence']] = sapply(resurgence_dates$start_resurgence, function(x) df_week[date == x]$week_index)
-  stan_data[['w_stop_resurgence']] = sapply(resurgence_dates$stop_resurgence, function(x) df_week[date == x]$week_index)
-  
-  T = sapply(1:length( stan_data[['w_start_resurgence']]), function(x)  stan_data[['w_stop_resurgence']][[x]] - stan_data[['w_start_resurgence']][[x]] + 1)
-  stan_data[['T']] = unique(unlist(T))
-  stopifnot(length(stan_data[['T']]) == 1)
-
-  stan_data[['week_indices_resurgence']] = 0:(stan_data[['T']]-1)
-  
-  return(stan_data)
-}
-
-add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_dates){
-  
-  delay = 2*7
-  
-  age_index_min = df_age_vaccination[age == '18-64']$age_index
-  
-  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
-  tmp = vaccine_data[age_index >= age_index_min, list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
-  tmp[, date := date + delay]
-  tmp = merge(tmp, resurgence_dates, by = 'code')
-  tmp = tmp[code %in% Code]
-  tmp = tmp[date %in% df_week$date]
-  
-  # resurgence period
-  tmp = tmp[date >= start_resurgence & date <= stop_resurgence]
-  tmp[, idx.resurgence.date := 1:length(date), by = c('age_index', 'loc_label')]
-  
-  # set proportion
-  tmp1 = tmp[, list(pre_prop = prop[date == start_resurgence]), by = c('loc_label', 'age_index')]
-  tmp = merge(tmp, tmp1,  by = c('loc_label', 'age_index'))
-  tmp[, prop := prop - pre_prop]
-  tmp = tmp[order(code)]
-  
-  prop_vac = list(); prop_vac_start = list(); prop_vac_start_counterfactual = list()
-  for(i in 1:length(unique(tmp$age_index))){
-    tmp1 = subset(tmp, age_index == unique(tmp$age_index)[i])
-    
-    prop_vac[[i]] = as.matrix( reshape2::dcast(tmp1, idx.resurgence.date ~ code, value.var = 'prop')[,-1] )
-    prop_vac_start[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
-    prop_vac_start_counterfactual[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
-    
-    if(i == 1){
-      prop_vac_start_counterfactual[[i]] = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
-      
-    }
-  }
-
-  stan_data[['prop_vac']] = prop_vac
-  stan_data[['prop_vac_start']] = prop_vac_start
-  stan_data[['prop_vac_start_counterfactual']] = prop_vac_start_counterfactual
-  stan_data[['age_from_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_from
-  stan_data[['age_to_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_to
-  stan_data[['C']] = nrow(df_age_vaccination[age_index >= age_index_min])
-  
-  return(stan_data)
-}
-
-add_vaccine_prop_indicator <- function(stan_data, cutoff_1864, cutoff_65p){
-  stan_data$prop_vac_start[[1]] = as.numeric(stan_data$prop_vac_start[[1]] >= cutoff_1864)
-  stan_data$prop_vac_start[[2]] = as.numeric(stan_data$prop_vac_start[[2]] >= cutoff_65p)
-  stan_data$prop_vac_start_counterfactual = list()
-  stan_data$prop_vac_start_counterfactual[[1]] = rep(1, stan_data$M)
-  stan_data$prop_vac_start_counterfactual[[2]] = stan_data$prop_vac_start[[2]] 
-  
-  return(stan_data)
-}
-
-add_JHU_data <- function(stan_data, df_week, Code){
-  
-  JHUData = as.data.table(JHUData)
-  JHUData = subset(JHUData, code %in% Code)
-  JHUData[, date := as.Date(date)]
-  tmp2 = JHUData[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
-  tmp2 = tmp2[order(code, date)]
-  tmp2[, cum.death := cumsum(daily_deaths)]
-  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
-  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
-  tmp2 = unique(subset(tmp2, date %in% df_week$date))
-  tmp2 = merge(tmp2, df_week, by = 'date')
-  tmp2 = select(tmp2, code, week_index, weekly.deaths)
-  tmp2 = subset(tmp2, !is.na(weekly.deaths))
-  tmp2[weekly.deaths<0, weekly.deaths := 0]
-  tmp2 = tmp2[order(code)]
-  
-  stan_data[['deaths_JHU']] = as.matrix(reshape2::dcast(tmp2, code ~ week_index, value.var = 'weekly.deaths')[,-1])
-  
-  return(stan_data)
-}
-
-add_vaccine_prop_other = function(stan_data, df_week, Code, vaccine_data, age.groups.vaccination){
-  
-  tmp = subset(vaccine_data, code == Code)
-  
-  if( stan_data[['C']] != 2){
-    stop('only 2 age groups for this model')
-  }
-  
-  if(!all(age.groups.vaccination == c('18-64', '65-105'))){
-    stop('use age groups', c('18-64', '65-105'))
-  }
-  
-  delay = 7 * 2
-  
-  df_age_continuous[, age_vac_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age_index']
-  tmp2 = merge(df_age_continuous, tmp, by = 'age')
-  tmp2 = unique(select(tmp2, age_vac_index, date, prop))
-  tmp2[age_vac_index == 3, age_vac_index := 5]
-  tmp2[age_vac_index == 4, age_vac_index := 3]
-  tmp2[age_vac_index == 5, age_vac_index := 4]
-  
-  tmp2 = merge(df_age_continuous, tmp2, by = 'age_vac_index', allow.cartesian=TRUE)
-  
-  tmp3 = data.table( expand.grid(date_delay = df_week$date, age = unique(tmp$age )) )
-  tmp3[, date := date_delay + delay]
-  tmp2 = merge(tmp2, tmp3, all.y = T, by = c('date', 'age'))
-  tmp2[is.na(prop), prop := 0]
-  tmp2 = tmp2[order(date_delay, age)]
-  tmp2 = reshape2::dcast(tmp2, age ~ date_delay, value.var = 'prop')[,-1]
-  
-  stan_data[['prop_vaccinated_other']] = tmp2*100
-  
-  return(stan_data)
-}
-
-add_piecewisegamma = function(stan_data){
-
-  if( stan_data[['C']] != 2){
-    stop('only 2 age groups for this model')
-  }
-  
-  delta_length = 20
-  piecewise_index = data.table(start = seq(0, 100-delta_length, delta_length), stop = seq(delta_length, 100, delta_length))
-  piecewise_index[, index:= 1:nrow(piecewise_index)]
-  
-  df = vector(mode = 'list', length = stan_data[['A']])
-  for(a in 1:stan_data[['A']]){
-    tmp <- data.table( prop = as.vector(unlist(stan_data[['prop_vaccinated']][a, ])))
-    tmp[, index := which(piecewise_index$start <= prop & piecewise_index$stop > prop), by = 'prop']
-    tmp[, age := a]
-    tmp[, date := colnames(stan_data[['prop_vaccinated']])]
-    tmp[, c := c(rep(0, stan_data[['max_age_not_vaccinated']]), stan_data[['map_A_to_C']])[a]]
-    df[[a+1]] = tmp
-  }
-  df = do.call('rbind', df)
-  
-  stan_data[['index_prop']] = reshape2::dcast(df, age ~ date, value.var = 'index')[,-1]
-  stan_data[['I']] = max(stan_data[['index_prop']])
-  stan_data[['I_age']]= df[, list(max(index)), by = 'c']$V1[-1]
-  
-  return(stan_data)
-}
-  
-add_vaccine_prop_extrapolate <- function(stan_data){
-  
-  stan_data[['extra_prop_vaccinated']] = seq(0, 1, 0.05)
-  stan_data[['M']] = length(stan_data[['extra_prop_vaccinated']])
-
-  return(stan_data)
-}
-
-add_vaccine_date <- function(stan_data){
-  vaccine_start = vector(mode = 'integer', length = stan_data[['A']] )
-  
-  for(a in 1:stan_data[['A']] ){
-    if(all(stan_data[['prop_vaccinated']][a,] == 0)){
-      vaccine_start[a] = stan_data[['W']] 
-    } else{
-      vaccine_start[a] = min(which(stan_data[['prop_vaccinated']][a,] != 0))
-    }
-    
-  }
-
-  stan_data[['w_vaccination_start']] = vaccine_start
-  
-  return(stan_data)
-}
-
-lag_neg <- function(x) sapply(1:(length(x)-1), function(i) min(which(x[i:length(x)] <= 0)) - 1)
-
-find_resurgence_dates <- function(JHUData, deathByAge, Code){
-  
-  ma <- function(x, n = 5){as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))}
-  
-  JHUData = as.data.table(JHUData)
-  JHUData = subset(JHUData, code %in% Code)
-  JHUData[, date := as.Date(date)]
-  tmp2 = JHUData[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
-  tmp2 = tmp2[order(code, date)]
-  tmp2[, cum.death := cumsum(daily_deaths)]
-  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
-  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
-  tmp2 = unique(subset(tmp2, date %in% df_week$date))
-  tmp2 = merge(tmp2, df_week, by = 'date')
-  tmp2 = select(tmp2, code, week_index, weekly.deaths)
-  tmp2 = subset(tmp2, !is.na(weekly.deaths))
-  tmp2[weekly.deaths<0, weekly.deaths := 0]
-  tmp2[, dummy := 1:nrow(tmp2)]
-  tmp2[, smooth.weekly.deaths := ma(weekly.deaths, 4), by = c('code')]
-  tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
-  tmp2[, lag.smooth.weekly.deaths := (shift(smooth.weekly.deaths)), by = c('code')]
-  tmp2[, change.smooth.weekly.deaths := diff.smooth.weekly.deaths / lag.smooth.weekly.deaths]
-  
-  # find start resurgence
-  tmp2 = merge(tmp2, df_week, by = 'week_index')
-  tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
-  # tmp2[is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := NA_real_, by = c('code')]
-  # tmp2[!is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := c(lag_neg(diff.smooth.weekly.deaths), NA_real_), by = c('code')]
-  # tmp3 <- tmp2[date >= as.Date('2021-07-01'), list(start_resurgence = date[which.max(number.positive.days.ahead)] ), by = c('code')]
-
-  # subset(tmp2, code == 'CA')
-  # find stop resurgence
-  # tmp4 = merge(tmp3, tmp4, by = 'code')
-  # max_resurgence_period = tmp4[, min(stop_resurgence - start_resurgence)] / 7
-  max_resurgence_period = (max(deathByAge$date) - tmp3[, max(start_resurgence)] )/ 7
-  # max_resurgence_period = min(tmp2[date >= as.Date('2021-07-01'), list(resurgence_period = max(na.omit(number.positive.days.ahead))), by = c('code')]$resurgence_period)
-  tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
-
-  stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
-  
-  
-  if(0){ #plot
-    ggplot(subset(tmp2, date >= as.Date('2021-04-01')), aes(x = date)) + 
-      geom_line(aes(y = weekly.deaths), col = 'red')+ 
-      geom_line(aes(y = smooth.weekly.deaths), col = 'blue') + 
-      facet_wrap(~code, nrow = length(Code), scale = 'free') + 
-      geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
-      geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
-      theme_bw()
-    ggsave('~/Downloads/file.png', h= 30, w =5) 
-  }
-  
-  tmp3 <- tmp3[order(code)]
-
-  return(tmp3)
 }
 
 insert.at <- function(a, pos, ...){

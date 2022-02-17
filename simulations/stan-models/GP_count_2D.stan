@@ -52,7 +52,7 @@ parameters {
   real<lower=0> nu_unscaled;
 }
 transformed parameters {
-  real<lower=0> nu = (1/nu_unscaled)^2;
+  real<lower=0> nu = (1/nu_unscaled);
   real<lower=0> theta = (1 / nu);
   matrix[n,m] f = exp(gp(n, m, x_1, x_2,
                               delta,
@@ -63,10 +63,10 @@ transformed parameters {
 }
 
 model {
-  nu_unscaled ~ normal(0,1);
+  nu_unscaled ~ normal(0,5);
     
-  rho_1 ~ inv_gamma(5, 5);
-  rho_2 ~ inv_gamma(5, 5);
+  rho_1 ~ inv_gamma(2,2);
+  rho_2 ~ inv_gamma(2,2);
   alpha_gp ~ cauchy(0,1);
   
   for(i in 1:n){

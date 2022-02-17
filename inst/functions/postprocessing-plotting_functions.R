@@ -1,4 +1,3 @@
-
 plot_posterior_predictive_checks = function(data, variable, outdir)
 {
   
@@ -33,29 +32,6 @@ plot_posterior_predictive_checks = function(data, variable, outdir)
     ggsave(p, file = paste0(outdir, "-posterior_predictive_checks_2_", Code,".png") , w= 15, h = 15, limitsize = FALSE)
     
   }
-  
-}
-
-plot_estimate_vaccine <- function(data_res5, label, lab_short, outdir){
-  # data_res5[, var := paste0(var,'_', age_param)]
-
-  ages = unique(data_res5$age_index_recipient)
-  data_res5[, var2:= paste0('Effect of the ', label,' of\nfully vaccinated individuals aged ', age_index_source) ]
-  data_res5[, var3:= factor(paste0('among individuals\naged ', age_index_recipient), 
-                            levels = c(paste0('among individuals\naged ', rev(ages))))]
-  
-  p = ggplot(data_res5, aes(y = var3)) + 
-    geom_vline(xintercept = 0, linetype = 'dashed', col = 'grey50') + 
-    geom_errorbarh(aes(xmin = CL, xmax = CU),  height = 0.2) + 
-    geom_point(aes(x = M, col = age_index_recipient, shape = age_index_source), size = 2, stroke = 0.1) + 
-    theme_bw() + 
-    facet_wrap(~var2, nrow = 2) +
-    theme(axis.title.x = element_blank(), 
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          legend.position = 'none') + 
-    labs(y = 'On relative COVID-19\nweekly deaths during the\nSummer 2021 resurgence period')
-  ggsave(p, file = paste0(outdir, '-vaccine_effect_estimate_', lab_short, '.png'), w = 6, h = 2.5)
   
 }
 
@@ -140,8 +116,6 @@ plot_probability_deaths_age_contribution = function(tmp1, var_name, outdir, disc
   return(list(p1, p))
 }
 
-
-
 plot_sum_missing_deaths = function(tmp, outdir)
 {
   
@@ -178,8 +152,10 @@ plot_sum_bounded_missing_deaths = function(tmp, outdir)
 
 }
 
-plot_mortality_rate = function(mortality_rate_table, outdir)
+plot_mortality_rate = function(mortality_rate_table, mortality_rate_table_continuous, outdir)
 {
+  mortality_rate_table_continuous[, age_cat := as.character(age)]
+  mortality_rate_table_continuous[age_cat == '85', age_cat := '85+']
   
   for(Code in unique(mortality_rate_table$code)){
     p = ggplot(subset(mortality_rate_table, code == Code), aes(x = date)) + 
@@ -192,6 +168,35 @@ plot_mortality_rate = function(mortality_rate_table, outdir)
             axis.text.x = element_text(angle = 90))  +
       theme_bw()
     ggsave(p, file = paste0(outdir, '-MortalityRate_', Code, '.png'), w = 7, h =7, limitsize = F)
+    
+    tmp <- subset(mortality_rate_table_continuous, code == Code & date == max(date))
+    p = ggplot(subset(tmp, age != '85'), aes(x = age)) + 
+      geom_line(aes(y = M)) +
+      geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) +
+      labs(y = 'COVID-19 mortality rate', col = '', fill = '') +
+      theme_bw() +
+      scale_x_continuous(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0), limits = range(c(tmp$CL, tmp$CU + 0.001)), breaks = seq(0, max(c( tmp$CU)), 0.01), labels = scales::percent) +
+      theme(axis.title.x = element_blank(),
+            plot.margin=unit(c(5.5, 0, 5.5, 5.5), "pt")) 
+    
+    
+    p1 <- ggplot(subset(tmp, age == '85'), aes(x = age_cat)) + 
+      theme_bw() + 
+      geom_point(aes(y = M)) +
+      geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, width = 0) +
+      labs(x = 'age', y = 'COVID-19 mortality rate', col = '', fill = '') + 
+      scale_x_discrete(expand = c(0,0)) +
+      scale_y_continuous(expand = c(0,0), limits = range(c(tmp$CL, tmp$CU + 0.001)), breaks = seq(0, max(c( tmp$CU)), 0.01), labels = scales::percent) +
+      theme(axis.title.x = element_blank(), 
+            axis.title.y = element_blank(), 
+            axis.ticks.y = element_blank(), 
+            axis.text.y = element_blank(),
+            plot.margin=unit(c(5.5, 5.5, 5.5, 0), "pt")) 
+    
+    p <- grid.arrange(p, p1, nrow = 1, widths = c(1, 0.1), bottom = 'Age')
+
+    ggsave(p, file = paste0(outdir, '-MortalityRateContinuous_', Code, '.png'), w = 7, h =7, limitsize = F)
   }
 
 }
@@ -334,8 +339,6 @@ plot_posterior_plane = function(fit_cum, df_week, df_age_continuous,stan_data, o
   return(p)
 }
 
-
-
 plot_mean_age_death = function(mean_age_death, outdir){
   if(length(unique(mean_age_death$code)) == 1)
   {
@@ -367,104 +370,131 @@ plot_mean_age_death = function(mean_age_death, outdir){
 
 plot_mortality_rate_all_states = function(mortality_rate, outdir)
 {
-  for(a in unique(mortality_rate$age_index))
-  {
-    tmp = subset(mortality_rate, age_index == a)
-    age = unique(tmp$age)
-    tmp = tmp[order(M)]
-    medianM =  tmp[,median(M)]
-    tmp[, loc_label := factor(loc_label, tmp$loc_label)]
-    ggplot(tmp, aes(x=loc_label, y = M)) + 
-      geom_bar(aes(fill = M), stat="identity") +
-      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
-      scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = medianM) + 
-      theme_bw() +
-      theme(axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
-            legend.position = 'none', 
-            panel.grid.major= element_blank(), 
-            axis.title.x = element_blank()) + 
-      scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
-      coord_cartesian(ylim = c(0,max(tmp$CU)+0.001)) +
-      labs(y = paste0('Predicted COVID-19 attributable mortality rates\namong individuals ', age, ' as of ', format(unique(tmp$date), '%b %Y')))
-    ggsave(paste0(outdir, paste0('-MortalityRate_', age, '.png')), w = 8, h = 5)
-  }
   
   tmp =   subset(mortality_rate, age == '85+')
   age = unique(tmp$age)
   tmp = tmp[order(M)]
   medianM =  tmp[,median(M)]
   mortality_rate[, loc_label := factor(loc_label, tmp$loc_label)]
-  ggplot(mortality_rate, aes(x=loc_label, y = M)) + 
+  
+  mortality_rate <- mortality_rate[age != '0-24']
+  mortality_rate[, `Age group` := age]
+  p <- ggplot(mortality_rate, aes(x=loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat="identity") +
     geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
     scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = medianM) + 
     theme_bw() +
-    facet_grid(.~age)+
-    theme(axis.text.x = element_text(angle = 45,hjust=1,vjust=1), 
+    theme(axis.text.x = element_text(angle = 70,hjust=1,vjust=1), 
           legend.position = 'none', 
-          panel.grid.major= element_blank(), 
-          axis.title.x = element_blank(),
+          panel.grid.minor= element_blank(), 
+          panel.grid.major.x= element_blank(), 
+          # axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
-    coord_cartesian(ylim = c(0,max(tmp$CU)+0.001)) +
-    labs(y = paste0('Predicted COVID-19 attributable mortality\nrates among individuals as of ', format(unique(tmp$date), '%b %Y')))
-  ggsave(paste0(outdir, paste0('-MortalityRate_allages.png')), w = 8, h = 3.5)
+    coord_cartesian(ylim = c(0,max(tmp$CU)+0.001))  +
+    labs(x = '')
   
+  if(length(unique(mortality_rate$code)) <= 10){
+    p <- p +  facet_grid(.~`Age group`, label = 'label_both')
+    ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages.png')), w = 6.5, h = 3.5)
+    
+  } else{
+    p <- p +  facet_wrap(~`Age group`, nrow =4, label = 'label_both')
+    ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_large.png')), w = 6.5, h = 9)
+    
+  }
+  # +
+  #   labs(y = '')
+
+  return(p)
 }
 
-plot_contribution_all_states <- function(contribution, vaccinedata, outdir){
+plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, outdir)
+{
   
-  tmp = subset(vaccinedata, date %in% unique(vaccinationeffect$date))
-  tmp1 = subset(vaccinationeffect, date == max(tmp$date))
+  mortality_rate[, age := as.numeric(age)]
+  mortality_rate[, age_cat := as.character(age)]
+  mortality_rate[age_cat == '85', age_cat := '85+']
   
-  ggplot(tmp1, aes(y = loc_label)) + 
-    geom_vline(xintercept = 0, linetype = 'dashed', col = 'grey50') +
-    geom_errorbarh(aes(xmin = CL, xmax = CU, group =  as.factor(age)), 
-                   position = position_dodge(width = 0.5), height = 0.2) +
-    geom_point(aes(x = M, col = as.factor(age)), position = position_dodge(width = 0.5)) 
-      
+  tmp <- subset(mortality_rate, code %in% selected_codes)
+  
+  p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
+    geom_line(aes(y = M, col = loc_label)) +
+    geom_ribbon(aes(ymin=CL, ymax=CU, fill = loc_label), alpha = 0.4) + 
+    theme_bw() +
+    theme(legend.position = 'bottom', 
+          panel.grid.minor= element_blank(), 
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          plot.margin = unit(c(5.5,0,5.5,5.5), "pt")) + 
+    scale_color_jcolors('pal8') + 
+    scale_fill_jcolors('pal8') + 
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
+                       breaks = seq(0, max(tmp$CU), 0.01)) +
+    scale_x_continuous(expand = c(0,0)) +
+    labs(y = paste0('Predicted COVID-19 attributable mortality\nrates as of ', format(unique(mortality_rate$date), '%b %Y')),
+         col = '', fill = '', x = 'Age')
+  
+  p1 <- ggplot(subset(tmp, age == '85'), aes(x=age_cat)) + 
+    geom_errorbar(aes(ymin=CL, ymax=CU), width = 0) + 
+    geom_point(aes(y = M, col = loc_label)) +
+    theme_bw() +
+    theme(
+      panel.grid.minor= element_blank(), 
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          axis.title.x = element_blank(), 
+          axis.ticks.y = element_blank(), 
+          axis.title.y = element_blank(), 
+          axis.text.y = element_blank(), 
+          plot.margin = unit(c(5.5,5.5,18,0), "pt"),
+          legend.position = 'none',
+          ) + 
+    scale_color_jcolors('pal8') + 
+    scale_fill_jcolors('pal8') + 
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
+                       breaks = seq(0, max(tmp$CU), 0.01)) +
+    scale_x_discrete(expand = c(0,0)) +
+    labs(y = paste0('Predicted COVID-19 attributable mortality\nrates as of ', format(unique(mortality_rate$date), '%b %Y')),
+         col = '')
+  
+  ggarrange(p, p1, nrow = 1, common.legend = T, legend = 'bottom', widths = c(1, 0.1))
+  ggsave(paste0(outdir, paste0('-MortalityRateContinuous_allages_selectedstates.png')), w = 6, h = 4)
   
   
+  ###
+  
+  tmp <- subset(mortality_rate, code == 'NY')
+  
+  if(nrow(tmp) == 0){
+    tmp <- subset(mortality_rate, code == unique(mortality_rate)[1])
+  }
+  
+  tmp[, Location := loc_label]
+  p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
+    geom_line(aes(y = M)) +
+    geom_ribbon(aes(ymin=CL, ymax=CU), alpha = 0.4) + 
+    theme_bw() + 
+    facet_wrap(~Location, label = 'label_both') +
+    theme(legend.position = 'bottom', 
+          # axis.title = element_text(size = rel(1.2)),
+          # axis.text = element_text(size = rel(1.1)),
+          axis.title.y = element_blank(), 
+          panel.grid.minor= element_blank(), 
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          plot.margin = unit(c(5.5,0,5.5,5.5), "pt")) + 
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = limits) +
+    scale_x_continuous(expand = c(0,0)) +
+    labs(x = 'Age') 
+   ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_NY.png')), w = 5, h = 4)
+  
+  return(p)
 }
 
-
-# plot_contribution_all_states = function(contribution, vaccinedata_state, outdir){
-# 
-#   vaccinedata_state = subset(vaccinedata_state, loc_label %in% unique(contribution$loc_label) & date <= max(contribution$date))
-#   vaccinedata_state[, dummy := '']
-#   
-#   tmp = contribution[!is.na(emp)]
-#   
-#   ggplot(tmp, aes(x= date) ) +
-#     geom_line(aes(y = M, col = age)) + 
-#     geom_point(aes(y = emp, col = age), size = 0.5) + 
-#     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
-#     facet_wrap(~loc_label, ncol = 6) +
-#     geom_line(data = vaccinedata_state, aes(y  = prop_vaccinated_1dosep, linetype = dummy), col = 'grey20', size = 0.9) + 
-#     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-#     theme_bw() + 
-#     theme(strip.background = element_blank(),
-#           panel.border = element_rect(colour = "black", fill = NA), 
-#           axis.text.x = element_text(angle = 45, hjust =1), 
-#           panel.grid.major = element_blank(), 
-#           axis.title.x = element_blank(), 
-#           axis.title.y = element_text(size = rel(1.2)), 
-#           legend.title = element_text(size = rel(1.1)), 
-#           strip.text = element_text(size = rel(1.1)), 
-#           legend.position = 'bottom') +
-#     labs(y = 'Estimated age-specific contribution to COVID-19 weekly deaths', fill = 'Age groups', col = 'Age groups', 
-#          linetype = 'Proportion of the state population\nvaccinated with at least one dose') + 
-#     scale_y_continuous(labels = scales::percent_format()) +
-#     scale_color_viridis_d(option = 'B', begin = 0.4, end = 0.8)+
-#     scale_fill_viridis_d(option = 'B', begin = 0.4, end = 0.8) + 
-#     scale_linetype_manual(values = 1)
-#   ggsave(paste0(outdir, paste0('-Contribution_Vaccination_allStates.png')), w = 9, h = 12)
-#   
-#   
-# }
-
-plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates', outdir)
+plot_mortality_all_states = function(death, lab = 'allStates', outdir)
 {
   
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
@@ -479,17 +509,13 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
   
   death[, `Age group` := age]
   
-  dummy.dt = merge(resurgence_dates, unique(select(death, code, loc_label)), by = 'code')
-  dummy.dt[, text := 'Beginning of Summer 2021 resurgence period']
-  
-  p <- ggplot(subset(death), aes(x= date) ) +
-    geom_point(data = subset(df), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
-    geom_line(aes(y = M, fill = loc_label), show.legend = F) +
-    geom_vline(data = dummy.dt, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
+  p <- ggplot(subset(death) ) +
+    geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
+    geom_line(aes(x= date, y = M, fill = loc_label), show.legend = F) +
+    geom_ribbon(aes(x= date, ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
     facet_grid(loc_label~`Age group`, scale = 'free') +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-    scale_y_continuous(expand = c(0,0)) + 
+    scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + 
     theme_bw() + 
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), 
@@ -511,272 +537,8 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
            linetype = guide_legend(order = 3), 
            col = guide_legend(order = 1),
            fill = guide_legend(order = 1))
+
   ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 8)
-  
-}
-
-plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence_dates, var, lab, outdir){
-  
-  dummies = c('Counterfactual analysis with higher vaccine\ncoverage in individuals aged 18-64', 
-              'Fit to observed data')
-  
-  data_res1[, dummy := dummies[1]]
-  data_res2[, dummy := dummies[2]]
-  
-  data_res1 = merge(data_res1, select(resurgence_dates, code, start_resurgence), by = 'code')
-  data_res1 = data_res1[date >= start_resurgence ]
-  data_res1 = select(data_res1, -start_resurgence)
-  
-  data_res1 = rbind(data_res1, data_res2)
-  
-  data_res1 = subset(data_res1, date >= as.Date('2021-01-01'))
-  data_res1 = merge(data_res1, select(resurgence_dates, code, stop_resurgence), by = 'code')
-  data_res1 = data_res1[date <= stop_resurgence]
-  data_res1[, dummy := factor(dummy, levels = rev(dummies))]
-  
-  dummy.dt = merge(resurgence_dates, df_state, by = 'code')
-  dummy.dt[, text := 'Beginning of Summer 2021 resurgence period']
-  
-  values_col = c('grey50', 'darkorchid4')
-  
-  ages = unique(data_res1$age)
-  
-  p = list()
-  for(i in 1:length(ages)){
-    # i = 1
-    Age = ages[i]
-    
-    p[[i]] = ggplot(subset(data_res1, age == Age), aes(x = date)) + 
-      geom_line(aes(y = M, col = dummy)) + 
-      geom_ribbon(aes(ymin = CL, ymax = CU, fill = dummy), alpha = 0.5) + 
-      facet_grid(loc_label~age) + 
-      scale_x_date(expand = expansion(mult = c(0.05,0)), date_labels = c("%b-%y"), breaks = '1 month') + 
-      theme_bw() + 
-      geom_vline(data = dummy.dt, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
-      theme(strip.background = element_blank(),
-            panel.border = element_rect(colour = "black", fill = NA), 
-            legend.position = 'bottom', 
-            axis.text.x = element_text(angle = 70, hjust = 1),
-            axis.title.x = element_blank()) + 
-      scale_color_manual(values = values_col) +
-      scale_fill_manual(values = values_col) + 
-      labs(col = '', y = paste0('Predicted age-specific ',var,' COVID-19 attributable weekly deaths'),
-           fill = '', linetype = '') +
-      scale_linetype_manual(values = 2) +
-      guides(fill=guide_legend(nrow=2,byrow=TRUE, order =1), col=guide_legend(nrow=2,byrow=TRUE, order =1), linetype = guide_legend(order=2))
-    
-    if(i != length(ages)){
-      p[[i]] = p[[i]] + theme(strip.text.y = element_blank())
-    }
-    
-    if(i != 1){
-      p[[i]] = p[[i]] + theme(axis.title.y = element_blank())
-    }
-  }
-  
-  p = ggarrange(plotlist = p, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.1, 1.1))
-  ggsave(p, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_', lab, '.png'), w = 6 + length(unique(data_res1$code))/6, h = 5 + 2*(length(unique(data_res1$code))/4))
-  
-}
-  
-plot_vaccine_effects_counterfactual_stat <- function(data_res, resurgence_dates, var_name, outdir){
-  
-  ages = unique(data_res$age)
-  
-  p1 = list()
-  for(i in 1:length(ages)){
-    # i = 1
-    Age = ages[i]
-    
-    p1[[i]] = ggplot(subset(data_res, age == Age), aes(x = date)) + 
-      geom_line(aes(y = M)) + 
-      geom_ribbon(aes(ymin = CL, ymax = CU), alpha = 0.5) + 
-      facet_grid(loc_label~age, scale = 'free') + 
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-      theme_bw() + 
-      theme(strip.background = element_blank(),
-            panel.border = element_rect(colour = "black", fill = NA), 
-            legend.position = 'bottom',
-            axis.title.x = element_blank()) + 
-      labs(y = paste0('Predicted ', var_name, ' age-specific COVID-19\nattributable weekly deaths counterfactual scenario')) + 
-      guides(fill=guide_legend(nrow=2,byrow=TRUE), col=guide_legend(nrow=2,byrow=TRUE)) + 
-      geom_hline(yintercept = 0, linetype = 'dashed')
-    
-    if(i != length(ages)){
-      p1[[i]] = p1[[i]] + theme(strip.text.y = element_blank())
-    }
-    
-    if(i != 1){
-      p1[[i]] = p1[[i]] + theme(axis.title.y = element_blank())
-    }
-  }
-  
-  p1 = ggarrange(plotlist = p1, common.legend = T, legend = 'bottom', nrow = 1, widths = c(1.1, 1.1))
-  ggsave(p1, file = paste0(outdir, '-predicted_weekly_deaths_', var_name, '_vaccine_coverage.png'), w = 6, h = 8)
-  
-}
-
-plot_forest_plot <- function(tmp, outdir){
-  
-  tmp1 = subset(tmp, grepl('\\["18-64', variable) | (grepl('18-64"\\]', variable) & !grepl('\\["65', variable)))
-  p1 <- ggplot(tmp1, aes(y = variable)) + 
-    geom_point(aes(x = M)) + 
-    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
-    theme_bw() + 
-    geom_vline(xintercept = 0, linetype = 'dashed') + 
-    facet_grid(group~., scales= "free", space="free") +
-    scale_y_discrete(labels = label_parse(), limits=rev) + 
-    theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          title = element_text(size = rel(0.8)),
-          plot.title = element_text(hjust = 0.5)) +
-  ggtitle("Effects on the relative rates\namong 18-64")
-  
-  tmp1 = subset(tmp, grepl('\\["65', variable) | (grepl('65\\+"\\]', variable) & !grepl('\\["18-64', variable)))
-  p2 <- ggplot(tmp1, aes(y = variable)) + 
-    geom_point(aes(x = M)) + 
-    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
-    theme_bw() + 
-    geom_vline(xintercept = 0, linetype = 'dashed') + 
-    facet_grid(group~., scales= "free", space="free") +
-    scale_y_discrete(labels = label_parse(), limits=rev) + 
-    theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          title = element_text(size = rel(0.8)),
-          plot.title = element_text(hjust = 0.5))+
-    ggtitle("Effects on the relative rates\namong 65+")
-  
-  p <- ggarrange(p1, p2, ncol = 2)
-  ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 7)
-  
-  return(p)
-}
-
-plot_forest_plot_with_common_effect <- function(forest_plot_without_common_effect, tmp, outdir){
-  
-  p1 <- ggplot(tmp, aes(y = variable)) + 
-    geom_point(aes(x = M)) + 
-    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
-    theme_bw() + 
-    geom_vline(xintercept = 0, linetype = 'dashed') + 
-    scale_y_discrete(labels = label_parse(), limits=rev) + 
-    theme(axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          title = element_text(size = rel(0.8)),
-          plot.title = element_text(hjust = 0.5))+
-    ggtitle("Common effects on the relative rates\nacross 18-64 and 65+")
-  
-  p2 <- grid.arrange(forest_plot_without_common_effect, p1, 
-                     layout_matrix = rbind(c(1, 1, 1),
-                                           c(NA, 2, NA)),
-                     heights = c(1, 0.2))
-  ggsave(p2, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 8)
-  
-  
-}
-
-plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir){
-  
-  data_res = merge(data_res1, prop_vac, by = c('code', 'date'))
-  data_res[, `Age group` := age]
-  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-  
-  data_res = merge(data_res, resurgence_dates, by = 'code')
-  
-  p1 <- ggplot(data_res, aes(x = prop_1)) + 
-    geom_line(aes(y = M, col = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~., label = 'label_both') +
-    geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1, col = 'grey50')  + 
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Proportion of individuals aged 18-64\nfully vaccinated two weeks before', shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
-    theme_bw() +
-    scale_x_continuous(labels = scales::percent) + 
-    theme(strip.background = element_blank(),
-          strip.text = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(size = rel(1)),
-          legend.spacing.y = unit(-0, "cm")) +
-    scale_shape_manual(values = 4) + 
-      scale_color_jcolors(palette = "pal8") + 
-      scale_fill_jcolors(palette = "pal8") +
-    guides(color = guide_legend(order=1), fill = guide_legend(order=1), shape = guide_legend(order=2)) 
-
-  p2 = ggplot(data_res, aes(x = prop_2)) + 
-    geom_line(aes(y = M, col = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~., label = 'label_both') +
-    geom_point(data = subset(data_res, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1, col = 'grey50')     + 
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Proportion of individuals aged 65+\nfully vaccinated two weeks before', shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
-    theme_bw() +
-    scale_x_continuous(labels = scales::percent) + 
-    theme(strip.background = element_blank(),
-          panel.border =  element_rect(colour = "black", fill = NA), 
-          strip.text = element_text(size = rel(0.85)),
-          axis.title.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.title.x = element_text(size = rel(0.9)),
-          legend.box="vertical") + 
-    scale_shape_manual(values = 4)+ 
-      scale_color_jcolors(palette = "pal8") + 
-      scale_fill_jcolors(palette = "pal8") +
-    guides(color = guide_legend(order=1), fill = guide_legend(order=1), shape = guide_legend(order=2)) 
-  
-  p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = 'bottom', widths = c(1.1,1)) # legend.grob = get_legend(p0)
-  ggsave(p, file = paste0(outdir, '-relative_deaths_vaccine_coverage.png'), w = 6.5, h = 5)
-  
-  
-}
-
-
-
-plot_relative_resurgence_vaccine_indicator <- function(data_res1, prop_vac_indicator, df_age_vaccination2, df_week2, outdir){
-  
-  data_res = merge(data_res1, select(prop_vac_indicator, -date), by = c('code'))
-  data_res[, `Age group` := age]
-  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-  
-  prop_vac_indicator[indic1 & indic2, group := '1']
-  prop_vac_indicator[indic1 & !indic2, group := '2']
-  prop_vac_indicator[!indic1 & indic2, group := '3']
-  prop_vac_indicator[!indic1 & !indic2, group := '4']
-  
-  lab = function(Age, prop) paste0('Proportion of individuals aged ', Age, ' fully vaccinated\ntwo weeks before the beginning of Summer 2021\nresurgence period greater than ', prop, '%')
-  
-  p1 <- ggplot(data_res, aes(x = week_index)) + 
-    geom_line(aes(y = M, col = indic1, linetype = indic2, group = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = indic1, group = loc_label), alpha = 0.5, width = 0.1) +
-    facet_grid(`Age group`~., label = 'label_both') +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = '', shape = 'Beginning of Summer 2021 resurgences', 
-         col = lab('18-64', cutoff_1864*100), fill = lab('18-64', cutoff_1864*100), 
-         linetype = lab('64+', cutoff_65p*100)) + 
-    theme_bw() +
-    geom_text(data = subset(data_res, week_index == max(week_index)), aes(label = loc_label, x = week_index, y = M), hjust = -.1, size = 3) +
-    # scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.15)), date_labels = "%b-%y") + 
-    scale_x_continuous(expand=  expansion(mult = c(0,0.15))) + 
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(size = rel(1)),
-          strip.text = element_text(size = rel(0.9)),
-          legend.spacing.y = unit(-0, "cm"), 
-          legend.position = 'bottom') +
-    scale_color_jcolors(palette = "pal8") + 
-    scale_fill_jcolors(palette = "pal8") +
-    guides(color = guide_legend(order=1), fill = guide_legend(order=1), linetype = guide_legend(order=2)) 
-
-  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_indicator.png'), w = 6.5, h = 7)
   
 }
 
@@ -785,443 +547,6 @@ base_breaks <- function(n = 10){
     axisTicks(log(range(x, na.rm = TRUE)), log = TRUE, n = n)
   }
 }
-
-plot_slope_by_prop <- function(log_r_pdeaths, prop_vac, outdir){
-  tmp <- log_r_pdeaths[, {
-    fit = lm(M ~ week_index)
-    list(beta = fit$coefficient[2])
-  }, by = c('code', 'age')]
-  
-  tmp1 = prop_vac[, list(prop_1 = prop_1[date == min(date)], prop_2 = prop_2[date == min(date)]), by = 'code']
-  tmp = merge(tmp,tmp1, by = 'code')
-  
-  p1 <- ggplot(tmp, aes(x = prop_1, y = beta)) + 
-    geom_point() + 
-    facet_wrap(~age, nrow = 2) + 
-    geom_smooth(method = 'lm')
-  
-  p2 <- ggplot(tmp, aes(x = prop_2, y = beta)) + 
-    geom_point() + 
-    facet_wrap(~age, nrow = 2) + 
-    geom_smooth(method = 'lm')
-  
-  p = ggpubr::ggarrange(p1, p2, ncol = 2)
-  ggsave(p, file = paste0(outdir, '-relative_deaths_slope_to_prop.png'), w = 8, h = 8)
-  
-}
-
-
-plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir, lab.fig = ''){
-
-  prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
-  data_res = merge(data_res1, prop_vac_init, by = 'code')
-
-  data_res[, `Age group` := age]
-  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-
-  data_res = merge(data_res, resurgence_dates, by = 'code')
-  
-  data_text = subset(data_res, week_index == max(week_index))
-  data_text[code == 'CA' & age == '18-64', M := M + 0.1]
-  data_text[code == 'CA' & age == '65+', M := M + 0.05]
-  
-  lab = function(Age) paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before\nthe beginning of Summer 2021\nresurgence period')
-  
-  p1 <- ggplot(data_res, aes(x = week_index)) + 
-    geom_line(aes(y = M, col = prop_1_init, group = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_1_init, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~., label = 'label_both', scale = 'free_y') +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('18-64'), fill = lab('18-64')) + 
-    theme_bw() +
-    geom_text(data = data_text, aes(label = loc_label, x = week_index, y = M, col = prop_1_init), hjust = -.1, size = 3) +
-    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(size = rel(1)),
-          strip.text = element_blank(),
-          legend.spacing.x = unit(0.3, "cm"), 
-          legend.position = 'bottom') +
-    scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init))) + 
-    scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)))
-  
-  p2 <- ggplot(data_res, aes(x = week_index)) + 
-    geom_line(aes(y = M, col = prop_2_init, group = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_2_init, group = loc_label), alpha = 0.5, width = 0.1) +
-    facet_grid(`Age group`~., label = 'label_both', scale = 'free_y') +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = 'Week index of Summer 2021 resurgence period', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('65+'), fill = lab('65+')) + 
-    theme_bw() +
-    geom_text(data = data_text, aes(label = loc_label, x = week_index, y = M, col = prop_2_init), hjust = -.1, size = 3) +
-    # scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") +
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_blank(),
-          axis.text.y = element_blank(),
-          strip.text = element_text(size = rel(0.9)),
-          legend.spacing.x = unit(0.3, "cm"), 
-          legend.position = 'bottom') +
-    scale_color_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init))) + 
-    scale_fill_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)))
-  
-  if(log_transform){
-    p1 = p1 + scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'log relative COVID-19 attributable weekly deaths')
-    p2 = p2 + scale_y_continuous(trans = 'log', breaks = base_breaks()) 
-  }
-  
-  p = grid.arrange(p1, p2, ncol = 2)
-  
-  if(log_transform){
-    file =  paste0(outdir, '-log_relative_deaths_vaccine_coverage2', lab.fig, '.png')
-  } else{
-    file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', lab.fig, '.png')
-  }
-  
-  ggsave(p, file =file, w = 8, h = 5)
-  
-}
-
-plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir){
-  
-  prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
-  data_res = merge(data_res1, prop_vac_init, by = 'code')
-  
-  data_res[, `Age group` := age]
-  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-  
-  data_res = merge(data_res, resurgence_dates, by = 'code')
-  
-  data_text = subset(data_res, week_index == max(week_index))
-  data_text[code == 'CA' & age == '18-64', M := M + 0.1]
-  data_text[code == 'CA' & age == '65+', M := M + 0.05]
-  
-  lab = function(Age) paste0('Proportion of individuals aged ', Age, ' fully vaccinated two weeks\nbefore the beginning of Summer 2021 resurgence period')
-  
-  ## 18-64
-  mid_code = round(length(Code) / 2)
-  Code_ordered = prop_vac_init[order(prop_1_init)]$code
-  tmp <- unique(select(data_res, code, loc_label))
-  tmp[, code := factor(code, levels = Code_ordered)]
-  
-  data_res = data_res[, loc_label := factor(loc_label, levels = tmp[order(code)]$loc_label)]
-  p1 <- ggplot(subset(data_res, code %in% Code_ordered[1:mid_code]), aes(x = week_index)) + 
-    geom_line(aes(y = M, col = prop_1_init, group = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_1_init, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~`loc_label`,  scale = 'free_y') +
-    labs(y = '', 
-         x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('18-64'), fill = lab('18-64')) + 
-    theme_bw() +
-    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    # scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_blank(),
-          legend.spacing.x = unit(0.5, "cm"), 
-          legend.position = 'bottom',
-          legend.key.width = unit(1 , "cm")) +
-    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
-    scale_x_continuous(breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)),
-                          limits = range(prop_vac_init$prop_1_init)) + 
-    scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)),
-                         limits = range(prop_vac_init$prop_1_init))
-  
-  p2 <- ggplot(subset(data_res, code %in% Code_ordered[(mid_code +1):(mid_code*2)]), aes(x = week_index)) + 
-    geom_line(aes(y = M, col = prop_1_init, group = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_1_init, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~`loc_label`,  scale = 'free_y') +
-    labs(y = '', 
-         x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('18-64'), fill = lab('18-64')) + 
-    theme_bw() +
-    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    # scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_x_continuous( breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(size = rel(1)),
-          legend.spacing.x = unit(0.5, "cm"), 
-          legend.position = 'bottom') +
-    scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)), 
-                          limits = range(prop_vac_init$prop_1_init)) + 
-    scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)), 
-                         limits = range(prop_vac_init$prop_1_init))
-  
-  p <- ggarrange(p1, p2, ncol = 1, common.legend = T, legend = 'bottom', heights = c(0.9, 1))
-  p <- grid.arrange(p, left = 'Relative COVID-19 attributable weekly deaths')
-  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part1', '.png')
-  ggsave(p, file =file, w = 8, h = 6)
-  
-  ## 65+
-  mid_code = round(length(Code) / 2)
-  Code_ordered = prop_vac_init[order(prop_2_init)]$code
-  tmp <- unique(select(data_res, code, loc_label))
-  tmp[, code := factor(code, levels = Code_ordered)]
-  
-  data_res = data_res[, loc_label := factor(loc_label, levels = tmp[order(code)]$loc_label)]
-  p1 <- ggplot(subset(data_res, code %in% Code_ordered[1:mid_code]), aes(x = week_index)) + 
-    geom_line(aes(y = M, col = prop_2_init, group = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_2_init, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~`loc_label`,  scale = 'free_y') +
-    labs(y = '', 
-         x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('65+'), fill = lab('65+')) + 
-    theme_bw() +
-    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    # scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_blank(),
-          axis.title.y = element_text(size = rel(1)),
-          legend.spacing.x = unit(0.5, "cm"), 
-          legend.position = 'bottom',
-          legend.key.width = unit(1 , "cm")) +
-    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
-    scale_x_continuous(breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_color_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)),
-                          limits = range(prop_vac_init$prop_2_init)) + 
-    scale_fill_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)),
-                         limits = range(prop_vac_init$prop_2_init))
-  
-  p2 <- ggplot(subset(data_res, code %in% Code_ordered[(mid_code +1):(mid_code*2)]), aes(x = week_index)) + 
-    geom_line(aes(y = M, col = prop_2_init, group = loc_label)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_2_init, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~`loc_label`,  scale = 'free_y') +
-    labs(y = '', 
-         x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('64+'), fill = lab('65+')) + 
-    theme_bw() +
-    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    # scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_x_continuous( breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
-    scale_y_continuous( limits =range(c(data_res$CL, data_res$CU))) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(size = rel(1)),
-          legend.spacing.x = unit(0.5, "cm"), 
-          legend.position = 'bottom') +
-    scale_color_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)), 
-                          limits = range(prop_vac_init$prop_2_init)) + 
-    scale_fill_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)), 
-                         limits = range(prop_vac_init$prop_2_init))
-  
-  p <- ggarrange(p1, p2, ncol = 1, common.legend = T, legend = 'bottom', heights = c(0.9, 1))
-  p <- grid.arrange(p, left = 'Relative COVID-19 attributable weekly deaths')
-  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part2', '.png')
-  ggsave(p, file =file, w = 8, h = 6)
-  
-}
-
-
-plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir){
-  
-  prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
-  data_res = merge(data_res1, prop_vac_init, by = 'code')
-  
-  data_res[, `Age group` := age]
-  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-  
-  data_res = merge(data_res, resurgence_dates, by = 'code')
-  
-  lab = function(Age) paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before\nthe beginning of Summer 202\nresurgences')
-  
-  p1 <- ggplot(data_res, aes(x = prop_1_init)) + 
-    geom_point(aes(y = M, col = week_index, shape = loc_label, group = loc_label)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~., label = 'label_both') +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = '', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('18-64'), fill = lab('18-64')) + 
-    theme_bw() +
-    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(size = rel(1)),
-          strip.text = element_blank(),
-          legend.spacing.y = unit(-0, "cm"), 
-          legend.position = 'bottom') 
-  
-  p2 <- ggplot(data_res, aes(x = prop_2_init)) + 
-    geom_point(aes(y = M, col = week_index, shape = loc_label, group = loc_label)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU, group = loc_label), alpha = 0.5) +
-    facet_grid(`Age group`~., label = 'label_both') +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         x = '', shape = 'Beginning of Summer 2021 resurgence period', 
-         col = lab('65+'), fill = lab('65+')) + 
-    theme_bw() +
-    # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25))) +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(size = rel(1)),
-          strip.text = element_blank(),
-          legend.spacing.y = unit(-0, "cm"), 
-          legend.position = 'bottom') 
-  
-  if(log_transform){
-    p1 = p1 + scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'log relative COVID-19 attributable weekly deaths')
-    p2 = p2 + scale_y_continuous(trans = 'log', breaks = base_breaks()) 
-  }
-  
-  p = grid.arrange(p1, p2, ncol = 2)
-  
-  if(log_transform){
-    file =  paste0(outdir, '-log_relative_deaths_vaccine_coverage_no_time.png')
-  } else{
-    file =  paste0(outdir, '-relative_deaths_vaccine_coverage_no_time.png')
-  }
-  
-  ggsave(p, file =file, w = 8, h = 5)
-  
-}
-
-
-plot_vaccination_effect_prediction <- function(prediction, var, outdir){
-  
-  p = list()
-  for(i in 1:length(unique(prediction$age_recipient))){
-    # Age="18-64"
-    Age = unique(prediction$age_recipient)[i]
-    tmp <- subset(prediction, age_source == Age)
-    p[[i]] = ggplot(tmp, aes(x = prop)) + 
-      geom_line(aes(y = M, col = age_recipient)) + 
-      geom_ribbon(aes(ymin = CL, ymax = CU, fill = age_recipient), alpha = 0.3) +
-      labs(y = 'Mitigation on the magnitude of\nrelative COVID-19 attributable weekly deaths', 
-           x = paste0('Proportion of individuals aged ', Age, '\nfully vaccinated two weeks before the\nbeginning of Summer 2021 resurgence period'), 
-           col = 'Age group', fill = 'Age group') + 
-      theme_bw() +
-      theme(strip.background = element_blank(),
-            strip.text = element_blank(),
-            panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-            legend.title = element_text(size = rel(0.85)),
-            axis.title.x = element_text(size = rel(0.9)),
-            axis.title.y = element_text(size = rel(1)),
-            legend.spacing.y = unit(-0, "cm")) +
-      scale_color_jcolors(palette = "pal6") + 
-      scale_fill_jcolors(palette = "pal6") 
-    
-    if(i > 1){
-      p[[i]] <- p[[i]] + theme(axis.title.y = element_blank())
-    }
-  }
-  
-  
-  p = ggarrange(plotlist = p, ncol = 2, common.legend = T, legend = 'bottom', widths = c(1.1,1)) # legend.grob = get_legend(p0)
-  ggsave(p, file = paste0(outdir, '-vaccine_effect_prediction_', var, '.png', collapse= '_'), w = 6.5, h = 5)
-  
-  return(p)
-}
-
-
-plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
-  
-  data_res1[, type := 'Fit to observed data']
-  data_res2[, type := 'Predicted with vaccination rates']
-  data_res = rbind(data_res1, data_res2)
-  
-  data_res[, `Age group` := age]
-  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-  
-  p1 <- ggplot(data_res, aes(x = date)) + 
-    geom_line(aes(y = M, col = type)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
-    facet_grid(`Age group`~loc_label) +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
-         shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
-    theme_bw() +
-    scale_x_date(expand = c(0,0), breaks = '1 month', date_labels = "%b-%y") + 
-    theme(strip.background = element_blank(),
-          strip.text = element_text(size = rel(0.85)),
-          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
-          legend.title = element_text(size = rel(0.85)),
-          axis.title.y = element_text(size = rel(0.9)),
-          axis.title.x = element_blank(),
-          legend.spacing.y = unit(-0, "cm"), 
-          legend.position = 'bottom',
-          axis.text.x = element_text(angle = 70, hjust = 1)) +
-    guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
-  
-  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC', lab, '.png'), w = 8, h = 5)
-  
-}
-
-plot_contribution_vaccine <- function(contribution, vaccine_data, resurgence_dates, lab, outdir){
-  
-  delay = 7*2
-  df_age_vaccination = unique(select(contribution, age_index, age))
-  df_age_vaccination[, age_from := gsub('(.+)-.*', '\\1', age)]
-  df_age_vaccination[, age_to := gsub('.*-(.+)', '\\1', age)]
-  df_age_vaccination[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
-  df_age_vaccination[grepl('\\+', age_to), age_to := max(vaccine_data$age)]
-  set(df_age_vaccination, NULL, 'age_from', df_age_vaccination[,as.numeric(age_from)])
-  set(df_age_vaccination, NULL, 'age_to', df_age_vaccination[,as.numeric(age_to)])
-  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
-  vaccine_data = vaccine_data[!is.na(age_index), list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
-  vaccine_data[, date := date + delay]
-  
-  tmp <- merge(contribution, vaccine_data, by = c('code', 'date', 'loc_label', 'age_index'), all.x = T)
-  tmp <- merge(tmp, resurgence_dates, by = 'code')
-    
-  p1 = ggplot(tmp, aes(x = date)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
-    geom_line(aes(y = M, col = as.factor(age))) + 
-    geom_point(data = subset(tmp, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1.1) + 
-    facet_wrap(~loc_label, nrow = length(unique(tmp$loc_label))) +
-    scale_y_continuous(labels = scales::percent) +
-    theme_bw() +
-    theme(legend.position = 'bottom', 
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) +
-    labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
-         col = "Age group", fill = "Age group", x = 'Date',
-         shape = 'Beginning of Summer 2021 resurgence period') + 
-    scale_shape_manual(values = 4)+ 
-    scale_x_date(expand = c(0,0), breaks = '3 months', date_labels = "%b-%y") 
-  
-
-  p2 = ggplot(tmp, aes(x = prop)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
-    geom_line(aes(y = M, col = as.factor(age))) + 
-    geom_point(data = subset(tmp, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1.1) + 
-    facet_wrap(~loc_label, nrow = length(unique(tmp$loc_label))) +
-    scale_y_continuous(labels = scales::percent) +
-    scale_x_continuous(labels = scales::percent) +
-    theme_bw() +
-    theme(legend.position = 'bottom', 
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) +
-    labs(y = paste0(""), 
-         x = 'Proportion of fully vaccinated individuals',
-         col = "Age group", fill = "Age group",
-         shape = 'Beginning of Summer 2021 resurgence period') + 
-    scale_shape_manual(values = 4) 
-  
-  p = ggarrange(p1, p2,common.legend = T, legend = 'bottom')
-  ggsave(p, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 7, h = 8)
-  
-}
-
 
 plot_contribution_continuous_comparison_method_with_data = function(tab_cc, tab_d, data, 
                                                           selected_method, model_name, show.method = T, heights= c(0.4,0.6), outdir = NULL){
@@ -1530,102 +855,66 @@ compare_CDCestimation_DoH_age_weekly_plot = function(tmp, outdir)
 
 }
 
-plot_vaccine_effects <- function(vaccine_data, weeklydv, weeklyf, weeklyphi, outdir){
+plot_lambda_table <- function(lambda_table, outdir){
   
-  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
-  tmp <- unique(select(vaccine_data, code, date, prop, age_index))
+  state_indices = unique(lambda_table$state_index)
   
-  delay = 7*2
-  weeklydv[, date := date - delay]
-  weeklyphi[, date := date - delay]
-  
-  tmp1 <- merge(tmp, weeklydv, by = c('code', 'date', 'age_index'))
-  p <- ggplot(tmp1, aes(x = prop)) + 
-    geom_point(aes(y = M)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU)) + 
-    facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
-    labs(x = 'Proportion of vaccinated', y = 'Weekly deaths 2 weeks later') + 
-    theme_bw() + 
-    theme(legend.key = element_blank(), 
-          strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-vaccination_effects_weekly_deaths_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
-  
-  p <- ggplot(weeklyf, aes(x = date)) + 
-    geom_point(aes(y = M)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU)) + 
-    facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
-    labs(col = 'Proportion of\nvaccinated', y = 'f 2 weeks later', x = '')+ 
-    theme_bw() + 
-    theme(legend.key = element_blank(), 
-          strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-vaccination_effects_f_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
-  
-  tmp1 <- merge(tmp, weeklyphi, by = c('code', 'date', 'age_index'))
-  p <- ggplot(tmp1, aes(x = date, col = prop)) + 
-    geom_point(aes(y = M, col = prop)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU, col = prop)) + 
-    geom_point(aes(y = prop_deaths), col = 'red') + 
-    facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
-    labs(col = 'Proportion of\nvaccinated', y = 'Contribution to weekly deaths 2 weeks later', x = '')+ 
-    theme_bw() + 
-    theme(legend.key = element_blank(), 
-          strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-vaccination_effects_contribution_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
-  
-  p <- ggplot(tmp1, aes(x = prop)) + 
-    geom_point(aes(y = M)) + 
-    geom_errorbar(aes(ymin = CL, ymax = CU)) + 
-    geom_point(aes(y = prop_deaths), col = 'red') + 
-    facet_wrap(~age, nrow = nrow(df_age_vaccination)) + 
-    labs(x = 'Proportion of vaccinated', y = 'Contribution to weekly deaths 2 weeks later')+ 
-    theme_bw() + 
-    theme(legend.key = element_blank(), 
-          strip.background = element_rect(colour="black", fill="white")) 
-  ggsave(p, file = paste0(outdir, "-vaccination_effects_contribution2_", Code,".png") , w= 7, h = 8, limitsize = FALSE)
-  
-}
-
-plot_vaccine_effects2 <- function(vaccine_effects, phi, phi_wo_vaccine, lab, outdir){
-  
-  isunscaled = any(phi$M < 0 | phi$M > 1)
-  isunscaled = ifelse(isunscaled, 'unscaled ', '')
+  if(length(state_indices) < 10){
     
-  # tmp1 <- subset(vaccine_effects, age_index %in% rev(unique(sort(vaccine_effects$age_index)))[1:3])
-  tmp1 <- subset(vaccine_effects, !age_index %in% unique(sort(vaccine_effects$age_index))[1])
-  tmp1 <- subset(tmp1, date >= as.Date('2021-01-01'))
-  p <- ggplot(tmp1, aes(x = date)) + 
-    geom_line(aes(y = M , col = age)) + 
-    geom_ribbon(aes(ymin = CL , ymax = CU , fill = age), alpha = 0.25) +
-    theme_bw() +
-    labs(y = paste0("Vaccine effect \n (% change ", isunscaled, "contribution to weekly deaths)"), 
-         x = "", col = 'Age groups', fill = 'Age groups') + 
-    scale_color_viridis_d(option = 'C', end = 0.9)+ 
-    scale_fill_viridis_d(option = 'C', end = 0.9) + 
-    scale_y_continuous(labels = scales::percent) +
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) 
-  ggsave(p, file = paste0(outdir, "-vaccine_effects_perc_contribution_", lab, '_', Code,".png") , w= 6, h = 5, limitsize = FALSE)
+    p <- ggplot(lambda_table, aes(x = date, col = type)) + 
+      geom_point(aes(y = M), position = position_dodge(5), size = 0.75) + 
+      geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(5), width = 0) + 
+      facet_grid(loc_label~., scales = 'free_y') + 
+      theme_bw() +
+      labs(y = expression(lambda), col = '') +
+      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+      theme(legend.position = 'bottom',
+            axis.text.x = element_text(angle = 70, hjust =1), 
+            strip.background = element_blank(), 
+            axis.title.x = element_blank()) 
+    ggsave(p, file = paste0(outdir, '-lambda_prior_posterior.png'), w = 9, h = 8)
+    
+  } else{
+    
+    mid_point = length(state_indices) / 2
+    state_indices_list = list(state_indices[1:mid_point], 
+                              state_indices[(mid_point+1):length(state_indices)])
+    
+    for(i in 1:2){
+      tmp <- subset(lambda_table, state_index %in% state_indices_list[[i]])
+      # tmp <- subset(tmp, date < as.Date('2020-12-01'))
+      p <- ggplot(tmp, aes(x = date, col = type)) + 
+        geom_point(aes(y = M), position = position_dodge(5), size = 0.75) + 
+        geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(5), width = 0) + 
+        facet_grid(loc_label~., scales = 'free_y') + 
+        theme_bw() +
+        labs(y = expression(lambda), col = '') +
+        scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+        theme(legend.position = 'bottom',
+              axis.text.x = element_text(angle = 70, hjust =1), 
+              strip.background = element_blank(), 
+              axis.title.x = element_blank()) 
+      ggsave(p, file = paste0(outdir, '-lambda_prior_posterior_part', i, '.png'), w = 9, h = 8)
+    }
+    
+  }
   
-  tmp <- reshape2::melt(phi, id.vars = c('age_index', 'week_index', 'code', 'date', 'age'))
-  setnames(tmp, c('value', 'variable'), c('with vaccination', 'stat'))
-  tmp1 <- reshape2::melt(phi_wo_vaccine, id.vars = c('age_index', 'week_index', 'code', 'date', 'age'))
-  setnames(tmp1, c('value', 'variable'), c('without vaccination', 'stat'))
-  tmp <- merge(tmp, tmp1, by = c('age_index', 'week_index', 'code', 'date', 'age', 'stat'))
-  tmp <- reshape2::melt(tmp, id.vars = c('age_index', 'week_index', 'code', 'date', 'age', 'stat'))
-  tmp <- subset(tmp, !age_index %in% unique(sort(tmp$age_index))[1])
-  tmp <- reshape2::dcast(tmp, date + age + variable ~ stat, value.var = 'value')
-  
-  p <- ggplot(tmp, aes(x = date)) + 
-    geom_line(aes(y = M, col = variable)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = variable), alpha = 0.5) +
-    facet_wrap(~age, nrow = length(unique(tmp$age))) + 
-    theme_bw() + 
-    theme(axis.text.x = element_text(angle = 70, hjust = 1),
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          legend.position = 'bottom') + 
-    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
-    labs(y = paste0("Estimated ", isunscaled, "contribution to COVID-19 weekly deaths"), x = "", col = '', fill = '') 
-  ggsave(p, file = paste0(outdir, "-vaccine_effects_compcont_", lab, '_', Code,".png") , w= 5, h = 7, limitsize = FALSE)
   
 }
 
+plot_var_base_model_table <- function(loc_label, outdir){
+  
+  p <- ggplot(var_base_model_table, aes(x = loc_label, col = type)) + 
+    geom_point(aes(y = M), position = position_dodge(0.5), size = 0.75) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5), width = 0.1) + 
+    facet_grid(math_name~., labeller = label_parsed, scales = 'free_y') + 
+    theme_bw() +
+    labs(y = '', col = '') +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 70, hjust =1), 
+          strip.background = element_blank(), 
+          axis.title.x = element_blank(), axis.title.y = element_blank()) 
+  scale_y_discrete(labels = label_parse(), limits=rev) 
+  ggsave(p, file = paste0(outdir, '-var_base_model_prior_posterior.png'), w = 6, h = 6)
+  
+}

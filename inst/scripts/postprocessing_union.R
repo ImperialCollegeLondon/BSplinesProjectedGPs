@@ -1,7 +1,6 @@
 
 cat("\n Begin postprocessing_union.R \n")
 
-
 library(rstan)
 library(data.table)
 library(dplyr)
@@ -13,9 +12,12 @@ library(jcolors)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
-states = strsplit('CA,FL',',')[[1]]
-stan_model = "211014b"
-JOBID = 7259
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+           "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+           "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+stan_model = "220209a"
+JOBID = 2543
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -57,12 +59,10 @@ outdir.fig = outdir.fig.post
 
 # 4 states
 selected_codes = c('CA', 'FL', 'NY', 'TX')
-
-# date 
-start_vaccine = vaccine_data[prop > 0 & date %in% df_week$date, min(date)]
-
+selected_codes_10 <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
+  
 #
-# mortality rate over time
+# mortality rate over time discrete
 mortality_rate = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
@@ -71,7 +71,33 @@ mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 
 plot_mortality_rate_all_states(mortality_rate, outdir.fig)
-find_statistics_mortality_rate(mortality_rate, outdir.table)
+
+mortality_rate_10 <- mortality_rate[code %in% selected_codes_10]
+p <- plot_mortality_rate_all_states(mortality_rate_10, outdir.fig)
+find_statistics_mortality_rate(mortality_rate_10, outdir.table)
+limits_mortality_rate <- range(c(mortality_rate_10$CL, mortality_rate_10$CU))
+
+
+#
+# mortality rate over time continuous
+mortality_rate = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateContinuousTable_', locs[i], '.rds'))
+}
+mortality_rate = do.call('rbind', mortality_rate)
+mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
+p_NY <- plot_mortality_rate_continuous_all_states(mortality_rate, limits_mortality_rate, outdir.fig)
+
+# make panel mortaliry
+p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1) #, label.x = 0.03
+p <- ggarrange(p, labels = 'B')
+
+panel <- grid.arrange(grobs = list(p_NY, p), widths = c(1, 0.7), heights = c(0.8, 0.1, 1.05), 
+                      layout_matrix = rbind(c(1, NA),
+                                            c(NA, NA),
+                                            c(2, 2)),
+                      left = paste0('Predicted COVID-19 attributable mortality rates\nas of ', format(unique(mortality_rate$date), '%B %Y')))
+ggsave(panel, file = paste0(outdir.fig, '-MortalityRate_panel_plot.png'), w = 7, h = 6)
 
 
 #
@@ -81,65 +107,29 @@ for(i in seq_along(locs)){
   death3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
 death3 = do.call('rbind', death3)
-plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates,'selectedStates', outdir.fig)
-if(any(!locs %in% selected_codes))
-  plot_mortality_all_states(subset(death3, !code %in% selected_codes), resurgence_dates,'otherStates', outdir.fig)
-
-if(length(locs) > 6){
-  mid_locs = floor(length(locs) / 2)
-  
-  plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
-  plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
-  
-} else{
-  plot_mortality_all_states(death3, resurgence_dates, 'allStates', outdir.fig)
+if(any(locs %in% selected_codes)){
+  plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
+}
+if(any(locs %in% selected_codes_10)){
+  plot_mortality_all_states(subset(death3, code %in% selected_codes_10),'otherStates', outdir.fig)
 }
 
 
 #
-# proportion weekly deaths after vaccine
-propdeath3 = vector(mode = 'list', length = length(locs))
+# predictions
+predictions = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  propdeath3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeprop_Table_3agegroups_', locs[i], '.rds'))
+  predictions[[i]] = readRDS(paste0(outdir.table, '-predictive_checks_table_', locs[i], '.rds'))
 }
-propdeath3 = do.call('rbind', propdeath3)
-find_prop_deaths_vaccine_statistics(propdeath3, start_vaccine, min(resurgence_dates$start_resurgence), outdir.table)
+predictions = do.call('rbind', predictions)
+predictions <- select(predictions, - min.sum.weekly.deaths, - max.sum.weekly.deaths, - sum.weekly.deaths, - weekly.deaths, - inside.CI, 
+                      -state_index, - week_index, - age_index)
+predictions <- predictions[order(loc_label, date, age)]
 
+dir = file.path(gsub('(.+)\\/results.*', '\\1', outdir.table), 'results', 'predictions')
+dir.create(dir)
+saveRDS(predictions, file = file.path(dir, 'predicted_weekly_deaths.rds'))
 
-# 
-# vaccination effect on contribution
-if(!is.null(stan_data$prop_vac)){
-  contribution = vector(mode = 'list', length = length(locs))
-  for(i in seq_along(locs)){
-    contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
-  }
-  contribution = do.call('rbind', contribution)
-  
-  mid_code = round(length(locs) / 2)
-  plot_contribution_vaccine(subset(contribution, code %in% locs[1:mid_code]), vaccine_data, resurgence_dates, 'part_1', outdir.fig)
-  plot_contribution_vaccine(subset(contribution, code %in% locs[(mid_code+1):(mid_code*2)]), vaccine_data, resurgence_dates,  'part_2',outdir.fig)
-  
-  find_regime_state(contribution, vaccine_data, resurgence_dates, start_vaccine, outdir.table)
-}
-
-
-#
-#  contribution baseline
-contribution_ref = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  contribution_ref[[i]] = readRDS(paste0(outdir.table, '-contribution_refTable_', locs[i], '.rds'))
-}
-contribution_ref = do.call('rbind', contribution_ref)
-
-contribution_ref_adj = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  contribution_ref_adj[[i]] = readRDS(paste0(outdir.table, '-contribution_ref_adjTable_', locs[i], '.rds'))
-}
-contribution_ref_adj = do.call('rbind', contribution_ref_adj)
-
-plot_contribution_ref_all_states(contribution_ref, contribution_ref_adj, outdir.fig)
-
-contribution_baseline = statistics_contributionref_all_states(contribution_ref_adj, outdir.table)
 
 
 cat("\n End postprocessing_union.R \n")

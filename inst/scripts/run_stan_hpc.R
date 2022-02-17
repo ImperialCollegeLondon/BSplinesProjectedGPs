@@ -10,7 +10,9 @@ library(ggpubr)
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-stan_model = "211201a"
+# states = strsplit('CA,FL,NY,TX',',')[[1]]
+states = strsplit('NE',',')[[1]]
+stan_model = "220208a"
 JOBID = 3541
 
 if(0)
@@ -42,11 +44,10 @@ rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2021-09-25.rds"))
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2021-09-25.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2021-09-25.rds"))
-path.to.pop.data = file.path(indir, "data", paste0("us_population_withnyc.rds"))
+path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
@@ -74,12 +75,9 @@ deathByAge = readRDS(path.to.CDC.data) # cdc data
 JHUData = readRDS(path.to.JHU.data)
 scrapedData = read.csv(path_to_scraped_data)
 
-# load vaccine data
-vaccine_data = readRDS(path_to_vaccine_data)
-
 # load population count 
-pop_data = as.data.table( reshape2::melt( readRDS(path.to.pop.data), id.vars = c('Region', 'code', 'Total')) )
-setnames(pop_data, c('Region', 'variable', 'value'), c('loc_label', 'age', 'pop'))
+pop_data = as.data.table( read.csv(path.to.pop.data) )
+setnames(pop_data, 'location', 'loc_label')
 
 # Create age maps
 age_max = 105
@@ -94,11 +92,9 @@ Code = locations[code %in% states, ]$code
 df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
 cat("Location ", as.character(loc_name), "\n")
 
-
 # plot data 
 if(1){
   plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                  JHUData = JHUData, 
                                  scrapedData = scrapedData,
@@ -115,27 +111,20 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 
-if(grepl('211201a|211202a|211201c|211201d', stan_model)){
+if(grepl('220209a|220209c|220209d', stan_model)){
   cat("\n Using 2D splines \n")
-  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_rows = 12, n_knots_columns = 10)
+  knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
+  stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 16, knots_rows = knots_rows)
 }
-if(grepl('211201d', stan_model)){
+if(grepl('220209d', stan_model)){
   cat("\n Adding adjacency matrix on 2D splines parameters \n")
   stan_data = add_adjacency_matrix_stan_data(stan_data, n = stan_data$num_basis_row, m = stan_data$num_basis_column)
   stan_data = add_nodes_stan_data(stan_data)
 }
 if(1){
-  cat("\n With vaccine effects \n")
-  resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
-  stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
-  stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-  stan_data = add_JHU_data(stan_data, df_week, Code)
-}
-if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
 }
-
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
