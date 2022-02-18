@@ -1217,12 +1217,35 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
   tmp = dcast(tmp, state_index + week_index_womissing ~ q_label, value.var = "q")
   tmp[, type := 'posterior']
   
-  tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
-  setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
-  tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
-  tmp1 <- tmp1[, list( 	q= qgamma(ps, alpha, beta),
-                        q_label=p_labs), 
-               by=c('state_index', 'week_index_womissing')]	
+  if(!grepl('sensitivity analysis 1 on lambda|sensitivity analysis 2 on lambda', model@model_code)){
+    tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
+    setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
+    tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
+    tmp1 <- tmp1[, list( 	q= qgamma(ps, alpha, beta),
+                          q_label=p_labs), 
+                 by=c('state_index', 'week_index_womissing')]	
+  }
+  
+  if(grepl('sensitivity analysis 1 on lambda', model@model_code)){
+    tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
+    setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
+    tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
+    tmp1[, mean := alpha / beta]
+    tmp1 <- tmp1[, list( 	q= extraDistr::qtnorm(ps, mean = mean, sd = 100, a = 0),
+                          q_label=p_labs), 
+                 by=c('state_index', 'week_index_womissing')]	
+  }
+
+  if(grepl('sensitivity analysis 2 on lambda', model@model_code)){
+    tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
+    setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
+    tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
+    tmp1[, mean := alpha / beta]
+    tmp1 <- tmp1[, list( 	q= qexp(ps, mean),
+                          q_label=p_labs), 
+                 by=c('state_index', 'week_index_womissing')]	
+  }
+  
   tmp1 = dcast(tmp1, state_index + week_index_womissing ~ q_label, value.var = "q")
   tmp1[, type := 'prior']
   
@@ -1260,20 +1283,48 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   
   # prior gamma
   tmp1 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = c('gamma_gp1', 'gamma_gp2')))
-  tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 2, 2), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  if(!grepl('sensitivity analysis 1 on gamma|sensitivity analysis 2 on gamma', model@model_code)){
+    tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 2, 2), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 1 on gamma', model@model_code)){
+    tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 5, 5), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 2 on gamma', model@model_code)){
+    tmp1 <- tmp1[, list(q= qnorm(ps, 0, 5), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
   tmp1 = dcast(tmp1, state_index + variable_name ~ q_label, value.var = "q")
-
-  # prior alpha
+  
+  # prior zeta
   tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'zeta_gp')
-  tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  1), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  if(!grepl('sensitivity analysis 1 on zeta|sensitivity analysis 2 on zeta', model@model_code)){
+    tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  1), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 1 on zeta', model@model_code)){
+    tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  10), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 2 on zeta', model@model_code)){
+    tmp2 <- tmp2[, list(q= extraDistr::qinvchisq(ps,  1), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
   tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
   tmp1 <- rbind(tmp1, tmp2)
   
   # prior nu 
-  tmp2 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = 'nu',
-                                 samples_nu_inverse = truncnorm::rtruncnorm(10000, a=0,  mean = 0, sd = 5)))
-  tmp2[, samples_nu := (1/samples_nu_inverse)]
-  tmp2 <- tmp2[, list(q= quantile(samples_nu, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'nu')
+  if(!grepl('sensitivity analysis 1 on nu|sensitivity analysis 2 on nu', model@model_code)){
+    tmp2 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = 'nu',
+                                   samples_nu_inverse = truncnorm::rtruncnorm(10000, a=0,  mean = 0, sd = 5)))
+    tmp2[, samples_nu := (1/samples_nu_inverse)]
+    tmp2 <- tmp2[, list(q= quantile(samples_nu, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  } 
+  if(grepl('sensitivity analysis 1 on nu', model@model_code)){
+    tmp2 <- tmp2[, list(q= qexp(ps, 1), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 2 on nu', model@model_code)){
+    tmp2 <- tmp2[, list(q= qexp(ps, 10), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 3 on nu', model@model_code)){
+    tmp2 <- tmp2[, list(q=  extraDistr::qhcauchy(ps,  1), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
   tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
   tmp1 <- rbind(tmp1, tmp2)
   tmp1[, type := 'prior']
