@@ -1290,7 +1290,7 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
     tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 5, 5), q_label=p_labs),by=c('state_index', 'variable_name')]	
   }
   if(grepl('sensitivity analysis 2 on gamma', model@model_code)){
-    tmp1 <- tmp1[, list(q= qnorm(ps, 0, 5), q_label=p_labs),by=c('state_index', 'variable_name')]	
+    tmp1 <- tmp1[, list(q= extraDistr::qtnorm(ps, mean = 0, sd = 5, a = 0), q_label=p_labs),by=c('state_index', 'variable_name')]	
   }
   tmp1 = dcast(tmp1, state_index + variable_name ~ q_label, value.var = "q")
   
