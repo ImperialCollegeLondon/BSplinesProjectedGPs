@@ -11,7 +11,7 @@ We apply the model to weekly, age-stratified COVID-19 attributable deaths report
 | Folder    | Description |
 |-----------|------------------------------------------------------|
 | misc   | Obtain weekly incomplete age and state-specific COVID-19 deaths from the cumulative incomplete age and state-specific COVID-19 deaths reported by the CDC |
-| inst | Reproduce the result of the "Real data analysis" section  |
+| inst | Reproduce the result of the "COVID-19 deaths in the US" section  |
 | simulations      | Reproduce the result of the "Simulations" section |
 | predictions | Reproduce the results of the "Real world benchmarks" |
 | inst/results | Median and 95\% credible interval of the age-specific COVID-19 attributable deaths predicted by our approach |
