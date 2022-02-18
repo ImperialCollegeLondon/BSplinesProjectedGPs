@@ -158,7 +158,7 @@ model {
 
   for(m in 1:M){
     // sensitivity analysis 2 on lambda
-    lambda_raw[m] ~ exponential( 1/lambda_prior_mean[m] );
+    lambda_raw[m] ~ exponential( rep_row_vector(1.0, W_OBSERVED) ./lambda_prior_mean[m] );
 
 
     // Note on the neg bin parametrisation related to the paper:
