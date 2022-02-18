@@ -1241,7 +1241,7 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
     setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
     tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
     tmp1[, mean := alpha / beta]
-    tmp1 <- tmp1[, list( 	q= qexp(ps, mean),
+    tmp1 <- tmp1[, list( 	q= qexp(ps, 1/mean),
                           q_label=p_labs), 
                  by=c('state_index', 'week_index_womissing')]	
   }
