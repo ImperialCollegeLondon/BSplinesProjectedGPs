@@ -17,7 +17,7 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 stan_model = "220209a"
-JOBID = 2543
+JOBID = 4055
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -111,7 +111,7 @@ if(any(locs %in% selected_codes)){
   plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
 }
 if(any(locs %in% selected_codes_10)){
-  plot_mortality_all_states(subset(death3, code %in% selected_codes_10),'otherStates', outdir.fig)
+  plot_mortality_all_states(subset(death3, code %in% selected_codes_10 & !code %in% selected_codes),'otherStates', outdir.fig)
 }
 
 
