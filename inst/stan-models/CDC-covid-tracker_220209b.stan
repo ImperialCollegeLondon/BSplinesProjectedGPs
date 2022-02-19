@@ -91,7 +91,7 @@ transformed data
 }
 
 parameters {
-  real<lower=0> nu_inverse[M];
+  real<lower=0> nu[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
   matrix[W,A] z1[M];
   real<lower=0> zeta_gp[M];
@@ -101,7 +101,7 @@ parameters {
 
 transformed parameters {
   vector<lower=0>[W] lambda[M];
-  real<lower=0> nu[M];
+  real<lower=0> nu_inverse[M];
   matrix[A,W] phi[M];
   matrix[A,W] alpha[M];
   matrix[B,W] phi_reduced[M];
@@ -110,7 +110,7 @@ transformed parameters {
 
   for(m in 1:M){
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
-    nu[m] = (1/nu_inverse[m]);
+    nu_inverse[m] = (1/nu[m]);
 
     f[m] = (gp(W, A, IDX_WEEKS, age, delta0, zeta_gp[m], gamma_gp1[m],  gamma_gp2[m], z1[m]))';
     
@@ -128,7 +128,7 @@ transformed parameters {
 
 model {
   
-  nu_inverse ~ normal(0,5);
+  nu ~ exponential(1);
 
   zeta_gp ~ cauchy(0,1);
   gamma_gp1 ~ inv_gamma(2, 2);

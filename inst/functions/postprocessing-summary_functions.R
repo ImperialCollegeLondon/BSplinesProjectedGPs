@@ -1311,13 +1311,13 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   # prior nu 
   tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'nu')
   if(!grepl('sensitivity analysis 1 on nu|sensitivity analysis 2 on nu', model@model_code)){
+    tmp2 <- tmp2[, list(q= qexp(ps, 1), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  } 
+  if(grepl('sensitivity analysis 1 on nu', model@model_code)){
     tmp2 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = 'nu',
                                    samples_nu_inverse = truncnorm::rtruncnorm(10000, a=0,  mean = 0, sd = 5)))
     tmp2[, samples_nu := (1/samples_nu_inverse)]
     tmp2 <- tmp2[, list(q= quantile(samples_nu, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'variable_name')]	
-  } 
-  if(grepl('sensitivity analysis 1 on nu', model@model_code)){
-    tmp2 <- tmp2[, list(q= qexp(ps, 1), q_label=p_labs),by=c('state_index', 'variable_name')]	
   }
   if(grepl('sensitivity analysis 2 on nu', model@model_code)){
     tmp2 <- tmp2[, list(q= qexp(ps, 10), q_label=p_labs),by=c('state_index', 'variable_name')]	

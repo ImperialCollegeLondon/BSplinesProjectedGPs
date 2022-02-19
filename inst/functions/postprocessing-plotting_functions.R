@@ -504,8 +504,8 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   # death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-  colfunc <- jcolors("pal8")[1:length(locs)]
-  colfunc <- colfunc[which(locs %in% unique(death$code))]
+  colfunc <- jcolors("pal8")[1:length(selected_codes_10)]
+  colfunc <- colfunc[which(selected_codes_10 %in% unique(death$code))]
   
   death[, `Age group` := age]
   
@@ -918,3 +918,52 @@ plot_var_base_model_table <- function(loc_label, outdir){
   ggsave(p, file = paste0(outdir, '-var_base_model_prior_posterior.png'), w = 6, h = 6)
   
 }
+
+plot_lambda_table_sensitivity <- function(lambda_table, outdir){
+  p <- ggplot(lambda_table, aes(x = date, col = model)) + 
+    geom_point(aes(y = M), position = position_dodge(7), size = 0.75) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(7), width = 0) + 
+    facet_wrap(~type, nrow =2) + 
+    theme_bw() +
+    labs(y = expression(lambda), col = '') +
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) + 
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 70, hjust =1, size = rel(1.2)), 
+          strip.background = element_blank(), 
+          axis.title.x = element_blank(), 
+          axis.text.y = element_text(size = rel(1.2)),
+          axis.title.y = element_text(size = rel(1.3)),
+          legend.text =  element_text(size = rel(1.3)),
+          strip.text =  element_text(size = rel(1.3))) + 
+    scale_color_manual(values = colors)
+  ggsave(p, file = paste0(outdir, '-lambda_prior_posterior_sensitivity.png'), w = 9, h = 6)
+}
+
+
+plot_var_base_model_table_sensitivity <- function(table, lab, outdir){
+  
+  scales_y <- list(
+    `zeta` = scale_y_log10(),
+    `gamma[1]` = scale_y_continuous(),
+    `gamma[2]` = scale_y_continuous(),
+    `nu` = scale_y_continuous(trans = 'log1p')
+  )
+  
+  p <- ggplot(table, aes(x = 1, col = model)) + 
+    geom_point(aes(y = M), position = position_dodge(0.5), size = 0.75) + 
+    geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5), width = 0.1) + 
+    facet_grid_sc(rows = vars(math_name), cols = vars(type), labeller = label_parsed,scales = list(y = scales_y)) +
+    theme_bw() +
+    labs(y = '', col = '') +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(size = rel(1.2)), 
+          strip.background = element_blank(), 
+          axis.title.x = element_blank(), axis.title.y = element_blank()) + 
+    scale_x_discrete(labels = function(l) parse(text=l))+ 
+    scale_color_manual(values = colors) + 
+    guides(color=guide_legend(nrow=2,byrow=TRUE))
+  ggsave(p, file = paste0(outdir, paste0('-var_base_model_prior_posterior_sensitivity_', lab, '.png')), w = 5.5, h = 6.5)
+  
+  return(p)
+}
+
