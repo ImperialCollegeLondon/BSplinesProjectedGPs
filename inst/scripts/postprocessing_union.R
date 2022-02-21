@@ -12,12 +12,13 @@ library(jcolors)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
+states = strsplit('CA,FL,NY,TX',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-           "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-           "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+#            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+#            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 stan_model = "220209a"
-JOBID = 4055
+JOBID = 1811791
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -110,7 +111,7 @@ death3 = do.call('rbind', death3)
 if(any(locs %in% selected_codes)){
   plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
 }
-if(any(locs %in% selected_codes_10)){
+if(any(locs %in% selected_codes_10 & !locs %in% selected_codes)){
   plot_mortality_all_states(subset(death3, code %in% selected_codes_10 & !code %in% selected_codes),'otherStates', outdir.fig)
 }
 
