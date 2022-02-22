@@ -425,7 +425,7 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
     lin_fit = lm(diff_sum_deaths_abs~weekly_deaths-1, data = tmp1)
     
     mean = tmp1$weekly_deaths
-    sd = predict(lin_fit2, tmp1) * 2
+    sd = predict(lin_fit, tmp1) * 2
     
     if( any(sd == 0) ) sd[sd ==0] = 0.01
     if( any(mean == 0) ) mean[mean ==0] = 0.01
