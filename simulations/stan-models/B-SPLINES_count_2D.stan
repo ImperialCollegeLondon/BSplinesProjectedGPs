@@ -14,18 +14,17 @@ data {
 
 parameters {
   matrix[num_basis_rows,num_basis_columns] beta;
-  real<lower=0> nu_unscaled;
+  real<lower=0> nu;
 }
 
 transformed parameters {
-  real<lower=0> nu = (1/nu_unscaled);
-  real<lower=0> theta = (1 / nu);
+  real<lower=0> nu_inverse = (1/nu);
    matrix[n,m] f = exp( (BASIS_ROWS') * beta * BASIS_COLUMNS );
    matrix[n,m] alpha = f / nu;
 }
 
 model {
-  nu_unscaled ~ normal(0, 5);
+  nu ~ exponential(1);
   
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
@@ -34,7 +33,7 @@ model {
   }
   
   for(k in 1:N){
-      y[k] ~ neg_binomial(alpha[coordinates[k,1],coordinates[k,2]], theta);
+      y[k] ~ neg_binomial(alpha[coordinates[k,1],coordinates[k,2]], nu_inverse);
   }
 
 }
@@ -42,7 +41,7 @@ model {
 generated quantities {
  real log_lik[N];
   for(k in 1:N)
-    log_lik[k] = neg_binomial_lpmf(y[k] | alpha[coordinates[k,1],coordinates[k,2]], theta);
+    log_lik[k] = neg_binomial_lpmf(y[k] | alpha[coordinates[k,1],coordinates[k,2]], nu_inverse);
 }
 
 

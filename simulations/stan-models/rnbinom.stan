@@ -8,10 +8,10 @@ data {
 
 transformed data {
   vector[n] alpha = mu / nu;
-  real theta = 1 / nu;
+  real nu_inverse = 1 / nu;
 }
 
 generated quantities {
-  int y[n] = neg_binomial_rng(alpha, theta);
+  int y[n] = neg_binomial_rng(alpha, nu_inverse);
 }
 
