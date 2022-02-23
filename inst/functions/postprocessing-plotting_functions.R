@@ -379,39 +379,41 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
   
   mortality_rate <- mortality_rate[age != '0-24']
   mortality_rate[, `Age group` := age]
+
   p <- ggplot(mortality_rate, aes(x=loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat="identity") +
     geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
-    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = medianM) + 
+    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige', midpoint = medianM, labels = scales::percent_format()) + 
     theme_bw() +
     theme(axis.text.x = element_text(angle = 70,hjust=1,vjust=1), 
-          legend.position = 'none', 
+          legend.position = 'bottom', 
           panel.grid.minor= element_blank(), 
           panel.grid.major.x= element_blank(), 
-          # axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
+          axis.title.x = element_blank(),
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) + 
-    scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
-    coord_cartesian(ylim = c(0,max(tmp$CU)+0.001))  +
-    labs(x = '')
+    labs(x = '', y = paste0('Predicted COVID-19 attributable mortality rates as of ', format(unique(mortality_rate$date), '%B %Y')), 
+         fill = '') + 
+    scale_y_continuous(expand =expansion(mult = c(0, .05)), labels = scales::percent_format())+ 
+    guides(fill = guide_colourbar(barwidth = 10,  barheight = 1))
+  
   
   if(length(unique(mortality_rate$code)) <= 10){
     p <- p +  facet_grid(.~`Age group`, label = 'label_both')
     ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages.png')), w = 6.5, h = 3.5)
     
   } else{
-    p <- p +  facet_wrap(~`Age group`, nrow =4, label = 'label_both')
-    ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_large.png')), w = 6.5, h = 9)
+    p <- p +  facet_wrap(~`Age group`, nrow =4, label = 'label_both', scales = 'free_y') 
+     
+    ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_large.png')), w = 7, h = 9)
     
   }
   # +
   #   labs(y = '')
 
-  return(p)
 }
 
-plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, outdir)
+plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
 {
   
   mortality_rate[, age := as.numeric(age)]
@@ -460,8 +462,8 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
     labs(y = paste0('Predicted COVID-19 attributable mortality\nrates as of ', format(unique(mortality_rate$date), '%b %Y')),
          col = '')
   
-  ggarrange(p, p1, nrow = 1, common.legend = T, legend = 'bottom', widths = c(1, 0.1))
-  ggsave(paste0(outdir, paste0('-MortalityRateContinuous_allages_selectedstates.png')), w = 6, h = 4)
+  p <- ggarrange(p, p1, nrow = 1, common.legend = T, legend = 'bottom', widths = c(1, 0.1))
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_selectedstates.png')), w = 6, h = 4)
   
   
   ###
@@ -472,26 +474,26 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, limits, out
     tmp <- subset(mortality_rate, code == unique(mortality_rate)[1])
   }
   
-  tmp[, Location := loc_label]
+  tmp[, State := loc_label]
   p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
     geom_line(aes(y = M)) +
     geom_ribbon(aes(ymin=CL, ymax=CU), alpha = 0.4) + 
     theme_bw() + 
-    facet_wrap(~Location, label = 'label_both') +
+    facet_wrap(~State, label = 'label_both') +
     theme(legend.position = 'bottom', 
           # axis.title = element_text(size = rel(1.2)),
           # axis.text = element_text(size = rel(1.1)),
-          axis.title.y = element_blank(), 
+          axis.title.y =element_text(size = rel(1)),
+          strip.text =element_text(size = rel(1)),
+          axis.title.x =element_text(size = rel(1)),
           panel.grid.minor= element_blank(), 
           strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          plot.margin = unit(c(5.5,0,5.5,5.5), "pt")) + 
-    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = limits) +
+          panel.border = element_rect(colour = "black", fill = NA)) + 
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
     scale_x_continuous(expand = c(0,0)) +
-    labs(x = 'Age') 
-   ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_NY.png')), w = 5, h = 4)
+    labs(x = 'Age', y = paste0('Predicted COVID-19 attributable mortality\nrates as of ', format(unique(mortality_rate$date), '%B %Y'))) 
+   ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_NY.png')), w = 6.5, h = 3)
   
-  return(p)
 }
 
 plot_mortality_all_states = function(death, lab = 'allStates', outdir)
@@ -504,15 +506,10 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   # death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-  colfunc <- jcolors("pal8")[1:length(selected_codes_10)]
-  colfunc <- colfunc[which(selected_codes_10 %in% unique(death$code))]
-  
+
   death[, `Age group` := age]
   
   p <- ggplot(subset(death) ) +
-    geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
-    geom_line(aes(x= date, y = M, fill = loc_label), show.legend = F) +
-    geom_ribbon(aes(x= date, ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
     facet_grid(loc_label~`Age group`, scale = 'free') +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + 
@@ -522,8 +519,7 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
           axis.text.x = element_text(angle = 45, hjust =1), 
           panel.grid.major = element_blank(), 
           axis.title.x = element_blank(), 
-          axis.title.y = element_blank(), 
-          legend.title = element_text(size = rel(1.1)), 
+          axis.title.y = element_text(size = rel(1.1)), 
           legend.text = element_text(size = rel(1.1)), 
           strip.text = element_text(size = rel(1)), 
           legend.position = 'bottom') +
@@ -531,16 +527,36 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
           linetype = '', col = '', fill = '') + 
     scale_shape_manual(values = 16) +
     scale_linetype_manual(values = 2) + 
-    scale_color_manual(values = as.character(colfunc)) + 
-    scale_fill_manual(values = as.character(colfunc)) + 
     guides(shape = guide_legend(override.aes = list(size=1, stroke =1.5), order = 2),
            linetype = guide_legend(order = 3), 
            col = guide_legend(order = 1),
            fill = guide_legend(order = 1))
-
-  ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 8)
   
+  if(all(unique(death$code) %in% selected_codes)){
+    colfunc <- jcolors("pal8")[1:length(unique(death$code))]
+
+    p <- p + 
+      geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
+      geom_line(aes(x= date, y = M, col = loc_label), show.legend = F) +
+      geom_ribbon(aes(x= date, ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
+      scale_color_manual(values = as.character(colfunc)) + 
+      scale_fill_manual(values = as.character(colfunc)) 
+    ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 8)
+    
+  } else {
+    p <- p + 
+      geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'darkred', fill = 'darkred', size = 0.9, alpha = 0.6)+ 
+      geom_line(aes(x= date, y = M, col = loc_label), show.legend = F) +
+      geom_ribbon(aes(x= date, ymin = CL, ymax = CU, fill = loc_label), alpha = 0.4, show.legend = F) +
+    scale_color_manual(values = rep('black', length(unique(death$code)))) + 
+      scale_fill_manual(values = rep('black', length(unique(death$code)))) 
+    ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 4 + 0.72 * length(unique(death$code)))
+    
+  }
+
+
 }
+
 
 base_breaks <- function(n = 10){
   function(x) {
@@ -935,7 +951,8 @@ plot_lambda_table_sensitivity <- function(lambda_table, outdir){
           axis.title.y = element_text(size = rel(1.3)),
           legend.text =  element_text(size = rel(1.3)),
           strip.text =  element_text(size = rel(1.3))) + 
-    scale_color_manual(values = colors)
+    scale_color_manual(values = colors) + 
+    scale_y_log10()
   ggsave(p, file = paste0(outdir, '-lambda_prior_posterior_sensitivity.png'), w = 9, h = 6)
 }
 
