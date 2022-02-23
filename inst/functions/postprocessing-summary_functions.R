@@ -1248,8 +1248,11 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
   tmp <- merge(tmp, df_week_womissing, by = 'week_index_womissing')
   tmp <- merge(tmp, df_state, by = 'state_index')
   
+  for(Code in unique(tmp$code)){
+    saveRDS(subset(tmp, code == Code), paste0(outdir, '-lambda_prior_posterior_', Code, '.rds'))
+  }
+
   saveRDS(tmp, paste0(outdir, '-lambda_prior_posterior.rds'))
-  
   return(tmp)
 }
 
@@ -1328,6 +1331,10 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   
   tmp[, math_name := factor(math_name, levels = .math_name)]
   # tmp[, math_name := paste0(math_name, '\\["', loc_label, '"\\]')]
+  
+  for(Code in unique(tmp$code)){
+    saveRDS(subset(tmp, code == Code), paste0(outdir, '-var_base_model_prior_posterior_', Code, '.rds'))
+  }
   
   saveRDS(tmp, paste0(outdir, '-var_base_model_prior_posterior.rds'))
   
