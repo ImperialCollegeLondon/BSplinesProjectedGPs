@@ -12,7 +12,7 @@ outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 # states = strsplit('CA,FL,NY,TX',',')[[1]]
 states = strsplit('NE',',')[[1]]
-stan_model = "220209a_slambda1"
+stan_model = "220209a"
 JOBID = 3541
 
 if(0)
@@ -123,7 +123,7 @@ if(grepl('220209d', stan_model)){
 }
 if(1){
   cat("\n With Gamma prior for lambda \n")
-  stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
+  stan_data = add_prior_parameters_lambda(stan_data, distribution = 'exponential')
 }
 
 # stan model

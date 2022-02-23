@@ -403,7 +403,7 @@ add_nodes_stan_data = function(stan_data)
   return(stan_data)
 }
 
-add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
+add_prior_parameters_lambda = function(stan_data, distribution = 'exponential')
 {
 
   lambda_prior_parameters = vector(mode = 'list', length = length(stan_data$inv_sum_deaths))
@@ -439,6 +439,9 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
       mu = 2 * log(mean) - 1/2 * log(sd^2 + mean^2)
       sigma = sqrt(-2*log(mean) + log(sd^2 + mean^2))
       lambda_prior_parameters[[m]] = rbind(mu, sigma)
+    }
+    if(distribution == 'exponential'){
+      lambda_prior_parameters[[m]] = mean
     }
     
   }

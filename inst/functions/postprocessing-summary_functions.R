@@ -1221,7 +1221,8 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
     tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
     setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
     tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
-    tmp1 <- tmp1[, list( 	q= qgamma(ps, alpha, beta),
+    tmp1[, mean := alpha / beta]
+    tmp1 <- tmp1[, list( 	q= qexp(ps, 1/mean),
                           q_label=p_labs), 
                  by=c('state_index', 'week_index_womissing')]	
   }
@@ -1236,16 +1237,6 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
                  by=c('state_index', 'week_index_womissing')]	
   }
 
-  if(grepl('sensitivity analysis 2 on lambda', model@model_code)){
-    tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
-    setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
-    tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
-    tmp1[, mean := alpha / beta]
-    tmp1 <- tmp1[, list( 	q= qexp(ps, 1/mean),
-                          q_label=p_labs), 
-                 by=c('state_index', 'week_index_womissing')]	
-  }
-  
   tmp1 = dcast(tmp1, state_index + week_index_womissing ~ q_label, value.var = "q")
   tmp1[, type := 'prior']
   

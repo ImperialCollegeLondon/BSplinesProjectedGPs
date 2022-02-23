@@ -44,7 +44,7 @@ data{
   int<lower=-1,upper=B> idx_non_missing[M,B,W_OBSERVED]; // indices non-missing deaths for W
   real age[A]; // age continuous
   real inv_sum_deaths[M,W_OBSERVED]; // inverse sum of deaths
-  matrix[2,W_OBSERVED] lambda_prior_parameters[M]; // parameters of the prior distribution of lambda
+  row_vector[W_OBSERVED] lambda_prior_parameters[M]; // parameters of the prior distribution of lambda
   int deaths[M,B,W_OBSERVED]; // daily deaths in age band b at time t
   int age_from_state_age_strata[B]; // age from of age band b
   int age_to_state_age_strata[B];// age to of age band b
@@ -75,11 +75,9 @@ transformed data
 {   
     real delta0 = 1e-9;  
     int N_log_lik = 0;
-    row_vector[W_OBSERVED] lambda_prior_mean[M];
-    
+
   for(m in 1:M){
-    lambda_prior_mean[m] = lambda_prior_parameters[m][1,:] ./ lambda_prior_parameters[m][2,:];
-    
+
     for(w in 1:W_OBSERVED){
       for(i in idx_non_missing[m][1:N_idx_non_missing[m][w],w]){
         N_log_lik += 1;
@@ -158,7 +156,7 @@ model {
 
   for(m in 1:M){
     // sensitivity analysis 1 on lambda
-    lambda_raw[m] ~ normal( lambda_prior_mean[m], 100);
+    lambda_raw[m] ~ normal( lambda_prior_parameters[m], 100);
 
 
     // Note on the neg bin parametrisation related to the paper:
