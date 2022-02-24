@@ -13,11 +13,11 @@ library(facetscales)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
-# states = strsplit('CA,FL,NY,TX',',')[[1]]
+states = strsplit('FL',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-           "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-           "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+#            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+#            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 stan_model = "220209a"
 JOBID = 5539
 
@@ -108,7 +108,7 @@ death3 = do.call('rbind', death3)
 if(any(locs %in% selected_codes)){
   plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
 }
-if(any(locs %in% selected_10_codes)){
+if(any(locs %in% selected_10_codes & !locs %in% selected_codes)){
   plot_mortality_all_states(subset(death3, code %in%selected_10_codes & !code %in%selected_codes), 'otherStates', outdir.fig)
 }
 if(any(!locs %in% selected_codes)){

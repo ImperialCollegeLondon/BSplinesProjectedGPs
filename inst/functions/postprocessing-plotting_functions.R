@@ -471,7 +471,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
   tmp <- subset(mortality_rate, code == 'NY')
   
   if(nrow(tmp) == 0){
-    tmp <- subset(mortality_rate, code == unique(mortality_rate)[1])
+    tmp <- subset(mortality_rate, code == unique(mortality_rate$code)[1])
   }
   
   tmp[, State := loc_label]
