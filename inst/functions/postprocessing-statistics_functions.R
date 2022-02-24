@@ -60,29 +60,37 @@ find_statistics_mortality_rate <- function(mortality_rate, mortality_rate_across
   tmp = mortality_rate[age == '85+' & M > prop.85, .(loc_label, M)]
   tmp = tmp[order(M, decreasing = T)]
   tmp = tmp[,as.character(loc_label)]
-  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
-  mortality_stats[[2]] = list(prop.85 * 100, tmp)
+  if(length(tmp) > 0){
+    tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+    mortality_stats[[2]] = list(prop.85 * 100, tmp)
+  } 
 
   prop.75 <- 0.015
   tmp = mortality_rate[age == '75-84' & M > prop.75, .(loc_label, M)]
   tmp = tmp[order(M, decreasing = T)]
   tmp = tmp[,as.character(loc_label)]
-  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
-  mortality_stats[[3]] = list(prop.75 * 100, tmp)
+  if(length(tmp) > 0){
+    tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+    mortality_stats[[3]] = list(prop.75 * 100, tmp)
+  }
 
   prop.55 <- 0.005
   tmp = mortality_rate[age == '55-74' & M > prop.55, .(loc_label, M)]
   tmp = tmp[order(M, decreasing = T)]
   tmp = tmp[,as.character(loc_label)]
-  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
-  mortality_stats[[4]] = list(prop.55 * 100, tmp)
+  if(length(tmp) > 0){
+    tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+    mortality_stats[[4]] = list(prop.55 * 100, tmp)
+  }
   
   prop.25 <- 0.001
   tmp = mortality_rate[age == '25-54' & M > prop.25, .(loc_label, M)]
   tmp = tmp[order(M, decreasing = T)]
   tmp = tmp[,as.character(loc_label)]
-  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
-  mortality_stats[[5]] = list(prop.25 * 100, tmp)
+  if(length(tmp) > 0){
+    tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+    mortality_stats[[5]] = list(prop.25 * 100, tmp)
+  }
   
   mortality_rate_across_states[, M := round(M * 100, digits = 2)]
   mortality_rate_across_states[, CL := round(CL * 100, digits = 2)]

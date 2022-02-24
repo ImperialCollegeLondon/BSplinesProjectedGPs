@@ -92,7 +92,7 @@ if('age_index' %in% colnames(pop_data)){
 
 ####
 
-# Predictions deaths by 1-year agd band
+# Predictions deaths by 1-year age band
 make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'deaths_predict', outdir.table)
 
 # Plots continuous and aggregated age distribution phi
