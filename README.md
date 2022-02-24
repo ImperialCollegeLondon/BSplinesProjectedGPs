@@ -14,7 +14,7 @@ We apply the model to weekly, age-stratified COVID-19 attributable deaths report
 | inst | Reproduce the result of the "COVID-19 deaths in the US" section  |
 | simulations      | Reproduce the result of the "Simulations" section |
 | predictions | Reproduce the results of the "Real world benchmarks" |
-| inst/results | Median and 95\% credible interval of the age-specific COVID-19 attributable deaths predicted by our approach |
+| inst/results | Median and 95\% credible interval of the predicted COVID-19 attributable deaths startified by 1-year age band |
 
 
 
