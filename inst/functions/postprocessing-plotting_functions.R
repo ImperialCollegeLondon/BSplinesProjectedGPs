@@ -532,9 +532,14 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
            col = guide_legend(order = 1),
            fill = guide_legend(order = 1))
   
-  if(all(unique(death$code) %in% selected_codes)){
-    colfunc <- jcolors("pal8")[1:length(unique(death$code))]
+  if(all(unique(death$code) %in% selected_codes) | all(unique(death$code) %in% selected_10_codes) ){
+    
+    if(all(unique(death$code) %in% selected_codes))
+      colfunc <- jcolors("pal8")[1:length(unique(death$code))]
 
+    if(all(unique(death$code) %in% selected_10_codes))
+      colfunc <- jcolors("pal8")[5:10][1:length(unique(death$code))]
+    
     p <- p + 
       geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
       geom_line(aes(x= date, y = M, col = loc_label), show.legend = F) +
@@ -924,7 +929,7 @@ plot_var_base_model_table <- function(loc_label, outdir){
     `zeta` = scale_y_log10(),
     `gamma[1]` = scale_y_continuous(),
     `gamma[2]` = scale_y_continuous(),
-    `nu` = scale_y_continuous(trans = 'log1p')
+    `nu` = scale_y_continuous()
   )  
   
   p <- ggplot(var_base_model_table, aes(x = loc_label, col = type)) + 
@@ -985,7 +990,8 @@ plot_var_base_model_table_sensitivity <- function(table, lab, outdir){
     scale_x_discrete(labels = function(l) parse(text=l))+ 
     scale_color_manual(values = colors) + 
     guides(color=guide_legend(nrow=2,byrow=TRUE))
-  ggsave(p, file = paste0(outdir, paste0('-var_base_model_prior_posterior_sensitivity_', lab, '.png')), w = 5.5, h = 6.5)
+  
+  ggsave(p, file = paste0(outdir, paste0('-var_base_model_prior_posterior_sensitivity_', lab, '.png')), w = 5.5, h = 2 + 1 * length(unique(table$math_name)))
   
   return(p)
 }

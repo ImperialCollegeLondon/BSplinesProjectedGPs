@@ -19,7 +19,7 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 stan_model = "220209a"
-JOBID = 4055
+JOBID = 5539
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -61,17 +61,10 @@ outdir.fig = outdir.fig.post
 
 # 4 states
 selected_codes = c('CA', 'FL', 'NY', 'TX')
+selected_10_codes = c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
 
 #
-# mortality rate over time discrete
-mortality_rate = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
-}
-mortality_rate = do.call('rbind', mortality_rate)
-mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
-plot_mortality_rate_all_states(mortality_rate, outdir.fig)
-
+# Mortality rate
 
 # mortality rate over time continuous
 mortality_rate = vector(mode = 'list', length = length(locs))
@@ -81,6 +74,28 @@ for(i in seq_along(locs)){
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 plot_mortality_rate_continuous_all_states(mortality_rate, outdir.fig)
+
+# mortality rate over time discrete
+mortality_rate = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
+}
+mortality_rate = do.call('rbind', mortality_rate)
+mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
+plot_mortality_rate_all_states(mortality_rate, outdir.fig)
+
+# aggregate across states
+mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  tmp = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRateContinuousTable_', locs[i], '.rds'))
+  mortality_rate_posterior_samples[[i]] = find_mortality_rate_aggregated(tmp)
+}
+mortality_rate_posterior_samples = do.call('rbind', mortality_rate_posterior_samples)
+mortality_rate_across_states <- find_mortality_rate_across_states(mortality_rate_posterior_samples)
+
+
+# statistics
+find_statistics_mortality_rate(mortality_rate, mortality_rate_across_states, outdir.table)
 
 
 #
@@ -92,6 +107,9 @@ for(i in seq_along(locs)){
 death3 = do.call('rbind', death3)
 if(any(locs %in% selected_codes)){
   plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
+}
+if(any(locs %in% selected_10_codes)){
+  plot_mortality_all_states(subset(death3, code %in%selected_10_codes & !code %in%selected_codes), 'otherStates', outdir.fig)
 }
 if(any(!locs %in% selected_codes)){
   not_selected_codes <- locs[!locs %in% selected_codes]

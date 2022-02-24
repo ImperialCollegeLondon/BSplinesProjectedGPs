@@ -49,19 +49,48 @@ statistics_contributionref_all_states = function(contribution_ref_adj, outdir){
   # return(contribution_baseline)
 }
 
-find_statistics_mortality_rate <- function(mortality_rate, outdir){
+find_statistics_mortality_rate <- function(mortality_rate, mortality_rate_across_states, outdir){
+  
+  mortality_stats = list()
+  
   max_date = format(unique(mortality_rate$date), '%B %d, %Y')
-  dold2p = mortality_rate[age == '85+' & M > 0.025, loc_label]
-  dold2p_n = paste0(paste0(dold2p[-length(dold2p)], collapse = ', '), ' and ', dold2p[length(dold2p)])
-  state_max = mortality_rate[age == '85+',]
-  state_max = state_max[order(M, decreasing = T)]
-  state_max = state_max[,loc_label][1]
-  # state_max = paste0(paste0(state_max[-length(state_max)], collapse = ', '), ' and ', state_max[length(state_max)])
+  mortality_stats[[1]] = max_date
   
-  d5574 = mortality_rate[age == '55-74',paste0(round((median(M)*100),2),'\\%')]
-  d7584 = mortality_rate[age == '75-84',paste0(round((median(M)*100),0),'\\%')]
+  prop.85 <- 0.04
+  tmp = mortality_rate[age == '85+' & M > prop.85, .(loc_label, M)]
+  tmp = tmp[order(M, decreasing = T)]
+  tmp = tmp[,as.character(loc_label)]
+  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+  mortality_stats[[2]] = list(prop.85 * 100, tmp)
+
+  prop.75 <- 0.015
+  tmp = mortality_rate[age == '75-84' & M > prop.75, .(loc_label, M)]
+  tmp = tmp[order(M, decreasing = T)]
+  tmp = tmp[,as.character(loc_label)]
+  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+  mortality_stats[[3]] = list(prop.75 * 100, tmp)
+
+  prop.55 <- 0.005
+  tmp = mortality_rate[age == '55-74' & M > prop.55, .(loc_label, M)]
+  tmp = tmp[order(M, decreasing = T)]
+  tmp = tmp[,as.character(loc_label)]
+  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+  mortality_stats[[4]] = list(prop.55 * 100, tmp)
   
-  mortality_stats = list(max_date = max_date, nstates2p = length(dold2p), dold2p_n,
-                         state_max, d5574, d7584)
+  prop.25 <- 0.001
+  tmp = mortality_rate[age == '25-54' & M > prop.25, .(loc_label, M)]
+  tmp = tmp[order(M, decreasing = T)]
+  tmp = tmp[,as.character(loc_label)]
+  tmp <- paste0(paste0(tmp[1:(length(tmp) - 1)], collapse = ', '), ' and ', tmp[length(tmp)])
+  mortality_stats[[5]] = list(prop.25 * 100, tmp)
+  
+  mortality_rate_across_states[, M := round(M * 100, digits = 2)]
+  mortality_rate_across_states[, CL := round(CL * 100, digits = 2)]
+  mortality_rate_across_states[, CU := round(CU * 100, digits = 2)]
+  
+  mortality_stats[[6]] = mortality_rate_across_states
+  
   saveRDS(mortality_stats, file = paste0(outdir, '-mortality_stats.rds'))
+  
+  return(mortality_stats)
 }

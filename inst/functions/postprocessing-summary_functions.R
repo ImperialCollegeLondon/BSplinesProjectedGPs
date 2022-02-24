@@ -1356,4 +1356,41 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
 }
 
 
+find_mortality_rate_aggregated <- function(tmp){
+  
+  df_four_age_groups <- data.table(age = 0:85)
+  df_four_age_groups[, idx_age_aggregated := 1]
+  df_four_age_groups[age >= 25, idx_age_aggregated := 2]
+  df_four_age_groups[age >= 55, idx_age_aggregated := 3]
+  df_four_age_groups[age >= 75, idx_age_aggregated := 4]
+  df_four_age_groups[age >= 85, idx_age_aggregated := 5]
+  df_four_age_groups[,age_aggregated := c('0-24', '25-54', '55-74', '75-84', '85+')[idx_age_aggregated] ]
+  
+  tmp = subset(tmp, date == max(tmp$date)-7)
+  tmp[, death := value * pop]
+  tmp <- merge(tmp, df_four_age_groups, by = 'age')
+  tmp <- tmp[, list(death = sum(death), 
+                    pop = sum(pop)), by = c('age_aggregated', 
+                                            'code', 'iterations', 'loc_label', 'date')]
+  setnames(tmp, 'age_aggregated', 'age')
+  return(tmp)
+}
 
+find_mortality_rate_across_states <- function(mortality_rate_posterior_samples){
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  df_pop <- unique(mortality_rate_posterior_samples[, .(code, pop, age)])
+  df_pop[, prop_state := pop / sum(pop), by = c('age')]
+  
+  tmp <- merge(mortality_rate_posterior_samples, df_pop, by = c('code', 'pop', 'age'))
+  tmp[, mortality_rate := death / pop]
+  
+  tmp <- tmp[, list(value = sum(mortality_rate * prop_state)), by = c('iterations', 'age')]
+  
+  tmp = tmp[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), 
+            by=c('age')]	
+  tmp = dcast(tmp, age ~ q_label, value.var = "q")
+  
+  return(tmp)
+}
