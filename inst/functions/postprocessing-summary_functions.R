@@ -81,6 +81,10 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics.rds"))
   saveRDS(time, file = paste0(outdir, "-time_elapsed.rds"))
   
+  for(i in Code){
+    saveRDS(log_lik, file = paste0(outdir, "-log_lik_", i, ".rds"))
+  }
+  
   return(summary)
 }
 
