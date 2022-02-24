@@ -933,6 +933,12 @@ make_mortality_rate_table_discrete = function(fit_samples, fouragegroups, date_1
   tmp1 = merge(tmp1, pop_data1, by = c('age_index', 'code'))
   tmp1[, value := value / pop]
   
+  # save
+  tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'PosteriorSampleMortalityRate', 'Table_', Code, '.rds'))
+  }
+  
   # quantiles
   tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
   tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
@@ -1044,12 +1050,6 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   # find mortality rate
   tmp1 = merge(tmp1, pop_data1, by = c('age_index', 'code'))
   tmp1[, value := value / pop]
-  
-  # save
-  tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
-  for(Code in unique(tmp1$code)){
-    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'PosteriorSampleMortalityRateContinuous', 'Table_', Code, '.rds'))
-  }
   
   # quantiles
   tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
