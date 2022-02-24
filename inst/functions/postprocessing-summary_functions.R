@@ -1024,9 +1024,7 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
 
   # aggregate 85+
-  tmp1 <- merge(tmp1, df_age_continuous, by = 'age_index')
-  tmp1 <- select(tmp1, -age_index)
-  tmp1 <- merge(tmp1, df_age, by = 'age')
+  tmp1[age_index > 85, age_index := 86]
   tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'state_index', 'age_index','week_index')]
   
   # find value from weeks before 10th date
