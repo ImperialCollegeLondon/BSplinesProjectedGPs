@@ -920,10 +920,17 @@ plot_lambda_table <- function(lambda_table, outdir){
 
 plot_var_base_model_table <- function(loc_label, outdir){
   
+  scales_y <- list(
+    `zeta` = scale_y_log10(),
+    `gamma[1]` = scale_y_continuous(),
+    `gamma[2]` = scale_y_continuous(),
+    `nu` = scale_y_continuous(trans = 'log1p')
+  )  
+  
   p <- ggplot(var_base_model_table, aes(x = loc_label, col = type)) + 
     geom_point(aes(y = M), position = position_dodge(0.5), size = 0.75) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), position = position_dodge(0.5), width = 0.1) + 
-    facet_grid(math_name~., labeller = label_parsed, scales = 'free_y') + 
+    facet_grid_sc(rows = vars(math_name), cols = NULL, labeller = label_parsed,scales = list(y = scales_y)) +
     theme_bw() +
     labs(y = '', col = '') +
     theme(legend.position = 'bottom',
@@ -951,8 +958,7 @@ plot_lambda_table_sensitivity <- function(lambda_table, outdir){
           axis.title.y = element_text(size = rel(1.3)),
           legend.text =  element_text(size = rel(1.3)),
           strip.text =  element_text(size = rel(1.3))) + 
-    scale_color_manual(values = colors) + 
-    scale_y_log10()
+    scale_color_manual(values = colors) 
   ggsave(p, file = paste0(outdir, '-lambda_prior_posterior_sensitivity.png'), w = 9, h = 6)
 }
 
