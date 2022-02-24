@@ -131,7 +131,6 @@ model = rstan::stan_model(path.to.stan.model)
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
-tmp <- tmp[!grepl('^.__|^\\.|^model$',tmp)]
 save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
 
 # fit 
