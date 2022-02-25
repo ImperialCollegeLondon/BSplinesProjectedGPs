@@ -9,15 +9,17 @@ library(viridis)
 library(gridExtra)
 library(ggpubr)
 library(jcolors)
+library(facetscales)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
+states = strsplit('FL',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-           "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-           "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+#            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+#            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 stan_model = "220209a"
-JOBID = 2543
+JOBID = 5539
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -59,26 +61,11 @@ outdir.fig = outdir.fig.post
 
 # 4 states
 selected_codes = c('CA', 'FL', 'NY', 'TX')
-selected_codes_10 <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
-  
-#
-# mortality rate over time discrete
-mortality_rate = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
-}
-mortality_rate = do.call('rbind', mortality_rate)
-mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
-
-plot_mortality_rate_all_states(mortality_rate, outdir.fig)
-
-mortality_rate_10 <- mortality_rate[code %in% selected_codes_10]
-p <- plot_mortality_rate_all_states(mortality_rate_10, outdir.fig)
-find_statistics_mortality_rate(mortality_rate_10, outdir.table)
-limits_mortality_rate <- range(c(mortality_rate_10$CL, mortality_rate_10$CU))
-
+selected_10_codes = c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
 
 #
+# Mortality rate
+
 # mortality rate over time continuous
 mortality_rate = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
@@ -86,18 +73,29 @@ for(i in seq_along(locs)){
 }
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
-p_NY <- plot_mortality_rate_continuous_all_states(mortality_rate, limits_mortality_rate, outdir.fig)
+plot_mortality_rate_continuous_all_states(mortality_rate, outdir.fig)
 
-# make panel mortaliry
-p_NY <- ggarrange(p_NY , labels = 'A', label.y = 1) #, label.x = 0.03
-p <- ggarrange(p, labels = 'B')
+# mortality rate over time discrete
+mortality_rate = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
+}
+mortality_rate = do.call('rbind', mortality_rate)
+mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
+plot_mortality_rate_all_states(mortality_rate, outdir.fig)
 
-panel <- grid.arrange(grobs = list(p_NY, p), widths = c(1, 0.7), heights = c(0.8, 0.1, 1.05), 
-                      layout_matrix = rbind(c(1, NA),
-                                            c(NA, NA),
-                                            c(2, 2)),
-                      left = paste0('Predicted COVID-19 attributable mortality rates\nas of ', format(unique(mortality_rate$date), '%B %Y')))
-ggsave(panel, file = paste0(outdir.fig, '-MortalityRate_panel_plot.png'), w = 7, h = 6)
+# aggregate across states
+mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  tmp = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRateContinuousTable_', locs[i], '.rds'))
+  mortality_rate_posterior_samples[[i]] = find_mortality_rate_aggregated(tmp)
+}
+mortality_rate_posterior_samples = do.call('rbind', mortality_rate_posterior_samples)
+mortality_rate_across_states <- find_mortality_rate_across_states(mortality_rate_posterior_samples)
+
+
+# statistics
+find_statistics_mortality_rate(mortality_rate, mortality_rate_across_states, outdir.table)
 
 
 #
@@ -110,8 +108,16 @@ death3 = do.call('rbind', death3)
 if(any(locs %in% selected_codes)){
   plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
 }
-if(any(locs %in% selected_codes_10)){
-  plot_mortality_all_states(subset(death3, code %in% selected_codes_10),'otherStates', outdir.fig)
+if(any(locs %in% selected_10_codes & !locs %in% selected_codes)){
+  plot_mortality_all_states(subset(death3, code %in%selected_10_codes & !code %in%selected_codes), 'otherStates', outdir.fig)
+}
+if(any(!locs %in% selected_codes)){
+  not_selected_codes <- locs[!locs %in% selected_codes]
+  seq.points <- c(seq(1, length(not_selected_codes), 7), length(not_selected_codes))
+  for(i in 1:(length(seq.points)-1)){
+    codes <- not_selected_codes[seq.points[i]:(seq.points[i+1] - 1)]
+    plot_mortality_all_states(subset(death3, code %in%codes),paste0('part_', i), outdir.fig)
+  }
 }
 
 

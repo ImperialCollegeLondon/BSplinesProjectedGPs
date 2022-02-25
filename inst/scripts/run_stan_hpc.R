@@ -12,7 +12,7 @@ outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 # states = strsplit('CA,FL,NY,TX',',')[[1]]
 states = strsplit('NE',',')[[1]]
-stan_model = "220208a"
+stan_model = "220209a"
 JOBID = 3541
 
 if(0)
@@ -123,20 +123,20 @@ if(grepl('220209d', stan_model)){
 }
 if(1){
   cat("\n With Gamma prior for lambda \n")
-  stan_data = add_prior_parameters_lambda(stan_data, distribution = 'gamma')
+  stan_data = add_prior_parameters_lambda(stan_data, distribution = 'exponential')
 }
+
+# stan model
+model = rstan::stan_model(path.to.stan.model)
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
-tmp <- tmp[!grepl('^.__|^\\.|^model$',tmp)]
 save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
 
 # fit 
 cat("\n Start sampling \n")
-model = rstan::stan_model(path.to.stan.model)
-
 if(0){
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=40,warmup=10,chains=1,
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=10,warmup=5,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 

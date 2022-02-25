@@ -10,6 +10,7 @@ library(cowplot)
 library(extraDistr)
 library(bayesplot)
 library(scales)
+library(facetscales)
 
 indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'

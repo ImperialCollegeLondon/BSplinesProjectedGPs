@@ -403,7 +403,7 @@ add_nodes_stan_data = function(stan_data)
   return(stan_data)
 }
 
-add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
+add_prior_parameters_lambda = function(stan_data, distribution = 'exponential')
 {
 
   lambda_prior_parameters = vector(mode = 'list', length = length(stan_data$inv_sum_deaths))
@@ -422,10 +422,10 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
         geom_point() 
     }
     
-    lin_fit = lm(weekly_deaths~diff_sum_deaths_abs-1, data = tmp1)
+    lin_fit = lm(diff_sum_deaths_abs~weekly_deaths-1, data = tmp1)
     
     mean = tmp1$weekly_deaths
-    sd = tmp1$weekly_deaths / (lin_fit$coefficients*2)
+    sd = predict(lin_fit, tmp1) * 2
     
     if( any(sd == 0) ) sd[sd ==0] = 0.01
     if( any(mean == 0) ) mean[mean ==0] = 0.01
@@ -439,6 +439,9 @@ add_prior_parameters_lambda = function(stan_data, distribution = 'gamma')
       mu = 2 * log(mean) - 1/2 * log(sd^2 + mean^2)
       sigma = sqrt(-2*log(mean) + log(sd^2 + mean^2))
       lambda_prior_parameters[[m]] = rbind(mu, sigma)
+    }
+    if(distribution == 'exponential'){
+      lambda_prior_parameters[[m]] = mean
     }
     
   }

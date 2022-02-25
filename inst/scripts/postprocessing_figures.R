@@ -92,6 +92,9 @@ if('age_index' %in% colnames(pop_data)){
 
 ####
 
+# Predictions deaths by 1-year age band
+make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'deaths_predict', outdir.table)
+
 # Plots continuous and aggregated age distribution phi
 age_contribution_continuous_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'phi', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
@@ -101,7 +104,6 @@ plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_r
 # baseline contribution adjusted and non-adjusted for population composition
 make_contribution_ref(fit_samples, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
 make_contribution_ref_adj(fit_samples, date_10thcum, fiveagegroups, df_week, pop_data, outdir.table)
-
 
 # contribution over time per age groups
 find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_reporting, '0-64', date_10thcum, pop_data, data, outdir.table, with_empirical = T)

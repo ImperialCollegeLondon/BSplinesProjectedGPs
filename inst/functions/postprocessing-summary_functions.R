@@ -81,6 +81,10 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics.rds"))
   saveRDS(time, file = paste0(outdir, "-time_elapsed.rds"))
   
+  for(i in Code){
+    saveRDS(log_lik, file = paste0(outdir, "-log_lik_", i, ".rds"))
+  }
+  
   return(summary)
 }
 
@@ -929,6 +933,12 @@ make_mortality_rate_table_discrete = function(fit_samples, fouragegroups, date_1
   tmp1 = merge(tmp1, pop_data1, by = c('age_index', 'code'))
   tmp1[, value := value / pop]
   
+  # save
+  tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'PosteriorSampleMortalityRate', 'Table_', Code, '.rds'))
+  }
+  
   # quantiles
   tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
   tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
@@ -978,6 +988,7 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   tmp[, pop_prop_US := pop / sum(pop_data$pop)]
   pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
   pop_data1 = subset(pop_data1, code %in% df_state$code)
+  df_age <- df_age[, list(age_from = min(age_from), age_to = max(age_to), age = min(age)), by = 'age_index']
   
   # week index
   df_week[, dummy := 1]
@@ -1013,9 +1024,7 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
   setnames(tmp1,2:4, c('state_index', 'age_index','week_index'))
 
   # aggregate 85+
-  tmp1 <- merge(tmp1, df_age_continuous, by = 'age_index')
-  tmp1 <- select(tmp1, -age_index)
-  tmp1 <- merge(tmp1, df_age, by = 'age')
+  tmp1[age_index > 85, age_index := 86]
   tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'state_index', 'age_index','week_index')]
   
   # find value from weeks before 10th date
@@ -1048,7 +1057,6 @@ make_mortality_rate_table_continuous = function(fit_samples, date_10thcum, df_we
 
   tmp1 = merge(tmp1, df_state, by = 'state_index')
   
-  df_age <- df_age[, list(age_from = min(age_from), age_to = max(age_to), age = min(age)), by = 'age_index']
   tmp1 = merge(tmp1, df_age, by = 'age_index')
   
   for(Code in unique(tmp1$code)){
@@ -1217,12 +1225,29 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
   tmp = dcast(tmp, state_index + week_index_womissing ~ q_label, value.var = "q")
   tmp[, type := 'posterior']
   
-  tmp1 <- reshape2::melt(stan_data$lambda_prior_parameters)
-  setnames(tmp1, c('Var2', 'L1'), c('week_index_womissing', 'state_index'))
-  tmp1 <- as.data.table( reshape2::dcast(tmp1, state_index + week_index_womissing ~ Var1, value.var = 'value'))
-  tmp1 <- tmp1[, list( 	q= qgamma(ps, alpha, beta),
-                        q_label=p_labs), 
-               by=c('state_index', 'week_index_womissing')]	
+  tmp1 <- lapply(1:length(stan_data$lambda_prior_parameters), function(i){
+    tmp <- as.data.table(stan_data$lambda_prior_parameters[[i]])
+    setnames(tmp, 'V1', 'value')
+    tmp[, week_index_womissing := 1:nrow(tmp)]
+    tmp[, state_index := i]
+    tmp
+  })
+  tmp1 <- do.call('rbind', tmp1)
+  
+  if(!grepl('sensitivity analysis 1 on lambda|sensitivity analysis 2 on lambda', model@model_code)){
+
+    tmp1 <- tmp1[, list( 	q= qexp(ps, 1/value),
+                          q_label=p_labs), 
+                 by=c('state_index', 'week_index_womissing')]	
+  }
+  
+  if(grepl('sensitivity analysis 1 on lambda', model@model_code)){
+
+    tmp1 <- tmp1[, list( 	q= extraDistr::qtnorm(ps, mean = value, sd = 100, a = 0),
+                          q_label=p_labs), 
+                 by=c('state_index', 'week_index_womissing')]	
+  }
+
   tmp1 = dcast(tmp1, state_index + week_index_womissing ~ q_label, value.var = "q")
   tmp1[, type := 'prior']
   
@@ -1234,8 +1259,11 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
   tmp <- merge(tmp, df_week_womissing, by = 'week_index_womissing')
   tmp <- merge(tmp, df_state, by = 'state_index')
   
+  for(Code in unique(tmp$code)){
+    saveRDS(subset(tmp, code == Code), paste0(outdir, '-lambda_prior_posterior_', Code, '.rds'))
+  }
+
   saveRDS(tmp, paste0(outdir, '-lambda_prior_posterior.rds'))
-  
   return(tmp)
 }
 
@@ -1260,20 +1288,48 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   
   # prior gamma
   tmp1 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = c('gamma_gp1', 'gamma_gp2')))
-  tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 2, 2), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  if(!grepl('sensitivity analysis 1 on gamma|sensitivity analysis 2 on gamma', model@model_code)){
+    tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 2, 2), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 1 on gamma', model@model_code)){
+    tmp1 <- tmp1[, list(q= invgamma::qinvgamma(ps, 5, 5), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 2 on gamma', model@model_code)){
+    tmp1 <- tmp1[, list(q= extraDistr::qtnorm(ps, mean = 0, sd = 5, a = 0), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
   tmp1 = dcast(tmp1, state_index + variable_name ~ q_label, value.var = "q")
-
-  # prior alpha
+  
+  # prior zeta
   tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'zeta_gp')
-  tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  1), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  if(!grepl('sensitivity analysis 1 on zeta|sensitivity analysis 2 on zeta', model@model_code)){
+    tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  1), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 1 on zeta', model@model_code)){
+    tmp2 <- tmp2[, list(q= extraDistr::qhcauchy(ps,  10), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 2 on zeta', model@model_code)){
+    tmp2 <- tmp2[, list(q= extraDistr::qinvchisq(ps,  1), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
   tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
   tmp1 <- rbind(tmp1, tmp2)
   
   # prior nu 
-  tmp2 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = 'nu',
-                                 samples_nu_inverse = truncnorm::rtruncnorm(10000, a=0,  mean = 0, sd = 5)))
-  tmp2[, samples_nu := (1/samples_nu_inverse)]
-  tmp2 <- tmp2[, list(q= quantile(samples_nu, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  tmp2 <- data.table(state_index = df_state$state_index, variable_name = 'nu')
+  if(!grepl('sensitivity analysis 1 on nu|sensitivity analysis 2 on nu', model@model_code)){
+    tmp2 <- tmp2[, list(q= qexp(ps, 1), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  } 
+  if(grepl('sensitivity analysis 1 on nu', model@model_code)){
+    tmp2 <- data.table(expand.grid(state_index = df_state$state_index, variable_name = 'nu',
+                                   samples_nu_inverse = truncnorm::rtruncnorm(10000, a=0,  mean = 0, sd = 5)))
+    tmp2[, samples_nu := (1/samples_nu_inverse)]
+    tmp2 <- tmp2[, list(q= quantile(samples_nu, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 2 on nu', model@model_code)){
+    tmp2 <- tmp2[, list(q= qexp(ps, 10), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
+  if(grepl('sensitivity analysis 3 on nu', model@model_code)){
+    tmp2 <- tmp2[, list(q=  extraDistr::qhcauchy(ps,  1), q_label=p_labs),by=c('state_index', 'variable_name')]	
+  }
   tmp2 = dcast(tmp2, state_index + variable_name ~ q_label, value.var = "q")
   tmp1 <- rbind(tmp1, tmp2)
   tmp1[, type := 'prior']
@@ -1287,11 +1343,34 @@ make_var_base_model_table <- function(fit_samples, stan_data, df_state, outdir){
   tmp[, math_name := factor(math_name, levels = .math_name)]
   # tmp[, math_name := paste0(math_name, '\\["', loc_label, '"\\]')]
   
+  for(Code in unique(tmp$code)){
+    saveRDS(subset(tmp, code == Code), paste0(outdir, '-var_base_model_prior_posterior_', Code, '.rds'))
+  }
+  
   saveRDS(tmp, paste0(outdir, '-var_base_model_prior_posterior.rds'))
   
   return(tmp)
   
 }
 
-
-
+find_mortality_rate_across_states <- function(mortality_rate_posterior_samples){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  df_pop <- unique(mortality_rate_posterior_samples[, .(code, pop, age)])
+  df_pop[, prop_state := pop / sum(pop), by = c('age')]
+  
+  tmp = subset(mortality_rate_posterior_samples, date == max(mortality_rate_posterior_samples$date)-7)
+  tmp[, death := value * pop]
+  tmp <- merge(tmp, df_pop, by = c('code', 'pop', 'age'))
+  tmp[, mortality_rate := death / pop]
+  
+  tmp <- tmp[, list(value = sum(mortality_rate * prop_state)), by = c('iterations', 'age')]
+  
+  tmp = tmp[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), 
+            by=c('age')]	
+  tmp = dcast(tmp, age ~ q_label, value.var = "q")
+  
+  return(tmp)
+}

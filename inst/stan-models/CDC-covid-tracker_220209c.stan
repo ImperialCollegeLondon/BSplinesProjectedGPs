@@ -11,7 +11,7 @@ data{
   int<lower=-1,upper=B> idx_non_missing[M,B,W_OBSERVED]; // indices non-missing deaths for W
   real age[A]; // age continuous
   real inv_sum_deaths[M,W_OBSERVED]; // inverse sum of deaths
-  matrix[2,W_OBSERVED] lambda_prior_parameters[M]; // parameters of the prior distribution of lambda
+  row_vector[W_OBSERVED] lambda_prior_parameters[M]; // parameters of the prior distribution of lambda
   int deaths[M,B,W_OBSERVED]; // daily deaths in age band b at time t
   int age_from_state_age_strata[B]; // age from of age band b
   int age_to_state_age_strata[B];// age to of age band b
@@ -60,14 +60,14 @@ transformed data
 }
 
 parameters {
-  real<lower=0> nu_inverse[M];
+  real<lower=0> nu[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
   matrix[num_basis_rows,num_basis_columns] beta[M];
 }
 
 transformed parameters {
   vector<lower=0>[W] lambda[M];
-  real<lower=0> nu[M];
+  real<lower=0> nu_inverse[M];
   matrix[A,W] phi[M];
   matrix[A,W] alpha[M];
   matrix[B,W] phi_reduced[M];
@@ -76,7 +76,7 @@ transformed parameters {
 
   for(m in 1:M){
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
-    nu[m] = (1 / nu_inverse[m]);
+    nu_inverse[m] = (1 / nu[m]);
 
     f[m] = (BASIS_ROWS') * beta[m] * BASIS_COLUMNS;
     
@@ -94,7 +94,7 @@ transformed parameters {
 
 model {
   
-  nu_inverse ~ normal(0,5);
+   nu ~ exponential(1);
 
   for(i in 1:num_basis_rows){
     for(j in 1:num_basis_columns){
@@ -105,7 +105,7 @@ model {
 
   for(m in 1:M){
     
-    lambda_raw[m] ~ gamma( lambda_prior_parameters[m][1,:],lambda_prior_parameters[m][2,:]);
+    lambda_raw[m] ~ exponential( rep_row_vector(1.0, W_OBSERVED) ./lambda_prior_parameters[m] ); 
 
 
     // Note on the neg bin parametrisation related to the paper:

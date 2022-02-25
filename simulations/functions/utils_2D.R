@@ -104,7 +104,7 @@ run_spatial_model_2D = function(x_1, x_2, coordinates_training, y, y_mean, lab, 
                                 n = dim(samples$alpha)[2], 
                                 m = dim(samples$alpha)[3], 
                                 alpha = samples$alpha, 
-                                theta = samples$theta)
+                                nu_inverse = samples$nu_inverse)
   
   stan_prediction_model = rstan::stan_model( file.path(indir, 'simulations', 'stan-models', 'rnbinom_matrix.stan') )
   pred <- rstan::sampling(stan_prediction_model,

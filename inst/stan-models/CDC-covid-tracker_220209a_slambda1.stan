@@ -60,16 +60,24 @@ data{
   int min_count_censored[M,max(N_missing)]; // range of the censored data if it ends after the period
   int max_count_censored[M,max(N_missing)]; // range of the censored data if it ends after the period
   
+  //splines
+  int num_basis_rows;
+  int num_basis_columns;
+  matrix[num_basis_rows, A] BASIS_ROWS; 
+  matrix[num_basis_columns, W] BASIS_COLUMNS; 
+  
   // GP
-  real IDX_WEEKS[W];
+  real IDX_BASIS_ROWS[num_basis_rows];
+  real IDX_BASIS_COLUMNS[num_basis_columns];
 }
 
 transformed data
 {   
     real delta0 = 1e-9;  
     int N_log_lik = 0;
-    
+
   for(m in 1:M){
+
     for(w in 1:W_OBSERVED){
       for(i in idx_non_missing[m][1:N_idx_non_missing[m][w],w]){
         N_log_lik += 1;
@@ -91,9 +99,9 @@ transformed data
 }
 
 parameters {
-  real<lower=0> nu[M];
+  real<lower=0> nu_inverse[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
-  matrix[W,A] z1[M];
+  matrix[num_basis_rows,num_basis_columns] z1[M];
   real<lower=0> zeta_gp[M];
   real<lower=0> gamma_gp1[M]; 
   real<lower=0> gamma_gp2[M];
@@ -101,18 +109,22 @@ parameters {
 
 transformed parameters {
   vector<lower=0>[W] lambda[M];
-  real<lower=0> nu_inverse[M];
+  real<lower=0> nu[M];
   matrix[A,W] phi[M];
   matrix[A,W] alpha[M];
   matrix[B,W] phi_reduced[M];
   matrix[B,W] alpha_reduced[M];
+  matrix[num_basis_rows,num_basis_columns] beta[M]; 
   matrix[A, W] f[M];
 
   for(m in 1:M){
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
-    nu_inverse[m] = (1/nu[m]);
+    nu[m] = (1/nu_inverse[m]);
 
-    f[m] = (gp(W, A, IDX_WEEKS, age, delta0, zeta_gp[m], gamma_gp1[m],  gamma_gp2[m], z1[m]))';
+    beta[m] = gp(num_basis_rows, num_basis_columns, IDX_BASIS_ROWS, IDX_BASIS_COLUMNS, delta0,
+              zeta_gp[m], gamma_gp1[m],  gamma_gp2[m], z1[m]);
+
+    f[m] = (BASIS_ROWS') * beta[m] * BASIS_COLUMNS;
     
     for(w in 1:W){
       phi[m][:,w] = softmax( f[m][:,w] ); 
@@ -124,26 +136,27 @@ transformed parameters {
       }
     }
   }
+  
 }
 
 model {
   
-  nu ~ exponential(1);
+  nu_inverse ~ normal(0,5);
 
   zeta_gp ~ cauchy(0,1);
   gamma_gp1 ~ inv_gamma(2, 2);
   gamma_gp2 ~ inv_gamma(2, 2);
-  
-  for(i in 1:W){
-    for(j in 1:A){
+
+  for(i in 1:num_basis_rows){
+    for(j in 1:num_basis_columns){
       z1[:,i,j] ~ normal(0,1);
     }
   }
   
 
   for(m in 1:M){
-    
-    lambda_raw[m] ~ exponential( rep_row_vector(1.0, W_OBSERVED) ./lambda_prior_parameters[m] ); 
+    // sensitivity analysis 1 on lambda
+    lambda_raw[m] ~ normal( lambda_prior_parameters[m], 100);
 
 
     // Note on the neg bin parametrisation related to the paper:
@@ -169,6 +182,7 @@ model {
           target += neg_binomial_lpmf( i | alpha_reduced_missing , nu_inverse[m] ) ;
       }
     } 
+
   }
 
 
@@ -215,7 +229,7 @@ generated quantities {
         }
     }
   }
-    
+
 
 }
 

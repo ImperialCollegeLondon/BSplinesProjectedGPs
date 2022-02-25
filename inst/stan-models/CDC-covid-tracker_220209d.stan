@@ -19,7 +19,7 @@ data{
   int<lower=-1,upper=B> idx_non_missing[M,B,W_OBSERVED]; // indices non-missing deaths for W
   real age[A]; // age continuous
   real inv_sum_deaths[M,W_OBSERVED]; // inverse sum of deaths
-  matrix[2,W_OBSERVED] lambda_prior_parameters[M]; // parameters of the prior distribution of lambda
+  row_vector[W_OBSERVED] lambda_prior_parameters[M]; // parameters of the prior distribution of lambda
   int deaths[M,B,W_OBSERVED]; // daily deaths in age band b at time t
   int age_from_state_age_strata[B]; // age from of age band b
   int age_to_state_age_strata[B];// age to of age band b
@@ -74,7 +74,7 @@ transformed data
 }
 
 parameters {
-  real<lower=0> nu_inverse[M];
+  real<lower=0> nu[M];
   vector<lower=0>[W-W_NOT_OBSERVED] lambda_raw[M];
   vector[K] beta_raw[M]; 
   real<lower=0> tau[M];
@@ -83,7 +83,7 @@ parameters {
 transformed parameters {
   real<lower=0> inv_tau_squared[M];
   vector<lower=0>[W] lambda[M];
-  real<lower=0> nu[M];
+  real<lower=0> nu_inverse[M];
   matrix[A,W] phi[M];
   matrix[A,W] alpha[M];
   matrix[B,W] phi_reduced[M];
@@ -93,7 +93,7 @@ transformed parameters {
 
   for(m in 1:M){
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
-    nu[m] = (1/nu_inverse[m]);
+    nu_inverse[m] = (1/nu[m]);
 
     inv_tau_squared[m] = 1/(tau[m]^2);
 
@@ -115,14 +115,14 @@ transformed parameters {
 
 model {
   
-  nu_inverse ~ normal(0,5);
+  nu ~ exponential(1);
 
   tau ~ cauchy(0,1);
 
   for(m in 1:M){
     
     beta_raw[m] ~ icar_normal_lpdf(K, node1, node2, inv_tau_squared[m]);
-    lambda_raw[m] ~ gamma( lambda_prior_parameters[m][1,:],lambda_prior_parameters[m][2,:]);
+    lambda_raw[m] ~ exponential( rep_row_vector(1.0, W_OBSERVED) ./lambda_prior_parameters[m] ); 
 
     // Note on the neg bin parametrisation related to the paper:
     // mean neg_binomial_lpmf is alpha_reduced / nu_inverse = alpha_reduced * nu
