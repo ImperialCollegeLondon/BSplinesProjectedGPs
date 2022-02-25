@@ -92,9 +92,9 @@ find_statistics_mortality_rate <- function(mortality_rate, mortality_rate_across
     mortality_stats[[5]] = list(prop.25 * 100, tmp)
   }
   
-  mortality_rate_across_states[, M := round(M * 100, digits = 2)]
-  mortality_rate_across_states[, CL := round(CL * 100, digits = 2)]
-  mortality_rate_across_states[, CU := round(CU * 100, digits = 2)]
+  mortality_rate_across_states[, M := round(M * 100, digits = 3)]
+  mortality_rate_across_states[, CL := round(CL * 100, digits = 3)]
+  mortality_rate_across_states[, CU := round(CU * 100, digits = 3)]
   
   mortality_stats[[6]] = mortality_rate_across_states
   
