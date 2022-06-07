@@ -10,9 +10,9 @@ library(ggpubr)
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-# states = strsplit('CA,FL,NY,TX',',')[[1]]
-states = strsplit('NE',',')[[1]]
-stan_model = "220209a"
+states = strsplit('CA,FL,NY,TX',',')[[1]]
+# states = strsplit('NE',',')[[1]]
+stan_model = "220607a"
 JOBID = 3541
 
 if(0)
@@ -44,8 +44,8 @@ rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
-path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-05-14.rds"))
+path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-05-14.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
 
@@ -110,8 +110,8 @@ cat("The reference date is", as.character(ref_date), "\n")
 # Prepare stan data
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
-
-if(grepl('220209a|220209c|220209d', stan_model)){
+stan_data = add_JHU_data(stan_data, df_week, Code)
+if(grepl('220209a|220209c|220209d|220607a', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 16, knots_rows = knots_rows)

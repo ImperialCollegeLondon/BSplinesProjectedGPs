@@ -93,12 +93,12 @@ if('age_index' %in% colnames(pop_data)){
 ####
 
 # Predictions deaths by 1-year age band
-make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'deaths_predict', outdir.table)
+make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_continuous, df_state, 'deaths_predict', outdir.table)
 
 # Plots continuous and aggregated age distribution phi
-age_contribution_continuous_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_continuous, df_state, 'phi', outdir.table)
+age_contribution_continuous_table = make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_continuous, df_state, 'phi', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
-age_contribution_discrete_table = make_var_by_age_by_state_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
+age_contribution_discrete_table = make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 
 # baseline contribution adjusted and non-adjusted for population composition
@@ -135,6 +135,10 @@ make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_
                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T)
 make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T)
+
+# compare two years
+deaths_ratio <- make_var_by_age_by_state_table(fit_samples, df_age_continuous, df_state, 'deaths_ratio', outdir.table)
+plot_deaths_ratio(deaths_ratio, outdir.fig)
 
 # compare to DoH data
 if(any(Code %in% unique(scrapedData$code))){

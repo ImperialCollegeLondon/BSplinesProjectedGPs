@@ -88,7 +88,7 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
   return(summary)
 }
 
-make_var_by_age_by_state_table = function(fit_samples, df_week, df_state_age, df_state, var_name, outdir){
+make_var_by_age_by_state_by_time_table = function(fit_samples, df_week, df_state_age, df_state, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -118,6 +118,32 @@ make_var_by_age_by_state_table = function(fit_samples, df_week, df_state_age, df
 
   return(tmp1)
 }
+
+make_var_by_age_by_state_table = function(fit_samples, df_state_age, df_state, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:3, c('state_index', 'age_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('state_index', 'age_index')]	
+  tmp1 = dcast(tmp1, state_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
 
 make_var_by_state_table = function(fit_samples, df_week, df_state, var_name, outdir){
   

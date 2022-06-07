@@ -996,3 +996,19 @@ plot_var_base_model_table_sensitivity <- function(table, lab, outdir){
   return(p)
 }
 
+plot_deaths_ratio <- function(deaths_ratio, outdir){
+  
+  ggplot(deaths_ratio, aes(y = age)) + 
+    theme_bw() + 
+    geom_point(aes(x = M)) +
+    geom_errorbarh(aes(xmin = CL, xmax = CU), alpha = 0.5, height = 0) +
+    geom_vline(xintercept = 1, linetype = 'dashed', col = 'darkred') + 
+    labs(y = 'Age', x = 'COVID-19 mortality ratio', col = '', fill = '') +
+    facet_grid(.~loc_label) + 
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA)) + 
+    scale_y_discrete(breaks = seq(deaths_ratio[, min(age_index)], deaths_ratio[, max(age_index)], 5)- 1) 
+  ggsave(file = paste0(outdir, '-MortalityRatioContinuous.png'), w = 7, h =7, limitsize = F)
+  
+}
+

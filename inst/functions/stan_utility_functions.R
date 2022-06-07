@@ -10,6 +10,31 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
   # number of age groups 
   B = nrow(df_state_age_strata)
   
+  # find time period of interest
+  dates <- deathByAge[, sort(unique(date))]
+
+  first_start_idx = 1; first_stop_idx = length(dates) / 2 - 2; 
+  second_start_idx = length(dates) / 2 - 1; second_stop_idx = length(dates) - 2
+  
+  first_start_date <<- dates[first_start_idx]; first_stop_date <<- dates[first_stop_idx] + 6; 
+  second_start_date <<- dates[second_start_idx]; second_stop_date <<- dates[second_stop_idx] + 6
+  
+  first_period_length = first_stop_date - first_start_date + 1
+  second_period_length = second_stop_date - second_start_date + 1
+  
+  period_idx_thresholds = c(first_start_idx, first_stop_idx, 
+                            second_start_idx, second_stop_idx)
+  
+  stopifnot(first_period_length == second_period_length)
+  
+  cat('\nFirst period Period goes from ', as.character(first_start_date), 
+      ' stop at ', as.character(first_stop_date), 
+      ' Second period starts at ', as.character(second_start_date), 
+      ' and stop ', as.character(second_stop_date), '\n')
+  cat('\nLength of the first period=',first_period_length, '\n')
+  cat('\nLength of the second period=',second_period_length, '\n')
+  
+
   # map week index
   last_date_previous_spec <<- max(deathByAge$date)
   WEEKS = seq.Date(min(deathByAge$date), max(deathByAge$date), by = 'week')
@@ -225,7 +250,8 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      max_count_censored = max_count_censored,
                      deaths = deaths,
                      inv_sum_deaths = inv_sum_deaths,
-                     M = length(loc_name)
+                     M = length(loc_name),
+                     period_idx_thresholds = period_idx_thresholds
                 ))
 
   stan_data$N_missing = unlist(stan_data$N_missing)
@@ -238,6 +264,28 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
     stan_data[[var]] = lapply(stan_data[[var]], function(x) c(x, rep(-1, n_max - length(x))))
 
   }
+  
+  return(stan_data)
+}
+
+add_JHU_data <- function(stan_data, df_week, Code){
+  
+  JHUData = as.data.table(JHUData)
+  JHUData = subset(JHUData, code %in% Code)
+  JHUData[, date := as.Date(date)]
+  tmp2 = JHUData[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
+  tmp2 = tmp2[order(code, date)]
+  tmp2[, cum.death := cumsum(daily_deaths)]
+  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
+  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
+  tmp2 = merge(tmp2, df_week, by = 'date')
+  tmp2 = select(tmp2, code, week_index, weekly.deaths)
+  tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths<0, weekly.deaths := 0]
+  tmp2 = tmp2[order(code)]
+  
+  stan_data[['deaths_JHU']] = as.matrix(reshape2::dcast(tmp2, code ~ week_index, value.var = 'weekly.deaths')[,-1])
   
   return(stan_data)
 }
