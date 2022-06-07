@@ -137,7 +137,7 @@ make_var_by_age_by_state_table = function(fit_samples, df_state_age, df_state, v
   tmp1[, age := factor(age, levels = df_state_age$age)]
   
   if(!is.null(vaccine_data)){
-    deaths_ratio <- merge(deaths_ratio, vaccine_data, by= c('code', 'loc_label', 'age'))
+    tmp1 <- merge(tmp1, vaccine_data, by= c('code', 'loc_label', 'age'))
   }
   
   for(Code in unique(tmp1$code)){
