@@ -152,7 +152,7 @@ transformed parameters {
     
     deaths_first_period[m] = E_deaths[m][:,period_idx_thresholds[1]:period_idx_thresholds[2]] * rep_vector(1.0, length_first_period);
     deaths_second_period[m] = E_deaths[m][:,(period_idx_thresholds[3]):period_idx_thresholds[4]] * rep_vector(1.0, length_second_period);
-    deaths_ratio[m] = deaths_first_period[m] ./ deaths_second_period[m];
+    deaths_ratio[m] = deaths_second_period[m] ./ deaths_first_period[m];
     
   }
   
