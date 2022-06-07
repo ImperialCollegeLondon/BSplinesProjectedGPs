@@ -1000,46 +1000,53 @@ plot_deaths_ratio <- function(deaths_ratio, deaths_first_period, deaths_second_p
   
   deaths_first_period[, type := paste0(format(first_start_date, '%B-%Y'), '-', format(first_stop_date, '%B-%Y'))]
   deaths_second_period[, type := paste0(format(second_start_date, '%B-%Y'), '-', format(second_stop_date, '%B-%Y'))]
-  tmp <- rbind(deaths_first_period, deaths_second_period)
+  deaths <- rbind(deaths_first_period, deaths_second_period)
+  
+  for(Code in unique(deaths$code)){
     
-  ggplot(tmp, aes(y = age, group = type)) + 
-    theme_bw() + 
-    geom_point(aes(x = M, col = type), position = position_dodge(0.6)) +
-    geom_errorbarh(aes(xmin = CL, xmax = CU), alpha = 0.5, height = 0) +
-    labs(y = 'Age', x = 'COVID-19 mortality ratio', col = '', fill = '') +
-    facet_grid(.~loc_label) + 
-    scale_x_log10() +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) +
-    scale_y_discrete(breaks = seq(deaths_ratio[, min(age_index)], deaths_ratio[, max(age_index)], 5)- 1) 
-  ggsave(file = paste0(outdir, '-MortalityPeriods.png'), w = 7, h =7, limitsize = F)
-  
-  ######
-  
-  ggplot(deaths_ratio, aes(y = age)) + 
-    theme_bw() + 
-    geom_point(aes(x = M)) +
-    geom_errorbarh(aes(xmin = CL, xmax = CU), alpha = 0.5, height = 0) +
-    geom_vline(xintercept = 1, linetype = 'dashed', col = 'darkred') + 
-    labs(y = 'Age', x = 'COVID-19 mortality ratio', col = '', fill = '') +
-    facet_grid(.~loc_label) + 
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) + 
-    scale_y_discrete(breaks = seq(deaths_ratio[, min(age_index)], deaths_ratio[, max(age_index)], 5)- 1) 
-  ggsave(file = paste0(outdir, '-MortalityRatioContinuous.png'), w = 7, h =7, limitsize = F)
-  
-  deaths_ratio[, age := as.numeric(as.character(age))]
-  deaths_ratio <- deaths_ratio[age >17]
-  ggplot(deaths_ratio, aes(x = prop)) + 
-    theme_bw() + 
-    geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, height = 0) +
-    geom_point(aes(y = M, col = age, shape = loc_label)) +
-    geom_hline(yintercept = 1, linetype = 'dashed', col = 'darkred') + 
-    labs(x = 'Proportion of vaccinated', y = 'COVID-19 mortality ratio', col = 'Age', fill = 'Age') +
-    theme(strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) + 
-    facet_grid(period~.) 
-  ggsave(file = paste0(outdir, '-MortalityRatioContinuous_Vaccinated.png'), w = 7, h =7, limitsize = F)
+    tmp <- deaths[code == Code]
+    ggplot(tmp, aes(y = age, group = type)) + 
+      theme_bw() + 
+      geom_point(aes(x = M, col = type), position = position_dodge(0.6)) +
+      geom_errorbarh(aes(xmin = CL, xmax = CU), alpha = 0.5, height = 0) +
+      labs(y = 'Age', x = 'COVID-19 mortality ratio', col = '', fill = '') +
+      facet_grid(.~loc_label) + 
+      scale_x_log10() +
+      theme(strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA)) +
+      scale_y_discrete(breaks = seq(deaths_ratio[, min(age_index)], deaths_ratio[, max(age_index)], 5)- 1) 
+    ggsave(file = paste0(outdir, '-MortalityPeriods_', Code, '.png'), w = 7, h =7, limitsize = F)
     
+    ######
+    
+    tmp1 <- deaths_ratio[code == Code]
+    ggplot(tmp1, aes(y = age)) + 
+      theme_bw() + 
+      geom_point(aes(x = M)) +
+      geom_errorbarh(aes(xmin = CL, xmax = CU), alpha = 0.5, height = 0) +
+      geom_vline(xintercept = 1, linetype = 'dashed', col = 'darkred') + 
+      labs(y = 'Age', x = 'COVID-19 mortality ratio', col = '', fill = '') +
+      facet_grid(.~loc_label) + 
+      theme(strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA)) + 
+      scale_y_discrete(breaks = seq(deaths_ratio[, min(age_index)], deaths_ratio[, max(age_index)], 5)- 1) 
+    ggsave(file = paste0(outdir, '-MortalityRatioContinuous_', Code, '.png'), w = 7, h =7, limitsize = F)
+    
+
+    tmp1[, age := as.numeric(as.character(age))]
+    tmp1 <- tmp1[age >17]
+    ggplot(tmp1, aes(x = prop)) + 
+      theme_bw() + 
+      geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, height = 0) +
+      geom_point(aes(y = M, col = age, shape = loc_label)) +
+      geom_hline(yintercept = 1, linetype = 'dashed', col = 'darkred') + 
+      labs(x = 'Proportion of vaccinated', y = 'COVID-19 mortality ratio', col = 'Age', fill = 'Age') +
+      theme(strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA)) + 
+      facet_grid(period~.) 
+    ggsave(file = paste0(outdir, '-MortalityRatioContinuous_Vaccinated_', Code, '.png'), w = 7, h =7, limitsize = F)
+    
+  }
+
 }
 
