@@ -1010,5 +1010,18 @@ plot_deaths_ratio <- function(deaths_ratio, outdir){
     scale_y_discrete(breaks = seq(deaths_ratio[, min(age_index)], deaths_ratio[, max(age_index)], 5)- 1) 
   ggsave(file = paste0(outdir, '-MortalityRatioContinuous.png'), w = 7, h =7, limitsize = F)
   
+  deaths_ratio[, age := as.numeric(as.character(age))]
+  deaths_ratio <- deaths_ratio[age >17]
+  ggplot(deaths_ratio, aes(x = prop)) + 
+    theme_bw() + 
+    geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, height = 0) +
+    geom_point(aes(y = M, col = age, shape = loc_label)) +
+    geom_hline(yintercept = 1, linetype = 'dashed', col = 'darkred') + 
+    labs(x = 'Proportion of vaccinated', y = 'COVID-19 mortality ratio', col = 'Age', fill = 'Age') +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA)) + 
+    facet_grid(period~.) 
+  ggsave(file = paste0(outdir, '-MortalityRatioContinuous_Vaccinated.png'), w = 7, h =7, limitsize = F)
+    
 }
 

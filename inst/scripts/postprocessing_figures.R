@@ -89,6 +89,11 @@ if('Total' %in% colnames(pop_data)){
 if('age_index' %in% colnames(pop_data)){
   pop_data = select(pop_data, -age_index)
 }
+vaccine_data <- as.data.table(readRDS(file.path(indir, "data", paste0("vaccination-prop-2022-06-07.rds"))))
+vaccine_data[date >= first_start_date & date <= first_stop_date, period := 'first period']
+vaccine_data[date >= second_start_date & date <= second_stop_date, period := 'second period']
+vaccine_data <- vaccine_data[!is.na(period), list(prop = max(prop)), by = c('loc_label', 'age', 'code', 'period')]
+vaccine_data[, age := factor(age, levels = df_age_continuous$age)]
 
 ####
 
@@ -138,6 +143,7 @@ make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_
 
 # compare two years
 deaths_ratio <- make_var_by_age_by_state_table(fit_samples, df_age_continuous, df_state, 'deaths_ratio', outdir.table)
+deaths_ratio <- merge(deaths_ratio, vaccine_data, by= c('code', 'loc_label', 'age'))
 plot_deaths_ratio(deaths_ratio, outdir.fig)
 
 # compare to DoH data
