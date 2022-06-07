@@ -996,7 +996,25 @@ plot_var_base_model_table_sensitivity <- function(table, lab, outdir){
   return(p)
 }
 
-plot_deaths_ratio <- function(deaths_ratio, outdir){
+plot_deaths_ratio <- function(deaths_ratio, deaths_first_period, deaths_second_period, outdir){
+  
+  deaths_first_period[, type := paste0(format(first_start_date, '%B-%Y'), '-', format(first_stop_date, '%B-%Y'))]
+  deaths_second_period[, type := paste0(format(second_start_date, '%B-%Y'), '-', format(second_stop_date, '%B-%Y'))]
+  tmp <- rbind(deaths_first_period, deaths_second_period)
+    
+  ggplot(tmp, aes(y = age, group = type)) + 
+    theme_bw() + 
+    geom_point(aes(x = M, col = type), position = position_dodge(0.6)) +
+    geom_errorbarh(aes(xmin = CL, xmax = CU), alpha = 0.5, height = 0) +
+    labs(y = 'Age', x = 'COVID-19 mortality ratio', col = '', fill = '') +
+    facet_grid(.~loc_label) + 
+    scale_x_log10() +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA)) +
+    scale_y_discrete(breaks = seq(deaths_ratio[, min(age_index)], deaths_ratio[, max(age_index)], 5)- 1) 
+  ggsave(file = paste0(outdir, '-MortalityPeriods.png'), w = 7, h =7, limitsize = F)
+  
+  ######
   
   ggplot(deaths_ratio, aes(y = age)) + 
     theme_bw() + 
