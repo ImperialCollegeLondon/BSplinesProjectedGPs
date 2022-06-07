@@ -119,7 +119,7 @@ make_var_by_age_by_state_by_time_table = function(fit_samples, df_week, df_state
   return(tmp1)
 }
 
-make_var_by_age_by_state_table = function(fit_samples, df_state_age, df_state, var_name, outdir){
+make_var_by_age_by_state_table = function(fit_samples, df_state_age, df_state, var_name, outdir, vaccine_data = NULL){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -135,6 +135,10 @@ make_var_by_age_by_state_table = function(fit_samples, df_state_age, df_state, v
   
   tmp1[, age := df_state_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  if(!is.null(vaccine_data)){
+    deaths_ratio <- merge(deaths_ratio, vaccine_data, by= c('code', 'loc_label', 'age'))
+  }
   
   for(Code in unique(tmp1$code)){
     saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))

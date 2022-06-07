@@ -142,8 +142,7 @@ make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T)
 
 # compare two years
-deaths_ratio <- make_var_by_age_by_state_table(fit_samples, df_age_continuous, df_state, 'deaths_ratio', outdir.table)
-deaths_ratio <- merge(deaths_ratio, vaccine_data, by= c('code', 'loc_label', 'age'))
+deaths_ratio <- make_var_by_age_by_state_table(fit_samples, df_age_continuous, df_state, 'deaths_ratio', outdir.table, vaccine_data)
 plot_deaths_ratio(deaths_ratio, outdir.fig)
 
 # compare to DoH data
