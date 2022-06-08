@@ -88,7 +88,7 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
   return(summary)
 }
 
-make_var_by_age_by_state_table = function(fit_samples, df_week, df_state_age, df_state, var_name, outdir){
+make_var_by_age_by_state_by_time_table = function(fit_samples, df_week, df_state_age, df_state, var_name, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -118,6 +118,36 @@ make_var_by_age_by_state_table = function(fit_samples, df_week, df_state_age, df
 
   return(tmp1)
 }
+
+make_var_by_age_by_state_table = function(fit_samples, df_state_age, df_state, var_name, outdir, vaccine_data = NULL){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:3, c('state_index', 'age_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('state_index', 'age_index')]	
+  tmp1 = dcast(tmp1, state_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  if(!is.null(vaccine_data)){
+    tmp1 <- merge(tmp1, vaccine_data, by= c('code', 'loc_label', 'age'))
+  }
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
 
 make_var_by_state_table = function(fit_samples, df_week, df_state, var_name, outdir){
   
@@ -1372,5 +1402,428 @@ find_mortality_rate_across_states <- function(mortality_rate_posterior_samples){
             by=c('age')]	
   tmp = dcast(tmp, age ~ q_label, value.var = "q")
   
+  return(tmp)
+}
+
+prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
+  
+  prop_vac = data.table( do.call('rbind', stan_data$prop_vac) ) 
+  prop_vac[, age := rep(df_age_vaccination2$age, each = nrow(stan_data$prop_vac[[1]]))]
+  prop_vac[, week_index := rep(1:nrow(stan_data$prop_vac[[1]]), length(stan_data$prop_vac))]
+  prop_vac = data.table(reshape2::melt(prop_vac, id.vars = c('age', 'week_index')))
+  setnames(prop_vac, c('variable', 'value'), c('code', 'prop'))
+  prop_vac = merge(prop_vac, df_week2, by = c('week_index', 'code'))
+  
+  prop_vac_start = data.table( do.call('rbind', stan_data$prop_vac_start) ) 
+  colnames(prop_vac_start) = colnames(stan_data$prop_vac[[1]])
+  prop_vac_start[, age := df_age_vaccination2$age] 
+  prop_vac_start = data.table(reshape2::melt(prop_vac_start, id.vars = c('age')))
+  setnames(prop_vac_start, c('variable', 'value'), c('code', 'pre_prop'))
+  
+  prop_vac = merge(prop_vac, prop_vac_start, by = c('code', 'age'))
+  prop_vac = merge(prop_vac, df_age_vaccination2, by = c('age'))
+  prop_vac[, prop := prop + pre_prop]
+  prop_vac[, cat := paste0('prop_', age_index)]
+  prop_vac = data.table(reshape2::dcast(prop_vac, code + date ~ cat, value.var = 'prop'))
+  
+  return(prop_vac)
+}
+
+prepare_prop_vac_counterfactual_table <- function(stan_data, df_state, df_age_vaccination2, df_counterfactual){
+  tmp <- lapply(1:length(stan_data$prop_vac_start_counterfactual), function(x){
+    tmp <- as.data.table( reshape2::melt(stan_data$prop_vac_start_counterfactual[[x]]) )
+    tmp$age_index <- x
+    tmp
+  })
+  tmp <- do.call('rbind', tmp)
+  setnames(tmp, 1:2, c('counterfactual_index', 'state_index'))
+  
+  tmp1 <- lapply(1:length(stan_data$prop_vac_start), function(x){
+    tmp <- as.data.table( reshape2::melt(stan_data$prop_vac_start[[x]]) )
+    tmp$state_index <- 1:nrow(tmp)
+    tmp$age_index <- x
+    tmp
+  })
+  tmp1 <- do.call('rbind', tmp1)
+  setnames(tmp1, 'value', 'value_true')
+  
+  tmp <- merge(tmp, tmp1, by = c('age_index', 'state_index'))
+  tmp[, diff_value := value - value_true]
+  
+  # tmp <- merge(tmp, df_state, by = 'state_index')
+  # tmp <- merge(tmp, df_counterfactual, by = 'counterfactual_index')
+  # tmp <- merge(tmp, df_age_vaccination2, by = 'age_index')
+  
+  return(tmp)
+}
+
+make_var_by_age_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_state, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_inv_var_by_age_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_state, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  tmp1[, value := -value]
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'state_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + state_index + week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-inv_', var_name,  'Table_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_ratio_vars_by_age_state_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_state, df_counterfactual, vars_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[vars_name[1]]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[vars_name[2]]]) )
+  setnames(tmp2, 2:5, c('state_index', 'age_index','week_index', 'value_denominator'))
+  
+  tmp1 <- merge(tmp1, tmp2,  by = c('iterations', 'age_index', 'state_index','week_index'))
+  tmp1[, value := value / value_denominator]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'age_index', 'state_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + age_index + state_index + week_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', vars_name[1], 'RatioTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_var_by_age_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('counterfactual_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1,counterfactual_index +week_index + age_index ~ q_label, value.var = "q")
+  # tmp1 = merge(tmp1, df_week, by = 'week_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 <- merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesTable.rds'))
+  
+  
+  return(tmp1)
+}
+
+make_inv_var_by_age_by_counterfactual_table = function(fit_samples, df_week, df_state_age, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  
+  tmp1[, value := - value]
+  
+  setnames(tmp1, 2:4, c('counterfactual_index', 'age_index','week_index'))
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1,counterfactual_index +week_index + age_index ~ q_label, value.var = "q")
+  # tmp1 = merge(tmp1, df_week, by = 'week_index')
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 <- merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesTable.rds'))
+  
+  
+  return(tmp1)
+}
+
+make_ratio_vars_by_age_by_counterfactual_table = function(fit_samples, df_state_age, df_counterfactual, vars_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[vars_name[1]]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'counterfactual_index', 'age_index','week_index')]
+  
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[vars_name[2]]]) )
+  setnames(tmp2, 2:5, c('state_index', 'age_index','week_index', 'value_denominator'))
+  tmp2 <- tmp2[, list(value_denominator = sum(value_denominator)), by = c('iterations', 'age_index','week_index')]
+  
+  tmp1 <- merge(tmp1, tmp2,  by = c('iterations', 'age_index','week_index'))
+  tmp1[, value := value / value_denominator]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'age_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + age_index + week_index ~ q_label, value.var = "q")
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', vars_name[1], 'AllStatesRatioTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_var_inv_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'counterfactual_index', 'state_index','week_index')]
+  
+  tmp1[, value := - value]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'state_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + state_index + week_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'AllAgesTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_var_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'counterfactual_index', 'state_index','week_index')]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'state_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + state_index + week_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'AllAgesTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_ratio_vars_by_state_by_counterfactual_table = function(fit_samples, df_week, df_state, df_counterfactual, vars_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[vars_name[1]]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'counterfactual_index', 'state_index','week_index')]
+  
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[vars_name[2]]]) )
+  setnames(tmp2, 2:5, c('state_index', 'age_index','week_index', 'value_denominator'))
+  tmp2 <- tmp2[, list(value_denominator = sum(value_denominator)), by = c('iterations', 'state_index','week_index')]
+  
+  tmp1 <- merge(tmp1, tmp2,  by = c('iterations', 'state_index','week_index'))
+  tmp1[, value := value / value_denominator]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'state_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + state_index + week_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+  
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', vars_name[1], 'RatioAllAgesTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+make_inv_var_by_counterfactual_table = function(fit_samples, df_counterfactual, var_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp1, 2:4, c('counterfactual_index', 'age_index','week_index'))
+  
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('counterfactual_index', 'iterations','week_index')]
+  
+  tmp1[, value := - value]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'week_index')]	
+  tmp1 = dcast(tmp1,counterfactual_index +week_index  ~ q_label, value.var = "q")
+  
+  tmp1 <- merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  saveRDS(tmp1, file = paste0(outdir, '-', var_name,  'AllStatesAllAgesTable.rds'))
+  
+  
+  return(tmp1)
+}
+
+make_ratio_vars_by_counterfactual_table = function(fit_samples, df_counterfactual, vars_name, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp1 = as.data.table( reshape2::melt(fit_samples[[vars_name[1]]]) )
+  setnames(tmp1, 2:5, c('counterfactual_index', 'state_index', 'age_index','week_index'))
+  tmp1 <- tmp1[, list(value = sum(value)), by = c('iterations', 'counterfactual_index','week_index')]
+  
+  tmp2 = as.data.table( reshape2::melt(fit_samples[[vars_name[2]]]) )
+  setnames(tmp2, 2:5, c('state_index', 'age_index','week_index', 'value_denominator'))
+  tmp2 <- tmp2[, list(value_denominator = sum(value_denominator)), by = c('iterations','week_index')]
+  
+  tmp1 <- merge(tmp1, tmp2,  by = c('iterations','week_index'))
+  tmp1[, value := value / value_denominator]
+  
+  tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
+                       q_label=p_labs), 
+              by=c('counterfactual_index', 'week_index')]	
+  tmp1 = dcast(tmp1, counterfactual_index + week_index ~ q_label, value.var = "q")
+  
+  tmp1 = merge(tmp1, df_counterfactual, by = 'counterfactual_index')
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', vars_name[1], 'RatioAllAgesAllStatesTable_', Code, '.rds'))
+    
+  }
+  
+  return(tmp1)
+}
+
+find_p_value_vaccine_effect <- function(sample, name){
+  
+  tmp <- as.data.table( reshape2::melt(sample) )
+  tmp[, value := value >= 0]
+  
+  if(ncol(tmp) == 2){
+    tmp = tmp[, list(M= mean(value)*100)]	
+    tmp[, name := name]
+  } else if(ncol(tmp) == 3){
+    tmp = tmp[, list(M= mean(value)*100),
+              by=c('Var2')]	
+    tmp[, name := paste0(name, '_', Var2)]
+    
+  }
+  
+  tmp <- tmp[, .(name, M)]
   return(tmp)
 }

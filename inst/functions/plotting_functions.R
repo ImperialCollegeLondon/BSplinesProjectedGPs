@@ -187,3 +187,182 @@ plot_data = function(deathByAge, outdir, Code = NULL)
   
   return(p)
 }
+
+
+plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
+  
+  tmp = merge(vaccine_data, select(df_age_continuous, -age_index), by = 'age')
+  tmp[, age_index := which(df_age_vaccination$age_from <= age_from & df_age_vaccination$age_to >= age_to), by = c('age_from', 'age_to')]
+  tmp = merge(select(tmp, -age_from, -age_to, -age), df_age_vaccination, by = 'age_index')
+  tmp = tmp[, list(prop = unique(prop), pop = sum(pop)), by = c('age', 'code', 'date', 'loc_label', 'age_index')]
+  
+  ggplot(tmp, aes(date, prop)) +
+    geom_line(aes(col = age)) + 
+    facet_wrap(~loc_label) + 
+    theme_bw()+ 
+    labs(x = '', y = 'Proportion of vaccinated', col = 'Age group') + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white")) 
+  ggsave(paste0(outdir, '-proportion_vaccine_age_code.png'), w = 9, h = 8)
+  
+  tmp[, `Age group` := age]
+  ggplot(subset(tmp, code %in% c('CA', 'FL', 'NY', 'TX') & age_index >2), aes(date, prop)) +
+    geom_line(aes(col = loc_label)) + 
+    facet_wrap(~`Age group`, label = 'label_both') + 
+    theme_bw()+ 
+    labs( y = 'Proportion of fully vaccinated individuals', col = '') + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="white", fill="white"),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'bottom',
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
+          axis.title.x = element_blank()) + 
+    scale_color_jcolors('pal8') + 
+    scale_y_continuous(labels = scales::percent)+ 
+    scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+  ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.75)
+  
+  if(length(Code) > 6){
+    
+    mid_code = length(Code) / 2
+    
+    p1 <- ggplot(subset(tmp, code %in% Code[1:mid_code] & age_index >2), aes(date, prop)) +
+      geom_hline(yintercept = 0.5, linetype = 'dashed', col = 'grey50') + 
+      geom_line(aes(col = loc_label)) + 
+      theme_bw()+ 
+      labs( y = '', col = '') + 
+      theme(legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"),
+            panel.border = element_rect(colour = "black", fill = NA), 
+            legend.position = 'bottom',
+            axis.text.x = element_blank(), 
+            axis.title.x = element_blank()) + 
+      scale_color_jcolors('pal8') + 
+      facet_grid(`Age group`~loc_label) +
+      scale_y_continuous(labels = scales::percent)+ 
+      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+    
+    
+    p2 <- ggplot(subset(tmp, code %in% Code[(mid_code + 1):(mid_code*2)] & age_index >2), aes(date, prop)) +
+      geom_hline(yintercept = 0.5, linetype = 'dashed', col = 'grey50') + 
+      geom_line(aes(col = loc_label)) + 
+      theme_bw()+ 
+      labs( y = '', col = '') + 
+      theme(legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"),
+            panel.border = element_rect(colour = "black", fill = NA), 
+            legend.position = 'bottom',
+            axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
+            axis.title.x = element_blank()) + 
+      scale_color_jcolors('pal8') + 
+      facet_grid(`Age group`~loc_label) +
+      scale_y_continuous(labels = scales::percent)+ 
+      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+    
+    p <- ggarrange(p1, p2, nrow = 2,  common.legend = T, legend = 'bottom')
+    grid.arrange(p, left = 'Proportion of fully vaccinated individuals')
+    ggsave(paste0(outdir, '-proportion_vaccine_age_code_all_states.png'), w = 8, h = 6)
+    
+    
+  } else{
+    ggplot(subset(tmp, code %in% Code & age_index >2), aes(date, prop)) +
+      geom_line(aes(col = loc_label)) + 
+      theme_bw()+ 
+      labs( y = 'Proportion of fully vaccinated individuals', col = '') + 
+      theme(legend.key = element_blank(), 
+            strip.background = element_rect(colour="white", fill="white"),
+            panel.border = element_rect(colour = "black", fill = NA), 
+            legend.position = 'bottom',
+            axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
+            axis.title.x = element_blank()) + 
+      scale_color_jcolors('pal8') + 
+      facet_grid(`Age group`~loc_label) +
+      scale_y_continuous(labels = scales::percent)+ 
+      scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
+    ggsave(paste0(outdir, '-proportion_vaccine_age_code_all_states.png'), w = 8, h = 3)
+  }
+  
+  
+  # population count
+  pop_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
+  df_pop_data = pop_data[, list(pop_adj = sum(pop)), by = c('code', 'age_index')]
+  
+  # deaths
+  df_age_close_vaccination = copy(df_age_reporting)
+  df_age_close_vaccination[, age_index :=  c(1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4)]
+  delay = 7 * 2
+  tmp1 = merge(deathByAge, df_age_close_vaccination, by = c('age_from', 'age_to', 'age'))
+  tmp1 = tmp1[, list(weekly.deaths = sum(na.omit(weekly.deaths))), by = c('code', 'date', 'loc_label', 'age_index')]
+  tmp2 = tmp1[, list(total_deaths = sum(na.omit(weekly.deaths))), by = c('date', 'code')]
+  tmp1 = merge(tmp1, tmp2, by = c('date', 'code'))
+  tmp1 = merge(tmp1, df_pop_data, by = c('code', 'age_index'))
+  
+  tmp1[, prop_deaths := weekly.deaths / total_deaths]
+  tmp1[, date := date - delay ]
+  
+  tmp = merge(tmp, tmp1, c('code', 'date', 'loc_label', 'age_index'))
+  tmp = subset(tmp, code %in% Code )
+  # summary(lm(prop_deaths ~ prop*age  + age, data = subset(tmp, code == 'TX')))
+  
+  tmp2 = tmp[, list(max_date = max(date[prop == 0])), by = c('age', 'loc_label')]
+  tmp = merge(tmp, tmp2, by = c('age', 'loc_label'))
+  tmp = tmp[date >= max_date,]
+  
+  tmp[, avg_pop := mean(pop_adj), by = 'age_index']
+  tmp[, weekly.deaths_adj := weekly.deaths / pop_adj * avg_pop]
+  
+  
+  ggplot(tmp, aes(x = prop, y = prop_deaths, col = date)) + 
+    geom_smooth( col = 'black', size = 0.5) + 
+    geom_point() + 
+    facet_grid(loc_label~age) + 
+    scale_color_viridis_c(trans = "date") + 
+    theme_bw() + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white")) +
+    labs(x = 'Proportion of vaccinated', y = 'Contribution to weekly death 2 weeks later' )
+  ggsave(paste0(outdir, '-proportion_vaccine_contribution_deaths.png'), w = 8, h = 6)
+  
+  ggplot(tmp, aes(x = prop, y = weekly.deaths, col = date)) +
+    geom_smooth(col = 'black', size = 0.5) + 
+    geom_point() + 
+    facet_grid(loc_label~age) + 
+    labs(x = 'Proportion of vaccinated', y = 'Weekly deaths 2 weeks later' ) +
+    # scale_y_log10() + 
+    scale_color_viridis_c(trans = "date") + 
+    theme_bw() + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white")) 
+  ggsave(paste0(outdir, '-proportion_vaccine_abs_deaths.png'), w = 8, h = 6)
+  
+  ggplot(tmp, aes(x = prop, y = weekly.deaths_adj, col = date)) +
+    geom_smooth(col = 'black', size = 0.5) + 
+    geom_point() + 
+    facet_grid(loc_label~age) + 
+    labs(x = 'Proportion of vaccinated', y = 'Weekly deaths 2 weeks later\nadjusted for population count' ) +
+    # scale_y_log10() + 
+    scale_color_viridis_c(trans = "date") + 
+    theme_bw() + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white")) 
+  ggsave(paste0(outdir, '-proportion_vaccine_adj_abs_deaths.png'), w = 8, h = 6)
+  
+  ggplot(tmp, aes(x = date, y = prop, col = loc_label)) + 
+    geom_line() + 
+    facet_grid(~age) +
+    labs(y = 'Proportion of vaccinated', x= '') + 
+    theme_bw() + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white"))
+  ggsave(paste0(outdir, '-proportion_vaccine.png'), w = 6, h = 4)
+  
+  ggplot(tmp, aes(x = date, y = weekly.deaths, col = loc_label)) + 
+    geom_line() + 
+    facet_grid(~age) +
+    labs(y = 'Proportion of vaccinated', x= '') + 
+    theme_bw() + 
+    theme(legend.key = element_blank(), 
+          strip.background = element_rect(colour="black", fill="white"))
+  ggsave(paste0(outdir, '-weekly_deaths_4states.png'), w = 6, h = 4)
+  
+}

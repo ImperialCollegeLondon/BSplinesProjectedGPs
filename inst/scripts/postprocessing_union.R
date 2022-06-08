@@ -13,13 +13,15 @@ library(facetscales)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
-states = strsplit('FL',',')[[1]]
+# states = strsplit('FL',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-#            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-#            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
-stan_model = "220209a"
-JOBID = 5539
+states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+           "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+           "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+
+paste0(states,collapse =  ',')
+stan_model = "220607a"
+JOBID = 8361
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -87,8 +89,7 @@ plot_mortality_rate_all_states(mortality_rate, outdir.fig)
 # aggregate across states
 mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  tmp = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRateContinuousTable_', locs[i], '.rds'))
-  mortality_rate_posterior_samples[[i]] = find_mortality_rate_aggregated(tmp)
+  mortality_rate_posterior_samples[[i]] = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRateTable_', locs[i], '.rds'))
 }
 mortality_rate_posterior_samples = do.call('rbind', mortality_rate_posterior_samples)
 mortality_rate_across_states <- find_mortality_rate_across_states(mortality_rate_posterior_samples)
@@ -119,7 +120,6 @@ if(any(!locs %in% selected_codes)){
     plot_mortality_all_states(subset(death3, code %in%codes),paste0('part_', i), outdir.fig)
   }
 }
-
 
 #
 # predictions

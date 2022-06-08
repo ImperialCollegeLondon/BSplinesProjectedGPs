@@ -16,8 +16,9 @@ indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('CA,FL,NY,TX',',')[[1]]
+states = strsplit('FL',',')[[1]]
 stan_model = "220209a"
-JOBID = 21193
+JOBID = 768670
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -105,6 +106,7 @@ names_samples <- names(fit_samples)
 names_fit <- names(fit_cum)
 
 ## base model
+model = rstan::stan_model(path.to.stan.model)
 lambda_table <- make_lambda_table(fit_samples, stan_data, df_week, df_state, outdir.table)
 plot_lambda_table(lambda_table, outdir.fig)
 var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_state, outdir.table)

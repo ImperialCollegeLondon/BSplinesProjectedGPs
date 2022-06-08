@@ -92,9 +92,9 @@ find_statistics_mortality_rate <- function(mortality_rate, mortality_rate_across
     mortality_stats[[5]] = list(prop.25 * 100, tmp)
   }
   
-  mortality_rate_across_states[, M := round(M * 100, digits = 2)]
-  mortality_rate_across_states[, CL := round(CL * 100, digits = 2)]
-  mortality_rate_across_states[, CU := round(CU * 100, digits = 2)]
+  mortality_rate_across_states[, M := round(M * 100, digits = 3)]
+  mortality_rate_across_states[, CL := round(CL * 100, digits = 3)]
+  mortality_rate_across_states[, CU := round(CU * 100, digits = 3)]
   
   mortality_stats[[6]] = mortality_rate_across_states
   
@@ -102,3 +102,72 @@ find_statistics_mortality_rate <- function(mortality_rate, mortality_rate_across
   
   return(mortality_stats)
 }
+
+save_p_value_vaccine_effects <- function(samples, names, outdir){
+  
+  names_fit <- names(samples)
+  names <- names_fit[ grepl(paste(paste0('^',names),collapse = '|'),names_fit) ]
+  
+  tmp <- lapply(names, function(x) find_p_value_vaccine_effect(samples[[x]], x))
+  tmp <- do.call('rbind', tmp)
+  
+  saveRDS(tmp, paste0(outdir.table, '-p_value_vaccine_effects.rds'))
+  
+}
+
+save_resurgence_dates <- function(resurgence_dates, outdir){
+  resurgence_dates[,start_resurgence_name := format(start_resurgence, '%d %b, %Y')]
+  resurgence_dates[,stop_resurgence_name := format(stop_resurgence, '%d %b, %Y')]
+  
+  tmp <- merge(resurgence_dates, df_state, by = 'code')[, .(loc_label, start_resurgence_name, stop_resurgence_name)]
+  
+  saveRDS(tmp, paste0(outdir, '-resurgence_dates.rds'))
+}
+
+find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res4,
+                                       data_res5, data_res6, data_res7, data_res8, prop_vac, resurgence_dates, outdir){
+  
+  data_res1 = merge(data_res1, resurgence_dates, by = 'code')
+  prop_vac = merge(prop_vac, resurgence_dates, by = 'code')
+  data_res2 = merge(data_res2, resurgence_dates, by = 'code')
+  data_res5 = merge(data_res5, resurgence_dates, by = 'code')
+  data_res6 = merge(data_res6, resurgence_dates, by = 'code')
+  
+  stat = list(format(c(min(resurgence_dates$start_resurgence), max(resurgence_dates$stop_resurgence)),  '%B %d, %Y'),
+              subset(data_res1, date == stop_resurgence)[, list(M = round(M), 
+                                                                CL = round(CL), 
+                                                                CU = round(CU)), by = c('counterfactual_index', 'age', 'loc_label')],
+              subset(prop_vac, date == start_resurgence)[, list(min_3 = paste0(round(min(prop_1*100), 2), '\\%'),
+                                                                max_3 = paste0(round(max(prop_1*100), 2), '\\%'),
+                                                                min_4 = paste0(round(min(prop_2*100), 2), '\\%'),
+                                                                max_4 = paste0(round(max(prop_2*100), 2), '\\%'))],
+              subset(data_res2, date == stop_resurgence)[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round(CL*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round(CU*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'age', 'loc_label')],
+              subset(data_res3, week_index == max(week_index))[, list(M = round(M), 
+                                                                      CL = round(CL), 
+                                                                      CU = round(CU)), by = c('counterfactual_index', 'age')],
+              subset(data_res4, week_index == max(week_index))[, list(M = format(round(M*100, digits = 2), nsmall = 2), 
+                                                                      CL = format(round(CL*100, digits = 2), nsmall = 2), 
+                                                                      CU = format(round(CU*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'age')],
+              subset(data_res5, date == stop_resurgence)[, list(M = round(M), 
+                                                                CL = round(CL), 
+                                                                CU = round(CU)), by = c('counterfactual_index', 'loc_label')],
+              subset(data_res6, date == stop_resurgence)[, list(M = format(round((M)*100, digits = 2), nsmall = 2), 
+                                                                CL = format(round((CL)*100, digits = 2), nsmall = 2), 
+                                                                CU = format(round((CU)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index', 'loc_label')],
+              subset(data_res7, week_index == max(week_index))[, list(M = round(M), 
+                                                                      CL = round(CL), 
+                                                                      CU = round(CU)), by = c('counterfactual_index')],
+              subset(data_res8, week_index == max(week_index))[, list(M = format(round((M)*100, digits = 2), nsmall = 2), 
+                                                                      CL = format(round((CL)*100, digits = 2), nsmall = 2), 
+                                                                      CU = format(round((CU)*100, digits = 2), nsmall = 2)), by = c('counterfactual_index')]
+              
+              
+  )
+  saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
+  
+  return(stat)
+}
+
+
