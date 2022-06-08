@@ -106,20 +106,20 @@ for(i in seq_along(locs)){
   death3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
 death3 = do.call('rbind', death3)
-if(any(locs %in% selected_codes)){
-  plot_mortality_all_states(subset(death3, code %in% selected_codes),'selectedStates', outdir.fig)
+plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates,'selectedStates', outdir.fig)
+if(any(!locs %in% selected_codes))
+  plot_mortality_all_states(subset(death3, !code %in% selected_codes), resurgence_dates,'otherStates', outdir.fig)
+
+if(length(locs) > 6){
+  mid_locs = floor(length(locs) / 2)
+  
+  plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
+  plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
+  
+} else{
+  plot_mortality_all_states(death3, resurgence_dates, 'allStates', outdir.fig)
 }
-if(any(locs %in% selected_10_codes & !locs %in% selected_codes)){
-  plot_mortality_all_states(subset(death3, code %in%selected_10_codes & !code %in%selected_codes), 'otherStates', outdir.fig)
-}
-if(any(!locs %in% selected_codes)){
-  not_selected_codes <- locs[!locs %in% selected_codes]
-  seq.points <- c(seq(1, length(not_selected_codes), 7), length(not_selected_codes))
-  for(i in 1:(length(seq.points)-1)){
-    codes <- not_selected_codes[seq.points[i]:(seq.points[i+1] - 1)]
-    plot_mortality_all_states(subset(death3, code %in%codes),paste0('part_', i), outdir.fig)
-  }
-}
+
 
 #
 # predictions

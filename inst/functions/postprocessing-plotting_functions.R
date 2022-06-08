@@ -496,7 +496,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
   
 }
 
-plot_mortality_all_states = function(death, lab = 'allStates', outdir)
+plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates', outdir)
 {
   
   df = as.data.table( reshape2::melt(select(death, loc_label, code, date, age, emp), id.vars = c('loc_label', 'code', 'date', 'age')) )
@@ -506,10 +506,19 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   # death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-
+  colfunc <- jcolors("pal8")[1:length(locs)]
+  colfunc <- colfunc[which(locs %in% unique(death$code))]
+  
   death[, `Age group` := age]
   
-  p <- ggplot(subset(death) ) +
+  dummy.dt = merge(resurgence_dates, unique(select(death, code, loc_label)), by = 'code')
+  dummy.dt[, text := 'Beginning of Summer 2021 resurgence period']
+  
+  p <- ggplot(subset(death), aes(x= date) ) +
+    geom_point(data = subset(df), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
+    geom_line(aes(y = M, fill = loc_label), show.legend = F) +
+    geom_vline(data = dummy.dt, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
     facet_grid(loc_label~`Age group`, scale = 'free') +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + 
@@ -519,7 +528,8 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
           axis.text.x = element_text(angle = 45, hjust =1), 
           panel.grid.major = element_blank(), 
           axis.title.x = element_blank(), 
-          axis.title.y = element_text(size = rel(1.1)), 
+          axis.title.y = element_blank(), 
+          legend.title = element_text(size = rel(1.1)), 
           legend.text = element_text(size = rel(1.1)), 
           strip.text = element_text(size = rel(1)), 
           legend.position = 'bottom') +
@@ -527,39 +537,14 @@ plot_mortality_all_states = function(death, lab = 'allStates', outdir)
           linetype = '', col = '', fill = '') + 
     scale_shape_manual(values = 16) +
     scale_linetype_manual(values = 2) + 
+    scale_color_manual(values = as.character(colfunc)) + 
+    scale_fill_manual(values = as.character(colfunc)) + 
     guides(shape = guide_legend(override.aes = list(size=1, stroke =1.5), order = 2),
            linetype = guide_legend(order = 3), 
            col = guide_legend(order = 1),
            fill = guide_legend(order = 1))
+  ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 8)
   
-  if(all(unique(death$code) %in% selected_codes) | all(unique(death$code) %in% selected_10_codes) ){
-    
-    if(all(unique(death$code) %in% selected_codes))
-      colfunc <- jcolors("pal8")[1:length(unique(death$code))]
-
-    if(all(unique(death$code) %in% selected_10_codes))
-      colfunc <- jcolors("pal8")[5:10][1:length(unique(death$code))]
-    
-    p <- p + 
-      geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
-      geom_line(aes(x= date, y = M, col = loc_label), show.legend = F) +
-      geom_ribbon(aes(x= date, ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
-      scale_color_manual(values = as.character(colfunc)) + 
-      scale_fill_manual(values = as.character(colfunc)) 
-    ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 8)
-    
-  } else {
-    p <- p + 
-      geom_point(data = subset(df), aes(x= date, y = value, shape= variable2), col = 'darkred', fill = 'darkred', size = 0.9, alpha = 0.6)+ 
-      geom_line(aes(x= date, y = M, col = loc_label), show.legend = F) +
-      geom_ribbon(aes(x= date, ymin = CL, ymax = CU, fill = loc_label), alpha = 0.4, show.legend = F) +
-    scale_color_manual(values = rep('black', length(unique(death$code)))) + 
-      scale_fill_manual(values = rep('black', length(unique(death$code)))) 
-    ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 4 + 0.72 * length(unique(death$code)))
-    
-  }
-
-
 }
 
 
