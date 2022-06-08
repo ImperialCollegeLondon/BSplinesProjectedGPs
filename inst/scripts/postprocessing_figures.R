@@ -138,13 +138,6 @@ make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_
 make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-74', '75+'), lab = '2agegroups', withempirical = T)
 
-# compare two years
-deaths_ratio <- make_var_by_age_by_state_table(fit_samples, df_age_continuous, df_state, 'deaths_ratio', outdir.table, vaccine_data)
-deaths_first_period <- make_var_by_age_by_state_table(fit_samples, df_age_continuous, df_state, 'deaths_first_period', outdir.table)
-deaths_second_period <- make_var_by_age_by_state_table(fit_samples, df_age_continuous, df_state, 'deaths_second_period', outdir.table)
-
-plot_deaths_ratio(deaths_ratio, deaths_first_period, deaths_second_period, outdir.fig)
-
 # compare to DoH data
 if(any(Code %in% unique(scrapedData$code))){
   tmp <- find_cumulative_deaths_prop_givensum_state_age_multiple_states(fit_samples, date_10thcum, df_week, df_age_continuous,
