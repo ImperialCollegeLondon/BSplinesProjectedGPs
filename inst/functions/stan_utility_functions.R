@@ -224,6 +224,7 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      min_count_censored = min_count_censored,
                      max_count_censored = max_count_censored,
                      deaths = deaths,
+                     M = length(loc_name),
                      inv_sum_deaths = inv_sum_deaths
                 ))
 
