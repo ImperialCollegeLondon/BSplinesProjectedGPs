@@ -1829,8 +1829,11 @@ find_p_value_vaccine_effect <- function(sample, name){
 }
 
 find_crude_mortality_rate <- function(mortality_rate, df_age_continuous, df_age_reporting, pop_data){
+  
+  fouragegroups <- unique(mortality_rate$age)
+  
   # df age
-  df_age = data.table(age = unique(mortality_rate$age))
+  df_age = data.table(age = fouragegroups)
   df_age[, age_index := 1:nrow(df_age)]
   df_age[, age_from := gsub('(.+)-.*', '\\1', age)]
   df_age[, age_to := gsub('.*-(.+)', '\\1', age)]
