@@ -1405,28 +1405,27 @@ find_mortality_rate_across_states <- function(mortality_rate_posterior_samples){
   return(tmp)
 }
 
-prepare_prop_vac_table <- function(stan_data, df_week2, df_age_vaccination2){
+prepare_prop_vac_table <- function(stan_data, vaccine_data, df_age_vaccination){
   
-  prop_vac = data.table( do.call('rbind', stan_data$prop_vac) ) 
-  prop_vac[, age := rep(df_age_vaccination2$age, each = nrow(stan_data$prop_vac[[1]]))]
-  prop_vac[, week_index := rep(1:nrow(stan_data$prop_vac[[1]]), length(stan_data$prop_vac))]
-  prop_vac = data.table(reshape2::melt(prop_vac, id.vars = c('age', 'week_index')))
-  setnames(prop_vac, c('variable', 'value'), c('code', 'prop'))
-  prop_vac = merge(prop_vac, df_week2, by = c('week_index', 'code'))
+  delay = 2*7
+  age_index_min = df_age_vaccination[age == '18-64']$age_index
+  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
+  tmp = vaccine_data[age_index >= age_index_min, list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
+  tmp[, date := date + delay]
+  tmp = merge(tmp, resurgence_dates, by = 'code')
+  tmp = tmp[code %in% Code]
+  tmp = tmp[date %in% df_week$date]
+  # resurgence period
+  tmp = tmp[date >= start_resurgence & date <= stop_resurgence]
+  tmp[, idx.resurgence.date := 1:length(date), by = c('age_index', 'loc_label')]
+  # set proportion
+  tmp1 = tmp[, list(pre_prop = prop[date == start_resurgence]), by = c('loc_label', 'age_index')]
+  tmp = merge(tmp, tmp1,  by = c('loc_label', 'age_index'))
   
-  prop_vac_start = data.table( do.call('rbind', stan_data$prop_vac_start) ) 
-  colnames(prop_vac_start) = colnames(stan_data$prop_vac[[1]])
-  prop_vac_start[, age := df_age_vaccination2$age] 
-  prop_vac_start = data.table(reshape2::melt(prop_vac_start, id.vars = c('age')))
-  setnames(prop_vac_start, c('variable', 'value'), c('code', 'pre_prop'))
+  tmp[, cat := paste0('prop_', age_index - 2)]
+  tmp = data.table(reshape2::dcast(tmp, code + date ~ cat, value.var = 'prop'))
   
-  prop_vac = merge(prop_vac, prop_vac_start, by = c('code', 'age'))
-  prop_vac = merge(prop_vac, df_age_vaccination2, by = c('age'))
-  prop_vac[, prop := prop + pre_prop]
-  prop_vac[, cat := paste0('prop_', age_index)]
-  prop_vac = data.table(reshape2::dcast(prop_vac, code + date ~ cat, value.var = 'prop'))
-  
-  return(prop_vac)
+  return(tmp)
 }
 
 prepare_prop_vac_counterfactual_table <- function(stan_data, df_state, df_age_vaccination2, df_counterfactual){
@@ -1729,7 +1728,8 @@ make_ratio_vars_by_state_by_counterfactual_table = function(fit_samples, df_week
   tmp2 <- tmp2[, list(value_denominator = sum(value_denominator)), by = c('iterations', 'state_index','week_index')]
   
   tmp1 <- merge(tmp1, tmp2,  by = c('iterations', 'state_index','week_index'))
-  tmp1[, value := value / value_denominator]
+  tmp1[, value := (value - value_denominator) / value_denominator]
+  # tmp1[, value := value  / value_denominator]
   
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
