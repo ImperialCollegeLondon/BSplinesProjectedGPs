@@ -1827,3 +1827,62 @@ find_p_value_vaccine_effect <- function(sample, name){
   tmp <- tmp[, .(name, M)]
   return(tmp)
 }
+
+find_crude_mortality_rate <- function(mortality_rate, df_age_continuous, df_age_reporting, pop_data){
+  # df age
+  df_age = data.table(age = unique(mortality_rate$age))
+  df_age[, age_index := 1:nrow(df_age)]
+  df_age[, age_from := gsub('(.+)-.*', '\\1', age)]
+  df_age[, age_to := gsub('.*-(.+)', '\\1', age)]
+  df_age[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
+  df_age[grepl('\\+', age_to), age_to := max(df_age_continuous$age)]
+  df_age[, age_from_index := which(df_age_continuous$age_from == age_from), by = "age"]
+  df_age[, age_to_index := which(df_age_continuous$age_to == age_to), by = "age"]
+  set(df_age, NULL, 'age_from', df_age[,as.numeric(age_from)])
+  set(df_age, NULL, 'age_to', df_age[,as.numeric(age_to)])
+  set(df_age, NULL, 'age_to_index', df_age[,as.numeric(age_to_index)])
+  set(df_age, NULL, 'age_from_index', df_age[,as.numeric(age_from_index)])
+  df_age_continuous[, age_index := 1:nrow(df_age_continuous)]
+  df_age_continuous[, age_state_index := which(df_age$age_from_index <= age_index & df_age$age_to_index >= age_index), by = 'age_index']
+  df_age_reporting[, age_state_index := unique(df_age_continuous$age_state_index[which(df_age_continuous$age_from == age_from)]), by = 'age_index']
+  
+  # find population proportion
+  pop_data1 = copy(pop_data)
+  pop_data1[, age_state_index := which(df_age$age_from <= age & df_age$age_to >= age), by = 'age']
+  tmp <- pop_data1[, list(Total = sum(pop)), by = 'code']
+  pop_data1 <- merge(pop_data1, tmp, by = 'code')
+  pop_data1 = pop_data1[, list(pop = sum(pop)), by = c('Total', 'age_state_index', 'code')]
+  setnames(pop_data1, 'age_state_index', 'age_index')
+  pop_data1[, age := fouragegroups[age_index]]
+  pop_data1[, pop_prop := pop / Total]
+  tmp = pop_data1[, list(pop = sum(pop)), by = 'age']
+  tmp[, pop_prop_US := pop / sum(pop_data$pop)]
+  pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
+  pop_data1 = subset(pop_data1, code %in% df_state$code)
+  
+  # find mortality
+  file = file.path(dirname(indir), paste0('misc/data/CDC_data_', unique(mortality_rate$date) + 13,'.csv'))
+  tmp <- as.data.table(read.csv(file))
+  tmp[, date := as.Date(End.Date, format = '%m/%d/%Y')]
+  tmp <- tmp[date == unique(mortality_rate$date) + 7]
+  tmp <- tmp[Sex == 'All Sexes']
+  tmp <- tmp[Group == 'By Total']
+  tmp[, age := ifelse(Age.Group == "Under 1 year", "0-0", 
+                      ifelse(Age.Group == "85 years and over", "85+", gsub("(.+) years", "\\1", Age.Group)))]
+  
+  # state
+  setnames(tmp, 'State', 'loc_label')
+  tmp <- merge(tmp, unique(mortality_rate[, .(loc_label, code)]))
+  
+  # merge age
+  tmp <- merge(tmp, df_age_reporting, by = 'age')
+  tmp <- tmp[, list(total_deaths = sum(na.omit(COVID.19.Deaths))), by = c('loc_label', 'age_state_index', 'code')]
+  setnames(tmp, 'age_state_index', 'age_index')
+  
+  # merge pop and find mortality rate
+  tmp <- merge(tmp, pop_data1, by = c('code', 'age_index'))
+  tmp[, crude_mortality_rate := total_deaths / pop]
+  
+  return(tmp)
+}
+

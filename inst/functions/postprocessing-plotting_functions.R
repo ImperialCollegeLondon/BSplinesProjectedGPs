@@ -368,7 +368,7 @@ plot_mean_age_death = function(mean_age_death, outdir){
   }
 }
 
-plot_mortality_rate_all_states = function(mortality_rate, outdir)
+plot_mortality_rate_all_states = function(mortality_rate, crude_mortality_rate, outdir)
 {
   
   tmp =   subset(mortality_rate, age == '85+')
@@ -379,6 +379,9 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
   
   mortality_rate <- mortality_rate[age != '0-24']
   mortality_rate[, `Age group` := age]
+  
+  crude_mortality_rate <- crude_mortality_rate[age != '0-24']
+  crude_mortality_rate[, `Age group` := age]
 
   p <- ggplot(mortality_rate, aes(x=loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat="identity") +
@@ -408,6 +411,13 @@ plot_mortality_rate_all_states = function(mortality_rate, outdir)
     ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_large.png')), w = 7, h = 9)
     
   }
+  
+    p <- p + 
+      geom_point(data = crude_mortality_rate, aes(x = loc_label, y = crude_mortality_rate, col = 'CDC crude estimate')) + 
+      labs(col = '')
+    ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_withcrude.png')), w = 7, h = 9)
+    
+
   # +
   #   labs(y = '')
 

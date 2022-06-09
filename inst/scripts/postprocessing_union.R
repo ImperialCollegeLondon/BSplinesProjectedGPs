@@ -84,7 +84,8 @@ for(i in seq_along(locs)){
 }
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
-plot_mortality_rate_all_states(mortality_rate, outdir.fig)
+crude_mortality_rate = find_crude_mortality_rate(mortality_rate, df_age_continuous, df_age_reporting, pop_data)
+plot_mortality_rate_all_states(mortality_rate, crude_mortality_rate, outdir.fig)
 
 # aggregate across states
 mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
