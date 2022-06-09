@@ -511,13 +511,14 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
   
   death[, `Age group` := age]
   
-  dummy.dt = merge(resurgence_dates, unique(select(death, code, loc_label)), by = 'code')
-  dummy.dt[, text := 'Beginning of Summer 2021 resurgence period']
+  dummy.dt <- resurgence_dates[, list(date = seq.Date(start_resurgence, stop_resurgence, by = 'week')), by = 'code']
+  dummy.dt = merge(dummy.dt, unique(select(death, code, loc_label)), by = 'code')
+  dummy.dt[, text := 'Summer 2021 resurgence period']
   
   p <- ggplot(subset(death), aes(x= date) ) +
     geom_point(data = subset(df), aes(y = value, shape= variable2), col = 'black', fill = 'black', size = 0.9, alpha = 0.7) + 
     geom_line(aes(y = M, fill = loc_label), show.legend = F) +
-    geom_vline(data = dummy.dt, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
+    geom_ribbon(data = dummy.dt, aes(ymin = -Inf, ymax = Inf, alpha = text)) +
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = loc_label), alpha = 0.5, show.legend = F) + 
     facet_grid(loc_label~`Age group`, scale = 'free') +
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
@@ -534,7 +535,7 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
           strip.text = element_text(size = rel(1)), 
           legend.position = 'bottom') +
     labs( y = 'Predicted age-specific COVID-19 attributable weekly deaths', shape = '',
-          linetype = '', col = '', fill = '') + 
+          linetype = '', col = '', fill = '', alpha = '') + 
     scale_shape_manual(values = 16) +
     scale_linetype_manual(values = 2) + 
     scale_color_manual(values = as.character(colfunc)) + 

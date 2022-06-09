@@ -97,7 +97,7 @@ cat("Location ", as.character(loc_name), "\n")
 
 # plot data 
 if(1){
-  plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
+  p <- plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                  JHUData = JHUData, 
@@ -106,6 +106,7 @@ if(1){
                                  outdir = outdir.fig,
                                  Code = Code)
 }
+
 
 # reference date
 ref_date = as.Date('2020-12-05')
@@ -149,7 +150,7 @@ cat("\n Start sampling \n")
 if(0){
   fit_cum <- rstan::sampling(model,data=stan_data,iter=10,warmup=5,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
-}
+g}
 
 fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
                            seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))

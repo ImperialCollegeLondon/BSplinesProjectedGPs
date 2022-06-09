@@ -206,7 +206,7 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
   ggsave(paste0(outdir, '-proportion_vaccine_age_code.png'), w = 9, h = 8)
   
   tmp[, `Age group` := age]
-  ggplot(subset(tmp, code %in% c('CA', 'FL', 'NY', 'TX') & age_index >2), aes(date, prop)) +
+  p2 <- ggplot(subset(tmp, code %in% c('CA', 'FL', 'NY', 'TX') & age_index >2), aes(date, prop)) +
     geom_line(aes(col = loc_label)) + 
     facet_wrap(~`Age group`, label = 'label_both') + 
     theme_bw()+ 
@@ -221,6 +221,12 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
     scale_y_continuous(labels = scales::percent)+ 
     scale_x_date(date_labels = c("%b-%y"), breaks = '2 months') 
   ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.75)
+  
+  p <- p  + facet_wrap(.~loc_label, nrow = 4) 
+  p2 <- p2 + facet_wrap(.~`Age group`, nrow = 2, label = 'label_both') 
+  pa <- grid.arrange(p, p2, layout_matrix = rbind(c(1, 2), c(1, NA)), heights = c(0.8, 0.2))
+  ggsave(pa, file = paste0(outdir, '-deathByAge_proportion_vaccine_panel_selected_states.png'), w = 7.7, h = 7.7)
+  
   
   if(length(Code) > 6){
     
