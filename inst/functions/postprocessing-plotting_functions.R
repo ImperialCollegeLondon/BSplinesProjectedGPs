@@ -1158,9 +1158,9 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
 
   ggsave(p, file =file, w = 8, h = 5)
   
-  p1 <- p1 +  guides(colour = 'none', fill ='none') + theme(axis.title.x = element_text(hjust = 1)) + 
-    labs(x ='Week index of Summer', y  ="Over time")
-  p2 <- p2 +  guides(colour = 'none', fill ='none') + theme(axis.title.y = element_blank(), axis.title.x = element_text(hjust = 0)) + 
+  p1 <- p1 +  guides(colour = 'none', fill ='none') + theme(axis.title.x = element_text(hjust = 1.05)) + 
+    labs(x ='Week index of the summer', y  ="Relative COVID-19 attributable\nweekly deaths")
+  p2 <- p2 +  guides(colour = 'none', fill ='none') + theme(axis.title.y = element_blank(), axis.title.x = element_text(hjust = -0.05)) + 
     labs(x='2021 resurgence period', y  ="Over time")
   p = ggarrange(p1, p2, ncol = 2, widths = c(0.53, 0.47))
   
@@ -1189,7 +1189,7 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
     geom_point(aes(y = M, col = prop_1_init, shape = loc_label)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, width = 0) +
     facet_grid(.~`Age group`, label = 'label_both') +
-    labs(y = 'At the pick of the resurgence', 
+    labs(y = '\n', 
          x = lab_long('18-64'), shape = '', 
          col = lab('18-64')) +
     theme_bw() +
@@ -1212,7 +1212,7 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
     geom_point(aes(y = M, col = prop_2_init, shape = loc_label, fill = prop_1_init)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, width = 0) +
     facet_grid(.~`Age group`, label = 'label_both') +
-    labs(y = 'At the pick of the resurgence', 
+    labs(y = '\n', 
          x = lab_long('65+'), shape = '', 
          col = lab('65+'), fill = lab('18-64')) + 
     theme_bw() +
