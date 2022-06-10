@@ -1861,7 +1861,6 @@ find_crude_mortality_rate <- function(mortality_rate, df_age_continuous, df_age_
   tmp = pop_data1[, list(pop = sum(pop)), by = 'age']
   tmp[, pop_prop_US := pop / sum(pop_data$pop)]
   pop_data1 = merge(pop_data1, select(tmp, age, pop_prop_US), by = 'age')
-  pop_data1 = subset(pop_data1, code %in% df_state$code)
   
   # find mortality
   file = file.path(dirname(indir), paste0('misc/data/CDC_data_', unique(mortality_rate$date) + 13,'.csv'))
@@ -1876,7 +1875,7 @@ find_crude_mortality_rate <- function(mortality_rate, df_age_continuous, df_age_
   # state
   setnames(tmp, 'State', 'loc_label')
   tmp <- merge(tmp, unique(mortality_rate[, .(loc_label, code)]))
-  
+
   # merge age
   tmp <- merge(tmp, df_age_reporting, by = 'age')
   tmp <- tmp[, list(total_deaths = sum(na.omit(COVID.19.Deaths))), by = c('loc_label', 'age_state_index', 'code')]

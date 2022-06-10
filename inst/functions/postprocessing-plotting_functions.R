@@ -439,16 +439,18 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     theme(legend.position = 'bottom', 
           panel.grid.minor= element_blank(), 
           strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA), 
-          plot.margin = unit(c(5.5,0,5.5,5.5), "pt")) + 
+          panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_color_jcolors('pal8') + 
     scale_fill_jcolors('pal8') + 
     scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
                        breaks = seq(0, max(tmp$CU), 0.01)) +
     scale_x_continuous(expand = c(0,0)) +
-    labs(y = paste0('Predicted COVID-19 attributable mortality\nrates as of ', format(unique(mortality_rate$date), '%b %Y')),
+    labs(y = paste0('Predicted COVID-19 attributable\nmortality rates as of ', format(unique(mortality_rate$date), '%b %Y')),
          col = '', fill = '', x = 'Age')
   
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_selectedstates_wo85p.png')), w = 6, h = 4)
+  
+  p <- p + theme(plot.margin = unit(c(5.5,0,5.5,5.5), "pt"))
   p1 <- ggplot(subset(tmp, age == '85'), aes(x=age_cat)) + 
     geom_errorbar(aes(ymin=CL, ymax=CU), width = 0) + 
     geom_point(aes(y = M, col = loc_label)) +
@@ -469,7 +471,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
                        breaks = seq(0, max(tmp$CU), 0.01)) +
     scale_x_discrete(expand = c(0,0)) +
-    labs(y = paste0('Predicted COVID-19 attributable mortality\nrates as of ', format(unique(mortality_rate$date), '%b %Y')),
+    labs(y = paste0('Predicted COVID-19 attributable\nmortality rates as of ', format(unique(mortality_rate$date), '%b %Y')),
          col = '')
   
   p <- ggarrange(p, p1, nrow = 1, common.legend = T, legend = 'bottom', widths = c(1, 0.1))
@@ -501,7 +503,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
           panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
     scale_x_continuous(expand = c(0,0)) +
-    labs(x = 'Age', y = paste0('Predicted COVID-19 attributable mortality\nrates as of ', format(unique(mortality_rate$date), '%B %Y'))) 
+    labs(x = 'Age', y = paste0('Predicted COVID-19 attributable\nmortality rates as of ', format(unique(mortality_rate$date), '%B %Y'))) 
    ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_NY.png')), w = 6.5, h = 3)
   
 }
@@ -2011,7 +2013,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
           # legend.box="vertical",
           # legend.spacing.y = unit(-0, "cm")
     ) + 
-    scale_shape_manual(values = c(15, 17, 20, 4, 3, 10, 11, 12, 13, 14)[1:length(tmp1$code)]) + 
+    scale_shape_manual(values = c(15, 17, 3, 10, 11, 20, 12, 13, 14, 4)[1:length(tmp1$code)]) + 
     labs(col = '', y = paste0('Change in COVID-19 attributable deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
          x = 'Difference between hypothesised vaccination rate\nandobserved vaccination rate', pch = '') +
