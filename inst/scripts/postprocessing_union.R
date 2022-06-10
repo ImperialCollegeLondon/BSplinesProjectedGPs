@@ -12,7 +12,7 @@ library(jcolors)
 library(facetscales)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
-outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
+outdir = file.path('/rds/general/user/mm3218/home/git/old_BSplinesProjectedGPs/inst', "results")
 # states = strsplit('FL',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
@@ -20,8 +20,8 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 
 paste0(states,collapse =  ',')
-stan_model = "220607a"
-JOBID = 8361
+stan_model = "220209a"
+JOBID = 5539
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -111,15 +111,15 @@ plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_d
 if(any(!locs %in% selected_codes))
   plot_mortality_all_states(subset(death3, !code %in% selected_codes), resurgence_dates,'otherStates', outdir.fig)
 
-if(length(locs) > 6){
-  mid_locs = floor(length(locs) / 2)
-  
-  plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
-  plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
-  
-} else{
-  plot_mortality_all_states(death3, resurgence_dates, 'allStates', outdir.fig)
-}
+# if(length(locs) > 6){
+#   mid_locs = floor(length(locs) / 2)
+# 
+#   plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
+#   plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
+# 
+# } else{
+#   plot_mortality_all_states(death3, resurgence_dates, 'allStates', outdir.fig)
+# }
 
 
 #

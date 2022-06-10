@@ -518,8 +518,12 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
   death[, dummy := 'Posterior median prediction\nusing age-aggregated JHU data\nto adjust for reporting delays']
   # death[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-  colfunc <- jcolors("pal8")[1:length(locs)]
-  colfunc <- colfunc[which(locs %in% unique(death$code))]
+  colfunc <- jcolors("pal8")[1:length(death[, unique(code)])]
+
+  if(length(death[, unique(code)]) > 4){
+    colfunc <- jcolors("pal8")[1:length(locs)]
+    colfunc <- colfunc[-(1:4)]
+  }
   
   death[, `Age group` := age]
   
