@@ -157,107 +157,111 @@ p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contributio
                                                             show.method = F,
                                                             heights = c(1,1), outdir.fig)
 
-
-# # p-value vaccine effects
-names = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
-save_p_value_vaccine_effects(fit_samples, names, outdir.table)
-
-# save resurgence dates
-save_resurgence_dates(resurgence_dates, outdir.table)
-
-# table for plotting vaccine effects
-min_age_index_vac = 3
-df_age_vaccination2 = df_age_vaccination[age_index >= 3]
-df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
-
-df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
-df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
-df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
-df_week2[, week_index := 1:length(date), by = 'code']
-df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
-df_week2 = df_week2[order(code)]
-df_week = select(df_week, -dummy)
-
-stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-prop_vac = prepare_prop_vac_table(stan_data1, vaccine_data, df_age_vaccination)
-prop_vac_counterfactual <- prepare_prop_vac_counterfactual_table(stan_data1, df_state, df_age_vaccination2, df_counterfactual)
-
-max_1864 = round(prop_vac[,list(date = min(date), prop_1 = prop_1[which.min(date)]), by = 'code'][,max(prop_1)] * 100)
-min_1864 = round(prop_vac[,list(date = min(date), prop_1 = prop_1[which.min(date)]), by = 'code'][,min(prop_1)] * 100)
-max_65p = round(prop_vac[,list(date = min(date), prop_2 = prop_2[which.min(date)]), by = 'code'][,max(prop_2)] * 100)
-min_65p = round(prop_vac[,list(date = min(date), prop_2 = prop_2[which.min(date)]), by = 'code'][,min(prop_2)] * 100)
-
-df_counterfactual = data.table(counterfactual_index = 1:6, 
-                               label_counterfactual = c(paste0('Hypothesised vaccination rate of ', max_1864, '% in 18-64'), 
-                                                        paste0('Hypothesised vaccination rate of ', max_65p, '% in 65+'), 
-                                                        paste0('Hypothesised vaccination rate of ', max_1864, '% in 18-64 and ', max_65p, '% in 65+'), 
-                                                        paste0('Hypothesised vaccination rate of ', min_1864, '% in 18-64'), 
-                                                        paste0('Hypothesised vaccination rate of ', min_65p, '% in 65+'), 
-                                                        paste0('Hypothesised vaccination rate of ', min_1864, '% in 18-64 and ', min_65p, '% in 65+')))
-df_counterfactual[, label_counterfactual := factor(label_counterfactual, 
-                                                   levels = df_counterfactual$label_counterfactual[c(4,1,5,2,6,3)])]
-make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
-
-# plot estimate relative deaths
-r_pdeaths = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
-plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
-plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
-p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states', selected_code)
-p_all <- plot_relative_resurgence_vaccine_end_2(subset(r_pdeaths, code %in% selected_10_codes), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
-p <- grid.arrange(p4, p_all, ncol = 1, heights = c(0.3,0.6), 
-                  left = text_grob('Relative COVID-19 attributable weekly deaths\nat the pick of the wave        ', rot = 90, hjust = 0.7, vjust = 1.5))
-ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 7, h = 8)
-
-if(length(Code) > 6){
-  plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
+# vaccination analysis
+if('intercept_resurgence0' %in% names(fit_samples)){
+  
+  # # p-value vaccine effects
+  names = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
+  save_p_value_vaccine_effects(fit_samples, names, outdir.table)
+  
+  # save resurgence dates
+  save_resurgence_dates(resurgence_dates, outdir.table)
+  
+  # table for plotting vaccine effects
+  min_age_index_vac = 3
+  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+  
+  df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
+  df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
+  df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
+  df_week2[, week_index := 1:length(date), by = 'code']
+  df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
+  df_week2 = df_week2[order(code)]
+  df_week = select(df_week, -dummy)
+  
+  stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
+  prop_vac = prepare_prop_vac_table(stan_data1, vaccine_data, df_age_vaccination)
+  prop_vac_counterfactual <- prepare_prop_vac_counterfactual_table(stan_data1, df_state, df_age_vaccination2, df_counterfactual)
+  
+  max_1864 = round(prop_vac[,list(date = min(date), prop_1 = prop_1[which.min(date)]), by = 'code'][,max(prop_1)] * 100)
+  min_1864 = round(prop_vac[,list(date = min(date), prop_1 = prop_1[which.min(date)]), by = 'code'][,min(prop_1)] * 100)
+  max_65p = round(prop_vac[,list(date = min(date), prop_2 = prop_2[which.min(date)]), by = 'code'][,max(prop_2)] * 100)
+  min_65p = round(prop_vac[,list(date = min(date), prop_2 = prop_2[which.min(date)]), by = 'code'][,min(prop_2)] * 100)
+  
+  df_counterfactual = data.table(counterfactual_index = 1:6, 
+                                 label_counterfactual = c(paste0('Hypothesised vaccination rate of ', max_1864, '% in 18-64'), 
+                                                          paste0('Hypothesised vaccination rate of ', max_65p, '% in 65+'), 
+                                                          paste0('Hypothesised vaccination rate of ', max_1864, '% in 18-64 and ', max_65p, '% in 65+'), 
+                                                          paste0('Hypothesised vaccination rate of ', min_1864, '% in 18-64'), 
+                                                          paste0('Hypothesised vaccination rate of ', min_65p, '% in 65+'), 
+                                                          paste0('Hypothesised vaccination rate of ', min_1864, '% in 18-64 and ', min_65p, '% in 65+')))
+  df_counterfactual[, label_counterfactual := factor(label_counterfactual, 
+                                                     levels = df_counterfactual$label_counterfactual[c(4,1,5,2,6,3)])]
+  make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
+  
+  # plot estimate relative deaths
+  r_pdeaths = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
+  plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
+  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
+  p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states', selected_code)
+  p_all <- plot_relative_resurgence_vaccine_end_2(subset(r_pdeaths, code %in% selected_10_codes), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
+  p <- grid.arrange(p4, p_all, ncol = 1, heights = c(0.3,0.6), 
+                    left = text_grob('Relative COVID-19 attributable weekly deaths\nat the pick of the wave        ', rot = 90, hjust = 0.7, vjust = 1.5))
+  ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 7, h = 8)
+  
+  if(length(Code) > 6){
+    plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
+  }
+  
+  # plot predicted relative deaths
+  r_pdeaths_predict = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths_predict', outdir.table)
+  plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
+  
+  # plot counterfactual analysis
+  E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
+  E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
+  diff_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
+  perc_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
+  perc_E_pdeaths_counterfactual_2 <- make_ratio_vars_by_age_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
+  
+  # aggregate across states
+  diff_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+  perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'perc_E_pdeaths_counterfactual_all', outdir.table)
+  diff_E_pdeaths_counterfactual_all_2 <- make_inv_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+  perc_E_pdeaths_counterfactual_all_2 <- make_ratio_vars_by_age_by_counterfactual_table(fit_samples, df_age_vaccination2, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
+  
+  # aggregate across ages
+  diff_E_pdeaths_counterfactual_allages = make_var_inv_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
+  E_pdeaths_counterfactual_resurgence_cumulative_allages = make_var_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
+  E_pdeaths_predict_resurgence_cumulative_allages = make_var_by_state_table(fit_samples, df_week2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
+  perc_E_pdeaths_counterfactual_allages = make_ratio_vars_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
+  
+  # aggregate across states and ages 
+  diff_E_pdeaths_counterfactual_allstatesages <- make_inv_var_by_counterfactual_table(fit_samples, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+  perc_E_pdeaths_counterfactual_allstatesages <- make_ratio_vars_by_counterfactual_table(fit_samples, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
+  
+  # plot
+  # plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
+  #                                     subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
+  # plot_vaccine_effects_counterfactual_change(subset(perc_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', outdir.fig)
+  # plot_vaccine_effects_counterfactual_change(subset(diff_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
+  
+  p_FL <- plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, code %in% selected_code), 
+                                                      subset(E_pdeaths_predict_resurgence_cumulative_allages, code %in% selected_code), 
+                                                      subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
+  p_all <- plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, code %in% selected_10_codes), prop_vac_counterfactual, 'selected_states', 'percChange',  outdir.fig)
+  plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
+  p <- ggarrange(p_FL, p_all, labels = c('A', 'B'), legend.grob= get_legend(p_all), legend = 'bottom', widths = c(0.4, 0.6))
+  ggsave(p, file = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), w = 10, h = 7)
+  
+  find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual_2, 
+                             diff_E_pdeaths_counterfactual_all_2, perc_E_pdeaths_counterfactual_all_2,
+                             diff_E_pdeaths_counterfactual_allages, perc_E_pdeaths_counterfactual_allages,
+                             diff_E_pdeaths_counterfactual_allstatesages, perc_E_pdeaths_counterfactual_allstatesages,
+                             prop_vac, resurgence_dates, outdir.table)
+  
 }
-
-# plot predicted relative deaths
-r_pdeaths_predict = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths_predict', outdir.table)
-plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
-
-# plot counterfactual analysis
-E_pdeaths_predict_resurgence_cumulative = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
-E_pdeaths_counterfactual_resurgence_cumulative = make_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
-diff_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
-perc_E_pdeaths_counterfactual = make_inv_var_by_age_by_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, 'perc_E_pdeaths_counterfactual', outdir.table)
-perc_E_pdeaths_counterfactual_2 <- make_ratio_vars_by_age_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
-
-# aggregate across states
-diff_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
-perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'perc_E_pdeaths_counterfactual_all', outdir.table)
-diff_E_pdeaths_counterfactual_all_2 <- make_inv_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
-perc_E_pdeaths_counterfactual_all_2 <- make_ratio_vars_by_age_by_counterfactual_table(fit_samples, df_age_vaccination2, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
-
-# aggregate across ages
-diff_E_pdeaths_counterfactual_allages = make_var_inv_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'diff_E_pdeaths_counterfactual', outdir.table)
-E_pdeaths_counterfactual_resurgence_cumulative_allages = make_var_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, 'E_pdeaths_counterfactual_resurgence_cumulative', outdir.table)
-E_pdeaths_predict_resurgence_cumulative_allages = make_var_by_state_table(fit_samples, df_week2, df_state, 'E_pdeaths_predict_resurgence_cumulative', outdir.table)
-perc_E_pdeaths_counterfactual_allages = make_ratio_vars_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
-
-# aggregate across states and ages 
-diff_E_pdeaths_counterfactual_allstatesages <- make_inv_var_by_counterfactual_table(fit_samples, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
-perc_E_pdeaths_counterfactual_allstatesages <- make_ratio_vars_by_counterfactual_table(fit_samples, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
-
-# plot
-# plot_vaccine_effects_counterfactual(subset(E_pdeaths_counterfactual_resurgence_cumulative, code %in% selected_code), 
-#                                     subset(E_pdeaths_predict_resurgence_cumulative, code %in% selected_code), subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
-# plot_vaccine_effects_counterfactual_change(subset(perc_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'percChange', outdir.fig)
-# plot_vaccine_effects_counterfactual_change(subset(diff_E_pdeaths_counterfactual, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
-
-p_FL <- plot_vaccine_effects_counterfactual_allages(subset(E_pdeaths_counterfactual_resurgence_cumulative_allages, code %in% selected_code), 
-                                            subset(E_pdeaths_predict_resurgence_cumulative_allages, code %in% selected_code), 
-                                            subset(resurgence_dates, code %in% selected_code), 'cumulative', 'cumulative_rperiod_selected_states', outdir.fig)
-p_all <- plot_vaccine_effects_counterfactual_change_allages(subset(perc_E_pdeaths_counterfactual_allages, code %in% selected_10_codes), prop_vac_counterfactual, 'selected_states', 'percChange',  outdir.fig)
-plot_vaccine_effects_counterfactual_change_allages(subset(diff_E_pdeaths_counterfactual_allages, code %in% selected_code), prop_vac_counterfactual, 'selected_states', 'diffChange', outdir.fig)
-p <- ggarrange(p_FL, p_all, labels = c('A', 'B'), legend.grob= get_legend(p_all), legend = 'bottom', widths = c(0.4, 0.6))
-ggsave(p, file = paste0(outdir.fig, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), w = 10, h = 7)
-
-find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual_2, 
-                           diff_E_pdeaths_counterfactual_all_2, perc_E_pdeaths_counterfactual_all_2,
-                           diff_E_pdeaths_counterfactual_allages, perc_E_pdeaths_counterfactual_allages,
-                           diff_E_pdeaths_counterfactual_allstatesages, perc_E_pdeaths_counterfactual_allstatesages,
-                           prop_vac, resurgence_dates, outdir.table)
 
 cat("\n End postprocessing_figures.R \n")
 

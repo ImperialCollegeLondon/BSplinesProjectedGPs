@@ -46,7 +46,7 @@ path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_"
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
-path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-06-07.rds"))
+path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds"))
 path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
 
 # load functions
@@ -98,7 +98,7 @@ cat("Location ", as.character(loc_name), "\n")
 # plot data 
 if(1){
   p <- plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
-  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data, pop_data = pop_data, Code, outdir = outdir.fig)
+  plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data[!date %in% max(date):(max(date) - 6)], pop_data = pop_data, Code, outdir = outdir.fig)
   compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
                                  JHUData = JHUData, 
                                  scrapedData = scrapedData,

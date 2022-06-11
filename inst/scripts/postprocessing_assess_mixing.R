@@ -106,11 +106,30 @@ names_samples <- names(fit_samples)
 names_fit <- names(fit_cum)
 
 ## base model
-model = rstan::stan_model(path.to.stan.model)
 lambda_table <- make_lambda_table(fit_samples, stan_data, df_week, df_state, outdir.table)
 plot_lambda_table(lambda_table, outdir.fig)
 var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_state, outdir.table)
 plot_var_base_model_table(var_base_model_table, outdir.fig)
+
+## vaccination model parameters
+names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
+if(any(names %in% names_samples)){
+  
+  # summary <- summary(fit_cum)$summary
+  
+  min_age_index_vac = 3
+  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+  
+  math_name = c('psi^"base"*""', 'psi^"state"*""', 'psi^"vacc-cross"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc-cross"*""', 'chi^"vacc"*""', 'psi^"vacc"*""')
+  groups = c('slope', 'slope', 'slope', 'baseline', 'baseline', 'baseline', 'baseline', 'slope')
+  groups_levels = c('baseline', 'slope')
+  
+  tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
+  
+  forest_plot <- plot_forest_plot(tmp, outdir.fig)
+  
+}
 
 
 cat("\n End postprocessing_assess_mixing.R \n")

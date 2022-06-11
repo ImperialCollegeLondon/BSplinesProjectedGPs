@@ -2035,3 +2035,78 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   return(p)
 }
 
+plot_forest_plot <- function(tmp, outdir){
+  
+  tmp1 <- tmp[!grepl('vacc', variable) & group == 'baseline']
+  tmp1[grepl('\\["18-64', variable) | (grepl('18-64"\\]', variable) & !grepl('\\["65', variable)), age_group := 'among 18-64']
+  tmp1[grepl('\\["65', variable) | (grepl('65\\+"\\]', variable) & !grepl('\\["18-64', variable)), age_group := 'among 65+']
+  p1 <- ggplot(tmp1, aes(y = variable)) + 
+    geom_point(aes(x = M)) + 
+    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed') + 
+    scale_y_discrete(labels = label_parse(), limits=rev) + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5)) +
+    ggtitle("Non-vaccine parameters on baseline")
+  
+  tmp1 <- tmp[!grepl('vacc', variable) & group == 'slope']
+  p2 <- ggplot(tmp1, aes(y = variable)) + 
+    geom_point(aes(x = M)) + 
+    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed') + 
+    scale_y_discrete(labels = label_parse(), limits=rev) + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5)) +
+    ggtitle("Non-vaccine parameters on slope")
+  
+  tmp1 <- tmp[grepl('vacc', variable) & group == 'baseline']
+  tmp1[, type := 'Direct\nvaccine\neffects']
+  tmp1[grepl('vacc-cross', variable), type := 'Indirect\nvaccine\neffects']
+  p3 <- ggplot(tmp1, aes(y = variable)) + 
+    geom_point(aes(x = M)) + 
+    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed') + 
+    facet_grid(type~., scales= "free", space="free") +
+    scale_y_discrete(labels = label_parse(), limits=rev) + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5))+
+    ggtitle("Vaccine parameters on baseline")
+  
+  tmp1 <- tmp[grepl('vacc', variable) & group == 'slope']
+  tmp1[, type := 'Direct\nvaccine\neffects']
+  tmp1[grepl('vacc-cross', variable), type := 'Indirect\nvaccine\neffects']
+  p4 <- ggplot(tmp1, aes(y = variable)) + 
+    geom_point(aes(x = M)) + 
+    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed') + 
+    facet_grid(type~., scales= "free", space="free") +
+    scale_y_discrete(labels = label_parse(), limits=rev) + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5))+
+    ggtitle("Vaccine parameters on slope")
+  
+  p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 1, 3), c(1, 1, 4), c(1, 1, NA), c(NA, 2, NA)), heights = c(0.25, 0.25, 0.35, 0.15), widths = c(0.07, 0.43, 0.5))
+  ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 7)
+  
+  return(p)
+}

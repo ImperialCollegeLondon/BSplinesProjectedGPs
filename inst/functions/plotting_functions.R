@@ -223,9 +223,11 @@ plot_vaccine_data = function(deathByAge, vaccine_data, pop_data, Code, outdir){
   ggsave(paste0(outdir, '-proportion_vaccine_age_code_selected_states.png'), w = 6, h = 3.75)
   
   p <- p  + facet_wrap(.~loc_label, nrow = 4) 
+  p <- ggarrange(p, labels = 'A')
   p2 <- p2 + facet_wrap(.~`Age group`, nrow = 2, label = 'label_both') 
-  pa <- grid.arrange(p, p2, layout_matrix = rbind(c(1, 2), c(1, NA)), heights = c(0.8, 0.2))
-  ggsave(pa, file = paste0(outdir, '-deathByAge_proportion_vaccine_panel_selected_states.png'), w = 7.7, h = 7.7)
+  p2 <- ggarrange(p2, labels = 'B')
+  pa <- grid.arrange(p, p2, layout_matrix = rbind(c(1, 2), c(1, NA)), heights = c(0.75, 0.25))
+  ggsave(pa, file = paste0(outdir, '-deathByAge_proportion_vaccine_panel_selected_states.png'), w = 7.7, h = 8.5)
   
   
   if(length(Code) > 6){
