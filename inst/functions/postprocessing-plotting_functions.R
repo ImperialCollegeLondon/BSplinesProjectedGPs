@@ -2019,7 +2019,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
     scale_shape_manual(values = c(15, 17, 3, 10, 11, 20, 12, 13, 14, 4)[1:length(tmp1$code)]) + 
     labs(col = '', y = paste0('Change in COVID-19 attributable deaths\namong 18+ at the end of the resurgence period'),
          fill = '', linetype = '', 
-         x = 'Difference between hypothesised vaccination rate\nandobserved vaccination rate', pch = '') +
+         x = 'Difference between hypothesised vaccination rate\nand observed vaccination rate', pch = '') +
     guides(fill=guide_legend(order=1,ncol=1,byrow=TRUE), 
            col=guide_legend(order=1,ncol=1,byrow=TRUE), 
            pch = guide_legend(order=2,nrow=length(unique(tmp1$code))/2,byrow=TRUE)) 
