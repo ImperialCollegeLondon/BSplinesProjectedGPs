@@ -448,7 +448,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
     labs(y = paste0('Predicted COVID-19 attributable\nmortality rates as of ', format(unique(mortality_rate$date), '%b %Y')),
          col = '', fill = '', x = 'Age')
   
-  ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_selectedstates_wo85p.png')), w = 6, h = 4)
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_selectedstates_wo85p.png')), w = 6.5, h = 3)
   
   p <- p + theme(plot.margin = unit(c(5.5,0,5.5,5.5), "pt"))
   p1 <- ggplot(subset(tmp, age == '85'), aes(x=age_cat)) + 
