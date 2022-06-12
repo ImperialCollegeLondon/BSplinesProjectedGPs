@@ -545,12 +545,12 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
           axis.text.x = element_text(angle = 45, hjust =1), 
           panel.grid.major = element_blank(), 
           axis.title.x = element_blank(), 
-          axis.title.y = element_blank(), 
+          axis.title.y = element_text(size = rel(1.1)),
           legend.title = element_text(size = rel(1.1)), 
           legend.text = element_text(size = rel(1.1)), 
           strip.text = element_text(size = rel(1)), 
           legend.position = 'bottom') +
-    labs( y = 'Predicted age-specific COVID-19 attributable weekly deaths', shape = '',
+    labs( y = 'Predicted COVID-19 attributable weekly deaths', shape = '',
           linetype = '', col = '', fill = '', alpha = '') + 
     scale_shape_manual(values = 16) +
     scale_linetype_manual(values = 2) + 
