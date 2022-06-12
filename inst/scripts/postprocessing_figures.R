@@ -207,7 +207,7 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states', selected_code)
   p_all <- plot_relative_resurgence_vaccine_end_2(subset(r_pdeaths, code %in% selected_10_codes), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
   p <- grid.arrange(p4, p_all, ncol = 1, heights = c(0.3,0.6), 
-                    left = text_grob('Relative COVID-19 attributable weekly deaths\nat the pick of the wave        ', rot = 90, hjust = 0.7, vjust = 1.5))
+                    left = text_grob('Relative COVID-19 attributable weekly deaths\nat the pick of the summer 2021 resurgence wave', rot = 90, hjust = 0.7, vjust = 1.5))
   ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 7, h = 8)
   
   if(length(Code) > 6){
