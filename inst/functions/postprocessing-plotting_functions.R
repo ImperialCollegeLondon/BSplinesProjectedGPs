@@ -1109,9 +1109,8 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
                           labels = scales::percent_format(accuracy = 1), limits = lim1864) + 
     scale_fill_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)), 
                          labels = scales::percent_format(accuracy = 1), limits = lim1864) + 
-    scale_shape_manual(values = c(15, 17, 20, 4)) + 
+    scale_shape_manual(values = c(15, 17, 20, 4, 3, 10, 11, 12, 13, 14)[1:length(data_res$code)]) + 
     guides(shape = 'none')
-  
   
   p2 <- ggplot(data_res[age == '65+'], aes(x = week_index)) + 
     geom_line(aes(y = M, col = prop_2_init, group = loc_label)) + 
@@ -1140,7 +1139,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
                           labels = scales::percent_format(accuracy = 1), limits = lim65p) + 
     scale_fill_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)),
                          labels = scales::percent_format(accuracy = 1), limits = lim65p) + 
-    scale_shape_manual(values = c(15, 17, 20, 4))+ 
+    scale_shape_manual(values = c(15, 17, 20, 4, 3, 10, 11, 12, 13, 14)[1:length(data_res$code)])+ 
     guides(shape = 'none')
   
   if(log_transform){
