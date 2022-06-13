@@ -555,14 +555,16 @@ plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates',
            linetype = guide_legend(order = 3), 
            col = guide_legend(order = 1),
            fill = guide_legend(order = 1))
-  ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 8)
-  
+
   if(!is.null(resurgence_dates)){
     dummy.dt <- resurgence_dates[, list(date = seq.Date(start_resurgence, stop_resurgence, by = 'week')), by = 'code']
     dummy.dt = merge(dummy.dt, unique(select(death, code, loc_label)), by = 'code')
     dummy.dt[, text := 'Summer 2021 resurgence period']
     p = p +     geom_ribbon(data = dummy.dt, aes(ymin = -Inf, ymax = Inf, alpha = text)) 
   }
+  
+  ggsave(p, file = paste0(outdir, paste0('-Mortality_', lab, '.png')), w = 7.5, h = 8)
+  
   
 }
 
