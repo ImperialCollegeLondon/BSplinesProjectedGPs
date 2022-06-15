@@ -161,8 +161,9 @@ p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contributio
 if('intercept_resurgence0' %in% names(fit_samples)){
   
   # # p-value vaccine effects
-  names = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
-  save_p_value_vaccine_effects(fit_samples, names, outdir.table)
+  names_var = c('slope_resurgence0', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
+  names_var <- names_var[names_var %in% names(fit_samples)]
+  save_p_value_vaccine_effects(fit_samples, names_var, outdir.table)
   
   # save resurgence dates
   save_resurgence_dates(resurgence_dates, outdir.table)
