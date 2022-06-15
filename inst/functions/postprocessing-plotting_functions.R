@@ -1162,7 +1162,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   ggsave(p, file =file, w = 8, h = 5)
   
   p1 <- p1 +  guides(colour = 'none', fill ='none') + theme(axis.title.x = element_text(hjust = 1.05)) + 
-    labs(x ='Week index of the summer', y  ="Relative COVID-19 attributable\nweekly deaths")
+    labs(x ='Week index of the summer', y  ="\nRelative COVID-19 attributable\nweekly deaths")
   p2 <- p2 +  guides(colour = 'none', fill ='none') + theme(axis.title.y = element_blank(), axis.title.x = element_text(hjust = -0.05)) + 
     labs(x='2021 resurgence period', y  ="Over time")
   p = ggarrange(p1, p2, ncol = 2, widths = c(0.53, 0.47))
@@ -1188,11 +1188,10 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
   lab = function(Age) paste0('Pre-resurgence\nvaccination rate in ', Age)
   lab_long = function(Age) paste0('Pre-resurgence vaccination rate in ', Age)
   
-  p1 <- ggplot(data_res, aes(x = prop_1_init)) + 
+  p1 <- ggplot(data_res[age == '18-64'], aes(x = prop_1_init)) + 
     geom_point(aes(y = M, col = prop_1_init, shape = loc_label)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, width = 0) +
-    facet_grid(.~`Age group`, label = 'label_both') +
-    labs(y = '\n', 
+    labs(y = 'Relative COVID-19 attributable\nweekly deaths at the peak of the\nsummer 2021 resurgence wave', 
          x = lab_long('18-64'), shape = '', 
          col = lab('18-64')) +
     theme_bw() +
@@ -1202,7 +1201,7 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
           axis.title.x = element_text(size = rel(0.9)),
-          axis.title.y = element_text(vjust =0),
+          axis.title.y = element_text(),
           strip.text = element_blank(),
           legend.spacing.x = unit(0.3, "cm"), 
           legend.position = 'bottom') +
@@ -1211,10 +1210,9 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
     scale_shape_manual(values = c(15, 17, 3, 10, 11, 20, 12, 13, 14, 4)[1:length(data_res$code)]) + 
     guides(col = 'none')
 
-  p2 <- ggplot(data_res, aes(x = prop_2_init)) + 
+  p2 <- ggplot(data_res[age == '65+'], aes(x = prop_2_init)) + 
     geom_point(aes(y = M, col = prop_2_init, shape = loc_label, fill = prop_1_init)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, width = 0) +
-    facet_grid(.~`Age group`, label = 'label_both') +
     labs(y = '\n', 
          x = lab_long('65+'), shape = '', 
          col = lab('65+'), fill = lab('18-64')) + 
@@ -1226,7 +1224,7 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
           # legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
           axis.title.x = element_text(size = rel(0.9)),
-          # axis.title.y = element_blank(),
+          axis.title.y = element_blank(),
           # axis.text.y = element_blank(),
           strip.text = element_blank(),
           # strip.text = element_text(size = rel(0.9)),
@@ -1246,7 +1244,7 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
     p2 = p2 + scale_y_continuous(trans = 'log', breaks = base_breaks()) 
   }
   
-  p = ggarrange(p1, p2, nrow = 2, widths = c(0.53, 0.47), legend.grob = get_legend(p2), legend = 'bottom')
+  p = ggarrange(p1, p2, nrow = 1, widths = c(0.53, 0.47), legend.grob = get_legend(p2), legend = 'bottom')
   p = ggarrange(p, legend.grob = get_legend(p1), legend = 'bottom')
   
   if(log_transform){
