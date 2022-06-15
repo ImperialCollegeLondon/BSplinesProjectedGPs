@@ -127,8 +127,8 @@ parameters {
   row_vector[M] intercept_resurgence_re[C];
   real<lower=0> sigma_intercept_resurgence;
   real slope_resurgence0[C];
-  real vaccine_effect_intercept_diagonal;
-  real vaccine_effect_slope_diagonal;
+  real vaccine_effect_intercept_diagonal[C];
+  real vaccine_effect_slope_diagonal[C];
   real<lower=0> sigma_r_pdeaths[M];
 }
 
@@ -192,8 +192,8 @@ transformed parameters {
     intercept_resurgence[c] = rep_row_vector(intercept_resurgence0[c], M) + intercept_resurgence_re[c];
     slope_resurgence[c] = rep_row_vector(slope_resurgence0[c], M) ;
 
-    intercept_resurgence[c] += prop_vac_start[c] .* rep_row_vector(vaccine_effect_intercept_diagonal, M);
-    slope_resurgence[c] += prop_vac_start[c] .* rep_row_vector(vaccine_effect_slope_diagonal, M);
+    intercept_resurgence[c] += prop_vac_start[c] .* rep_row_vector(vaccine_effect_intercept_diagonal[c], M);
+    slope_resurgence[c] += prop_vac_start[c] .* rep_row_vector(vaccine_effect_slope_diagonal[c], M);
     
     log_xi[c] = rep_matrix(intercept_resurgence[c], T) + rep_matrix(week_indices_resurgence, M) .* rep_matrix(slope_resurgence[c], T);
     xi[c] = exp(log_xi[c]);
@@ -350,8 +350,8 @@ generated quantities {
       intercept_resurgence_counterfactual[c] = rep_row_vector(intercept_resurgence0[c], M) + intercept_resurgence_re[c];
       slope_resurgence_counterfactual[c] = rep_row_vector(slope_resurgence0[c], M) ;
       
-      intercept_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c][n,:] .* rep_row_vector(vaccine_effect_intercept_diagonal, M);
-      slope_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c][n,:] .* rep_row_vector(vaccine_effect_slope_diagonal, M);
+      intercept_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c][n,:] .* rep_row_vector(vaccine_effect_intercept_diagonal[c], M);
+      slope_resurgence_counterfactual[c] += prop_vac_start_counterfactual[c][n,:] .* rep_row_vector(vaccine_effect_slope_diagonal[c], M);
 
       log_xi_counterfactual[c] = rep_matrix(intercept_resurgence_counterfactual[c], T) +
                             rep_matrix(week_indices_resurgence, M) .* rep_matrix(slope_resurgence_counterfactual[c], T);

@@ -2080,7 +2080,6 @@ plot_forest_plot <- function(tmp, outdir){
     geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
     theme_bw() + 
     geom_vline(xintercept = 0, linetype = 'dashed') + 
-    facet_grid(type~., scales= "free", space="free") +
     scale_y_discrete(labels = label_parse(), limits=rev) + 
     theme(axis.title.x = element_blank(),
           axis.title.y = element_blank(),
@@ -2090,6 +2089,10 @@ plot_forest_plot <- function(tmp, outdir){
           plot.title = element_text(hjust = 0.5))+
     ggtitle("Vaccine parameters on baseline")
   
+  if(length(unique(tmp1$variable))>2){
+    p3 <- p3 + facet_grid(type~., scales= "free", space="free") 
+  }
+  
   tmp1 <- tmp[grepl('vacc', variable) & group == 'slope']
   tmp1[, type := 'Direct\nvaccine\neffects']
   tmp1[grepl('vacc-cross', variable), type := 'Indirect\nvaccine\neffects']
@@ -2098,7 +2101,6 @@ plot_forest_plot <- function(tmp, outdir){
     geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
     theme_bw() + 
     geom_vline(xintercept = 0, linetype = 'dashed') + 
-    facet_grid(type~., scales= "free", space="free") +
     scale_y_discrete(labels = label_parse(), limits=rev) + 
     theme(axis.title.x = element_blank(),
           axis.title.y = element_blank(),
@@ -2107,6 +2109,10 @@ plot_forest_plot <- function(tmp, outdir){
           title = element_text(size = rel(0.8)),
           plot.title = element_text(hjust = 0.5))+
     ggtitle("Vaccine parameters on slope")
+  
+  if(length(unique(tmp1$variable))>2){
+    p4 <- p4 + facet_grid(type~., scales= "free", space="free") 
+  }
   
   p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 1, 3), c(1, 1, 4), c(1, 1, NA), c(NA, 2, NA)), heights = c(0.25, 0.25, 0.35, 0.15), widths = c(0.07, 0.43, 0.5))
   ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 7)
