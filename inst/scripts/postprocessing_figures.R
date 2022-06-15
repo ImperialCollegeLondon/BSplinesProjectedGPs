@@ -207,9 +207,14 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
   p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states', selected_code)
   p_all <- plot_relative_resurgence_vaccine_end_2(subset(r_pdeaths, code %in% selected_10_codes), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
-  p <- grid.arrange(p4, p_all, ncol = 1, heights = c(0.3,0.6), 
-                    left = text_grob('Relative COVID-19 attributable weekly deaths\nat the peak of the summer 2021 resurgence wave', rot = 90, hjust = 0.7, vjust = 1.5))
-  ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 7, h = 8)
+  p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.45,0.55))
+  ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 7, h = 7)
+  
+  # relative deaths ratio
+  r_pdeaths_ratio <- make_var_by_age_by_state_by_time_table_relative(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', 'FL', outdir.table)
+  r_pdeaths_ratio[, max_week_index := max(week_index), by = 'code']
+  r_pdeaths_ratio <- r_pdeaths_ratio[week_index == max_week_index]
+  print(r_pdeaths_ratio)
   
   if(length(Code) > 6){
     plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
