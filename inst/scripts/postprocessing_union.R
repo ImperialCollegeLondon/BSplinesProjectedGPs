@@ -20,8 +20,8 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 
 paste0(states,collapse =  ',')
-stan_model = "220209a"
-JOBID = 5539
+stan_model = "220208a"
+JOBID = 3541
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -139,6 +139,20 @@ dir.create(dir)
 saveRDS(predictions, file = file.path(dir, 'predicted_weekly_deaths.rds'))
 
 
+# 
+# vaccination effect on contribution
+if(!is.null(stan_data$prop_vac)){
+  contribution = vector(mode = 'list', length = length(locs))
+  for(i in seq_along(locs)){
+    contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
+  }
+  contribution = do.call('rbind', contribution)
+  
+  mid_code = round(length(locs) / 2)
+  plot_contribution_vaccine(subset(contribution, code %in% locs[1:mid_code]), vaccine_data, resurgence_dates, 'part_1', outdir.fig)
+  plot_contribution_vaccine(subset(contribution, code %in% locs[(mid_code+1):(mid_code*2)]), vaccine_data, resurgence_dates,  'part_2',outdir.fig)
+  
+}
 
 cat("\n End postprocessing_union.R \n")
 
