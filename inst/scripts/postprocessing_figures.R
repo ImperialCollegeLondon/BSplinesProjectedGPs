@@ -82,6 +82,11 @@ fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 selected_code = c('CA', 'FL', 'NY', 'TX')
 selected_10_codes = c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
 
+# table for plotting vaccine effects
+min_age_index_vac = 3
+df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+
 ### temporary
 if('Total' %in% colnames(pop_data)){
   path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
@@ -103,6 +108,8 @@ age_contribution_continuous_table = make_var_by_age_by_state_by_time_table(fit_s
 plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
 age_contribution_discrete_table = make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
+make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
+make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', outdir.table)
 
 # baseline contribution adjusted and non-adjusted for population composition
 make_contribution_ref(fit_samples, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
@@ -168,11 +175,6 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   # save resurgence dates
   save_resurgence_dates(resurgence_dates, outdir.table)
   
-  # table for plotting vaccine effects
-  min_age_index_vac = 3
-  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
-  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
-  
   df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
   df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
   df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
@@ -199,8 +201,7 @@ if('intercept_resurgence0' %in% names(fit_samples)){
                                                           paste0('Hypothesised vaccination rate of ', min_1864, '% in 18-64 and ', min_65p, '% in 65+')))
   df_counterfactual[, label_counterfactual := factor(label_counterfactual, 
                                                      levels = df_counterfactual$label_counterfactual[c(4,1,5,2,6,3)])]
-  make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
-  
+
   # plot estimate relative deaths
   r_pdeaths = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)

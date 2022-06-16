@@ -84,8 +84,11 @@ for(i in seq_along(locs)){
 }
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
+# mortality_rate[is.na(M), M := c(2.056321e-03, 1.684421e-02)]
 crude_mortality_rate = find_crude_mortality_rate(mortality_rate, df_age_continuous, df_age_reporting, pop_data)
 plot_mortality_rate_all_states(mortality_rate, crude_mortality_rate, outdir.fig)
+plot_mortality_rate_all_states2(mortality_rate, outdir.fig)
+
 
 # aggregate across states
 mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
@@ -141,18 +144,16 @@ saveRDS(predictions, file = file.path(dir, 'predicted_weekly_deaths.rds'))
 
 # 
 # vaccination effect on contribution
-if(!is.null(stan_data$prop_vac)){
-  contribution = vector(mode = 'list', length = length(locs))
-  for(i in seq_along(locs)){
-    contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
-  }
-  contribution = do.call('rbind', contribution)
-  
-  mid_code = round(length(locs) / 2)
-  plot_contribution_vaccine(subset(contribution, code %in% locs[1:mid_code]), vaccine_data, resurgence_dates, 'part_1', outdir.fig)
-  plot_contribution_vaccine(subset(contribution, code %in% locs[(mid_code+1):(mid_code*2)]), vaccine_data, resurgence_dates,  'part_2',outdir.fig)
-  
+contribution = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  contribution[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacTable_', locs[i], '.rds'))
 }
+contribution = do.call('rbind', contribution)
+
+mid_code = round(length(locs) / 2)
+plot_contribution_vaccine(subset(contribution, code %in% locs[1:mid_code]), vaccine_data, resurgence_dates, 'part_1', outdir.fig)
+plot_contribution_vaccine(subset(contribution, code %in% locs[(mid_code+1):(mid_code*2)]), vaccine_data, resurgence_dates,  'part_2',outdir.fig)
+
 
 cat("\n End postprocessing_union.R \n")
 

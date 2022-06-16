@@ -382,7 +382,7 @@ plot_mortality_rate_all_states = function(mortality_rate, crude_mortality_rate, 
   
   crude_mortality_rate <- crude_mortality_rate[age != '0-24']
   crude_mortality_rate[, `Age group` := age]
-
+  
   p <- ggplot(mortality_rate, aes(x=loc_label, y = M)) + 
     geom_bar(aes(fill = M), stat="identity") +
     geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
@@ -407,20 +407,79 @@ plot_mortality_rate_all_states = function(mortality_rate, crude_mortality_rate, 
     
   } else{
     p <- p +  facet_wrap(~`Age group`, nrow =4, label = 'label_both', scales = 'free_y') 
-     
+    
     ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_large.png')), w = 7, h = 9)
     
   }
   
-    p <- p + 
-      geom_point(data = crude_mortality_rate, aes(x = loc_label, y = crude_mortality_rate, col = 'CDC crude estimate')) + 
-      labs(col = '')
-    ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_withcrude.png')), w = 7, h = 9)
-    
-
+  p <- p + 
+    geom_point(data = crude_mortality_rate, aes(x = loc_label, y = crude_mortality_rate, col = 'CDC crude estimate')) + 
+    labs(col = '')
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages_withcrude.png')), w = 7, h = 9)
+  
+  
   # +
   #   labs(y = '')
+  
+}
 
+plot_mortality_rate_all_states2 = function(mortality_rate, outdir)
+{
+  
+  tmp =   subset(mortality_rate, age == '85+')
+  age = unique(tmp$age)
+  tmp = tmp[order(M)]
+  mortality_rate[, loc_label := factor(loc_label, tmp$loc_label)]
+  
+  mortality_rate <- mortality_rate[age != '0-24']
+  mortality_rate[, `Age group` := age]
+  
+  mortality_rate[, medianM := median(M), by = 'age']
+  
+  crude_mortality_rate <- crude_mortality_rate[age != '0-24']
+  crude_mortality_rate[, `Age group` := age]
+
+  my_plot <- function(tmp, with_axis){
+    
+    pp <- ggplot(tmp, aes(x=loc_label, y = M)) + 
+      geom_hline(aes(yintercept = tmp[, unique(medianM)], linetype = ''), alpha = 0.75, col = 'darkblue') + 
+      geom_bar(aes(fill = M), stat="identity") +
+      geom_errorbar(aes(ymin=CL, ymax=CU), width=.2, position=position_dodge(.9), color = 'grey30') + 
+      scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige',
+                           midpoint = tmp[, unique(medianM)], labels = scales::percent_format()) + 
+      theme_bw() +
+      theme(axis.text.x = element_text(angle = 70,hjust=1,vjust=1), 
+            legend.position = 'bottom', 
+            panel.grid.minor= element_blank(), 
+            panel.grid.major.x= element_blank(), 
+            axis.title.x = element_blank(),
+            axis.title.y = element_blank(),
+            legend.text = element_text(colour = 'white'),
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA)) + 
+      labs(x = '', y = '', fill = '', linetype = 'National median') + 
+      scale_linetype_manual(values = 'dashed') +
+      scale_y_continuous(expand =expansion(mult = c(0, .05)), labels = scales::percent_format())+ 
+      guides(fill = guide_colourbar(barwidth = 10,  barheight = 1)) +  
+      facet_grid(`Age group`~., label = 'label_both') 
+    
+    if(!with_axis){
+      pp <- pp + theme(axis.ticks.x = element_blank(), axis.text.x = element_blank(), axis.title.x = element_blank())
+    
+    }
+    return(pp)
+  }
+  
+  p1 <- my_plot(mortality_rate[age == sort(unique(mortality_rate$age))[1]], F)
+  p2 <- my_plot(mortality_rate[age == sort(unique(mortality_rate$age))[2]], F)
+  p3 <- my_plot(mortality_rate[age == sort(unique(mortality_rate$age))[3]], F)
+  p4 <- my_plot(mortality_rate[age == sort(unique(mortality_rate$age))[4]], T)
+
+  p <- ggarrange(p1, p2, p3, p4,common.legend = T, legend = 'bottom', ncol= 1, heights = c(0.2, 0.2, 0.2, 0.3))
+  p <- grid.arrange(p, left = paste0('                             Predicted COVID-19 attributable mortality rates as of ', format(unique(mortality_rate$date), '%B %Y')),
+                    bottom = text_grob('Lower <-> Higher   \nthan national median', hjust = 1.15, vjust = -0.1, size = 10))
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRate_allages2.png')), w = 7, h = 9)
+  
 }
 
 plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
@@ -442,7 +501,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
           panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_color_jcolors('pal8') + 
     scale_fill_jcolors('pal8') + 
-    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), limits = range(c(tmp$CL, tmp$CU + 0.001)), 
+    scale_y_continuous(expand = c(0,0), labels = scales::percent_format(), 
                        breaks = seq(0, max(tmp$CU), 0.01)) +
     scale_x_continuous(expand = c(0,0)) +
     labs(y = paste0('Predicted COVID-19 attributable\nmortality rates as of ', format(unique(mortality_rate$date), '%B %Y')),
@@ -2173,3 +2232,4 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, resurgence_dat
   ggsave(p, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 7, h = 8)
   
 }
+

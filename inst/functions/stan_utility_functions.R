@@ -482,6 +482,16 @@ insert.at <- function(a, pos, ...){
   unlist(result)
 }
 
+add_vaccine_age_strata <- function(stan_data, df_age_vaccination){
+  age_index_min = df_age_vaccination[age == '18-64']$age_index
+  
+  stan_data[['age_from_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_from
+  stan_data[['age_to_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_to
+  stan_data[['C']] = nrow(df_age_vaccination[age_index >= age_index_min])
+  
+  return(stan_data)
+}
+
 add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_dates){
   
   delay = 2*7
@@ -533,10 +543,6 @@ add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_d
       
     }
   }
-  
-  stan_data[['age_from_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_from
-  stan_data[['age_to_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_to
-  stan_data[['C']] = nrow(df_age_vaccination[age_index >= age_index_min])
   
   stan_data[['prop_vac']] = prop_vac
   stan_data[['prop_vac_start']] = prop_vac_start
