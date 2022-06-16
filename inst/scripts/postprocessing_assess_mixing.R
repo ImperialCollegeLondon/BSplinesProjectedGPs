@@ -112,7 +112,10 @@ var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_sta
 plot_var_base_model_table(var_base_model_table, outdir.fig)
 
 ## vaccination model parameters
-names = c('slope_resurgence0', 'slope_resurgence_re', 'vaccine_effect_slope_cross', 'intercept_resurgence0', 'intercept_resurgence_re', 'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_slope_diagonal')
+names = c('slope_resurgence0', 'slope_resurgence_re', 'intercept_resurgence0', 'intercept_resurgence_re', 
+          'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_intercept0',
+          'vaccine_effect_slope_cross', 'vaccine_effect_slope_diagonal', 'vaccine_effect_slope0'
+          )
 if(any(names %in% names_samples)){
   
   # summary <- summary(fit_cum)$summary
@@ -121,8 +124,10 @@ if(any(names %in% names_samples)){
   df_age_vaccination2 = df_age_vaccination[age_index >= 3]
   df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
   
-  math_name = c('psi^"base"*""', 'psi^"state"*""', 'psi^"vacc-cross"*""', 'chi^"base"*""', 'chi^"state"*""', 'chi^"vacc-cross"*""', 'chi^"vacc"*""', 'psi^"vacc"*""')
-  groups = c('slope', 'slope', 'slope', 'baseline', 'baseline', 'baseline', 'baseline', 'slope')
+  math_name = c('psi^"base"*""', 'psi^"state"*""', 'chi^"base"*""', 'chi^"state"*""', 
+                'chi^"vacc-cross"*""', 'chi^"vacc"*""',  'chi^"vacc0"*""',
+                'psi^"vacc-cross"*""', 'psi^"vacc"*""', 'psi^"vacc0"*""')
+  groups = c('slope', 'slope', 'baseline', 'baseline', 'baseline', 'baseline', 'baseline','slope', 'slope', 'slope')
   groups_levels = c('baseline', 'slope')
   
   tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)

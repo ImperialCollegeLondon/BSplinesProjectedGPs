@@ -9,10 +9,15 @@ library(ggpubr)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-# states = strsplit('CA,FL,NY,TX',',')[[1]]
 # states = strsplit('NE',',')[[1]]
-stan_model = "220615a"
+# states = strsplit('CA,FL,NY,TX',',')[[1]]
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA',',')[[1]]
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI',',')[[1]]
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA',',')[[1]]
+# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA,KY,OR,OK,CT,UT',',')[[1]]
+
+stan_model = "220617a"
 JOBID = 3541
 
 if(0)
@@ -116,7 +121,7 @@ cat("The reference date is", as.character(ref_date), "\n")
 cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 stan_data = add_JHU_data(stan_data, df_week, Code)
-if(grepl('220209a|220209c|220209d|220607a|220208a|220131a|220615|220616', stan_model)){
+if(grepl('220209a|220209c|220209d|220607a|220208a|220131a|220615|220616|220617', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 16, knots_rows = knots_rows)
@@ -130,7 +135,7 @@ if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'exponential')
 }
-if(grepl('220208|220131|22061|2206165', stan_model)){
+if(grepl('220208|220131|220615|220616|220617', stan_model)){
   cat("\n With vaccine effects \n")
   resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
   stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
