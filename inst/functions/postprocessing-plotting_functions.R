@@ -2201,8 +2201,11 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
   tmp1 <- tmp1[code %in% unique(contribution$code)]
   tmp1[, type := factor(type, levels = unique(type[order(age_index, decreasing = T)]))]
   
+  contribution[, M_median := median(M), by = c('date', 'age')]
+  
   p1 = ggplot(contribution, aes(x = date)) + 
-    geom_vline(data = tmp1, aes(xintercept = mindate, linetype = type), col = 'grey50', size=1.2) +
+    geom_vline(data = tmp1, aes(xintercept = mindate, alpha = type), col = 'grey50', size=1.2) +
+    geom_line(aes(y = M_median, col = as.factor(age), linetype = '')) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     geom_line(aes(y = M, col = as.factor(age))) + 
     scale_y_continuous(labels = scales::percent, expand = c(0,0), limits = c(0,1)) +
@@ -2212,11 +2215,14 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
           panel.border = element_rect(colour = "black", fill = NA), 
           legend.direction='vertical') +
     labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
-         col = "Age group", fill = "Age group", x = '') + 
+         col = "Age group", fill = "Age group", x = '', linetype = 'National median', alpha = '') + 
     scale_shape_manual(values = 4)+ 
+    scale_alpha_manual(values = c(1, 0.7)) + 
+    scale_linetype_manual(values = 'dashed') + 
     scale_x_date(expand = c(0,0), breaks = '3 months', date_labels = "%b-%y")  + 
     guides(col = guide_legend(order = 1), fill = guide_legend(order = 1), 
-          alpha = guide_legend(order = 2)) 
+           linetype = guide_legend(order = 2),
+          alpha = guide_legend(order = 3)) 
   
   if(length(unique(contribution$code)) > 10){
     p1 <- p1 +     facet_wrap(~loc_label, ncol= 5) 
