@@ -94,12 +94,26 @@ plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
 # trace and paris plots
 cat("\n Trace plot weekly deaths params \n")
-p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 20, limitsize = F)
-
-cat("\n Pairs plot weekly deaths params \n")
-p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
+tryCatch(
+  # This is what I want to do...
+  {
+    sum(is.na(fit_samples[['nu']]))
+    p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
+    ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 20, limitsize = F)
+    
+    cat("\n Pairs plot weekly deaths params \n")
+    p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
+    ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
+    
+  },
+  # ... but if an error occurs, tell me what happened: 
+  error=function(error_message) {
+    message("This is my custom message.")
+    message("And below is the error message from R:")
+    message(error_message)
+    return(NA)
+  }
+)
 
 # forest plots
 names_samples <- names(fit_samples)
