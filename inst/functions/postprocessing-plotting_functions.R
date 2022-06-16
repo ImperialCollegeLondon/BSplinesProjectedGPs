@@ -2177,7 +2177,7 @@ plot_forest_plot <- function(tmp, outdir){
   return(p)
 }
 
-plot_contribution_vaccine <- function(contribution, vaccine_data, resurgence_dates, lab, outdir){
+plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
   
   delay = 7*2
   df_age_vaccination = unique(select(contribution, age_index, age))
@@ -2190,46 +2190,44 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, resurgence_dat
   vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
   vaccine_data = vaccine_data[!is.na(age_index), list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
   vaccine_data[, date := date + delay]
+  tmp <- vaccine_data[age_index == 2, list(mindate = min(date[prop > 0.5]), 
+                                           age_index = age_index), by = 'code']
+  tmp[, type:= 'Vaccination rate in 65+ reaches 50%']
+  tmp1 <- vaccine_data[age_index == 1, list(mindate = min(date[prop > 0.39]), 
+                                            age_index = age_index), by = 'code']
+  tmp1[, type:= 'Vaccination rate in 18-64 reaches 40%']
+  tmp1 <- rbind(tmp, tmp1)
+  tmp1 <- merge(tmp1, unique(contribution[, .(code, loc_label)]), by = 'code')
+  tmp1 <- tmp1[code %in% unique(contribution$code)]
+  tmp1[, type := factor(type, levels = unique(type[order(age_index, decreasing = T)]))]
   
-  tmp <- merge(contribution, vaccine_data, by = c('code', 'date', 'loc_label', 'age_index'), all.x = T)
-  tmp <- merge(tmp, resurgence_dates, by = 'code')
-  
-  p1 = ggplot(tmp, aes(x = date)) + 
+  p1 = ggplot(contribution, aes(x = date)) + 
+    geom_vline(data = tmp1, aes(xintercept = mindate, linetype = type), col = 'grey50', size=1.2) +
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     geom_line(aes(y = M, col = as.factor(age))) + 
-    geom_point(data = subset(tmp, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1.1) + 
-    facet_wrap(~loc_label, nrow = length(unique(tmp$loc_label))) +
-    scale_y_continuous(labels = scales::percent) +
+    scale_y_continuous(labels = scales::percent, expand = c(0,0), limits = c(0,1)) +
     theme_bw() +
     theme(legend.position = 'bottom', 
           strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) +
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.direction='vertical') +
     labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
-         col = "Age group", fill = "Age group", x = 'Date',
-         shape = 'Beginning of Summer 2021 resurgence period') + 
+         col = "Age group", fill = "Age group", x = '') + 
     scale_shape_manual(values = 4)+ 
-    scale_x_date(expand = c(0,0), breaks = '3 months', date_labels = "%b-%y") 
+    scale_x_date(expand = c(0,0), breaks = '3 months', date_labels = "%b-%y")  + 
+    guides(col = guide_legend(order = 1), fill = guide_legend(order = 1), 
+          alpha = guide_legend(order = 2)) 
   
+  if(length(unique(contribution$code)) > 10){
+    p1 <- p1 +     facet_wrap(~loc_label, ncol= 5) 
+    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 9, h = 12)
+    
+  }else{
+    p1 <- p1 +  facet_wrap(~loc_label, nrow = length(unique(contribution$code)) )
+    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 6, h = 9)
+    
+  }
   
-  p2 = ggplot(tmp, aes(x = prop)) + 
-    geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
-    geom_line(aes(y = M, col = as.factor(age))) + 
-    geom_point(data = subset(tmp, date == start_resurgence), aes(shape = '', y = M), size = 2, stroke = 1.1) + 
-    facet_wrap(~loc_label, nrow = length(unique(tmp$loc_label))) +
-    scale_y_continuous(labels = scales::percent) +
-    scale_x_continuous(labels = scales::percent) +
-    theme_bw() +
-    theme(legend.position = 'bottom', 
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) +
-    labs(y = paste0(""), 
-         x = 'Proportion of fully vaccinated individuals',
-         col = "Age group", fill = "Age group",
-         shape = 'Beginning of Summer 2021 resurgence period') + 
-    scale_shape_manual(values = 4) 
-  
-  p = ggarrange(p1, p2,common.legend = T, legend = 'bottom')
-  ggsave(p, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 7, h = 8)
-  
+
 }
 

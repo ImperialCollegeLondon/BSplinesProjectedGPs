@@ -83,8 +83,8 @@ selected_code = c('CA', 'FL', 'NY', 'TX')
 selected_10_codes = c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
 
 # table for plotting vaccine effects
-min_age_index_vac = 3
-df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+min_age_index_vac = df_age_vaccination[age == '18-64']$age_index
+df_age_vaccination2 = df_age_vaccination[age_index >= min_age_index_vac]
 df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
 
 ### temporary

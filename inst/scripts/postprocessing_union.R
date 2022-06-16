@@ -151,8 +151,8 @@ for(i in seq_along(locs)){
 contribution = do.call('rbind', contribution)
 
 mid_code = round(length(locs) / 2)
-plot_contribution_vaccine(subset(contribution, code %in% locs[1:mid_code]), vaccine_data, resurgence_dates, 'part_1', outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% locs[(mid_code+1):(mid_code*2)]), vaccine_data, resurgence_dates,  'part_2',outdir.fig)
+plot_contribution_vaccine(contribution, vaccine_data, 'all', outdir.fig)
+plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'selected_codes',outdir.fig)
 
 
 cat("\n End postprocessing_union.R \n")
