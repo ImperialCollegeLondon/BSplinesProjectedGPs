@@ -482,6 +482,48 @@ plot_mortality_rate_all_states2 = function(mortality_rate, outdir)
   
 }
 
+plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
+  
+  mortality_rate <- mortality_rate[age != '0-24']
+  
+  mortality_rate[, M85 := M[age == '85+'], by = 'code']
+  mortality_rate[, ratio := M / M85]
+  mortality_rate[, state := code]
+  mortality_rate <- mortality_rate[, .(M, state, ratio, age)]
+  
+  to_include <- mortality_rate[, unique(state)]
+  
+  tmp <- mortality_rate[age == '85+']
+  MedianM <- tmp[, unique(median(M))]
+  p1 <- plot_usmap(data =tmp, values = 'M', include = to_include) +
+    facet_wrap(~age) + 
+    theme(legend.position = "right",
+          legend.text = element_text(size = rel(1)), 
+          strip.text = element_text(size = rel(1)),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "white", fill = NA)) + 
+    labs(fill = 'Predicted COVID-19\nattributable mortality\nrates') + 
+    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige',
+                         midpoint = MedianM, labels = scales::percent_format()) 
+  
+  tmp <- mortality_rate[age != '85+']
+  tmp[, age_relative := paste0(age, ' relative to 85+')]
+  p2 <- plot_usmap(data = tmp, values = 'ratio', include = to_include) +
+    facet_wrap(~age) + 
+    theme(legend.position = "right",
+          legend.text = element_text(size = rel(1)), 
+          strip.text = element_text(size = rel(1)),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "white", fill = NA))  + 
+    labs(fill = 'Predicted COVID-19\nattributable mortality\nrates\nrelative to 85+') + 
+    scale_fill_gradient(high= 'mediumorchid', low = 'dimgray') 
+  
+  p <- grid.arrange(p1, p2, layout_matrix = rbind(c(NA, 1, NA), c(2, 2, 2)), widths = c(0.05, 0.9, 0.05), 
+                    heights = c(0.45, 0.55))
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map.png')), w = 9, h = 5)
+  
+}
+
 plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
 {
   

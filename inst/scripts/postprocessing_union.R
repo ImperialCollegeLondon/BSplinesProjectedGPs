@@ -88,7 +88,7 @@ mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 crude_mortality_rate = find_crude_mortality_rate(mortality_rate, df_age_continuous, df_age_reporting, pop_data)
 plot_mortality_rate_all_states(mortality_rate, crude_mortality_rate, outdir.fig)
 plot_mortality_rate_all_states2(mortality_rate, outdir.fig)
-
+plot_mortality_rate_all_states_map(mortality_rate, outdir.fig)
 
 # aggregate across states
 mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
