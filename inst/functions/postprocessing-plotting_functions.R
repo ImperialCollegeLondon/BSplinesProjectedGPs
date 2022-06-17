@@ -1267,7 +1267,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
     file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', lab.fig, '.png')
   }
 
-  ggsave(p, file =file, w = 8, h = 5)
+  ggsave(p, file =file, w = 8, h = 4)
   
   p1 <- p1 +  guides(colour = 'none', fill ='none') + theme(axis.title.x = element_text(hjust = 1.05)) + 
     labs(x ='Week index of the summer', y  ="\nRelative COVID-19 attributable\nweekly deaths")
