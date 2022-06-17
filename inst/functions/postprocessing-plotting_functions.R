@@ -1196,6 +1196,11 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   lim65p =  prop_vac_init[, range(prop_2_init)]
   lab = function(Age) paste0('Pre-resurgence\nvaccination rate in ', Age)
   
+  space_mult <- 0.25
+  if(nchar(data_res[, unique(loc_label)]) > 10){
+    space_mult <- 0.3
+  }
+  
   p1 <- ggplot(data_res[age == '18-64'], aes(x = week_index)) + 
     geom_line(aes(y = M, col = prop_1_init, group = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_1_init, group = loc_label), alpha = 0.5) +
@@ -1207,7 +1212,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
     theme_bw() +
     geom_text(data = data_text[age == '18-64'], aes(label = loc_label, x = week_index, y = M, col = prop_1_init), hjust = -.1, size = 3) +
     # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
+    scale_x_continuous(expand=  expansion(mult = c(0,space_mult)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     scale_y_continuous(limits = lims) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
@@ -1235,7 +1240,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
     theme_bw() +
     geom_text(data = data_text[age == '65+'], aes(label = loc_label, x = week_index, y = M, col = prop_2_init), hjust = -.1, size = 3) +
     # scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") +
-    scale_x_continuous(expand=  expansion(mult = c(0,0.25)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
+    scale_x_continuous(expand=  expansion(mult = c(0,space_mult)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     theme(strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
           legend.title = element_text(size = rel(0.85)),
