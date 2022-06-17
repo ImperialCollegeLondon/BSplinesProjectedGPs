@@ -10,6 +10,7 @@ library(gridExtra)
 library(ggpubr)
 library(jcolors)
 library(facetscales)
+library(usmap)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/old_BSplinesProjectedGPs/inst', "results")
