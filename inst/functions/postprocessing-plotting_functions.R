@@ -460,7 +460,7 @@ plot_mortality_rate_all_states2 = function(mortality_rate, outdir)
       labs(x = '', y = '', fill = '', linetype = 'National median') + 
       scale_linetype_manual(values = 'dashed') +
       scale_y_continuous(expand =expansion(mult = c(0, .05)), labels = scales::percent_format())+ 
-      guides(fill = guide_colourbar(barwidth = 10,  barheight = 1)) +  
+      guides(fill = guide_colourbar(barwidth = 10,  barheight = 1, order = 1)) +  
       facet_grid(`Age group`~., label = 'label_both') 
     
     if(!with_axis){
@@ -2221,7 +2221,8 @@ plot_forest_plot <- function(tmp, outdir){
 
 plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
   
-  delay = 7*2
+  # delay = 7*2
+  delay = 0
   df_age_vaccination = unique(select(contribution, age_index, age))
   df_age_vaccination[, age_from := gsub('(.+)-.*', '\\1', age)]
   df_age_vaccination[, age_to := gsub('.*-(.+)', '\\1', age)]
@@ -2267,7 +2268,8 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
           alpha = guide_legend(order = 3)) 
   
   if(length(unique(contribution$code)) > 10){
-    p1 <- p1 +     facet_wrap(~loc_label, ncol= 5) 
+    p1 <- p1 +     facet_wrap(~loc_label, ncol= 5) + 
+      theme(axis.text.x = element_text(angle = 70, hjust = 1))
     ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 9, h = 12)
     
   }else{

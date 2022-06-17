@@ -143,10 +143,21 @@ saveRDS(predictions, file = file.path(dir, 'predicted_weekly_deaths.rds'))
 
 
 # 
-# vaccination effect on contribution
+# vaccination effect on contribution predict
 contribution = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   contribution[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacTable_', locs[i], '.rds'))
+}
+contribution = do.call('rbind', contribution)
+
+mid_code = round(length(locs) / 2)
+plot_contribution_vaccine(contribution, vaccine_data, 'predict_all', outdir.fig)
+plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'predict_selected_codes',outdir.fig)
+
+## contribution 
+contribution = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
 }
 contribution = do.call('rbind', contribution)
 
