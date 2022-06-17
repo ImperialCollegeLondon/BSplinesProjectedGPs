@@ -490,6 +490,7 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
   mortality_rate[, ratio := M / M85]
   mortality_rate[, state := code]
   mortality_rate <- mortality_rate[, .(M, state, ratio, age)]
+  mortality_rate[, age_relative := paste0(age, '\nrelative to 85+')]
   
   to_include <- mortality_rate[, unique(state)]
   
@@ -504,21 +505,27 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
           panel.border = element_rect(colour = "white", fill = NA)) + 
     labs(fill = 'Predicted COVID-19\nattributable mortality\nrates') + 
     scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige',
-                         midpoint = MedianM, labels = scales::percent_format()) 
+                         midpoint = MedianM, labels = scales::percent_format()) + 
+    guides(fill = guide_colorbar(barwidth = 0.4))
   
-  tmp <- mortality_rate[age != '85+']
-  tmp[, age_relative := paste0(age, ' relative to 85+')]
-  p2 <- plot_usmap(data = tmp, values = 'ratio', include = to_include) +
-    facet_wrap(~age) + 
-    theme(legend.position = "right",
-          legend.text = element_text(size = rel(1)), 
-          strip.text = element_text(size = rel(1)),
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "white", fill = NA))  + 
-    labs(fill = 'Predicted COVID-19\nattributable mortality\nrates\nrelative to 85+') + 
-    scale_fill_gradient(high= 'mediumorchid', low = 'dimgray') 
+  my_plots <- function(tmp){
+    plot_usmap(data = tmp, values = 'ratio', include = to_include) +
+      facet_wrap(~age_relative) + 
+      theme(legend.position = "right",
+            legend.text = element_text(size = rel(1)), 
+            strip.text = element_text(size = rel(1)),
+            strip.background = element_blank(),
+            legend.title = element_blank(),
+            panel.border = element_rect(colour = "white", fill = NA))  + 
+      scale_fill_gradient(high= 'mediumorchid', low = 'dimgray') + 
+      guides(fill = guide_colorbar(barwidth = 0.4))
+  }
+
+  p2 <- my_plots(copy(mortality_rate[age == '25-54']))
+  p3 <- my_plots(copy(mortality_rate[age == '55-74']))
+  p4 <- my_plots(copy(mortality_rate[age == '75-84']))
   
-  p <- grid.arrange(p1, p2, layout_matrix = rbind(c(NA, 1, NA), c(2, 2, 2)), widths = c(0.05, 0.9, 0.05), 
+  p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 1, 1), c(2, 3, 4)), widths = c(0.33, 0.33, 0.33), 
                     heights = c(0.45, 0.55))
   ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map.png')), w = 9, h = 5)
   
