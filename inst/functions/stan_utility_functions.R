@@ -627,6 +627,11 @@ add_resurgence_period = function(stan_data, df_week, resurgence_dates){
   stan_data[['w_start_resurgence']] = sapply(resurgence_dates$start_resurgence, function(x) df_week[date == x]$week_index)
   stan_data[['w_stop_resurgence']] = sapply(resurgence_dates$stop_resurgence, function(x) df_week[date == x]$week_index)
   
+  if(stan_data[["M"]] == 1){
+    stan_data[['w_start_resurgence']] <- as.array(stan_data[['w_start_resurgence']])
+    stan_data[['w_stop_resurgence']] <- as.array(stan_data[['w_stop_resurgence']])
+  }
+  
   T = sapply(1:length( stan_data[['w_start_resurgence']]), function(x)  stan_data[['w_stop_resurgence']][[x]] - stan_data[['w_start_resurgence']][[x]] + 1)
   stan_data[['T']] = unique(unlist(T))
   stopifnot(length(stan_data[['T']]) == 1)
