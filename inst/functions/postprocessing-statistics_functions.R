@@ -115,6 +115,15 @@ save_p_value_vaccine_effects <- function(samples, names, outdir){
   
 }
 
+save_mortality_rate_correlation_longtermdeaths <- function(mortality_rateJ21, outdir.table){
+ 
+  tmp <- mortality_rateJ21[, list(M_corr = unique(M_corr), 
+                                  CL_corr = unique(CL_corr), 
+                                  CU_corr = unique(CU_corr)), by = 'age']
+  
+  saveRDS(tmp, paste0(outdir.table, '-mortality_rateJ21.rds'))
+}
+
 save_resurgence_dates <- function(resurgence_dates, outdir){
   resurgence_dates[,start_resurgence_name := format(start_resurgence, '%d %b, %Y')]
   resurgence_dates[,stop_resurgence_name := format(stop_resurgence, '%d %b, %Y')]
@@ -168,6 +177,23 @@ find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res
   saveRDS(stat, file = paste0(outdir, paste0('-Mortality_counterfactual.rds')))
   
   return(stat)
+}
+
+save_statistics_contributiondiff <- function(contributiondiff, outdir.table){
+  l = list()
+  tmp <- contributiondiff[, list(code_min = code[which.min(M)], 
+                                 code_max = code[which.max(M)]), by = c('variable', 'age')]
+  contributiondiff <- merge(contributiondiff, tmp, by = c('variable', 'age'))
+  contributiondiff[, `:=`(M = round(M, 2), CL = round(CL, 2), CU = round(CU, 2))]
+  l[['code_min_1']] = contributiondiff[age == '65+' & code == code_min & variable == 'diff1', .(loc_label, M, CL, CU)]
+  l[['code_max_1']] = contributiondiff[age == '65+' & code == code_max & variable == 'diff1', .(loc_label, M, CL, CU)]
+  l[['code_US_1']] = contributiondiff[age == '65+' & code == 'US' & variable == 'diff1', .(loc_label, M, CL, CU)]
+  l[['code_min_2']] = contributiondiff[age == '65+' & code == code_min & variable == 'diff2', .(loc_label, M, CL, CU)]
+  l[['code_max_2']] = contributiondiff[age == '65+' & code == code_max & variable == 'diff2', .(loc_label, M, CL, CU)]
+  l[['code_US_2']] = contributiondiff[age == '65+' & code == 'US' & variable == 'diff2', .(loc_label, M, CL, CU)]
+  
+  saveRDS(l, file = paste0(outdir.table, '-contributiondiff.rds'))
+  
 }
 
 

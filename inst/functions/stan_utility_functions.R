@@ -260,7 +260,7 @@ add_JHU_data <- function(stan_data, df_week, Code){
   tmp2 = tmp2[order(code)]
   
   stan_data[['deaths_JHU']] = as.matrix(reshape2::dcast(tmp2, code ~ week_index, value.var = 'weekly.deaths')[,-1])
-  
+  stan_data[['deaths_JHU']][which(stan_data[['deaths_JHU']] == 0)] = 0.1
   return(stan_data)
 }
 
@@ -612,7 +612,7 @@ find_resurgence_dates <- function(JHUData, deathByAge, Code){
       geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
       geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
       theme_bw()
-    ggsave('~/Downloads/file.png', h= 30, w =5) 
+    ggsave('~/Downloads/file.png', h= 70, w =5, limitsize = F) 
   }
   
   tmp3 <- tmp3[order(code)]

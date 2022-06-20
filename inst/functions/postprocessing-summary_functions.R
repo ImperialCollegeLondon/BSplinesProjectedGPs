@@ -113,7 +113,6 @@ make_var_by_age_by_state_by_time_table = function(fit_samples, df_week, df_state
 
   for(Code in unique(tmp1$code)){
     saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
-    
   }
 
   return(tmp1)
@@ -895,7 +894,7 @@ find_cumulative_deaths_prop_givensum_state_age = function(fit_samples, date_10th
   return(tmp1)
 }
 
-make_mortality_rate_table_discrete = function(fit_samples, fouragegroups, date_10thcum, df_week, pop_data, data_comp, df_age_continuous, cum.death.var, outdir){
+make_mortality_rate_table_discrete = function(fit_samples, fouragegroups, date_10thcum, df_week, pop_data, data_comp, df_age_continuous, cum.death.var, nyt_data, outdir){
   
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
@@ -1006,9 +1005,27 @@ make_mortality_rate_table_discrete = function(fit_samples, fouragegroups, date_1
     saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', 'PosteriorSampleMortalityRate', 'Table_', Code, '.rds'))
   }
   
+  # find relative value to 85+
+  tmp1[, value_maxage := value[age_index == max(age_index)], by = c('iterations', 'state_index', 'week_index')]
+  tmp1[, value_rel := value / value_maxage]
+  
+  # find correlation coefficients 
+  tmp2 <- merge(nyt_data, df_state[, .(loc_label, state_index)], by.x = 'STATE', by.y = 'loc_label')
+  tmp2 <- merge(tmp1, tmp2[, .(state_index, SHARE_DEATHS)], by = 'state_index')
+  tmp2 <- tmp2[!is.na(value_rel) & !is.na(SHARE_DEATHS)]
+  tmp2[, value_corr := cor(value_rel, SHARE_DEATHS), by = c('week_index', 'age_index', 'iterations')]
+  
   # quantiles
-  tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
+  tmp3 = tmp2[, list(q= quantile(na.omit(value_corr), prob=ps, na.rm = T), q_label=paste0(p_labs, '_corr')), by=c('week_index', 'age_index')]	
+  tmp3 = dcast(tmp3,  week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp2 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
+  tmp2 = dcast(tmp2, state_index + week_index + age_index ~ q_label, value.var = "q")
+  tmp2 = merge(tmp2, tmp3, by=c('week_index', 'age_index'))
+  
+  tmp1 = tmp1[, list(q= quantile(value_rel, prob=ps, na.rm = T), q_label=paste0(p_labs, '_rel')), by=c('state_index', 'week_index', 'age_index')]	
   tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
+  tmp1 = merge(tmp1, tmp2, by=c('state_index', 'week_index', 'age_index'))
   
   tmp1 = merge(tmp1, df_week_adj, by = 'week_index')
   tmp1[, age := df_age$age[age_index]]
@@ -1965,3 +1982,60 @@ make_forest_plot_table <- function(summary, df_age_vaccination2, df_state, names
   setnames(tmp, c('50%', '2.5%', '97.5%'), c('M', 'CL', "CU"))
   
 }
+
+make_var_by_age_by_state_by_time_diff_table = function(fit_samples, df_week, df_state_age, df_state, var_name, vaccine_data, outdir){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  # delay = 7*2
+  vaccine_data[, age_index := which(df_age_vaccination2$age_from <= age & df_age_vaccination2$age_to >= age), by = 'age']
+  vaccine_data = vaccine_data[!is.na(age_index), list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
+  vaccine_data <- merge(vaccine_data, df_age_vaccination2, by = 'age_index')
+  vaccine_data <- vaccine_data[date %in% df_week[, unique(date)]]
+  tmp <- vaccine_data[age == '65+', list(mindate65 = min(date[prop > 0.5])), by = 'code']
+  tmp1 <- vaccine_data[age == '18-64', list(mindate1864 = min(date[prop > 0.39])), by = 'code']
+  tmp1 <- merge(tmp, tmp1, by = c('code'))
+  tmp1 <- merge(tmp1, df_state, by = 'code')
+  
+  tmp = as.data.table( reshape2::melt(fit_samples[[var_name]]) )
+  setnames(tmp, 2:4, c('state_index', 'age_index','week_index'))
+  
+  tmp1 <- merge(tmp, tmp1, by = 'state_index')
+  if('code' %in% names(df_week)){
+    tmp1 = merge(tmp1, df_week, by = c('week_index', 'code'))
+  }else{
+    tmp1 = merge(tmp1, df_week, by = 'week_index')
+  }
+  
+  # difference value 1
+  tmp1 <- tmp1[, list(diff1 = value[date == min(date)] - value[date == (mindate65 - 7*4)], 
+                      diff2 = value[date == (mindate65 - 7*4)] - value[date == (mindate65 + 7*8)]), by = c('state_index', 'iterations', 'age_index')]
+  tmp1 <- melt.data.table(tmp1, id.vars = c('state_index', 'iterations', 'age_index'))
+  
+  tmp2 <- tmp1[, list(value = mean(na.omit(value))), by = c('iterations', 'age_index', 'variable')]
+
+  tmp1 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), 
+              by=c('state_index', 'age_index', 'variable')]	
+  tmp1 = dcast(tmp1, variable + state_index + age_index ~ q_label, value.var = "q")
+  tmp1 = merge(tmp1, df_state, by = 'state_index')
+
+  tmp2 = tmp2[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), 
+              by=c('age_index', 'variable')]	
+  tmp2 = dcast(tmp2, variable + age_index ~ q_label, value.var = "q")
+  tmp2[, state_index := 0]
+  tmp2[, code := 'US']
+  tmp2[, loc_label := 'United States']
+  
+  tmp1 <- rbind(tmp1, tmp2)
+  
+  tmp1[, age := df_state_age$age[age_index]]
+  tmp1[, age := factor(age, levels = df_state_age$age)]
+  
+  for(Code in unique(tmp1$code)){
+    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'DiffTable_', Code, '.rds'))
+  }
+  
+  return(tmp1)
+}
+

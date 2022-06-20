@@ -38,6 +38,11 @@ reduce_agebands_scrapedData_GA = function(tmp)
   return(tmp)
 }
 
-
+process.nyt_data <- function(nyt_data){
+  set(nyt_data, NULL, 'X', NULL)
+  set(nyt_data, NULL, 'X.1', NULL)
+  nyt_data[, SHARE_DEATHS := as.numeric(gsub('(.+)\\%', '\\1', SHARE_DEATHS))/100]
+  nyt_data
+}
 
 

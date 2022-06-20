@@ -80,7 +80,7 @@ fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # selected states
 selected_code = c('CA', 'FL', 'NY', 'TX')
-selected_6_codes = c('CA', 'FL', 'NY', 'TX', 'PA', 'IL')
+selected_6_codes = c('CA', 'FL', 'NY', 'TX', 'PA')
 selected_10_codes = c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
 
 # table for plotting vaccine effects
@@ -111,6 +111,8 @@ age_contribution_discrete_table = make_var_by_age_by_state_by_time_table(fit_sam
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
 make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', outdir.table)
+make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', vaccine_data, outdir.table)
+make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', vaccine_data, outdir.table)
 
 # baseline contribution adjusted and non-adjusted for population composition
 make_contribution_ref(fit_samples, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
@@ -133,12 +135,13 @@ find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_
 
 # mortality rate
 mortality_rate_table = make_mortality_rate_table_discrete(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
-                                                 JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
+                                                 JHUData, df_age_continuous, 'cumulative_deaths' , nyt_data, outdir.table)
 mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_samples, date_10thcum, df_week, pop_data,
                                                           JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)
 
-
+tmp1 = make_mortality_rate_table_discrete(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
+                                                          JHUData, df_age_continuous, 'cumulative_deaths' , nyt_data, outdir.table)
 # predicted weekly deaths by various age groups
 deatht = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
 tmp = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
@@ -165,6 +168,27 @@ p2=plot_contribution_continuous_comparison_method_with_data(copy(age_contributio
                                                             show.method = F,
                                                             heights = c(1,1), outdir.fig)
 
+# resurgence deaths 
+save_resurgence_dates(resurgence_dates, outdir.table)
+
+df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
+df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
+df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
+df_week2[, week_index := 1:length(date), by = 'code']
+df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
+df_week2 = df_week2[order(code)]
+df_week = select(df_week, -dummy)
+
+stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
+prop_vac = prepare_prop_vac_table(stan_data1, vaccine_data, df_age_vaccination)
+
+# plot estimate relative deaths
+r_pdeaths = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
+r_pdeaths = merge(r_pdeaths, prop_vac, by = c('code', 'date'))
+for(Code in unique(r_pdeaths$code)){
+  saveRDS(subset(r_pdeaths, code == Code), file = paste0(outdir.table, '-', 'r_pdeaths',  'Table_', Code, '.rds'))
+}
+
 # vaccination analysis
 if('intercept_resurgence0' %in% names(fit_samples)){
   
@@ -173,19 +197,6 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   names_var <- names_var[names_var %in% names(fit_samples)]
   save_p_value_vaccine_effects(fit_samples, names_var, outdir.table)
   
-  # save resurgence dates
-  save_resurgence_dates(resurgence_dates, outdir.table)
-  
-  df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
-  df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
-  df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
-  df_week2[, week_index := 1:length(date), by = 'code']
-  df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
-  df_week2 = df_week2[order(code)]
-  df_week = select(df_week, -dummy)
-  
-  stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-  prop_vac = prepare_prop_vac_table(stan_data1, vaccine_data, df_age_vaccination)
   prop_vac_counterfactual <- prepare_prop_vac_counterfactual_table(stan_data1, df_state, df_age_vaccination2, df_counterfactual)
   
   max_1864 = round(prop_vac[,list(date = min(date), prop_1 = prop_1[which.min(date)]), by = 'code'][,max(prop_1)] * 100)
@@ -203,15 +214,10 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   df_counterfactual[, label_counterfactual := factor(label_counterfactual, 
                                                      levels = df_counterfactual$label_counterfactual[c(4,1,5,2,6,3)])]
 
-  # plot estimate relative deaths
-  r_pdeaths = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
+  # plot relative deaths
   plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
   plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_6_states', selected_6_codes)
-  p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states', selected_code)
-  p_all <- plot_relative_resurgence_vaccine_end_2(subset(r_pdeaths, code %in% selected_10_codes), prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states')
-  p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.45,0.55))
-  ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 7, h = 7)
+  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_6_states', selected_6_codes, F)
   
   # relative deaths ratio
   r_pdeaths_ratio <- make_var_by_age_by_state_by_time_table_relative(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', 'FL', outdir.table)

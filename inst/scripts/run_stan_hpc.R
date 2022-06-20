@@ -11,15 +11,16 @@ indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('NE',',')[[1]]
 # states = strsplit('CA,FL,NY,TX',',')[[1]]
+# states = strsplit('CA,FL,NY,TX,PA',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA,KY,OR,OK,CT,UT',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA,KY,OR,OK,CT,UT',',')[[1]]
-# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-#             "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-#             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 
 stan_model = "220209a"
 JOBID = 3541
@@ -57,6 +58,7 @@ path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds"))
 path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
+path.to.nyt.data = file.path(indir, "data", paste0("NYT_sharedeaths_carehomes.csv"))
 
 # load functions
 source(file.path(indir, "functions", "summary_functions.R"))
@@ -90,6 +92,9 @@ vaccine_data = readRDS(path_to_vaccine_data)
 # load population count 
 pop_data = as.data.table( read.csv(path.to.pop.data) )
 setnames(pop_data, 'location', 'loc_label')
+
+# load NYT data
+nyt_data <- process.nyt_data(as.data.table(read.csv(path.to.nyt.data)))
 
 # Create age maps
 age_max = 105
@@ -126,6 +131,8 @@ cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 stan_data = add_JHU_data(stan_data, df_week, Code)
 stan_data = add_vaccine_age_strata(stan_data, df_age_vaccination)
+resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
+stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
 if(grepl('220209a|220209c|220209d|220607a|220208a|220131a|220615|220616|220617', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
@@ -142,10 +149,7 @@ if(1){
 }
 if(grepl('220208|220131|220615|220616|220617', stan_model)){
   cat("\n With vaccine effects \n")
-  resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
-  stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-  stan_data = add_JHU_data(stan_data, df_week, Code)
 }
 
 # stan model
