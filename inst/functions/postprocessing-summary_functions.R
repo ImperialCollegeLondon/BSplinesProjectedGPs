@@ -1010,19 +1010,21 @@ make_mortality_rate_table_discrete = function(fit_samples, fouragegroups, date_1
   tmp1[, value_rel := value / value_maxage]
   
   # find correlation coefficients 
-  tmp2 <- merge(nyt_data, df_state[, .(loc_label, state_index)], by.x = 'STATE', by.y = 'loc_label')
-  tmp2 <- merge(tmp1, tmp2[, .(state_index, SHARE_DEATHS)], by = 'state_index')
-  tmp2 <- tmp2[!is.na(value_rel) & !is.na(SHARE_DEATHS)]
-  tmp2[, value_corr := cor(value_rel, SHARE_DEATHS), by = c('week_index', 'age_index', 'iterations')]
+  tmp3 <- merge(nyt_data, df_state[, .(loc_label, state_index)], by.x = 'STATE', by.y = 'loc_label')
+  tmp3 <- merge(tmp1, tmp3[, .(state_index, SHARE_DEATHS)], by = 'state_index')
+  tmp3 <- tmp3[!is.na(value_rel) & !is.na(SHARE_DEATHS)]
+  tmp3[, value_corr := cor(value_rel, SHARE_DEATHS), by = c('week_index', 'age_index', 'iterations')]
   
-  # quantiles
-  tmp3 = tmp2[, list(q= quantile(na.omit(value_corr), prob=ps, na.rm = T), q_label=paste0(p_labs, '_corr')), by=c('week_index', 'age_index')]	
-  tmp3 = dcast(tmp3,  week_index + age_index ~ q_label, value.var = "q")
-  
+  # quantile
   tmp2 = tmp1[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs), by=c('state_index', 'week_index', 'age_index')]	
   tmp2 = dcast(tmp2, state_index + week_index + age_index ~ q_label, value.var = "q")
-  tmp2 = merge(tmp2, tmp3, by=c('week_index', 'age_index'))
   
+  if(nrow(tmp3) > 1){
+    tmp3 = tmp3[, list(q= quantile(na.omit(value_corr), prob=ps, na.rm = T), q_label=paste0(p_labs, '_corr')), by=c('week_index', 'age_index')]	
+    tmp3 = dcast.data.table(tmp3,  week_index + age_index ~ q_label, value.var = "q")
+    tmp2 = merge(tmp2, tmp3, by=c('week_index', 'age_index'))
+  }
+
   tmp1 = tmp1[, list(q= quantile(value_rel, prob=ps, na.rm = T), q_label=paste0(p_labs, '_rel')), by=c('state_index', 'week_index', 'age_index')]	
   tmp1 = dcast(tmp1, state_index + week_index + age_index ~ q_label, value.var = "q")
   tmp1 = merge(tmp1, tmp2, by=c('state_index', 'week_index', 'age_index'))

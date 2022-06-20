@@ -17,8 +17,8 @@ outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst'
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('AK',',')[[1]]
-stan_model = "220208a"
-JOBID = 8060
+stan_model = "220209a"
+JOBID = 8004
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -140,8 +140,6 @@ mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_sampl
                                                           JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)
 
-tmp1 = make_mortality_rate_table_discrete(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
-                                                          JHUData, df_age_continuous, 'cumulative_deaths' , nyt_data, outdir.table)
 # predicted weekly deaths by various age groups
 deatht = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
 tmp = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
