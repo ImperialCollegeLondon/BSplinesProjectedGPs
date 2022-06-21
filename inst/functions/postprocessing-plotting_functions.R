@@ -1212,7 +1212,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, 
     geom_line(aes(y = M, col = prop_1_init, group = loc_label)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = prop_1_init, group = loc_label), alpha = 0.5) +
     facet_grid(.~`Age group`, label = 'label_both') +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
+    labs(y = 'Relative COVID-19\nweekly deaths', 
          x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
          col = lab('18-64'), fill = lab('18-64')) + 
     theme_bw() +
