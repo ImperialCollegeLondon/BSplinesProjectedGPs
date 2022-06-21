@@ -188,7 +188,7 @@ for(i in seq_along(locs)){
 r_pdeaths = do.call('rbind', r_pdeaths)
 
 p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_codes)
-p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, F, outdir.fig, '_all_states')
+p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states')
 p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.4,0.6))
 ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 6, h = 9)
 

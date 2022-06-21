@@ -9,7 +9,7 @@ library(ggpubr)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('NE',',')[[1]]
+states = strsplit('FL',',')[[1]]
 # states = strsplit('CA,FL,NY,TX',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
@@ -22,7 +22,7 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
             "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 
-stan_model = "220209a"
+stan_model = "220208a"
 JOBID = 3541
 
 if(0)
@@ -48,9 +48,12 @@ if(length(args_line) > 0)
 }
 
 # stan model
+with_cmdstan <- F
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
-path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
+prefix= '' 
+if(with_cmdstan){ prefix = 'cmdstan_'}
+path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", prefix, stan_model, ".stan"))
 
 # path to data
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
@@ -64,6 +67,7 @@ path.to.nyt.data = file.path(indir, "data", paste0("NYT_sharedeaths_carehomes.cs
 source(file.path(indir, "functions", "summary_functions.R"))
 source(file.path(indir, "functions", "plotting_functions.R"))
 source(file.path(indir, "functions", "stan_utility_functions.R"))
+
 
 # tag and directories
 run_tag = paste0(stan_model, "-", JOBID)
@@ -131,7 +135,7 @@ cat("\n Prepare stan data \n")
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 stan_data = add_JHU_data(stan_data, df_week, Code)
 stan_data = add_vaccine_age_strata(stan_data, df_age_vaccination)
-resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, Code)
+resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, locations$code)[code %in% Code]
 stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
 if(grepl('220209a|220209c|220209d|220607a|220208a|220131a|220615|220616|220617', stan_model)){
   cat("\n Using 2D splines \n")
@@ -166,8 +170,12 @@ if(0){
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 
-fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
-                           seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+if(with_cmdstan){
+  NULL
+}else{
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
+                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+}
 
 # save
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
