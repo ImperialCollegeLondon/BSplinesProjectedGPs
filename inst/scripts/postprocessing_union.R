@@ -155,6 +155,7 @@ for(i in seq_along(locs)){
 contribution = do.call('rbind', contribution)
 
 mid_code = round(length(locs) / 2)
+contribution[, M_median := median(M), by = c('date', 'age')]
 plot_contribution_vaccine(contribution, vaccine_data, 'predict_all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'predict_selected_codes',outdir.fig)
 
@@ -167,7 +168,6 @@ contribution = do.call('rbind', contribution)
 contribution[, M_median := median(M), by = c('date', 'age')]
 mid_code = round(length(locs) / 2)
 plot_contribution_vaccine(contribution, vaccine_data, 'all', outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'selected_codes',outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'selected_codes',outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% 'FL'), vaccine_data,  'FL',outdir.fig)
 
