@@ -487,6 +487,7 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
   mortality_rate <- mortality_rate[age != '0-24']
   
   mortality_rate[, state := code]
+
   mortality_rate <- mortality_rate[, .(M, state, M_rel, age)]
   mortality_rate[, age_relative := paste0(age, '\nrelative to 85+')]
   
@@ -528,6 +529,8 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
   
   p <- grid.arrange(p1, p3, p4, layout_matrix = rbind(c(1, 3, 4)), widths = c(0.35, 0.3, 0.3))
   ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map2.png')), w = 12, h = 4)
+  p <- grid.arrange(p1, p3, p4, ncol = 1)
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map3.png')), w = 4, h = 7)
 }
 
 plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
@@ -2504,12 +2507,13 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
     ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 6, h = 9)
     
   }else{
+    
     p1 <- p1 +  facet_wrap(~loc_label, nrow = length(unique(contribution$code))) + 
       labs(y = paste0("Estimated contribution to\nCOVID-19 weekly deaths")) + 
       theme(legend.box = 'vertical', 
             legend.title = element_text(size = rel(0.8)), 
             legend.text = element_text(size = rel(0.8)))
-    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 5, h = 6)
+    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 3.6, h = 5)
     
   }
   

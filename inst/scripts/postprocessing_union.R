@@ -86,7 +86,7 @@ for(i in seq_along(locs)){
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rateJ21 <- subset(mortality_rate, date == '2021-06-05')
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
-# mortality_rate[is.na(M), M := c(2.056321e-03, 1.684421e-02, 2.056321e-03, 1.684421e-02, 2.056321e-03, 1.684421e-02)]
+# mortality_rate[is.na(M), M := c(2.056321e-03, 1.684421e-02)]
 crude_mortality_rate = find_crude_mortality_rate(mortality_rate, df_age_continuous, df_age_reporting, pop_data)
 plot_mortality_rate_all_states(mortality_rate, crude_mortality_rate, outdir.fig)
 plot_mortality_rate_all_states2(mortality_rate, outdir.fig)
@@ -169,7 +169,7 @@ mid_code = round(length(locs) / 2)
 plot_contribution_vaccine(contribution, vaccine_data, 'all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'selected_codes',outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'selected_codes',outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% 'NY'), vaccine_data,  'NY',outdir.fig)
+plot_contribution_vaccine(subset(contribution, code %in% 'FL'), vaccine_data,  'FL',outdir.fig)
 
 ## contribution shift
 locs_plus_US <- c(locs, 'US')
@@ -201,7 +201,7 @@ r_pdeaths = do.call('rbind', r_pdeaths)
 p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states', selected_code)
 p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_all_states')
 p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.4,0.6))
-ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 7, h = 9)
+ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 6, h = 9)
 
 
 cat("\n End postprocessing_union.R \n")
