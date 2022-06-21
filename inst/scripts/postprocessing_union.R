@@ -164,7 +164,7 @@ for(i in seq_along(locs)){
   contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
 }
 contribution = do.call('rbind', contribution)
-
+contribution[, M_median := median(M), by = c('date', 'age')]
 mid_code = round(length(locs) / 2)
 plot_contribution_vaccine(contribution, vaccine_data, 'all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'selected_codes',outdir.fig)

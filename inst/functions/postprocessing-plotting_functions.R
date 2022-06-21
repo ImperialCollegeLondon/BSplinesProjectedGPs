@@ -2472,8 +2472,6 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
   tmp1 <- tmp1[code %in% unique(contribution$code)]
   tmp1[, type := factor(type, levels = unique(type[order(age_index, decreasing = T)]))]
   
-  contribution[, M_median := median(M), by = c('date', 'age')]
-  
   p1 = ggplot(contribution, aes(x = date)) + 
     geom_vline(data = tmp1, aes(xintercept = mindate, alpha = type), col = 'grey50', size=1.2) +
     geom_line(aes(y = M_median, col = as.factor(age), linetype = '')) + 
