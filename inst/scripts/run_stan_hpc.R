@@ -51,9 +51,8 @@ if(length(args_line) > 0)
 with_cmdstan <- F
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
-prefix= '' 
-if(with_cmdstan){ prefix = 'cmdstan_'}
-path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", prefix, stan_model, ".stan"))
+if(grepl('cmdstan', stan_model)){ with_cmdstan = T}
+path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to data
 path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
@@ -171,18 +170,22 @@ if(0){
 }
 
 if(with_cmdstan){
-  NULL
+  file = file.path(outdir.fit, paste0(run_tag,"_cmdstanin.R"))
+  
+  rstan::stan_rdump( names(stan_data), file=file, envir=list2env(stan_data))  	
 }else{
   fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+  
+  # save
+  file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
+  
+  cat('\n Save file', file, '\n')
+  while(!file.exists(file)){
+    tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
+  }
 }
 
-# save
-file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
 
-cat('\n Save file', file, '\n')
-while(!file.exists(file)){
-  tryCatch(saveRDS(fit_cum, file=file), error=function(e){cat("ERROR :",conditionMessage(e), ", let's try again \n")})
-}
 
 
