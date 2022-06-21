@@ -1168,10 +1168,10 @@ plot_relative_resurgence_vaccine <- function(data_res1, prop_vac, df_age_vaccina
   
 }
 
-plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir, lab.fig = '', 
+plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, lab.fig = '', 
                                                   selected_codes = NULL, withlimits = T){
   
-  prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
+  prop_vac_init = unique(data_res1[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code'])
   
   data_res = merge(data_res1, prop_vac_init, by = 'code')
   
@@ -1182,7 +1182,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, prop_vac, df_age_vaccin
   data_res[, `Age group` := age]
   # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-  data_res = as.data.table( merge(data_res, resurgence_dates, by = 'code') )
+  # data_res = as.data.table( merge(data_res, resurgence_dates, by = 'code') )
   
   data_res[, max_week_index := max(week_index), by = 'code']
   data_text = data_res[ week_index == max_week_index]
@@ -1511,15 +1511,13 @@ plot_relative_resurgence_vaccine_end_2 <- function(data_res1, prop_vac, df_age_v
   return(p)
 }
 
-plot_relative_resurgence_vaccine_end_3 <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir, lab.fig = ''){
+plot_relative_resurgence_vaccine_end_3 <- function(data_res1,log_transform, outdir, lab.fig = ''){
   
-  prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
+  prop_vac_init = unique(data_res1[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code'])
   data_res = merge(data_res1, prop_vac_init, by = 'code')
   
   data_res[, `Age group` := age]
   # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-  
-  data_res = as.data.table( merge(data_res, resurgence_dates, by = 'code') )
   
   data_res[, max_week_index := max(week_index), by = 'code']
   

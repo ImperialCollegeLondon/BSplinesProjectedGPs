@@ -83,7 +83,7 @@ mortality_rate = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
 }
-mortality_rate = do.call('rbind', mortality_rate)
+mortality_rate = do.call('rbindlist', list(l = mortality_rate, fill=TRUE))
 mortality_rateJ21 <- subset(mortality_rate, date == '2021-06-05')
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 # mortality_rate[is.na(M), M := c(2.056321e-03, 1.684421e-02)]
@@ -181,25 +181,14 @@ contributiondiff = do.call('rbind', contributiondiff)
 save_statistics_contributiondiff(contributiondiff, outdir.table)
 
 # Resurgence
-df_week[, dummy := 1]; resurgence_dates[, dummy := 1]
-df_week2 = merge(df_week, resurgence_dates, by = 'dummy', allow.cartesian=TRUE)
-df_week2 = df_week2[date >= start_resurgence & date <= stop_resurgence]
-df_week2[, week_index := 1:length(date), by = 'code']
-df_week2 = select(df_week2, - start_resurgence, - stop_resurgence, -dummy)
-df_week2 = df_week2[order(code)]
-df_week = select(df_week, -dummy)
-
-stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-prop_vac = prepare_prop_vac_table(stan_data1, vaccine_data, df_age_vaccination)
-
 r_pdeaths  = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   r_pdeaths[[i]] = readRDS(paste0(outdir.table, '-r_pdeathsTable_', locs[i], '.rds'))
 }
 r_pdeaths = do.call('rbind', r_pdeaths)
 
-p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_states', selected_code)
-p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_all_states')
+p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_code)
+p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, F, outdir.fig, '_all_states')
 p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.4,0.6))
 ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 6, h = 9)
 
