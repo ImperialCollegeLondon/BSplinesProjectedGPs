@@ -165,7 +165,7 @@ for(i in seq_len(nrow(args)))
   {
     cmd2 <- make.PBS.header(	hpc.walltime=23, 
                              hpc.select=1, 
-                             hpc.nproc=1, 
+                             hpc.nproc=9, 
                              hpc.mem= "550gb", 
                              hpc.load= "module load anaconda3/personal", 
                              hpc.array= 1)
