@@ -66,7 +66,11 @@ outdir.fit = outdir.fit.post
 cat("Load fits \n")
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
-fit_samples = rstan::extract(fit_cum)
+if(file.exists(file)){
+  fit_samples <- readRDS(file=file)
+}else{
+  fit_samples <- rstan::extract(fit_cum)
+}
 
 # find date for the first 10th cumulative deaths
 date_10thcum = subset(data, !is.na(weekly.deaths))
@@ -110,9 +114,11 @@ plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi
 age_contribution_discrete_table = make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
-make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', outdir.table)
 make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', vaccine_data, outdir.table)
-make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', vaccine_data, outdir.table)
+if('phi_predict_reduced_vac' %in% names(fit_samples)){
+  make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', outdir.table)
+  make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', vaccine_data, outdir.table)
+}
 
 # baseline contribution adjusted and non-adjusted for population composition
 make_contribution_ref(fit_samples, date_10thcum, fiveagegroups, data, df_week, df_age_continuous, outdir.table)
@@ -213,10 +219,9 @@ if('intercept_resurgence0' %in% names(fit_samples)){
                                                      levels = df_counterfactual$label_counterfactual[c(4,1,5,2,6,3)])]
 
   # plot relative deaths
-  plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
-  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig)
-  plot_relative_resurgence_vaccine2(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, F, outdir.fig, '_selected_6_states', selected_6_codes, F)
-  
+  # plot_relative_resurgence_vaccine(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates,outdir.fig)
+  plot_relative_resurgence_vaccine2(r_pdeaths,  F, outdir.fig)
+
   # relative deaths ratio
   r_pdeaths_ratio <- make_var_by_age_by_state_by_time_table_relative(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', 'FL', outdir.table)
   r_pdeaths_ratio[, max_week_index := max(week_index), by = 'code']
@@ -239,9 +244,17 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   perc_E_pdeaths_counterfactual_2 <- make_ratio_vars_by_age_state_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
   
   # aggregate across states
-  diff_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
-  perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'perc_E_pdeaths_counterfactual_all', outdir.table)
-  diff_E_pdeaths_counterfactual_all_2 <- make_inv_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+  if('diff_E_pdeaths_counterfactual_all' %in% names(fit_samples)){
+    diff_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+    perc_E_pdeaths_counterfactual_all <- make_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'perc_E_pdeaths_counterfactual_all', outdir.table)
+    diff_E_pdeaths_counterfactual_all_2 <- make_inv_var_by_age_by_counterfactual_table(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+    diff_E_pdeaths_counterfactual_allstatesages <- make_inv_var_by_counterfactual_table(fit_samples, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
+  } else{
+    diff_E_pdeaths_counterfactual_all <- find_diff_E_pdeaths_counterfactual_all(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, outdir.table)
+    perc_E_pdeaths_counterfactual_all <- find_perc_E_pdeaths_counterfactual_all(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, outdir.table)
+    diff_E_pdeaths_counterfactual_all_2 <- find_inv_diff_E_pdeaths_counterfactual_all(fit_samples, df_week2, df_age_vaccination2, df_counterfactual, outdir.table)
+    diff_E_pdeaths_counterfactual_allstatesages <- find_inv_diff_E_pdeaths_counterfactual_allstatesages(fit_samples, df_week2, df_counterfactual, outdir.table)
+  }
   perc_E_pdeaths_counterfactual_all_2 <- make_ratio_vars_by_age_by_counterfactual_table(fit_samples, df_age_vaccination2, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
   
   # aggregate across ages
@@ -251,7 +264,6 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   perc_E_pdeaths_counterfactual_allages = make_ratio_vars_by_state_by_counterfactual_table(fit_samples, df_week2, df_state, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
   
   # aggregate across states and ages 
-  diff_E_pdeaths_counterfactual_allstatesages <- make_inv_var_by_counterfactual_table(fit_samples, df_counterfactual, 'diff_E_pdeaths_counterfactual_all', outdir.table)
   perc_E_pdeaths_counterfactual_allstatesages <- make_ratio_vars_by_counterfactual_table(fit_samples, df_counterfactual, c('E_pdeaths_counterfactual_resurgence_cumulative', 'E_pdeaths_predict_resurgence_cumulative'), outdir.table)
   
   # plot

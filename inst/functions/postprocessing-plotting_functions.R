@@ -1798,7 +1798,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   
   data_res1[, type := 'Fit to observed data']
   data_res2[, type := 'Predicted with vaccination rates']
-  data_res = rbind(data_res1, data_res2)
+  data_res = rbind(data_res1, data_res2, fill = T)
   
   data_res[, `Age group` := age]
   # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]

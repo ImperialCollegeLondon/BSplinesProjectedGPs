@@ -10,7 +10,7 @@ library(ggpubr)
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
 states = strsplit('FL',',')[[1]]
-# states = strsplit('CA,FL,NY,TX',',')[[1]]
+states = strsplit('CA,FL,NY,TX',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA',',')[[1]]
@@ -21,8 +21,9 @@ states = strsplit('FL',',')[[1]]
 states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
             "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+states <- c("AK", "AL", "AR", "AZ")
 
-stan_model = "220208a"
+stan_model = "220616a"
 JOBID = 3541
 
 if(0)
@@ -90,7 +91,6 @@ if(grepl('cmdstan', stan_model)){
   job_id <- ifelse(tmp!='', paste0(job_id, '[', tmp, ']'), job_id)
   job_dir <- file.path(outdir, run_tag, paste0(run_tag,'-',job_id)) 
   dir.create(job_dir)
-  outdir.fit = file.path(outdir, run_tag)
   cat("\n job_dir is ", job_dir, '\n')
 }
 
@@ -167,14 +167,15 @@ if(grepl('220208|220131|220615|220616|220617', stan_model)){
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
 }
 
-# stan model
-model = rstan::stan_model(path.to.stan.model)
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
 if(with_cmdstan){
   file <- file.path(job_dir, paste0(basename(job_dir), '_stanin.RData'))
 }else{
+  # stan model
+  model = rstan::stan_model(path.to.stan.model)
+  
   file <- file.path(outdir.data, paste0("stanin_",run_tag,".RData"))
 }
 cat('Writing ', file, '\n')
@@ -183,7 +184,7 @@ save(list=tmp, file= file)
 # fit 
 cat("\n Start sampling \n")
 if(0){
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=10,warmup=5,chains=1,
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=2,warmup=1,chains=3,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 

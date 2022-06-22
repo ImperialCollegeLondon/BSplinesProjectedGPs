@@ -33,7 +33,7 @@ infile.stanin <- list.files(indir.results, pattern='.*_stanin.RData$', recursive
 stopifnot(length(infile.stanin)>0)
 stopifnot(length(infile.stanin)<=1)
 tmp <- load(file.path(indir.results, infile.stanin))
-stopifnot(c('args','stan_data')%in%tmp)
+stopifnot(c('stan_data')%in%tmp)
 stan_data$LOCATION_PROCESSING_IDX <- location.index
 
 #	reset args
@@ -49,9 +49,8 @@ stopifnot(length(infile.stanfits)<=1)
 tmp <- load(file.path(indir.results, infile.stanfits[1]))
 
 #	find stan model and stan model for generating quantities
-file_stanModel <- gsub('.*inst/(.*)','\\1',args$file_stanModel)
-file_stanModel <- file.path(indir, file_stanModel)
-file_stanModel_gqs <- gsub('cmdstan','gqs',file_stanModel)
+file_stanModel_gqs <- gsub('cmdstan','gqs',path.to.stan.model)
+cat("\n file_stanModel_gqs is ", file_stanModel_gqs)
 stopifnot( file.exists(file_stanModel_gqs) )
 
 cat('\nCompiling gqs model file ...')
@@ -62,7 +61,8 @@ draws <- as.matrix(fit)
 fit2 <- rstan::gqs(m2, data=stan_data, draws=draws)
 fit.gqs <- rstan::extract(fit2)
 
-file <- file.path(indir.results, paste0(basename(args$job_dir), '_location',location.index,'_stangqs.RDS'))
+file <- file.path(indir.results, paste0(basename(job_dir), '_location',location.index,'_stangqs.RDS'))
+cat('\nWriting file ', file)
 saveRDS(fit.gqs, file = file)
 
 cat('\nFinished base-ages-generate-quantities.R ...')

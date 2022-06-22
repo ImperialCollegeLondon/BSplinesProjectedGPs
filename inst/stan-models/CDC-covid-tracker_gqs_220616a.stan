@@ -221,8 +221,10 @@ generated quantities{
   matrix[A,W] phi;
   matrix[A,W] alpha;
   matrix[B,W] phi_reduced;
+  matrix[C,W] phi_predict_reduced_vac;
   matrix[C,W] phi_reduced_vac;
   matrix[B,W] alpha_reduced;
+  matrix[C,W] alpha_reduced_vac;
   matrix[A, W] f;
   matrix[C,W] E_pdeaths;
   matrix[C,T] r_pdeaths = rep_matrix(1.0, C, T);
@@ -231,12 +233,12 @@ generated quantities{
   real log_lik[N_log_lik];
   int deaths_predict[A,W];
   int deaths_predict_state_age_strata[B,W];
+  int deaths_predict_vac_age_strata[C,W];
   
   matrix[C,T] log_r_pdeaths_predict = rep_matrix(1.0, C, T);
   matrix[C,T] r_pdeaths_predict = rep_matrix(1.0, C, T);
   matrix[C,T] E_pdeaths_predict = rep_matrix(1.0, C, T);
   matrix[C,T] E_pdeaths_predict_resurgence_cumulative = rep_matrix(1.0, C, T);
-  matrix[C,T] E_pdeaths_predict_resurgence_cumulative_all = rep_matrix(1.0, C, T);
 
   matrix[C,T] E_pdeaths_counterfactual[N_COUNTERFACTUAL] = rep_array(rep_matrix(1.0, C, T), N_COUNTERFACTUAL);
   matrix[C,T] E_pdeaths_counterfactual_resurgence_cumulative[N_COUNTERFACTUAL] = rep_array(rep_matrix(1.0, C, T), N_COUNTERFACTUAL);
@@ -256,9 +258,12 @@ generated quantities{
                           zeta_gp[m], gamma_gp1[m], gamma_gp2[m], z1[m], delta0);
       phi  =  get_age_profile(A,W,f);
       alpha = get_dirichlet_parameter(A,W,phi, lambda, nu[m]);
+      
       phi_reduced = get_reduced_matrix(B, W, phi, state_age_strata);
       alpha_reduced = get_reduced_matrix(B, W, alpha, state_age_strata);
+      
       phi_reduced_vac = get_reduced_matrix(C, W, phi, vac_age_strata);
+      alpha_reduced_vac = get_reduced_matrix(C, W, alpha, vac_age_strata);
       
       E_pdeaths = get_expected_deaths(C,W,to_row_vector(deaths_JHU[m,]), phi_reduced_vac);
       r_pdeaths = get_resurgence_deaths(C, T,E_pdeaths,w_start_resurgence[m], w_stop_resurgence[m]);
@@ -272,7 +277,10 @@ generated quantities{
         for(w in 1:W){
             // predict deaths
             deaths_predict[:,w] = neg_binomial_rng(alpha[:,w], nu_inverse );
+            deaths_predict_vac_age_strata[:,w] = neg_binomial_rng(alpha_reduced_vac[:,w], nu_inverse );
             deaths_predict_state_age_strata[:,w] = neg_binomial_rng(alpha_reduced[:,w], nu_inverse );
+            phi_predict_reduced_vac[:,w] = to_vector(deaths_predict_vac_age_strata[:,w]) ./ rep_vector(sum(deaths_predict_vac_age_strata[:,w]), C);       
+
         }
 
         for(w in 1:W_OBSERVED){

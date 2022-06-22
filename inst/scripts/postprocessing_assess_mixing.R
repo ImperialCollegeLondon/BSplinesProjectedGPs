@@ -12,13 +12,17 @@ library(bayesplot)
 library(scales)
 library(facetscales)
 
+if(0){
+  indir = "~/git/BSplinesProjectedGPs/inst/" # path to the repo
+  outdir = '~/Downloads/results/'
+}
 indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('CA,FL,NY,TX',',')[[1]]
 states = strsplit('FL',',')[[1]]
-stan_model = "220209a"
-JOBID = 768670
+stan_model = "cmdstan_220616a"
+JOBID = 9228
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -67,7 +71,12 @@ outdir.fit = outdir.fit.post
 cat("Load fits \n")
 file = file.path(outdir.fit.post, paste0("fit_cumulative_deaths_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
-fit_samples <- rstan::extract(fit_cum)
+file = file.path(outdir.fit.post, paste0("posterior_samples_", run_tag,".rds"))
+if(file.exists(file)){
+  fit_samples <- readRDS(file=file)
+}else{
+  fit_samples <- rstan::extract(fit_cum)
+}
 
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")

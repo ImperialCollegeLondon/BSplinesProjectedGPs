@@ -172,7 +172,7 @@ for(i in seq_len(nrow(args)))
     cmd2 <- paste0(cmd2,'\n')
     # set up env variables
     cmd2 <- paste0(cmd2,'SCRIPT_DIR=',args$source_dir[i],'\n',			
-                   'OUT_DIR=',tmpdir2,'\n',
+                   'OUT_DIR=',dirname(tmpdir2),'\n',
                    'JOBID=',args$JOBID[i],'\n',
                    'STAN_MODEL_FILE=',args$stanModelFile[i],'\n',
                    'NUMB_CHAINS=', max(args$chain),'\n',
