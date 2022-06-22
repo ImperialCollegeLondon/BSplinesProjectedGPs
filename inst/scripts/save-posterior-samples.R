@@ -128,6 +128,16 @@ if(nrow(do)!=0){
     re <- c(re, listvar)
   }
   
+  # permute the dimension to match previous dim
+  if("E_casesByAge" %in% vars) re[["E_casesByAge"]] <- aperm(re[["E_casesByAge"]], c(1, 4, 2, 3))
+  if("E_deathsByAge" %in% vars) re[["E_deathsByAge"]] <- aperm(re[["E_deathsByAge"]], c(1, 4, 2, 3))
+  if("E_antibodyByAge" %in% vars) re[["E_antibodyByAge"]] <- aperm(re[["E_antibodyByAge"]], c(1, 4, 2, 3))
+  if("RtByAge" %in% vars) re[["RtByAge"]] <- aperm(re[["RtByAge"]], c(1, 4, 2, 3))
+  if("lambdaByAge" %in% vars) re[["lambdaByAge"]] <- aperm(re[["lambdaByAge"]], c(1, 4, 2, 3))
+  if("E_effcasesByAge" %in% vars) re[["E_effcasesByAge"]] <- aperm(re[["E_effcasesByAge"]], c(1, 4, 2, 3))
+  if("contacts_ByAge" %in% vars) re[["contacts_ByAge"]] <- aperm(re[["contacts_ByAge"]], c(1, 4, 2, 3))
+  if("RtByAge_counter" %in% vars) re[["RtByAge_counter"]] <- aperm(re[["RtByAge_counter"]], c(1, 4, 2, 3))
+  if("E_effcasesByAge_counter" %in% vars) re[["E_effcasesByAge_counter"]] <- aperm(re[["E_effcasesByAge_counter"]], c(1, 4, 2, 3))
     gc()
 }
 

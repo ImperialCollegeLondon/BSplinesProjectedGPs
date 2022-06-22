@@ -98,6 +98,10 @@ functions {
     return(xi);
   }
   
+  real my_neg_binomial_lpmf(int y, real alpha, real beta){
+    return(lchoose(y + alpha - 1, alpha - 1) + alpha * (log(beta) - log(beta + 1)) + y * (log(1) - log(beta + 1)));
+  }
+  
   real countries_log_dens(int[,] sum_count_censored, 
                           int start,
                           int end,
@@ -207,8 +211,14 @@ functions {
         lpmf += neg_binomial_lpmf( sum_count_censored[m][n] | alpha_reduced_missing , nu_inverse ) ;
       } 
       else {
-       for(i in min_count_censored[m][n]:max_count_censored[m][n])
-          lpmf += neg_binomial_lpmf( i | alpha_reduced_missing , nu_inverse ) ;
+       for(i in min_count_censored[m][n]:max_count_censored[m][n]){
+         // if(i == 1){ // bug cmdstan when argument is 1
+           lpmf += my_neg_binomial_lpmf( i | alpha_reduced_missing , nu_inverse ) ;
+         // }else{
+         //   lpmf += neg_binomial_lpmf( i | alpha_reduced_missing , nu_inverse ) ;
+         // }
+          
+       }
       }
     } 
 

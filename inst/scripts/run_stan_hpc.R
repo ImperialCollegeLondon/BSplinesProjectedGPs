@@ -51,7 +51,6 @@ if(length(args_line) > 0)
 with_cmdstan <- F
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
-if(grepl('cmdstan', stan_model)){ with_cmdstan = T}
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to data
@@ -81,6 +80,19 @@ print(outdir.fit)
 print(outdir.data)
 print(outdir.fig)
 cat("\n outfile.dir is ", file.path(outdir, run_tag), '\n')
+
+if(grepl('cmdstan', stan_model)){ 
+  with_cmdstan = T
+  tmp <- Sys.getenv("PBS_JOBID")
+  tmp <- ifelse(tmp!='', gsub("(.+)\\[(.*)", "\\1", tmp), '' )
+  job_id <- ifelse(tmp!='', tmp, as.character(abs(round(rnorm(1) * 1e6))) )
+  tmp <- Sys.getenv("PBS_JOBID_INDEX")
+  job_id <- ifelse(tmp!='', paste0(job_id, '[', tmp, ']'), job_id)
+  job_dir <- file.path(outdir, run_tag, paste0(run_tag,'-',job_id)) 
+  dir.create(job_dir)
+  outdir.fit = file.path(outdir, run_tag)
+  cat("\n job_dir is ", job_dir, '\n')
+}
 
 # load CDC data
 deathByAge = readRDS(path.to.CDC.data) # cdc data 
@@ -160,7 +172,13 @@ model = rstan::stan_model(path.to.stan.model)
 
 ## save image before running Stan
 tmp <- names(.GlobalEnv)
-save(list=tmp, file=file.path(outdir.data, paste0("stanin_",run_tag,".RData")) )
+if(with_cmdstan){
+  file <- file.path(job_dir, paste0(basename(job_dir), '_stanin.RData'))
+}else{
+  file <- file.path(outdir.data, paste0("stanin_",run_tag,".RData"))
+}
+cat('Writing ', file, '\n')
+save(list=tmp, file= file)
 
 # fit 
 cat("\n Start sampling \n")
@@ -170,8 +188,8 @@ if(0){
 }
 
 if(with_cmdstan){
-  file = file.path(outdir.fit, paste0(run_tag,"_cmdstanin.R"))
-  
+  file = file.path(job_dir, paste0(basename(job_dir),"_cmdstanin.R"))
+  cat('Writing ', file, '\n')
   rstan::stan_rdump( names(stan_data), file=file, envir=list2env(stan_data))  	
 }else{
   fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,

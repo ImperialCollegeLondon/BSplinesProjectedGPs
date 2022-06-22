@@ -105,11 +105,10 @@ for(i in seq_len(nrow(args)))
     cmd <- paste0(cmd, 'make ', file.path('$CWD',paste0("CDC-covid-tracker_",args$stanModelFile[i])), ' \n')
     cmd <- paste0(cmd, 'cd $CWD\n')
     #	set up env variables
-    cmd <- paste0( cmd, 'JOB_DIR=$(ls -d "',tmpdir,'"/*/)\n')
-    cmd <- paste0( cmd, 'JOB_DIR=${JOB_DIR%?}\n')
-    cmd <- paste0( cmd, 'JOB_DIR_NAME=${JOB_DIR##*/}\n')
     cmd <- paste0( cmd, 'STAN_DATA_FILE=$(find ', tmpdir, ' -name "*cmdstanin.R")\n')
-    cmd <- paste0( cmd, 'STAN_OUT_FILE=', file.path('$JOB_DIR','${JOB_DIR##*/}_stanout.csv'),' \n')
+    cmd <- paste0( cmd, 'JOB_DIR=${STAN_DATA_FILE%/*}\n')
+    cmd <- paste0( cmd, 'JOB_DIR_NAME=${JOB_DIR##*/}\n')
+    cmd <- paste0( cmd, 'STAN_OUT_FILE=', file.path('$JOB_DIR', '${JOB_DIR##*/}_stanout.csv'),' \n')
     #	run model
     cmd <- paste0( cmd, 'echo "----------- env variables are: ------------"\n')
     cmd <- paste0( cmd, 'echo $JOB_DIR\n')
@@ -143,7 +142,7 @@ for(i in seq_len(nrow(args)))
     dir.create(tmpdir2)		  		
   }
   cmd		<- paste0(cmd,"mkdir -p ",tmpdir2,'\n')
-  cmd		<- paste0(cmd, 'cp -R --no-preserve=mode,ownership "', tmpdir,'"/* ', tmpdir2,'\n')
+  cmd		<- paste0(cmd, 'cp -R --no-preserve=mode,ownership "', file.path(tmpdir, paste0(args$stanModelFile[i],'-',args$JOBID[i])),'"/* ', tmpdir2,'\n')
   cmd		<- paste0(cmd, 'chmod -R g+rw ', tmpdir2,'\n')
   
   #	generate quantities 
@@ -156,9 +155,9 @@ for(i in seq_len(nrow(args)))
   stopifnot(is.numeric(tmp))
   cmd <- paste0( cmd, paste0('xargs -P ',tmp,' -n 1 -I {} ') )
   tmp <- paste0('Rscript ', file.path(args$source_dir[i],args$script_generate_quantities_file[i]),
+                ' -indir "', args$source_dir[i], '"',
                 ' -indir.results "$JOB_DIR2"',
-                ' -location.index {}',
-                ' -with.flow 1')		
+                ' -location.index {}')		
   cmd <- paste0(cmd, tmp,'\n')
   
   # create post-processing shell script for central analyses
@@ -184,10 +183,10 @@ for(i in seq_len(nrow(args)))
                   ' -stanModelFile $STAN_MODEL_FILE -out_dir $OUT_DIR -JOBID $JOBID -numb_chains $NUMB_CHAINS')
     cmd2 <- paste0(cmd2,tmp,'\n')
     tmp = paste0('Rscript ', file.path('$SCRIPT_DIR','/scripts/postprocessing_assess_mixing.R'), 
-                 '-indir $SCRIPT_DIR -outdir $OUT_DIR -states ',  args$countries[i], ' -stan_model $STAN_MODEL_FILE -JOBID $JOBID')
+                 ' -indir $SCRIPT_DIR -outdir $OUT_DIR -states ',  args$countries[i], ' -stan_model $STAN_MODEL_FILE -JOBID $JOBID')
     cmd2 = paste0(cmd2, tmp, '\n')
     tmp = paste0('Rscript ', file.path('$SCRIPT_DIR','/scripts/postprocessing_figures.R'), 
-                 '-indir $SCRIPT_DIR -outdir $OUT_DIR -states ',  args$countries[i], ' -stan_model $STAN_MODEL_FILE -JOBID $JOBID')
+                 ' -indir $SCRIPT_DIR -outdir $OUT_DIR -states ',  args$countries[i], ' -stan_model $STAN_MODEL_FILE -JOBID $JOBID')
     cmd2 = paste0(cmd2, tmp, '\n')
     
     
@@ -221,6 +220,7 @@ pbshead <- make.PBS.header(	hpc.walltime=63,
 #	make array job
 for(i in seq_len(nrow(args)))
 {
+  cmds[[i]] <- paste0('echo PBS_JOBID_INDEX=', i,' > .Renviron\n', cmds[[i]])
   cmds[[i]] <- paste0(i,')\n',cmds[[i]],';;\n')
 }
 cmd		<- paste0('case $PBS_ARRAY_INDEX in\n',paste0(cmds, collapse=''),'esac')			

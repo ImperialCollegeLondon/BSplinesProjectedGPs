@@ -13,7 +13,7 @@ if(length(args_line) > 0)
 {  
   stopifnot(args_line[[1]]=='-indir')
   stopifnot(args_line[[3]]=='-indir.results')
-  stopifnot(args_line[[4]]=='-location.index')
+  stopifnot(args_line[[5]]=='-location.index')
   args <- list()    
   args[['indir']] <- args_line[[2]]  
   args[['indir.results']] <- args_line[[4]]  
@@ -63,6 +63,6 @@ fit2 <- rstan::gqs(m2, data=stan_data, draws=draws)
 fit.gqs <- rstan::extract(fit2)
 
 file <- file.path(indir.results, paste0(basename(args$job_dir), '_location',location.index,'_stangqs.RDS'))
-saveRDS(fit.gqs, file = file.path( args[['work_dir']], dirname(file), basename(file)))
+saveRDS(fit.gqs, file = file)
 
 cat('\nFinished base-ages-generate-quantities.R ...')
