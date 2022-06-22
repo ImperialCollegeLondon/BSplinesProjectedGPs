@@ -188,7 +188,9 @@ for(i in seq_len(nrow(args)))
     tmp = paste0('Rscript ', file.path('$SCRIPT_DIR','/scripts/postprocessing_figures.R'), 
                  ' -indir $SCRIPT_DIR -outdir $OUT_DIR -states ',  args$countries[i], ' -stan_model $STAN_MODEL_FILE -JOBID $JOBID')
     cmd2 = paste0(cmd2, tmp, '\n')
-    
+    tmp = paste0('Rscript ', file.path('$SCRIPT_DIR','/scripts/postprocessing_union.R'), 
+                 ' -indir $SCRIPT_DIR -outdir $OUT_DIR -states ',  args$countries[i], ' -stan_model $STAN_MODEL_FILE -JOBID $JOBID')
+    cmd2 = paste0(cmd2, tmp, '\n')
     
     # write submission file	
     post.processing.file <- file.path(tmpdir2, 'post_processing.sh')
