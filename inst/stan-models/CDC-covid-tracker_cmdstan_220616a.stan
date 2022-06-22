@@ -371,9 +371,9 @@ model {
   
 
   // rstan version
-  target += countries_log_dens(sum_count_censored, 1, M,
+  // target += countries_log_dens(sum_count_censored, 1, M,
   // cmdstan version
-  // target += reduce_sum(countries_log_dens, sum_count_censored, 1, 
+  target += reduce_sum(countries_log_dens, sum_count_censored, 1,
                               deaths,
                               lambda_prior_parameters,
                               W_OBSERVED,
