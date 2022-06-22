@@ -66,6 +66,7 @@ outdir.fit = outdir.fit.post
 cat("Load fits \n")
 file = file.path(outdir.fit, paste0("fit_cumulative_deaths_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
+file = file.path(outdir.fit.post, paste0("posterior_samples_", run_tag,".rds"))
 if(file.exists(file)){
   fit_samples <- readRDS(file=file)
 }else{
