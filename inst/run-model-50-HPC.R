@@ -33,6 +33,7 @@ if(1)
   countries <- paste0(c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
                         "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
                         "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"), collapse = ',')
+  #countries <- 'CA,FL,NY,TX'
   
   n_countries <- length(unlist(strsplit(countries,',')))
   hpc.nproc.cmdstan <- n_countries	
