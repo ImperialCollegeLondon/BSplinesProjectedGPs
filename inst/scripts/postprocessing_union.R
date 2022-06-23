@@ -87,32 +87,42 @@ for(i in seq_along(locs)){
   mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRateTable_', locs[i], '.rds'))
 }
 mortality_rate = do.call('rbindlist', list(l = mortality_rate, fill=TRUE))
-mortality_rateJ21 <- subset(mortality_rate, date == '2021-06-05')
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
 # mortality_rate[is.na(M), M := c(2.056321e-03, 1.684421e-02)]
 crude_mortality_rate = find_crude_mortality_rate(mortality_rate, df_age_continuous, df_age_reporting, pop_data)
 plot_mortality_rate_all_states(mortality_rate, crude_mortality_rate, outdir.fig)
 plot_mortality_rate_all_states2(mortality_rate, outdir.fig)
-plot_mortality_rate_all_states_map(mortality_rate, outdir.fig)
-plot_relative_mortality_all_states(mortality_rateJ21, nyt_data, outdir.fig)
-
-# mortality rate correlation with longtermdeaths in care home facilities
-mortality_rateJ21 = vector(mode = 'list', length = length(locs))
-for(i in seq_along(locs)){
-  mortality_rateJ21[[i]] = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRateTable_', locs[i], '.rds'))
-  mortality_rateJ21[[i]] <- mortality_rateJ21[[i]][date == '2021-06-05']
-}
-mortality_rateJ21 = do.call('rbindlist', list(l = mortality_rateJ21, fill=TRUE))
-save_mortality_rate_correlation_longtermdeaths(mortality_rateJ21, nyt_data, region_name, outdir.table)
-
 
 # aggregate across states
 mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   mortality_rate_posterior_samples[[i]] = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRateTable_', locs[i], '.rds'))
 }
-mortality_rate_posterior_samples = do.call('rbind', mortality_rate_posterior_samples)
+mortality_rate_posterior_samples = as.data.table(do.call('rbind', mortality_rate_posterior_samples))
 mortality_rate_across_states <- find_mortality_rate_across_states(mortality_rate_posterior_samples)
+
+# mortality rate over time discrete 4 gae groups
+mortality_rate = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  mortality_rate[[i]] = readRDS(paste0(outdir.table, '-MortalityRate4agegroupsTable_', locs[i], '.rds'))
+}
+mortality_rate = do.call('rbindlist', list(l = mortality_rate, fill=TRUE))
+mortality_rateJ21 <- subset(mortality_rate, date == '2021-06-05')
+mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
+p <- plot_mortality_rate_all_states_map(mortality_rate, outdir.fig)
+p2 <- plot_relative_mortality_all_states(mortality_rateJ21, nyt_data, outdir.fig)
+p <- ggarrange(p, labels = 'A')
+p2 <- ggarrange(p2, labels = 'B')
+pp <- grid.arrange(p, p2, layout_matrix = rbind(c(1, 2), c(1, NA)), widths = c(0.45, 0.55), heights = c(0.6, 0.4))
+ggsave(pp, file = paste0(outdir.fig, paste0('-MortalityRateRelative_CareHome_panel.png')), w = 9.5, h = 5.5)
+
+mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  mortality_rate_posterior_sample = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRate4agegroupsTable_', locs[i], '.rds'))
+  mortality_rate_posterior_samples[[i]] <- mortality_rate_posterior_sample[date == '2021-06-05']
+}
+mortality_rateJ21 = do.call('rbindlist', list(l = mortality_rate_posterior_samples, fill=TRUE))
+save_mortality_rate_correlation_longtermdeaths(mortality_rateJ21, nyt_data, region_name, outdir.table)
 
 
 # statistics
@@ -168,8 +178,8 @@ contribution = do.call('rbind', contribution)
 
 mid_code = round(length(locs) / 2)
 contribution[, M_median := median(M), by = c('date', 'age')]
-plot_contribution_vaccine(contribution, vaccine_data, 'predict_all', outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'predict_selected_codes',outdir.fig)
+plot_contribution_vaccine(contribution, vaccine_data_pop, 'predict_all', outdir.fig)
+plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'predict_selected_codes',outdir.fig)
 
 ## contribution 
 contribution = vector(mode = 'list', length = length(locs))
@@ -179,17 +189,17 @@ for(i in seq_along(locs)){
 contribution = do.call('rbind', contribution)
 contribution[, M_median := median(M), by = c('date', 'age')]
 mid_code = round(length(locs) / 2)
-plot_contribution_vaccine(contribution, vaccine_data, 'all', outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data,  'selected_codes',outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% 'FL'), vaccine_data,  'FL',outdir.fig)
+plot_contribution_vaccine(contribution, vaccine_data_pop, 'all', outdir.fig)
+plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'selected_codes',outdir.fig)
 
 ## contribution shift
 locs_plus_US <- c(locs, 'US')
 contributiondiff = vector(mode = 'list', length = length(locs_plus_US))
 for(i in seq_along(locs_plus_US)){
-  contributiondiff[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacDiffTable_', locs_plus_US[i], '.rds'))
+  contributiondiff[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacDiffTable_', locs_plus_US[i], '.rds'))
 }
 contributiondiff = do.call('rbind', contributiondiff)
+plot_contributiondiff_map(contributiondiff, outdir.fig)
 save_statistics_contributiondiff(contributiondiff, outdir.table)
 
 # Resurgence

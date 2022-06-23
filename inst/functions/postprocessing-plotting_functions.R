@@ -489,49 +489,83 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
   mortality_rate[, state := code]
 
   mortality_rate <- mortality_rate[, .(M, state, M_rel, age)]
-  mortality_rate[, age_relative := paste0(age, '\nrelative to 85+')]
-  
+
   to_include <- mortality_rate[, unique(state)]
+  
+  mortality_rate[, `Age group`:=age]
   
   tmp <- mortality_rate[age == '85+']
   MedianM <- tmp[, unique(median(M))]
   p1 <- plot_usmap(data =tmp, values = 'M', include = to_include, color='white') +
-    facet_wrap(~age) + 
+    # facet_wrap(~`Age group`, label = 'label_both') + 
     theme(legend.position = "right",
           legend.text = element_text(size = rel(1)), 
           strip.text = element_text(size = rel(1)),
           strip.background = element_blank(),
           panel.border = element_rect(colour = "white", fill = NA)) + 
-    labs(fill = 'Predicted COVID-19\nattributable mortality\nrates') + 
-    scale_fill_gradient2(low= 'darkturquoise', high = 'darkred', mid = 'beige',
-                         midpoint = MedianM, labels = scales::percent_format()) + 
+    labs(fill = 'Predicted COVID-19\nattributable mortality\nrate in 85+') + 
+    scale_fill_gradient(low= '#FBF4F3', high = '#BE0301', labels = scales::percent_format()) + 
     guides(fill = guide_colorbar(barwidth = 0.4))
   
   my_plots <- function(tmp){
     plot_usmap(data = tmp, values = 'M_rel', include = to_include, color='white') +
-      facet_wrap(~age_relative) + 
+      # facet_wrap(~`Age group`, label = 'label_both') + 
       theme(legend.position = "right",
             legend.text = element_text(size = rel(1)), 
             strip.text = element_text(size = rel(1)),
             strip.background = element_blank(),
-            legend.title = element_blank(),
             panel.border = element_rect(colour = "white", fill = NA))  + 
-      scale_fill_gradient(high= 'mediumorchid', low = 'dimgray') + 
-      guides(fill = guide_colorbar(barwidth = 0.4))
+      scale_fill_gradient(high= '#013D47', low = '#E4F3F4') + 
+      guides(fill = guide_colorbar(barwidth = 0.4)) + 
+      labs(fill = 'Predicted COVID-19\nattributable mortality\nrate ratio in 85+\nrelative to 55-84')
   }
 
-  p2 <- my_plots(copy(mortality_rate[age == '25-54']))
-  p3 <- my_plots(copy(mortality_rate[age == '55-74']))
-  p4 <- my_plots(copy(mortality_rate[age == '75-84']))
+  # p2 <- my_plots(copy(mortality_rate[age == '25-54']))
+  p3 <- my_plots(copy(mortality_rate[age == '55-84']))
+  # p4 <- my_plots(copy(mortality_rate[age == '75-84']))
   
-  p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 1, 2), c(NA, 3, 4)), widths = c(0.04, 0.48, 0.48))
+  # p <- grid.arrange(p1, p3, layout_matrix = rbind(c(1, 1, 2), c(NA, 3, 4)), widths = c(0.04, 0.48, 0.48))
+  p <- grid.arrange(p1, p3, nrow = 2)
   ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map.png')), w = 9, h = 7)
   
-  p <- grid.arrange(p1, p3, p4, layout_matrix = rbind(c(1, 3, 4)), widths = c(0.35, 0.3, 0.3))
-  ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map2.png')), w = 12, h = 4)
-  p <- grid.arrange(p1, p3, p4, ncol = 1)
-  ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map3.png')), w = 4, h = 7)
+  # p <- grid.arrange(p1, p3, p4, layout_matrix = rbind(c(1, 3, 4)), widths = c(0.35, 0.3, 0.3))
+  # ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map2.png')), w = 12, h = 4)
+  # p <- grid.arrange(p1, p3, p4, ncol = 1)
+  # ggsave(p, file = paste0(outdir, paste0('-MortalityRate_map3.png')), w = 4, h = 7)
+  
+  return(p)
 }
+
+plot_contributiondiff_map <- function(contributiondiff, outdir){
+  
+  contributiondiff <- contributiondiff[age == '65+' & variable=='diff1']
+  
+  contributiondiff[, state := code]
+  contributiondiff[, change := 'no significant change']
+  contributiondiff[CL < 0 & CU < 0, change := 'significant decrease']
+  contributiondiff[CL > 0 & CU > 0, change := 'significant increase']
+  contributiondiff[, change := factor(change, levels = c('significant increase', 'no significant change', 'significant decrease'))]
+  contributiondiff <- contributiondiff[, .(change, state)]
+  
+  to_include <- contributiondiff[, unique(state)]
+  
+  p <- plot_usmap(data =contributiondiff, values = 'change', include = to_include, color='white') +
+    # facet_wrap(~`Age group`, label = 'label_both') + 
+    theme(legend.position = "right",
+          legend.text = element_text(size = rel(1)), 
+          strip.text = element_text(size = rel(1)),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "white", fill = NA)) + 
+    labs(fill = 'Estimated change in the contribution of 65+\nto COVID-19 weekly deaths between\nMay 2020 to when vaccination started') + 
+    ggsci::scale_fill_npg()  +
+    bgcolor('white')
+  
+
+  ggsave(p, file = paste0(outdir, paste0('-contributiondiff_map.png')), w = 9, h = 7)
+
+  return(p)
+}
+
 
 plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
 {
@@ -2447,31 +2481,14 @@ plot_forest_plot <- function(tmp, outdir){
   return(p)
 }
 
-plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
+plot_contribution_vaccine <- function(contribution, vaccine_data_pop, lab, outdir){
   
   # delay = 7*2
-  delay = 0
-  df_age_vaccination = unique(select(contribution, age_index, age))
-  df_age_vaccination[, age_from := gsub('(.+)-.*', '\\1', age)]
-  df_age_vaccination[, age_to := gsub('.*-(.+)', '\\1', age)]
-  df_age_vaccination[grepl('\\+', age_from), age_from := gsub('(.+)\\+', '\\1', age)]
-  df_age_vaccination[grepl('\\+', age_to), age_to := max(vaccine_data$age)]
-  set(df_age_vaccination, NULL, 'age_from', df_age_vaccination[,as.numeric(age_from)])
-  set(df_age_vaccination, NULL, 'age_to', df_age_vaccination[,as.numeric(age_to)])
-  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
-  vaccine_data = vaccine_data[!is.na(age_index), list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
-  vaccine_data[, date := date + delay]
-  tmp <- vaccine_data[age_index == 2, list(mindate = min(date[prop > 0.5]), 
-                                           age_index = age_index), by = 'code']
-  tmp[, type:= 'Vaccination rate in 65+ reaches 50%']
-  tmp1 <- vaccine_data[age_index == 1, list(mindate = min(date[prop > 0.39]), 
-                                            age_index = age_index), by = 'code']
-  tmp1[, type:= 'Vaccination rate in 18-64 reaches 40%']
-  tmp1 <- rbind(tmp, tmp1)
-  tmp1 <- merge(tmp1, unique(contribution[, .(code, loc_label)]), by = 'code')
+  tmp <- vaccine_data_pop[, list(mindate = min(date[prop > 0.05])), by = 'code']
+  tmp[, type:= 'Vaccination starts']
+  tmp1 <- merge(tmp, unique(contribution[, .(code, loc_label)]), by = 'code')
   tmp1 <- tmp1[code %in% unique(contribution$code)]
-  tmp1[, type := factor(type, levels = unique(type[order(age_index, decreasing = T)]))]
-  
+
   p1 = ggplot(contribution, aes(x = date)) + 
     geom_vline(data = tmp1, aes(xintercept = mindate, alpha = type), col = 'grey50', size=1.2) +
     geom_line(aes(y = M_median, col = as.factor(age), linetype = '')) + 
@@ -2518,37 +2535,33 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
 
 
 plot_relative_mortality_all_states <- function(mortality_rateJ21, nyt_data, outdir){
+  
   tmp <- merge(mortality_rateJ21, nyt_data[, .(STATE, SHARE_DEATHS)], by.x = 'loc_label', by.y = 'STATE')
   tmp <- tmp[!is.na(SHARE_DEATHS)]
   
-  tmp <- tmp[!age %in% c('0-24', '85+')]
+  tmp <- tmp[!age %in% c('0-24', '25-54', '85+')]
   tmp[, `Age group`:=age]
-  p <- ggplot(tmp, aes(y = M_rel, x = SHARE_DEATHS, col = loc_label)) + 
-    geom_point() + 
-    geom_errorbar(aes(ymin = CL_rel, ymax = CU_rel)) +
-    labs(x = "Share of state's deaths linked to long term care facilities", 
-         y = 'Predicted COVID-19 attributable\nmortality rate relative to 85+', 
-         col = '') + 
-    facet_grid(.~`Age group`, label = 'label_both') + 
-    theme_bw() + 
-    theme(legend.position = 'bottom', 
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) + 
-    scale_color_viridis_d(option = 'C')
-  ggsave(p, file = paste0(outdir, paste0('-MortalityRateRelative_CareHome.png')), w = 9, h = 7)
   
   p <- ggplot(tmp, aes(y = M_rel, x = SHARE_DEATHS, col = loc_label)) + 
     geom_point() + 
     geom_errorbar(aes(ymin = CL_rel, ymax = CU_rel)) +
-    labs(x = "Share of state's deaths linked to long term care facilities", 
-         y = 'Predicted COVID-19 attributable\nmortality rate relative to 85+', 
+    labs(x = "Share of COVID-19 deaths linked to long term care facilities", 
+         y = 'Predicted COVID-19 attributable\nmortality rate ratio in 85+ relative to 55-84', 
          col = '') + 
-    facet_wrap(.~`Age group`, nrow =1, label = 'label_both', scale = 'free') + 
+    # facet_grid(.~`Age group`, label = 'label_both') + 
     theme_bw() + 
     theme(legend.position = 'bottom', 
+          strip.text = element_text(size = rel(0.8)),
+          axis.title = element_text(size = rel(0.85)),
+          axis.text = element_text(size = rel(0.8)),
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) + 
-    scale_color_viridis_d(option = 'C')
-  ggsave(p, file = paste0(outdir, paste0('-MortalityRateRelative_CareHome2.png')), w = 9, h = 7)
+    scale_color_viridis_d(option = 'C', end = 0.9) + 
+    geom_text(aes(label = code, y = CU_rel + 0.03, col = loc_label), size = 2.5) + 
+    guides(col = 'none') + 
+    scale_x_continuous(labels = scales::percent)
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRateRelative_CareHome.png')), w = 7, h = 5)
+  
+  return(p)
 }
 

@@ -80,7 +80,7 @@ date_10thcum[, cum.deaths := cumsum(weekly.deaths), by = 'code']
 date_10thcum = date_10thcum[ cum.deaths >=10, list(date_10thcum = min(date)), by = 'code']
 
 # age groups
-fouragegroups = c('0-24', '25-54', '55-79', '80+')
+fouragegroups = c('0-24',  '25-54', '55-84', '85+')
 fiveagegroups = c('0-24', '25-54', '55-74', '75-84', '85+')
 
 # selected states
@@ -115,10 +115,13 @@ plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi
 age_contribution_discrete_table = make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
 make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
-make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', vaccine_data, outdir.table)
+make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', vaccine_data_pop, outdir.table)
+make_var_by_age_by_state_by_time_diff_over_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
+
 if('phi_predict_reduced_vac' %in% names(fit_samples)){
   make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', outdir.table)
-  make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', vaccine_data, outdir.table)
+  make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', vaccine_data_pop, outdir.table)
+  make_var_by_age_by_state_by_time_diff_over_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', outdir.table)
 }
 
 # baseline contribution adjusted and non-adjusted for population composition
@@ -143,6 +146,8 @@ find_contribution_one_age_group(fit_samples, df_week, df_age_continuous, df_age_
 # mortality rate
 mortality_rate_table = make_mortality_rate_table_discrete(fit_samples, fiveagegroups, date_10thcum, df_week, pop_data,
                                                  JHUData, df_age_continuous, 'cumulative_deaths' , nyt_data, outdir.table)
+make_mortality_rate_table_discrete(fit_samples, fouragegroups, date_10thcum, df_week, pop_data, JHUData, df_age_continuous, 
+                                   'cumulative_deaths' , nyt_data, outdir.table, '4agegroups')
 mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_samples, date_10thcum, df_week, pop_data,
                                                           JHUData, df_age_continuous, 'cumulative_deaths' , outdir.table)
 plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)

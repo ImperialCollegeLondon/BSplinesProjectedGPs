@@ -117,9 +117,12 @@ save_p_value_vaccine_effects <- function(samples, names, outdir){
 
 save_mortality_rate_correlation_longtermdeaths <- function(mortality_rateJ21, nyt_data, region_name, outdir.table){
  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
   # find relative value to 85+
   mortality_rateJ21[, value_maxage := value[age_index == max(age_index)], by = c('iterations', 'loc_label', 'week_index')]
-  mortality_rateJ21[, value_rel := value / value_maxage]
+  mortality_rateJ21[, value_rel := value_maxage / value]
   
   # find correlation coefficients 
   tmp3 <- merge(mortality_rateJ21, nyt_data, by.y = 'STATE', by.x = 'loc_label')
@@ -129,9 +132,6 @@ save_mortality_rate_correlation_longtermdeaths <- function(mortality_rateJ21, ny
   # quantile
   tmp2 = tmp3[, list(q= quantile(value_corr, prob=ps, na.rm = T), q_label=p_labs), by=c('week_index', 'age_index')]	
   tmp2 = dcast(tmp2, week_index + age_index ~ q_label, value.var = "q")
-  
-  tmp2[, age := df_age$age[age_index]]
-  tmp2[, age := factor(age, levels = df_age$age)]
   
   saveRDS(tmp2, paste0(outdir.table, '-mortality_rateJ21.rds'))
 }

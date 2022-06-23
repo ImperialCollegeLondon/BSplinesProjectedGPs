@@ -1,8 +1,6 @@
 library(rstan)
 library(data.table)
 library(dplyr)
-library(foreach)
-library(doParallel)
 library(jcolors)
 library(gridExtra)
 library(ggpubr)
@@ -23,7 +21,7 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 states <- c("AK", "AL", "AR", "AZ")
 
-stan_model = "220616a"
+stan_model = "220208a"
 JOBID = 3541
 
 if(0)
@@ -59,6 +57,7 @@ path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds"))
+path_to_vaccine_data_pop = file.path(indir, "data", paste0("vaccination-prop-pop-2022-02-06.rds"))
 path.to.pop.data = file.path(indir, "data", paste0("us_population.csv"))
 path.to.nyt.data = file.path(indir, "data", paste0("NYT_sharedeaths_carehomes.csv"))
 
@@ -103,6 +102,7 @@ scrapedData = read.csv(path_to_scraped_data)
 
 # load vaccine data
 vaccine_data = readRDS(path_to_vaccine_data)
+vaccine_data_pop = readRDS(path_to_vaccine_data_pop)
 
 # load population count 
 pop_data = as.data.table( read.csv(path.to.pop.data) )
@@ -184,7 +184,7 @@ save(list=tmp, file= file)
 # fit 
 cat("\n Start sampling \n")
 if(0){
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=2,warmup=1,chains=3,
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=15,warmup=5,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
 }
 
@@ -193,6 +193,9 @@ if(with_cmdstan){
   cat('Writing ', file, '\n')
   rstan::stan_rdump( names(stan_data), file=file, envir=list2env(stan_data))  	
 }else{
+  library(foreach)
+  library(doParallel)
+  
   fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
   
