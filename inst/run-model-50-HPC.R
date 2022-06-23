@@ -217,7 +217,7 @@ pbshead <- make.PBS.header(	hpc.walltime=63,
                             hpc.select=1, 
                             hpc.nproc=hpc.nproc.cmdstan, 
                             hpc.mem= paste0(hpc.nproc.cmdstan*9,'gb'), 
-                            hpc.load= paste0("module anaconda3/personal\nexport STAN_NUM_THREADS=",hpc.nproc.cmdstan,"\nexport TBB_CXX_TYPE=gcc\nexport CXXFLAGS+=-fPIE"),
+                            hpc.load= paste0("module load anaconda3/personal\nsource activate Bsplines\nexport STAN_NUM_THREADS=",hpc.nproc.cmdstan,"\nexport TBB_CXX_TYPE=gcc\nexport CXXFLAGS+=-fPIE"),
                             hpc.array= length(cmds) )
 
 #	make array job
