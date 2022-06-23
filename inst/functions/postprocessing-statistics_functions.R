@@ -118,17 +118,16 @@ save_p_value_vaccine_effects <- function(samples, names, outdir){
 save_mortality_rate_correlation_longtermdeaths <- function(mortality_rateJ21, nyt_data, region_name, outdir.table){
  
   # find relative value to 85+
-  mortality_rateJ21[, value_maxage := value[age_index == max(age_index)], by = c('iterations', 'state_index', 'week_index')]
+  mortality_rateJ21[, value_maxage := value[age_index == max(age_index)], by = c('iterations', 'loc_label', 'week_index')]
   mortality_rateJ21[, value_rel := value / value_maxage]
   
   # find correlation coefficients 
-  tmp3 <- merge(nyt_data, region_name[, .(loc_label, state_index)], by.x = 'STATE', by.y = 'loc_label')
-  tmp3 <- merge(mortality_rateJ21, tmp3[, .(state_index, SHARE_DEATHS)], by = 'state_index')
-  mortality_rateJ21 <- mortality_rateJ21[!is.na(value_rel) & !is.na(SHARE_DEATHS)]
-  mortality_rateJ21[, value_corr := cor(value_rel, SHARE_DEATHS), by = c('week_index', 'age_index', 'iterations')]
+  tmp3 <- merge(mortality_rateJ21, nyt_data, by.y = 'STATE', by.x = 'loc_label')
+  tmp3 <- tmp3[!is.na(value_rel) & !is.na(SHARE_DEATHS)]
+  tmp3[, value_corr := cor(value_rel, SHARE_DEATHS), by = c('week_index', 'age_index', 'iterations')]
   
   # quantile
-  tmp2 = mortality_rateJ21[, list(q= quantile(value_corr, prob=ps, na.rm = T), q_label=p_labs), by=c('week_index', 'age_index')]	
+  tmp2 = tmp3[, list(q= quantile(value_corr, prob=ps, na.rm = T), q_label=p_labs), by=c('week_index', 'age_index')]	
   tmp2 = dcast(tmp2, week_index + age_index ~ q_label, value.var = "q")
   
   tmp2[, age := df_age$age[age_index]]
