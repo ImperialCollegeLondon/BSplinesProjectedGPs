@@ -1,6 +1,6 @@
 require(data.table)
 
-cmdstan_dir <- '/apps/cmdstan/2.33.0'
+cmdstan_dir <- '/rds/general/user/mm3218/home/git/cmdstan'
 out_dir <- '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results'
 hmc_chains_n <- 8
 source_dir <- '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/'
@@ -217,7 +217,7 @@ pbshead <- make.PBS.header(	hpc.walltime=63,
                             hpc.select=1, 
                             hpc.nproc=hpc.nproc.cmdstan, 
                             hpc.mem= paste0(hpc.nproc.cmdstan*9,'gb'), 
-                            hpc.load= paste0("module load cmdstan/2.33.0 anaconda3/personal\nexport STAN_NUM_THREADS=",hpc.nproc.cmdstan,"\nexport TBB_CXX_TYPE=gcc\nexport CXXFLAGS+=-fPIE"),
+                            hpc.load= paste0("module anaconda3/personal\nexport STAN_NUM_THREADS=",hpc.nproc.cmdstan,"\nexport TBB_CXX_TYPE=gcc\nexport CXXFLAGS+=-fPIE"),
                             hpc.array= length(cmds) )
 
 #	make array job
