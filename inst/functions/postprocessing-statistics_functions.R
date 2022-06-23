@@ -115,13 +115,26 @@ save_p_value_vaccine_effects <- function(samples, names, outdir){
   
 }
 
-save_mortality_rate_correlation_longtermdeaths <- function(mortality_rateJ21, outdir.table){
+save_mortality_rate_correlation_longtermdeaths <- function(mortality_rateJ21, nyt_data, region_name, outdir.table){
  
-  tmp <- mortality_rateJ21[, list(M_corr = unique(M_corr), 
-                                  CL_corr = unique(CL_corr), 
-                                  CU_corr = unique(CU_corr)), by = 'age']
+  # find relative value to 85+
+  mortality_rateJ21[, value_maxage := value[age_index == max(age_index)], by = c('iterations', 'state_index', 'week_index')]
+  mortality_rateJ21[, value_rel := value / value_maxage]
   
-  saveRDS(tmp, paste0(outdir.table, '-mortality_rateJ21.rds'))
+  # find correlation coefficients 
+  tmp3 <- merge(nyt_data, region_name[, .(loc_label, state_index)], by.x = 'STATE', by.y = 'loc_label')
+  tmp3 <- merge(mortality_rateJ21, tmp3[, .(state_index, SHARE_DEATHS)], by = 'state_index')
+  mortality_rateJ21 <- mortality_rateJ21[!is.na(value_rel) & !is.na(SHARE_DEATHS)]
+  mortality_rateJ21[, value_corr := cor(value_rel, SHARE_DEATHS), by = c('week_index', 'age_index', 'iterations')]
+  
+  # quantile
+  tmp2 = mortality_rateJ21[, list(q= quantile(value_corr, prob=ps, na.rm = T), q_label=p_labs), by=c('week_index', 'age_index')]	
+  tmp2 = dcast(tmp2, week_index + age_index ~ q_label, value.var = "q")
+  
+  tmp2[, age := df_age$age[age_index]]
+  tmp2[, age := factor(age, levels = df_age$age)]
+  
+  saveRDS(tmp2, paste0(outdir.table, '-mortality_rateJ21.rds'))
 }
 
 save_resurgence_dates <- function(resurgence_dates, outdir){
@@ -184,7 +197,7 @@ save_statistics_contributiondiff <- function(contributiondiff, outdir.table){
   tmp <- contributiondiff[, list(code_min = code[which.min(M)], 
                                  code_max = code[which.max(M)]), by = c('variable', 'age')]
   contributiondiff <- merge(contributiondiff, tmp, by = c('variable', 'age'))
-  contributiondiff[, `:=`(M = round(M, 2), CL = round(CL, 2), CU = round(CU, 2))]
+  contributiondiff[, `:=`(M = round(M, 4), CL = round(CL, 4), CU = round(CU, 4))]
   l[['code_min_1']] = contributiondiff[age == '65+' & code == code_min & variable == 'diff1', .(loc_label, M, CL, CU)]
   l[['code_max_1']] = contributiondiff[age == '65+' & code == code_max & variable == 'diff1', .(loc_label, M, CL, CU)]
   l[['code_US_1']] = contributiondiff[age == '65+' & code == 'US' & variable == 'diff1', .(loc_label, M, CL, CU)]

@@ -2517,8 +2517,9 @@ plot_contribution_vaccine <- function(contribution, vaccine_data, lab, outdir){
 }
 
 
-plot_relative_mortality_all_states <- function(mortality_rate, nyt_data, outdir){
+plot_relative_mortality_all_states <- function(mortality_rateJ21, nyt_data, outdir){
   tmp <- merge(mortality_rateJ21, nyt_data[, .(STATE, SHARE_DEATHS)], by.x = 'loc_label', by.y = 'STATE')
+  tmp <- tmp[!is.na(SHARE_DEATHS)]
   
   tmp <- tmp[!age %in% c('0-24', '85+')]
   tmp[, `Age group`:=age]
@@ -2535,5 +2536,19 @@ plot_relative_mortality_all_states <- function(mortality_rate, nyt_data, outdir)
           panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_color_viridis_d(option = 'C')
   ggsave(p, file = paste0(outdir, paste0('-MortalityRateRelative_CareHome.png')), w = 9, h = 7)
+  
+  p <- ggplot(tmp, aes(y = M_rel, x = SHARE_DEATHS, col = loc_label)) + 
+    geom_point() + 
+    geom_errorbar(aes(ymin = CL_rel, ymax = CU_rel)) +
+    labs(x = "Share of state's deaths linked to long term care facilities", 
+         y = 'Predicted COVID-19 attributable\nmortality rate relative to 85+', 
+         col = '') + 
+    facet_wrap(.~`Age group`, nrow =1, label = 'label_both', scale = 'free') + 
+    theme_bw() + 
+    theme(legend.position = 'bottom', 
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA)) + 
+    scale_color_viridis_d(option = 'C')
+  ggsave(p, file = paste0(outdir, paste0('-MortalityRateRelative_CareHome2.png')), w = 9, h = 7)
 }
 

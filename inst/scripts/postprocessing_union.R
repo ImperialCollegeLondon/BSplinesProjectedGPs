@@ -13,16 +13,19 @@ library(facetscales)
 library(usmap)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
-outdir = file.path('/rds/general/user/mm3218/home/git/old_BSplinesProjectedGPs/inst', "results")
+outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 # states = strsplit('FL',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 
+states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", 
+            "MI", "MN", "MO", "MS", "MT", "NC", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 paste0(states,collapse =  ',')
-stan_model = "220208a"
-JOBID = 3541
+stan_model = "220209a"
+JOBID = 8004
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -91,8 +94,17 @@ crude_mortality_rate = find_crude_mortality_rate(mortality_rate, df_age_continuo
 plot_mortality_rate_all_states(mortality_rate, crude_mortality_rate, outdir.fig)
 plot_mortality_rate_all_states2(mortality_rate, outdir.fig)
 plot_mortality_rate_all_states_map(mortality_rate, outdir.fig)
-plot_relative_mortality_all_states(mortality_rate, nyt_data, outdir.fig)
-save_mortality_rate_correlation_longtermdeaths(mortality_rateJ21, outdir.fig)
+plot_relative_mortality_all_states(mortality_rateJ21, nyt_data, outdir.fig)
+
+# mortality rate correlation with longtermdeaths in care home facilities
+mortality_rateJ21 = vector(mode = 'list', length = length(locs))
+for(i in seq_along(locs)){
+  mortality_rateJ21[[i]] = readRDS(paste0(outdir.table, '-PosteriorSampleMortalityRateTable_', locs[i], '.rds'))
+  mortality_rateJ21[[i]] <- mortality_rateJ21[[i]][date == '2021-06-05']
+}
+mortality_rateJ21 = do.call('rbindlist', list(l = mortality_rateJ21, fill=TRUE))
+save_mortality_rate_correlation_longtermdeaths(mortality_rateJ21, nyt_data, region_name, outdir.table)
+
 
 # aggregate across states
 mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
@@ -190,7 +202,7 @@ r_pdeaths = do.call('rbind', r_pdeaths)
 p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_codes)
 p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states')
 p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.4,0.6))
-ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 6, h = 9)
+ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 8, h = 9)
 
 
 cat("\n End postprocessing_union.R \n")
