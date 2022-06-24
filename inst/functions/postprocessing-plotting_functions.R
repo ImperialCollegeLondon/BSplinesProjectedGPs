@@ -557,6 +557,8 @@ plot_contributiondiff_map <- function(contributiondiff, var, outdir, lab = NULL)
   
   to_include <- contributiondiff[, unique(state)]
   
+  cols <- ggsci::pal_npg()(10)[c(10,5,6)]
+  
   p <- plot_usmap(data =contributiondiff, values = 'change', include = to_include, color='white') +
     # facet_wrap(~`Age group`, label = 'label_both') + 
     theme(legend.position = "right",
@@ -565,7 +567,7 @@ plot_contributiondiff_map <- function(contributiondiff, var, outdir, lab = NULL)
           strip.background = element_blank(),
           panel.border = element_rect(colour = "white", fill = NA)) + 
     labs(fill = label) + 
-    ggsci::scale_fill_npg(drop = FALSE)  +
+    scale_fill_manual(values = cols, drop = FALSE)  +
     bgcolor('white')
   
 
