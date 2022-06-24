@@ -504,7 +504,7 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
           strip.background = element_blank(),
           panel.border = element_rect(colour = "white", fill = NA)) + 
     labs(fill = 'Predicted COVID-19\nattributable mortality\nrate in 85+') + 
-    scale_fill_gradient(low= '#FBF4F3', high = '#BE0301', labels = scales::percent_format()) + 
+    scale_fill_gradient(low= '#FBF4F3', high = 'firebrick4', labels = scales::percent_format()) + 
     guides(fill = guide_colorbar(barwidth = 0.4))
   
   my_plots <- function(tmp){
@@ -536,9 +536,17 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
   return(p)
 }
 
-plot_contributiondiff_map <- function(contributiondiff, outdir){
+plot_contributiondiff_map <- function(contributiondiff, var, outdir){
   
-  contributiondiff <- contributiondiff[age == '65+' & variable=='diff1']
+  if(var == 'diff1'){
+    label = 'Estimated change in the contribution of 65+\nto COVID-19 weekly deaths between\nMay 2020 to when vaccination started'
+  }
+  
+  if(var == 'diff2'){
+    label = 'Estimated change in the contribution of 65+\nto COVID-19 weekly deaths two months\nafter vacccination started'
+    
+  }
+  contributiondiff <- contributiondiff[age == '65+' & variable==var]
   
   contributiondiff[, state := code]
   contributiondiff[, change := 'no significant change']
@@ -556,12 +564,12 @@ plot_contributiondiff_map <- function(contributiondiff, outdir){
           strip.text = element_text(size = rel(1)),
           strip.background = element_blank(),
           panel.border = element_rect(colour = "white", fill = NA)) + 
-    labs(fill = 'Estimated change in the contribution of 65+\nto COVID-19 weekly deaths between\nMay 2020 to when vaccination started') + 
+    labs(fill = label) + 
     ggsci::scale_fill_npg()  +
     bgcolor('white')
   
 
-  ggsave(p, file = paste0(outdir, paste0('-contributiondiff_map.png')), w = 9, h = 7)
+  ggsave(p, file = paste0(outdir, paste0('-contribution', var, '_map.png')), w = 9, h = 7)
 
   return(p)
 }
@@ -574,7 +582,7 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
   mortality_rate[, age_cat := as.character(age)]
   mortality_rate[age_cat == '85', age_cat := '85+']
   
-  tmp <- subset(mortality_rate, code %in% selected_codes)
+  tmp <- mortality_rate
   
   p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
     geom_line(aes(y = M, col = loc_label)) +
@@ -624,32 +632,35 @@ plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
   
   ###
   
-  tmp <- subset(mortality_rate, code == 'NY')
-  
-  if(nrow(tmp) == 0){
-    tmp <- subset(mortality_rate, code == unique(mortality_rate$code)[1])
+  if('NY' %in% mortality_rate[, unique(code)]){
+    tmp <- subset(mortality_rate, code == 'NY')
+    
+    if(nrow(tmp) == 0){
+      tmp <- subset(mortality_rate, code == unique(mortality_rate$code)[1])
+    }
+    
+    tmp[, State := loc_label]
+    p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
+      geom_line(aes(y = M)) +
+      geom_ribbon(aes(ymin=CL, ymax=CU), alpha = 0.4) + 
+      theme_bw() + 
+      facet_wrap(~State, label = 'label_both') +
+      theme(legend.position = 'bottom', 
+            # axis.title = element_text(size = rel(1.2)),
+            # axis.text = element_text(size = rel(1.1)),
+            axis.title.y =element_text(size = rel(1)),
+            strip.text =element_text(size = rel(1)),
+            axis.title.x =element_text(size = rel(1)),
+            panel.grid.minor= element_blank(), 
+            strip.background = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA)) + 
+      scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
+      scale_x_continuous(expand = c(0,0)) +
+      labs(x = 'Age', y = paste0('Predicted COVID-19 attributable\nmortality rates as of ', format(unique(mortality_rate$date), '%B %Y'))) 
+    ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_NY.png')), w = 6.5, h = 3)
+    
   }
-  
-  tmp[, State := loc_label]
-  p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
-    geom_line(aes(y = M)) +
-    geom_ribbon(aes(ymin=CL, ymax=CU), alpha = 0.4) + 
-    theme_bw() + 
-    facet_wrap(~State, label = 'label_both') +
-    theme(legend.position = 'bottom', 
-          # axis.title = element_text(size = rel(1.2)),
-          # axis.text = element_text(size = rel(1.1)),
-          axis.title.y =element_text(size = rel(1)),
-          strip.text =element_text(size = rel(1)),
-          axis.title.x =element_text(size = rel(1)),
-          panel.grid.minor= element_blank(), 
-          strip.background = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA)) + 
-    scale_y_continuous(expand = c(0,0), labels = scales::percent_format()) +
-    scale_x_continuous(expand = c(0,0)) +
-    labs(x = 'Age', y = paste0('Predicted COVID-19 attributable\nmortality rates as of ', format(unique(mortality_rate$date), '%B %Y'))) 
-   ggsave(p, file = paste0(outdir, paste0('-MortalityRateContinuous_allages_NY.png')), w = 6.5, h = 3)
-  
+
 }
 
 plot_mortality_all_states = function(death, resurgence_dates, lab = 'allStates', outdir)
@@ -2490,7 +2501,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data_pop, lab, outdi
   tmp1 <- tmp1[code %in% unique(contribution$code)]
 
   p1 = ggplot(contribution, aes(x = date)) + 
-    geom_vline(data = tmp1, aes(xintercept = mindate, alpha = type), col = 'grey50', size=1.2) +
+    geom_vline(data = tmp1, aes(xintercept = mindate, alpha = type), col = 'grey50', size=1) +
     geom_line(aes(y = M_median, col = as.factor(age), linetype = '')) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = age), alpha = 0.5) + 
     geom_line(aes(y = M, col = as.factor(age))) + 
@@ -2557,7 +2568,7 @@ plot_relative_mortality_all_states <- function(mortality_rateJ21, nyt_data, outd
           strip.background = element_blank(),
           panel.border = element_rect(colour = "black", fill = NA)) + 
     scale_color_viridis_d(option = 'C', end = 0.9) + 
-    geom_text(aes(label = code, y = CU_rel + 0.03, col = loc_label), size = 2.5) + 
+    geom_text(aes(label = code, y = CU_rel + 0.5, col = loc_label), size = 2.5) + 
     guides(col = 'none') + 
     scale_x_continuous(labels = scales::percent)
   ggsave(p, file = paste0(outdir, paste0('-MortalityRateRelative_CareHome.png')), w = 7, h = 5)

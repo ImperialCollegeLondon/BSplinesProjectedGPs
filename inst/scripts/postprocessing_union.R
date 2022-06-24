@@ -199,7 +199,8 @@ for(i in seq_along(locs_plus_US)){
   contributiondiff[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacDiffTable_', locs_plus_US[i], '.rds'))
 }
 contributiondiff = do.call('rbind', contributiondiff)
-plot_contributiondiff_map(contributiondiff, outdir.fig)
+plot_contributiondiff_map(contributiondiff, 'diff1', outdir.fig)
+plot_contributiondiff_map(contributiondiff, 'diff2', outdir.fig)
 save_statistics_contributiondiff(contributiondiff, outdir.table)
 
 # Resurgence
