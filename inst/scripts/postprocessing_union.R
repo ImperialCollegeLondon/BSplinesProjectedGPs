@@ -192,6 +192,7 @@ contribution[, M_median := median(M), by = c('date', 'age')]
 mid_code = round(length(locs) / 2)
 plot_contribution_vaccine(contribution, vaccine_data_pop, 'all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'selected_codes',outdir.fig)
+plot_contribution_vaccine(subset(contribution, code %in% c('TX', 'NH')), vaccine_data_pop,  'TXNH',outdir.fig)
 
 ## contribution shift with observational noise
 locs_plus_US <- c(locs, 'US')

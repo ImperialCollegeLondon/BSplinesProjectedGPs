@@ -565,7 +565,7 @@ plot_contributiondiff_map <- function(contributiondiff, var, outdir, lab = NULL)
           strip.background = element_blank(),
           panel.border = element_rect(colour = "white", fill = NA)) + 
     labs(fill = label) + 
-    ggsci::scale_fill_npg()  +
+    ggsci::scale_fill_npg(drop = FALSE)  +
     bgcolor('white')
   
 
@@ -2497,7 +2497,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data_pop, lab, outdi
   
   # delay = 7*2
   tmp <- vaccine_data_pop[, list(mindate = min(date[prop > 0.05])), by = 'code']
-  tmp[, type:= 'Vaccination starts']
+  tmp[, type:= '']
   tmp1 <- merge(tmp, unique(contribution[, .(code, loc_label)]), by = 'code')
   tmp1 <- tmp1[code %in% unique(contribution$code)]
 
@@ -2513,7 +2513,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data_pop, lab, outdi
           panel.border = element_rect(colour = "black", fill = NA), 
           legend.direction='vertical') +
     labs(y = paste0("Estimated contribution to COVID-19 weekly deaths"), 
-         col = "Age group", fill = "Age group", x = '', linetype = 'National median', alpha = '') + 
+         col = "Age group", fill = "Age group", x = '', linetype = 'National median', alpha = 'Vaccination starts') + 
     scale_shape_manual(values = 4)+ 
     scale_alpha_manual(values = c(1, 0.7)) + 
     scale_linetype_manual(values = 'dashed') + 
@@ -2535,11 +2535,12 @@ plot_contribution_vaccine <- function(contribution, vaccine_data_pop, lab, outdi
   }else{
     
     p1 <- p1 +  facet_wrap(~loc_label, nrow = length(unique(contribution$code))) + 
-      labs(y = paste0("Estimated contribution to\nCOVID-19 weekly deaths")) + 
-      theme(legend.box = 'vertical', 
-            legend.title = element_text(size = rel(0.8)), 
-            legend.text = element_text(size = rel(0.8)))
-    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 3.6, h = 5)
+      labs(y = paste0("Estimated contribution to\nCOVID-19 weekly deaths")) +
+      theme(axis.text.x = element_text(angle = 70, hjust = 1)) + 
+      ggsci::scale_color_jco() + 
+      ggsci::scale_fill_jco()
+    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 5, h = 5)
+    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.pdf'), w = 5, h = 5)
     
   }
   
