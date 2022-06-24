@@ -115,6 +115,7 @@ p <- ggarrange(p, labels = 'A')
 p2 <- ggarrange(p2, labels = 'B')
 pp <- grid.arrange(p, p2, layout_matrix = rbind(c(1, 2), c(1, NA)), widths = c(0.45, 0.55), heights = c(0.6, 0.4))
 ggsave(pp, file = paste0(outdir.fig, paste0('-MortalityRateRelative_CareHome_panel.png')), w = 9.5, h = 5.5)
+ggsave(pp, file = paste0(outdir.fig, paste0('-MortalityRateRelative_CareHome_panel.pdf')), w = 9.5, h = 5.5)
 
 mortality_rate_posterior_samples = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
@@ -192,11 +193,22 @@ mid_code = round(length(locs) / 2)
 plot_contribution_vaccine(contribution, vaccine_data_pop, 'all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'selected_codes',outdir.fig)
 
-## contribution shift
+## contribution shift with observational noise
 locs_plus_US <- c(locs, 'US')
 contributiondiff = vector(mode = 'list', length = length(locs_plus_US))
 for(i in seq_along(locs_plus_US)){
   contributiondiff[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacDiffTable_', locs_plus_US[i], '.rds'))
+}
+contributiondiff = do.call('rbind', contributiondiff)
+plot_contributiondiff_map(contributiondiff, 'diff1', outdir.fig, 'predict')
+plot_contributiondiff_map(contributiondiff, 'diff2', outdir.fig, 'predict')
+save_statistics_contributiondiff(contributiondiff, outdir.table, 'predict')
+
+## contribution shift
+locs_plus_US <- c(locs, 'US')
+contributiondiff = vector(mode = 'list', length = length(locs_plus_US))
+for(i in seq_along(locs_plus_US)){
+  contributiondiff[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacDiffTable_', locs_plus_US[i], '.rds'))
 }
 contributiondiff = do.call('rbind', contributiondiff)
 plot_contributiondiff_map(contributiondiff, 'diff1', outdir.fig)

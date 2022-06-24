@@ -536,7 +536,7 @@ plot_mortality_rate_all_states_map <- function(mortality_rate, outdir){
   return(p)
 }
 
-plot_contributiondiff_map <- function(contributiondiff, var, outdir){
+plot_contributiondiff_map <- function(contributiondiff, var, outdir, lab = NULL){
   
   if(var == 'diff1'){
     label = 'Estimated change in the contribution of 65+\nto COVID-19 weekly deaths between\nMay 2020 to when vaccination started'
@@ -569,8 +569,9 @@ plot_contributiondiff_map <- function(contributiondiff, var, outdir){
     bgcolor('white')
   
 
-  ggsave(p, file = paste0(outdir, paste0('-contribution', var, '_map.png')), w = 9, h = 7)
-
+  ggsave(p, file = paste0(outdir, paste0('-contribution', var, lab, '_map.png')), w = 9, h = 7)
+  ggsave(p, file = paste0(outdir, paste0('-contribution', var, lab, '_map.pdf')), w = 9, h = 7)
+  
   return(p)
 }
 
@@ -2525,6 +2526,7 @@ plot_contribution_vaccine <- function(contribution, vaccine_data_pop, lab, outdi
     p1 <- p1 +     facet_wrap(~loc_label, ncol= 5) + 
       theme(axis.text.x = element_text(angle = 70, hjust = 1))
     ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.png'), w = 9, h = 12)
+    ggsave(p1, file = paste0(outdir, '-contribution_vaccine_coverage_', lab, '.pdf'), w = 9, h = 12)
     
   }else if(length(unique(contribution$code)) > 3){
     p1 <- p1 +  facet_wrap(~loc_label, nrow = length(unique(contribution$code)) )

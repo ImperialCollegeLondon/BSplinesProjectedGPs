@@ -191,7 +191,7 @@ find_stats_vaccine_effects <- function(data_res1, data_res2, data_res3, data_res
   return(stat)
 }
 
-save_statistics_contributiondiff <- function(contributiondiff, outdir.table){
+save_statistics_contributiondiff <- function(contributiondiff, outdir.table, lab = NULL){
   l = list()
   tmp <- contributiondiff[, list(code_min = code[which.min(M)], 
                                  code_max = code[which.max(M)]), by = c('variable', 'age')]
@@ -204,7 +204,7 @@ save_statistics_contributiondiff <- function(contributiondiff, outdir.table){
   l[['code_max_2']] = contributiondiff[age == '65+' & code == code_max & variable == 'diff2', .(loc_label, M, CL, CU)]
   l[['code_US_2']] = contributiondiff[age == '65+' & code == 'US' & variable == 'diff2', .(loc_label, M, CL, CU)]
   
-  saveRDS(l, file = paste0(outdir.table, '-contributiondiff.rds'))
+  saveRDS(l, file = paste0(outdir.table, '-contributiondiff', lab, '.rds'))
   
 }
 
