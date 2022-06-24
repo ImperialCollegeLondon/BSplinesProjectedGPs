@@ -576,14 +576,14 @@ plot_contributiondiff_map <- function(contributiondiff, var, outdir, lab = NULL)
 }
 
 
-plot_mortality_rate_continuous_all_states = function(mortality_rate, outdir)
+plot_mortality_rate_continuous_all_states = function(mortality_rate, selected_codes, outdir)
 {
   
   mortality_rate[, age := as.numeric(age)]
   mortality_rate[, age_cat := as.character(age)]
   mortality_rate[age_cat == '85', age_cat := '85+']
   
-  tmp <- mortality_rate
+  tmp <- mortality_rate[code %in% selected_codes]
   
   p <- ggplot(subset(tmp, age != '85'), aes(x=age)) + 
     geom_line(aes(y = M, col = loc_label)) +
