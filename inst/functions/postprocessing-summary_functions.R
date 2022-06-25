@@ -68,6 +68,9 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
       print(.WAIC); print(.LOO)
       WAIC = .WAIC$pointwise
       LOO = .LOO$pointwise
+      
+      saveRDS(.WAIC, file = paste0(outdir, "-WAIC.rds"))
+      saveRDS(.LOO, file = paste0(outdir, "-LOO.rds"))
     }} , error = function(e) e)
   
   # time of execution
@@ -76,8 +79,6 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
   # save
   saveRDS(eff_sample_size_cum, file = paste0(outdir, "-eff_sample_size_cum.rds"))
   saveRDS(Rhat_cum, file = paste0(outdir, "-Rhat_cum.rds"))
-  saveRDS(.WAIC, file = paste0(outdir, "-WAIC.rds"))
-  saveRDS(.LOO, file = paste0(outdir, "-LOO.rds"))
   saveRDS(sampler_diagnostics, file = paste0(outdir, "-sampler_diagnostics.rds"))
   saveRDS(time, file = paste0(outdir, "-time_elapsed.rds"))
   
