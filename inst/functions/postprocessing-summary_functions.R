@@ -298,11 +298,6 @@ make_var_by_age_by_state_by_time_table_relative = function(fit_samples, df_week,
   tmp1[, age := df_state_age$age[age_index]]
   tmp1[, age := factor(age, levels = df_state_age$age)]
   
-  for(Code in unique(tmp1$code)){
-    saveRDS(subset(tmp1, code == Code), file = paste0(outdir, '-', var_name,  'Table_', Code, '.rds'))
-    
-  }
-  
   return(tmp1)
 }
 
