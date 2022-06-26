@@ -106,7 +106,6 @@ cat("\n Trace plot weekly deaths params \n")
 tryCatch(
   # This is what I want to do...
   {
-    sum(is.na(fit_samples[['nu']]))
     p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
     ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 20, limitsize = F)
     
@@ -142,6 +141,12 @@ names = c('slope_resurgence0', 'slope_resurgence_re', 'intercept_resurgence0', '
 if(any(names %in% names_samples)){
   
   # summary <- summary(fit_cum)$summary
+  vars <- c('vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_intercept0',
+            'vaccine_effect_slope_cross', 'vaccine_effect_slope_diagonal', 'vaccine_effect_slope0')
+  vars <- vars[vars %in% names_samples]
+  p <- bayesplot::mcmc_trace(fit_cum, regex_pars = vars)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_vaccination.png'), h = 20, w = 20, limitsize = F)
+  
   
   min_age_index_vac = 3
   df_age_vaccination2 = df_age_vaccination[age_index >= 3]
