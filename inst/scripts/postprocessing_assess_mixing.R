@@ -107,11 +107,11 @@ tryCatch(
   # This is what I want to do...
   {
     p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
-    ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 20, limitsize = F)
+    ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 50, w = 50, limitsize = F)
     
     cat("\n Pairs plot weekly deaths params \n")
     p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
-    ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
+    ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 50, w = 50, limitsize = F)
     
   },
   # ... but if an error occurs, tell me what happened: 
