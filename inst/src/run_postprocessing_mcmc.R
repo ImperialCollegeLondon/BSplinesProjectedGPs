@@ -15,13 +15,11 @@ JOBID <- '1081'
 states = strsplit('FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 
 if(1){
-  outdir <- "~/git/BSplinesProjectedGPs/src/results"
-  datadir <- "~/git/BSplinesProjectedGPs/inst/results"
+  outdir <- "~/git/BSplinesProjectedGPs/inst/results"
 }
 
 if(0){
-  outdir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/src/results"
-  datadir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results"
+  outdir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results"
 }
 
 
@@ -43,7 +41,7 @@ if(length(args_line) > 0)
 } 
 
 # load functions
-source(file.path(indir, 'src', "postprocessing-mcmc-functions.R"))
+source(file.path(indir, 'src', 'functions', "postprocessing-mcmc.R"))
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
@@ -63,7 +61,18 @@ MetrHastrw_outputs = readRDS(file)
 posterior <- format_posterior(MetrHastrw_outputs)
 
 # convergence and mixing analysis
-save_convergence_diagnostics(posterior, log_lik, datadir.table)
+posterior[, list(ESS = coda::effectiveSize(value) ), by = 'variable']
+tryCatch(
+  {
+save_convergence_diagnostics(posterior, datadir.table)
+  },
+error=function(cond) {
+  message("Here's the original error message:")
+  message(cond)
+  # Choose a return value in case of error
+  return(NA)
+}
+)   
 
 # confidence intervals
 confidence_intervals <- save_confidence_intervals(posterior)
@@ -73,6 +82,10 @@ min_age_index_vac = 3
 df_age_vaccination2 = df_age_vaccination[age_index >= 3]
 df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
 
+names = c('slope_resurgence0', 'slope_resurgence_re', 'intercept_resurgence0', 'intercept_resurgence_re', 
+          'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_intercept0',
+          'vaccine_effect_slope_cross', 'vaccine_effect_slope_diagonal', 'vaccine_effect_slope0'
+)
 math_name = c('psi^"base"*""', 'psi^"state"*""', 'chi^"base"*""', 'chi^"state"*""', 
               'chi^"vacc-cross"*""', 'chi^"vacc"*""',  'chi^"vacc0"*""',
               'psi^"vacc-cross"*""', 'psi^"vacc"*""', 'psi^"vacc0"*""')

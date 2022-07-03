@@ -1,4 +1,4 @@
-get_expected_resurgence_deaths <- function(C, M, T,
+get_expected_resurgence_deaths <- function(C, M, TT,
                                prop_vac_start, week_indices_resurgence,
                                intercept_resurgence0, intercept_resurgence_re, 
                                slope_resurgence0, 
@@ -8,8 +8,8 @@ get_expected_resurgence_deaths <- function(C, M, T,
   intercept_resurgence = matrix(nrow = M, ncol = C, 0)
   slope_resurgence = matrix(nrow = M, ncol = C, 0)
 
-  xi = array(0, dim = c(M, C, T))
-  log_xi = array(0, dim = c(M, C, T))
+  xi = array(0, dim = c(M, C, TT))
+  log_xi = array(0, dim = c(M, C, TT))
   
   for(c in 1:C){
     intercept_resurgence[,c] = rep(intercept_resurgence0[c], M) + intercept_resurgence_re[,c];
@@ -26,7 +26,7 @@ get_expected_resurgence_deaths <- function(C, M, T,
       }
     }
     
-    log_xi[,c,] = matrix(nrow = M, ncol = T, intercept_resurgence[,c], byrow = F) + matrix(nrow = M, ncol = T, week_indices_resurgence, byrow =T) * matrix(nrow = M, ncol = T, slope_resurgence[,c], byrow = F);
+    log_xi[,c,] = matrix(nrow = M, ncol = TT, intercept_resurgence[,c], byrow = F) + matrix(nrow = M, ncol = TT, week_indices_resurgence, byrow =T) * matrix(nrow = M, ncol = TT, slope_resurgence[,c], byrow = F);
     xi[,c,] = exp(log_xi[,c,]);
   }
 
@@ -34,7 +34,7 @@ get_expected_resurgence_deaths <- function(C, M, T,
   return(xi)
 }
 
-log_likelihood <- function(M, C, T, r_pdeaths, 
+log_likelihood <- function(M, C, TT, r_pdeaths, 
                            prop_vac_start, week_indices_resurgence,
                            parameters){
   
@@ -47,7 +47,7 @@ log_likelihood <- function(M, C, T, r_pdeaths,
   vaccine_effect_slope_cross <- parameters$vaccine_effect_slope_cross
   sigma_r_pdeaths <- parameters$sigma_r_pdeaths
   
-  xi = get_expected_resurgence_deaths (C, M, T, 
+  xi = get_expected_resurgence_deaths (C, M, TT, 
                                        prop_vac_start, week_indices_resurgence,
                                        intercept_resurgence0, intercept_resurgence_re, 
                                        slope_resurgence0, 
@@ -59,9 +59,9 @@ log_likelihood <- function(M, C, T, r_pdeaths,
   for(m in 1:M){
     for(c in 1:C){
       
-      shape = (xi[m, c, 1:T])^2 / sigma_r_pdeaths[m]^2
-      scale = sigma_r_pdeaths[m]^2 / xi[m, c, 1:T]
-      log_lik = log_lik + sum(dgamma(r_pdeaths[m, c, 1:T], shape, scale, log = T))
+      shape = (xi[m, c, 1:TT])^2 / sigma_r_pdeaths[m]^2
+      scale = sigma_r_pdeaths[m]^2 / xi[m, c, 1:TT]
+      log_lik = log_lik + sum(dgamma(r_pdeaths[m, c, 1:TT], shape, scale, log = T))
 
     }
   }
@@ -106,9 +106,9 @@ update_parameters_size_C <- function(n, D, theta, s_theta, parameters, log_prior
     parameters_star[[theta]][c] <- theta_star[c]
     
     #accept-reject
-    ratio = log_likelihood(M, C, T, r_pdeaths[[n]], 
+    ratio = log_likelihood(M, C, TT, r_pdeaths[[n]], 
                            prop_vac_start, week_indices_resurgence, parameters_star) - 
-      log_likelihood(M, C, T, r_pdeaths[[n-1]], 
+      log_likelihood(M, C, TT, r_pdeaths[[n-1]], 
                      prop_vac_start, week_indices_resurgence, parameters) + 
       log_prior(theta_star[c]) - log_prior(parameters[[theta]][c])
     

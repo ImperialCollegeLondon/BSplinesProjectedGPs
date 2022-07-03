@@ -19,11 +19,23 @@ format_posterior <- function(MetrHastrw_outputs){
   posterior <- rbind(posterior, tmp, fill = TRUE)
   
   max_iterations <- max(posterior$iterations)
+  posterior <- posterior[iterations <= floor(max_iterations / 8) * 8 ]
   posterior[, chain := findInterval(iterations, seq(1, max_iterations,length.out = 8)), by = 'iterations']
   
   return(posterior)
 }
 
+make_convergence_diagnostics = function(res, value_name){
+  
+  # Convergence Rhat and effective sample size 
+  n_chain = max(res$chain)
+  mcmc_samples = vector(mode = 'list', length = n_chain)
+  for(i in 1:n_chain) mcmc_samples[[i]] = coda::mcmc(subset(res, chain == i)[, get(value_name)])
+  
+  convergence_diagnostics = c(Rhat = coda::gelman.diag(mcmc.list(mcmc_samples))$psrf[1], neff = as.numeric(coda::effectiveSize(mcmc.list(mcmc_samples))))
+  
+  return(convergence_diagnostics)
+}
 
 save_convergence_diagnostics <- function(posterior, outdir){
   
@@ -56,9 +68,8 @@ make_trace_plots_parameters = function(posterior_params, outdir){
   
 }
 
-
 make_forest_plot_table <- function(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels){
-  tmp <- tmp1[ grepl(paste(paste0('^',names),collapse = '|'),rownames(tmp1)) ,]
+  tmp <- summary[ grepl(paste(paste0('^',names),collapse = '|'),rownames(summary)) ,]
   # tmp1 <- tmp[grepl('diagonal', rownames(tmp)),]
   # tmp <- tmp[!grepl('diagonal', rownames(tmp)),]
   

@@ -99,11 +99,6 @@ warmup = 5
 # adapt 
 adapt = T
 
-# prepare base data
-T <- data$T; 
-C <- data$C; 
-M <<- data$M; 
-
 # add data for all countries
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
 stan_data = add_JHU_data(stan_data, df_week, Code)
@@ -111,6 +106,11 @@ stan_data = add_vaccine_age_strata(stan_data, df_age_vaccination)
 resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, locations$code)[code %in% Code]
 stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
 stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
+
+# prepare base data
+TT <- data$T; 
+C <- data$C; 
+M <<- data$M; 
 
 # sampling
 MetrHastrw_outputs = MetrHastrw(iter, warmup, r_pdeaths, stan_data, adapt)

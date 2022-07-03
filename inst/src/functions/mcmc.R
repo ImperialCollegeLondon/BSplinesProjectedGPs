@@ -10,9 +10,6 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
   # SAVE DATA OBJECTS IN ENV TO AVOID EXCESSIVE FCT INPUTS
   w_stop_resurgence <<- data$w_stop_resurgence
   w_start_resurgence <<- data$w_start_resurgence; 
-  T <- data$T; 
-  C <- data$C; 
-  M <<- data$M; 
   age_from_vac_age_strata <<- data$age_from_vac_age_strata
   age_to_vac_age_strata <<- data$age_to_vac_age_strata
   prop_vac_start <<- t(do.call('rbind', data$prop_vac_start))
@@ -76,7 +73,7 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
                     vaccine_effect_slope_cross = params$vaccine_effect_slope_cross[[1]], 
                     sigma_r_pdeaths = params$sigma_r_pdeaths[[1]],
                     sigma_intercept_resurgence = params$sigma_intercept_resurgence[[1]])
-  params$log_lik[[1]] <- log_likelihood(M, C, T, r_pdeaths[[1]], prop_vac_start, week_indices_resurgence, parameters) 
+  params$log_lik[[1]] <- log_likelihood(M, C, TT, r_pdeaths[[1]], prop_vac_start, week_indices_resurgence, parameters) 
   
   #############
   ### SAMPLE ##
@@ -109,9 +106,9 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
       
       #accept-reject
       acceptance_prob = min(1, exp(
-        log_likelihood(M, C, T, r_pdeaths[[n]], 
+        log_likelihood(M, C, TT, r_pdeaths[[n]], 
                        prop_vac_start, week_indices_resurgence, parameters) - 
-          log_likelihood(M, C, T, r_pdeaths[[n-1]], 
+          log_likelihood(M, C, TT, r_pdeaths[[n-1]], 
                          prop_vac_start, week_indices_resurgence, parameters_star) + 
           logprior_sigma_intercept_resurgence(parameters_star$sigma_intercept_resurgence[c]) - logprior_sigma_intercept_resurgence(parameters$sigma_intercept_resurgence[c]) + 
           logprior_intercept_resurgence_re(parameters_star$intercept_resurgence_re[,c], parameters_star$sigma_intercept_resurgence[c]) - logprior_intercept_resurgence_re(parameters$intercept_resurgence_re[,c], parameters$sigma_intercept_resurgence[c]) +
@@ -168,7 +165,7 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
     params$vaccine_effect_slope_cross[[n]] <- parameters$vaccine_effect_slope_cross
     params$sigma_r_pdeaths[[n]] <- parameters$sigma_r_pdeaths
     params$sigma_intercept_resurgence[[n]] <- parameters$sigma_intercept_resurgence
-    params$log_lik[[n]] <- log_likelihood(M, C, T, r_pdeaths[[n]], prop_vac_start, week_indices_resurgence, parameters) 
+    params$log_lik[[n]] <- log_likelihood(M, C, TT, r_pdeaths[[n]], prop_vac_start, week_indices_resurgence, parameters) 
     
     # compute generated quantities
     
