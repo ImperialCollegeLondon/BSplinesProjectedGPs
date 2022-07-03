@@ -54,17 +54,32 @@ save_convergence_diagnostics <- function(posterior, outdir){
 make_trace_plots_parameters = function(posterior_params, outdir){ 
   
   # trace plots of the epidemiological parameter 
+  tmp <- posterior_params[!grepl('_re', variable)]
+  p = ggplot(tmp, aes(x = iterations, y = value, colour = chain))+
+    geom_step(alpha = 0.7)+
+    theme_bw() +
+    xlab("Iteration") +
+    facet_wrap(~variable, scales = 'free_y') +
+    theme(legend.position = 'bottom')+
+    guides(colour = guide_legend(nrow = 1, title.position="top", override.aes = list(size=1)))
+  
+  file = paste0(outdir, "-trace_plots_theta_wore.png")
+  cat('\n Write file ', file, '\n')
+  ggsave(p, file = file, w = 12, h = 10)
+  
+  # trace plots of the epidemiological parameter 
+  tmp <- posterior_params[grepl('_re', variable)]
   p = ggplot(posterior_params, aes(x = iterations, y = value, colour = chain))+
     geom_step(alpha = 0.7)+
     theme_bw() +
     xlab("Iteration") +
-    facet_grid(name~., scales = 'free_y') +
+    facet_wrap(~variable, scales = 'free_y') +
     theme(legend.position = 'bottom')+
     guides(colour = guide_legend(nrow = 1, title.position="top", override.aes = list(size=1)))
   
-  file = paste0(outdir, "-trace_plots_theta_network.png")
+  file = paste0(outdir, "-trace_plots_theta_re.png")
   cat('\n Write file ', file, '\n')
-  ggsave(p, file = file, w = 20, h = 20)
+  ggsave(p, file = file, w = 13, h = 10)
   
 }
 

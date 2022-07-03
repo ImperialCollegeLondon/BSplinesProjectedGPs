@@ -77,6 +77,9 @@ error=function(cond) {
 # confidence intervals
 confidence_intervals <- save_confidence_intervals(posterior)
 
+# trace plots
+make_trace_plots_parameters(posterior, outdir.fig.post)
+  
 # forest plots
 min_age_index_vac = 3
 df_age_vaccination2 = df_age_vaccination[age_index >= 3]
