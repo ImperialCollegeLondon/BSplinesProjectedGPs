@@ -48,8 +48,8 @@ if(length(args_line) > 0)
 } 
 
 # load functions
-source(file.path(indir, 'src', "mcmc.R"))
-source(file.path(indir, 'src', "mcmc-utils.R"))
+source(file.path(indir, 'src', 'functions', "mcmc.R"))
+source(file.path(indir, 'src', 'functions', "mcmc-utils.R"))
 
 # set directories
 run_tag = paste0(stan_model, "-", JOBID)
@@ -98,6 +98,11 @@ warmup = 5
 
 # adapt 
 adapt = T
+
+# prepare base data
+T <- data$T; 
+C <- data$C; 
+M <<- data$M; 
 
 # add data for all countries
 stan_data = prepare_stan_data(deathByAge, loc_name, ref_date); data <- tmp
