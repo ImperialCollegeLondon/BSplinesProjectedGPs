@@ -193,7 +193,7 @@ stan_data1 = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence
 prop_vac = prepare_prop_vac_table(stan_data1, vaccine_data, df_age_vaccination)
 
 # plot estimate relative deaths
-r_pdeaths = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table)
+r_pdeaths = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths', outdir.table, T)
 r_pdeaths = merge(r_pdeaths, prop_vac, by = c('code', 'date'))
 for(Code in unique(r_pdeaths$code)){
   saveRDS(subset(r_pdeaths, code == Code), file = paste0(outdir.table, '-', 'r_pdeaths',  'Table_', Code, '.rds'))
