@@ -12,7 +12,7 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
   w_start_resurgence <<- data$w_start_resurgence; 
   T <- data$T; 
   C <- data$C; 
-  M <- data$M; 
+  M <<- data$M; 
   age_from_vac_age_strata <<- data$age_from_vac_age_strata
   age_to_vac_age_strata <<- data$age_to_vac_age_strata
   prop_vac_start <<- t(do.call('rbind', data$prop_vac_start))

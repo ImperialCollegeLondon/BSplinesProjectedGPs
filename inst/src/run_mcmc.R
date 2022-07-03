@@ -10,7 +10,6 @@ library("purrr")
 library("doParallel")
 library("prodlim")
 library("tidyverse")
-library("igraph")
 # library("ramcmc")
 # library("lognorm")
 # library('metRology')
@@ -20,13 +19,13 @@ stan_model <- '220209a'
 JOBID <- '1081'
 states = strsplit('FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 
-if(1){
-  outdir <- "~/git/BSplinesProjectedGPs/src/results"
+if(0){
+  outdir <- "~/git/BSplinesProjectedGPs/inst/results"
   datadir <- "~/git/BSplinesProjectedGPs/inst/results"
 }
 
-if(0){
-  outdir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/src/results"
+if(1){
+  outdir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results"
   datadir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results"
 }
 
@@ -57,15 +56,17 @@ run_tag = paste0(stan_model, "-", JOBID)
 datadir.table = file.path(outdir, run_tag, "table", run_tag)
 datadir.fit.post = file.path(outdir, run_tag, "fits")
 datadir.data = file.path(outdir, run_tag, "data")
-
-# code
-locations = readRDS( file.path(outdir, paste0("location_", run_tag,".rds")) )
-loc_name = locations[code %in% states,]$loc_label
-Code = locations[code %in% states, ]$code
-df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
+outdir.fit.post = file.path(outdir, run_tag, "fits")
+locs <- states
 
 # load image 
 load(file.path(datadir.data, paste0("stanin_",run_tag,".RData")))
+
+# code
+locations = readRDS( file.path(outdir.fit.post, paste0("location_", run_tag,".rds")) )
+loc_name = locations[code %in% locs,]$loc_label
+Code = locations[code %in% locs, ]$code
+df_state = data.table(loc_label = loc_name, code = Code, state_index = 1:length(Code))
 
 # resurgence deats
 r_pdeaths  = vector(mode = 'list', length = length(Code))
@@ -87,6 +88,9 @@ for( i in sort(unique(r_pdeaths$iterations))){
   r_pdeaths_list[[i]] <- copy(tmp)
 }
 r_pdeaths <- copy(r_pdeaths_list)
+
+# select chain
+# posterior[, chain := findInterval(iterations, seq(1, max_iterations,length.out = 8)), by = 'iterations']
 
 # iterations and warmup
 iter = length(r_pdeaths)
