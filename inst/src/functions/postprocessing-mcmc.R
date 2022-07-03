@@ -199,7 +199,7 @@ plot_forest_plot <- function(tmp, outdir){
   }
   
   p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 1, 3), c(1, 1, 4), c(1, 1, NA), c(NA, 2, NA)), heights = c(0.25, 0.25, 0.35, 0.15), widths = c(0.07, 0.43, 0.5))
-  ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 7)
+  ggsave(p, file = paste0(outdir, '-forest_plot_mcmc.png'), w = 8, h = 7)
   
   return(p)
 }

@@ -10,7 +10,7 @@ library("purrr")
 library("doParallel")
 library("prodlim")
 library("tidyverse")
-# library("ramcmc")
+library("ramcmc")
 # library("lognorm")
 # library('metRology')
 
@@ -21,12 +21,10 @@ states = strsplit('FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 
 if(0){
   outdir <- "~/git/BSplinesProjectedGPs/inst/results"
-  datadir <- "~/git/BSplinesProjectedGPs/inst/results"
 }
 
 if(1){
   outdir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results"
-  datadir <- "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results"
 }
 
 
@@ -106,11 +104,6 @@ stan_data = add_vaccine_age_strata(stan_data, df_age_vaccination)
 resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, locations$code)[code %in% Code]
 stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
 stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
-
-# prepare base data
-TT <- data$T; 
-C <- data$C; 
-M <<- data$M; 
 
 # sampling
 MetrHastrw_outputs = MetrHastrw(iter, warmup, r_pdeaths, stan_data, adapt)

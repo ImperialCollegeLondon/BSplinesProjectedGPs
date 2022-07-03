@@ -53,7 +53,6 @@ log_likelihood <- function(M, C, TT, r_pdeaths,
                                        slope_resurgence0, 
                                        vaccine_effect_intercept_diagonal, vaccine_effect_slope_diagonal,
                                        vaccine_effect_intercept_cross, vaccine_effect_slope_cross)
-  
   log_lik <- 0
   
   for(m in 1:M){
@@ -92,7 +91,8 @@ proposal_sigma_intercept_resurgence <- function(proposal_sigma_intercept_star, p
   extraDistr::dtnorm(proposal_sigma_intercept_star, proposal_sigma_intercept, sigma_proposal_sigma_intercept, a = 0, log = T)
 }
 
-update_parameters_size_C <- function(n, D, theta, s_theta, parameters, log_prior, proposal = rnorm, log_proposal = NULL){
+update_parameters_size_C <- function(n, D, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence,
+                                     theta, s_theta, parameters, log_prior, proposal = rnorm, log_proposal = NULL){
   
   ### intercept_resurgence0 ###
   theta_star <- parameters[[theta]]

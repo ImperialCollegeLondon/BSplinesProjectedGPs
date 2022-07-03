@@ -16,6 +16,9 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
   N_COUNTERFACTUAL <<- data$N_COUNTERFACTUAL
   prop_vac_start_counterfactual <<- data$prop_vac_start_counterfactual
   week_indices_resurgence <- data$week_indices_resurgence
+  TT <- data$T; 
+  C <- data$C; 
+  M <<- data$M;
   
   #######################
   ### STARTING VALUES ###
@@ -75,6 +78,7 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
                     sigma_intercept_resurgence = params$sigma_intercept_resurgence[[1]])
   params$log_lik[[1]] <- log_likelihood(M, C, TT, r_pdeaths[[1]], prop_vac_start, week_indices_resurgence, parameters) 
   
+  
   #############
   ### SAMPLE ##
   #############  
@@ -82,7 +86,7 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
   for(n in 2:N){
     
     ## intercept_resurgence0 ##
-    res <- update_parameters_size_C(n, C, 'intercept_resurgence0', s_intercept_resurgence0, parameters, logprior_intercept_resurgence0)
+    res <- update_parameters_size_C(n, C, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence, 'intercept_resurgence0', s_intercept_resurgence0, parameters, logprior_intercept_resurgence0)
     parameters$intercept_resurgence0 <- res[[1]]
     s_intercept_resurgence0 <- res[[2]]
     
@@ -128,29 +132,29 @@ MetrHastrw <- cmpfun(function(iter, warmup, r_pdeaths, data, adapt = T){
     }
     
     ## slope_resurgence0 ##
-    res <- update_parameters_size_C(n, C, 'slope_resurgence0', s_slope_resurgence0, parameters, logprior_slope_resurgence0)
+    res <- update_parameters_size_C(n, C, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence, 'slope_resurgence0', s_slope_resurgence0, parameters, logprior_slope_resurgence0)
     parameters$slope_resurgence0 <- res[[1]]
     s_slope_resurgence0 <- res[[2]]
 
     ## vaccine_effects ##
-    res <- update_parameters_size_C(n, C, 'vaccine_effect_intercept_diagonal', s_vaccine_effect_intercept_diagonal, parameters, logprior_vaccine_effects)
+    res <- update_parameters_size_C(n, C, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence, 'vaccine_effect_intercept_diagonal', s_vaccine_effect_intercept_diagonal, parameters, logprior_vaccine_effects)
     parameters$vaccine_effect_intercept_diagonal <- res[[1]]
     s_vaccine_effect_intercept_diagonal <- res[[2]]
     
-    res <- update_parameters_size_C(n, C, 'vaccine_effect_slope_diagonal', s_vaccine_effect_slope_diagonal, parameters, logprior_vaccine_effects)
+    res <- update_parameters_size_C(n, C, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence, 'vaccine_effect_slope_diagonal', s_vaccine_effect_slope_diagonal, parameters, logprior_vaccine_effects)
     parameters$vaccine_effect_slope_diagonal <- res[[1]]
     s_vaccine_effect_slope_diagonal <- res[[2]]
     
-    res <- update_parameters_size_C(n, C, 'vaccine_effect_intercept_cross', s_vaccine_effect_intercept_cross, parameters, logprior_vaccine_effects)
+    res <- update_parameters_size_C(n, C, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence, 'vaccine_effect_intercept_cross', s_vaccine_effect_intercept_cross, parameters, logprior_vaccine_effects)
     parameters$vaccine_effect_intercept_cross <- res[[1]]
     s_vaccine_effect_intercept_cross <- res[[2]]
     
-    res <- update_parameters_size_C(n, C, 'vaccine_effect_slope_cross', s_vaccine_effect_slope_cross, parameters, logprior_vaccine_effects)
+    res <- update_parameters_size_C(n, C, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence, 'vaccine_effect_slope_cross', s_vaccine_effect_slope_cross, parameters, logprior_vaccine_effects)
     parameters$vaccine_effect_slope_cross <- res[[1]]
     s_vaccine_effect_slope_cross <- res[[2]]
     
     ## sigma deaths ##
-    res <- update_parameters_size_C(n, M, 'sigma_r_pdeaths', s_sigma_r_pdeaths, parameters, logprior_sigma_intercept_resurgence, 
+    res <- update_parameters_size_C(n, M, M, C, TT, r_pdeaths, prop_vac_start, week_indices_resurgence, 'sigma_r_pdeaths', s_sigma_r_pdeaths, parameters, logprior_sigma_intercept_resurgence, 
                                     function(x) extraDistr::dtnorm(x, 0, 1, a = 0), proposal_sigma_intercept_resurgence)
     parameters$sigma_r_pdeaths <- res[[1]]
     s_sigma_r_pdeaths <- res[[2]]

@@ -1,11 +1,12 @@
 #!/bin/sh
 
-JOBID="1081"
+JOBID="3068"
 STAN_MODEL="220209a"
 CWD="/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/"
 INDIR="/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/"
 #STATES='CA,FL,NY,TX'
-STATES='FL,NY,TX,PA,IL,OH,GA,NC,MI'
+#STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA,KY,OR,UT,IA,NV,AR,MS,KS,NM,NE,ID,WV,HI,NH,ME'
+STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI'
 
 mkdir $INDIR
 
