@@ -115,25 +115,37 @@ save_p_value_vaccine_effects <- function(samples, names, outdir){
   
 }
 
-save_mortality_rate_correlation_longtermdeaths <- function(mortality_rateJ21, nyt_data, region_name, outdir.table){
+save_mortality_rate_correlation_longtermdeaths <- function(mortality_rate_posterior_samples, mortality_rateJ21, nyt_data, region_name, outdir.table){
  
   ps <- c(0.5, 0.025, 0.975)
   p_labs <- c('M','CL','CU')
   
+  res <- list()
   # find relative value to 85+
-  mortality_rateJ21[, value_maxage := value[age_index == max(age_index)], by = c('iterations', 'loc_label', 'week_index')]
-  mortality_rateJ21[, value_rel := value_maxage / value]
+  mortality_rate_posterior_samples[, value_maxage := value[age_index == max(age_index)], by = c('iterations', 'loc_label', 'week_index')]
+  mortality_rate_posterior_samples[, value_rel := value_maxage / value]
   
   # find correlation coefficients 
-  tmp3 <- merge(mortality_rateJ21, nyt_data, by.y = 'STATE', by.x = 'loc_label')
+  tmp3 <- merge(mortality_rate_posterior_samples, nyt_data, by.y = 'STATE', by.x = 'loc_label')
   tmp3 <- tmp3[!is.na(value_rel) & !is.na(SHARE_DEATHS)]
   tmp3[, value_corr := cor(value_rel, SHARE_DEATHS), by = c('week_index', 'age_index', 'iterations')]
   
   # quantile
   tmp2 = tmp3[, list(q= quantile(value_corr, prob=ps, na.rm = T), q_label=p_labs), by=c('week_index', 'age_index')]	
   tmp2 = dcast(tmp2, week_index + age_index ~ q_label, value.var = "q")
+  res[[1]] <- tmp2
   
-  saveRDS(tmp2, paste0(outdir.table, '-mortality_rateJ21.rds'))
+  # higher relative value
+  tmp <- mortality_rateJ21[age == '55-84']
+  tmp <- tmp[order(M_rel)]
+  tmp <- tmp[, .(loc_label, M_rel, CL_rel, CU_rel)]
+  tmp[, `:=` (M_rel = round(M_rel, digits = 2), CL_rel = round(CL_rel, digits = 2), CU_rel = round(CU_rel, digits = 2))]
+  res[[2]] <- tmp[M_rel > 10]
+  res[[3]] <- tmp[M_rel < 5]
+  
+  print(res)
+  
+  saveRDS(res, paste0(outdir.table, '-mortality_rateJ21.rds'))
 }
 
 save_resurgence_dates <- function(resurgence_dates, outdir){
@@ -195,14 +207,23 @@ save_statistics_contributiondiff <- function(contributiondiff, outdir.table, lab
   l = list()
   tmp <- contributiondiff[, list(code_min = code[which.min(M)], 
                                  code_max = code[which.max(M)]), by = c('variable', 'age')]
-  contributiondiff <- merge(contributiondiff, tmp, by = c('variable', 'age'))
-  contributiondiff[, `:=`(M = round(M, 4), CL = round(CL, 4), CU = round(CU, 4))]
-  l[['code_min_1']] = contributiondiff[age == '65+' & code == code_min & variable == 'diff1', .(loc_label, M, CL, CU)]
-  l[['code_max_1']] = contributiondiff[age == '65+' & code == code_max & variable == 'diff1', .(loc_label, M, CL, CU)]
-  l[['code_US_1']] = contributiondiff[age == '65+' & code == 'US' & variable == 'diff1', .(loc_label, M, CL, CU)]
-  l[['code_min_2']] = contributiondiff[age == '65+' & code == code_min & variable == 'diff2', .(loc_label, M, CL, CU)]
-  l[['code_max_2']] = contributiondiff[age == '65+' & code == code_max & variable == 'diff2', .(loc_label, M, CL, CU)]
-  l[['code_US_2']] = contributiondiff[age == '65+' & code == 'US' & variable == 'diff2', .(loc_label, M, CL, CU)]
+  tmp <- merge(contributiondiff, tmp, by = c('variable', 'age'))
+  tmp[, `:=`(M = round(M, 4), CL = round(CL, 4), CU = round(CU, 4))]
+  l[['code_min_1']] = tmp[age == '65+' & code == code_min & variable == 'diff1', .(loc_label, M, CL, CU)]
+  l[['code_max_1']] = tmp[age == '65+' & code == code_max & variable == 'diff1', .(loc_label, M, CL, CU)]
+  l[['code_US_1']] = tmp[age == '65+' & code == 'US' & variable == 'diff1', .(loc_label, M, CL, CU)]
+  l[['code_min_2']] = tmp[age == '65+' & code == code_min & variable == 'diff2', .(loc_label, M, CL, CU)]
+  l[['code_max_2']] = tmp[age == '65+' & code == code_max & variable == 'diff2', .(loc_label, M, CL, CU)]
+  l[['code_US_2']] = tmp[age == '65+' & code == 'US' & variable == 'diff2', .(loc_label, M, CL, CU)]
+  
+
+  tmp <- contributiondiff[age == '65+']
+  tmp[, change := 'no significant change', by = 'variable']
+  tmp[CL < 0 & CU < 0, change := 'significant decrease', by = 'variable']
+  tmp[CL > 0 & CU > 0, change := 'significant increase', by = 'variable']
+  
+  l[['diff1']] <- tmp[variable == 'diff1' & change != 'no significant change']
+  l[['diff2']] <- tmp[variable == 'diff2' & change != 'significant decrease']
   
   saveRDS(l, file = paste0(outdir.table, '-contributiondiff', lab, '.rds'))
   
