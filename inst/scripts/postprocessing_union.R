@@ -237,7 +237,8 @@ p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_20_
 plot_relative_resurgence_vaccine_panel(p4, p_all2, '20_log', outdir.fig)
 p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_30_states', selected_30_codes)
 plot_relative_resurgence_vaccine_panel(p4, p_all2, '30_log', outdir.fig)
-
+p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, F, outdir.fig, '_30_states', selected_30_codes)
+plot_relative_resurgence_vaccine_panel(p4, p_all2, '30', outdir.fig)
 cat("\n End postprocessing_union.R \n")
 
 

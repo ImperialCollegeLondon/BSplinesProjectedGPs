@@ -1902,7 +1902,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
           axis.text.x = element_text(angle = 70, hjust = 1)) +
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
-  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC', lab, '.png'), w = 6, h = 8)
+  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC', lab, '.png'), w = 6, h = 20, limitsize = F)
   
 }
 
