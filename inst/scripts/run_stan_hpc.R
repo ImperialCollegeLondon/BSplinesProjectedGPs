@@ -148,7 +148,7 @@ stan_data = add_JHU_data(stan_data, df_week, Code)
 stan_data = add_vaccine_age_strata(stan_data, df_age_vaccination)
 resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, locations$code)[code %in% Code]
 stan_data = add_resurgence_period(stan_data, df_week, resurgence_dates)
-if(grepl('220209a|220209c|220209d|220607a|220208a|220131a|220615|220616|220617|220624', stan_model)){
+if(grepl('220209a|220209c|220209d|220607a|220208a|220131a|220615|220616|220617|220624|220701', stan_model)){
   cat("\n Using 2D splines \n")
   knots_rows = c(df_age_reporting$age_from, max(df_age_continuous$age_to))
   stan_data = add_2D_splines_stan_data(stan_data, spline_degree = 3, n_knots_columns = 16, knots_rows = knots_rows)
@@ -162,7 +162,7 @@ if(1){
   cat("\n With Gamma prior for lambda \n")
   stan_data = add_prior_parameters_lambda(stan_data, distribution = 'exponential')
 }
-if(grepl('220208|220131|220615|220616|220617|220624', stan_model)){
+if(grepl('220208|220131|220615|220616|220617|220624|220701', stan_model)){
   cat("\n With vaccine effects \n")
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
 }
