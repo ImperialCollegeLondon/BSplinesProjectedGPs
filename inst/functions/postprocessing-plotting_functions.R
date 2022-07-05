@@ -1267,7 +1267,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, 
          x = 'Week index of Summer 2021 resurgences period', shape = 'Beginning of Summer 2021 resurgence period', 
          col = lab('18-64'), fill = lab('18-64')) + 
     theme_bw() +
-    geom_text(data = data_text[age == '18-64'], aes(label = code, x = week_index, y = M, col = prop_1_init), hjust = -.1, size = 2.5) +
+    geom_text(data = data_text[age == '18-64'], aes(label = code, x = week_index, y = M), hjust = -.1, size = 2.5) +
     # scale_x_date(breaks = '1 month', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") + 
     scale_x_continuous(expand=  expansion(mult = c(0,space_mult)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     scale_y_continuous(limits = lims) +
@@ -1296,7 +1296,7 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, 
          x = 'Week index of Summer 2021 resurgence period', shape = 'Beginning of Summer 2021 resurgence period', 
          col = lab('65+'), fill = lab('65+')) + 
     theme_bw() +
-    geom_text(data = data_text[age == '65+'], aes(label = code, x = week_index, y = M, col = prop_2_init), hjust = -.1, size = 2.5) +
+    geom_text(data = data_text[age == '65+'], aes(label = code, x = week_index, y = M), hjust = -.1, size = 2.5) +
     # scale_x_date(breaks = '2 weeks', expand=  expansion(mult = c(0,0.25)), date_labels = "%b-%y") +
     scale_x_continuous(expand=  expansion(mult = c(0,space_mult)), breaks = min(data_res$week_index) + 2*c(0:floor((max(data_res$week_index)-1)/2) )) +
     theme(strip.background = element_blank(),
@@ -1345,13 +1345,20 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, 
   ggsave(p, file =file, w = 10.5, h = 3)
   
   p1 <- p1 + theme(axis.title.x = element_text(hjust = 1.04)) + 
-    labs(x ='Week index of the summer', y  ="\nRelative COVID-19 attributable\nweekly deaths")
+    labs(x ='', y  ="\nRelative COVID-19 attributable\nweekly deaths") + theme(legend.position = 'none')
   p2 <- p2 + theme(axis.title.y = element_blank(), axis.title.x = element_text(hjust = -0.05)) + 
-    labs(x='2021 resurgence period', y  ="Over time")
-  p = ggarrange(p1, p2, ncol = 2, widths = c(0.53, 0.47), legend = 'none')
-  
-  return(p)
+    labs(x='', y  ="Over time") + theme(legend.position = 'none')
+
+  return(list(p1, p2))
 }
+
+plot_relative_resurgence_vaccine_panel <- function(p4, p_all, lab, outdir){
+  p <- grid.arrange(grobs = c(p4, p_all), layout_matrix = rbind(c(NA, 1, NA, 2), c(3, 3, 4, 4)), 
+                    heights = c(0.46, 0.54), widths = c(0.0155034, 0.5121270, 0.01664, 0.4510599), 
+                    bottom = text_grob('Week index of the summer 2021 resurgence period', vjust = -36.5, size =10))
+  ggsave(p, file =paste0(outdir, '-relative_deaths_vaccine_coverage_panel_', lab, '.png'), w = 8, h = 6.5)
+}
+
 
 plot_relative_resurgence_vaccine2_old <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, log_transform, outdir, lab.fig = '', 
                                               selected_codes = NULL, withlimits = T){
@@ -1615,7 +1622,7 @@ plot_relative_resurgence_vaccine_end_3 <- function(data_res1,log_transform, outd
                          labels = scales::percent_format(accuracy = 1)) + 
     scale_fill_gradient(high = '#3B4371', low = '#F3904F', 
                         labels = scales::percent_format(accuracy = 1)) + 
-    geom_text(data = data_text[age == '18-64'], aes(x = prop_1_init + 0.01, y = M, label = code), size = 2)
+    geom_text_repel(data = data_text[age == '18-64'], aes(x = prop_1_init, y = M, label = code), size = 2)
   
   p2 <- ggplot(data_res[age == '65+'], aes(x = prop_2_init)) + 
     geom_errorbar(aes(ymin = CL, ymax = CU), alpha = 0.5, width = 0) +
@@ -1636,7 +1643,7 @@ plot_relative_resurgence_vaccine_end_3 <- function(data_res1,log_transform, outd
           # strip.text = element_text(size = rel(0.9)),
           # legend.spacing.x = unit(0.3, "cm"), 
           legend.position = 'bottom') +
-    geom_text(data = data_text[age == '65+'], aes(x = prop_2_init + 0.015, y = M, label = code), size = 2)+
+    geom_text_repel(data = data_text[age == '65+'], aes(x = prop_2_init, y = M, label = code), size = 2)+
     scale_color_gradient(low = '#ffe000', high = '#334d50',
                          labels = scales::percent_format(accuracy = 1)) + 
     scale_fill_gradient(low = '#ffe000', high = '#334d50', 
@@ -1647,7 +1654,7 @@ plot_relative_resurgence_vaccine_end_3 <- function(data_res1,log_transform, outd
     p2 = p2 + scale_y_continuous(trans = 'log', breaks = base_breaks()) 
   }
   
-  p = ggarrange(p1, p2, nrow = 1, widths = c(0.51, 0.49))
+  p = ggarrange(p1, p2, nrow = 1, widths = c(0.53, 0.47))
   
   if(log_transform){
     file =  paste0(outdir, '-log_relative_deaths_vaccine_coverage2_all', lab.fig, '.png')
@@ -1657,7 +1664,7 @@ plot_relative_resurgence_vaccine_end_3 <- function(data_res1,log_transform, outd
   
   ggsave(p, file =file, w = 8, h = 5)
   
-  return(p)
+  return(list(p1, p2))
 }
 
 

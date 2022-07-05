@@ -11,6 +11,7 @@ library(ggpubr)
 library(jcolors)
 library(facetscales)
 library(usmap)
+library(ggrepel)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
@@ -67,7 +68,9 @@ outdir.fig = outdir.fig.post
 # 4 states
 selected_codes = c('CA', 'FL', 'NY', 'TX')
 selected_10_codes = c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI')
+selected_15_codes <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA')
 selected_20_codes <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA','TN','IN','MD','MO','WI')
+selected_30_codes <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA','TN','IN','MD','MO','WI','CO','MN','SC','AL','LA','KY','OR','UT','IA','NV')
 
 #
 # Mortality rate
@@ -127,8 +130,6 @@ for(i in seq_along(locs)){
 }
 mortality_rate_posterior_samples = do.call('rbindlist', list(l = mortality_rate_posterior_samples, fill=TRUE))
 save_mortality_rate_correlation_longtermdeaths(mortality_rate_posterior_samples, mortality_rateJ21, nyt_data, region_name, outdir.table)
-
-
 
 
 #
@@ -225,23 +226,17 @@ for(i in seq_along(locs)){
 r_pdeaths = do.call('rbind', r_pdeaths)
 
 p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_codes)
+
 p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states')
-p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.45,0.55))
-ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel_log.png'), w = 8, h = 6)
-
-p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, F, outdir.fig, '_all_states')
-p <- ggarrange(p4, p_all,  ncol = 1, heights = c(0.45,0.55))
-ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel.png'), w = 8, h = 6)
-
-
-p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states', selected_10_codes)
-p <- ggarrange(p4, p_all2,  ncol = 1, heights = c(0.4,0.6))
-ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel2.png'), w = 8, h = 9)
-
-p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states', selected_20_codes)
-p <- ggarrange(p4, p_all2,  ncol = 1, heights = c(0.4,0.6))
-ggsave(p, file =paste0(outdir.fig, '-relative_deaths_vaccine_coverage_panel3.png'), w = 8, h = 9)
-
+plot_relative_resurgence_vaccine_panel(p4, p_all, '50_log', outdir.fig)
+p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_10_states', selected_10_codes)
+plot_relative_resurgence_vaccine_panel(p4, p_all2, '10_log', outdir.fig)
+p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_15_states', selected_15_codes)
+plot_relative_resurgence_vaccine_panel(p4, p_all2, '15_log', outdir.fig)
+p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_20_states', selected_20_codes)
+plot_relative_resurgence_vaccine_panel(p4, p_all2, '20_log', outdir.fig)
+p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_30_states', selected_30_codes)
+plot_relative_resurgence_vaccine_panel(p4, p_all2, '30_log', outdir.fig)
 
 cat("\n End postprocessing_union.R \n")
 
