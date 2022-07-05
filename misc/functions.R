@@ -823,3 +823,37 @@ incorporate_AllSexes_totalsum_information = function(tmp1, tmp2)
   return(tmp)
 }
 
+merge_deathByAge_over_NY_NYC <- function(deathByAge_res){
+  tmp2 <- deathByAge_res[code %in% c('NY', 'NYC')]
+  
+  for(Loc in c('NY')){
+    for(Age in unique(tmp2$age)){
+      tmp3 = subset(tmp2, code == Loc & age == Age)
+      if(length(unique(tmp3$min.sum.weekly.deaths)) != 1){
+        tmp3$min.sum.weekly.deaths[!is.na(tmp3$min.sum.weekly.deaths)] = min(tmp3$min.sum.weekly.deaths[!is.na(tmp3$min.sum.weekly.deaths)])
+        tmp3$max.sum.weekly.deaths[!is.na(tmp3$max.sum.weekly.deaths)] = min(tmp3$max.sum.weekly.deaths[!is.na(tmp3$max.sum.weekly.deaths)])
+      }
+      # stopifnot( length(unique(tmp3$min.sum.weekly.deaths)) == 1)
+      # stopifnot( length(unique(tmp3$max.sum.weekly.deaths)) == 1)
+      tmp2 <- rbind(tmp2[!(code == Loc & age == Age)], tmp3)
+    }
+  }
+  
+  
+  tmp2[, date_idx := 1:length(date), by = c("loc_label", 'age')]
+  tmp3 = tmp2[, list(min_date_idx = min(date_idx), max_date_idx = max(date_idx)), by = c("loc_label", 'age')]
+  tmp2 = merge(tmp2, tmp3, by = c("loc_label", 'age'))
+  tmp2[, max_date_idx := max_date_idx + 1]
+  tmp2[, loc_label := 'New York']
+  
+  tmp1 <- copy(tmp2[code %in% 'NY'])
+  tmp2 <- copy(tmp2[code %in% c('NYC')])
+  tmp2[, code := 'NY']
+  
+  tmp2 = merge_deathByAge_over_Sex(copy(tmp1), copy(tmp2))
+  
+  deathByAge_res <- rbind(deathByAge_res[!code %in% c('NY', 'NYC')], tmp2)
+  deathByAge_res[, order(loc_label, code, age, date)]
+  return(deathByAge_res)
+}
+

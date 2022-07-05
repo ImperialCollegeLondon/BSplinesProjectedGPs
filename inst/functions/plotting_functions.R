@@ -1,61 +1,185 @@
-compare_CDC_JHU_DoH_error_plot = function(CDC_data, JHUData, scrapedData, var.weekly.deaths.CDC, outdir, Code = NULL)
+compare_cumulative_CDC_JHU_DoH_error_plot = function(deathByAge, JHUData, scrapedData, outdir)
 {
-  # find errors 
-  CDCdata = CDC_data[, list(cumulative_deaths.CDC = sum(na.omit( get(var.weekly.deaths.CDC) ))), by = c('code', 'date')]
   
-  # take cumulative deaths
-  CDCdata[, cumulative_deaths.CDC := cumsum(cumulative_deaths.CDC), by = c('code', 'code')]
+  # find initial cumulative deatha 
+  file = file.path(dirname(indir), paste0('misc/data/CDC_data_2020-05-06.csv'))
+  tmp <- as.data.table(read.csv(file))
+  tmp <- tmp[grepl("Total", State)]
+  tmp[, loc_label := gsub('(.+) Total', '\\1', State)]
+  tmp1 <- tmp[loc_label %in% deathByAge[!(loc_label %in% 'New York'), unique(loc_label)]]
+  tmp1 <- tmp1[, .(loc_label, COVID.19.Deaths)]
+  tmp <- tmp[loc_label %in% c('New York', 'New York City'), list(COVID.19.Deaths = sum(COVID.19.Deaths), loc_label = 'New York')]
+  tmp <- rbind(tmp,tmp1)
   
+  # aggregate deaths by age across ages and add initial cumulative deaths
+  CDCdata = deathByAge[, list(weekly_deaths.CDC = sum(na.omit( weekly.deaths ))), by = c('loc_label', 'date')]
+  CDCdata = CDCdata[order(loc_label, date)]
+  CDCdata[, cumulative_deaths := cumsum(weekly_deaths.CDC), by = c('loc_label')]
+  CDCdata <- merge(tmp, CDCdata, by = 'loc_label')
+  CDCdata[, cumulative_deaths := cumulative_deaths + COVID.19.Deaths]
+  CDCdata <- CDCdata[, .(loc_label, date, cumulative_deaths)]
+  CDCdata[, source := 'Reported by the CDC']
+
+  # aggregate JHU by weeks
   JHUData = select(as.data.table(JHUData), code, date, cumulative_deaths)
   JHUData[, date := as.Date(date)]
   JHUData = subset(JHUData, date <= max(CDCdata$date))
+  JHUData <- merge(JHUData, unique(deathByAge[, .(code, loc_label)]), by = 'code')
+  JHUData <- JHUData[, .(loc_label, date, cumulative_deaths)]
+  JHUData[, source := 'Reported by JHU']
   
+  # prepare scraped data
   scrapedData = select(as.data.table(scrapedData), code, date, cum.deaths, age)
-  scrapedData = scrapedData[, list(cum.deaths = sum(cum.deaths)), by = c('code', 'date')]
+  scrapedData = scrapedData[, list(cumulative_deaths = sum(cum.deaths)), by = c('code', 'date')]
   scrapedData[, date := as.Date(date)]
   scrapedData = subset(scrapedData, date <= max(CDCdata$date))
-
-  # plot
-  JHUData[, source := 'JHU']
-  CDCdata[, source := 'CDC']
+  scrapedData <- merge(scrapedData, unique(deathByAge[, .(code, loc_label)]), by = 'code')
+  scrapedData <- scrapedData[, .(loc_label, date, cumulative_deaths)]
   scrapedData[, source := 'DoH']
-  setnames(CDCdata, 'cumulative_deaths.CDC', 'cumulative_deaths')
-  setnames(scrapedData, 'cum.deaths', 'cumulative_deaths')
   
+  # merge
   tmp2 = rbind(rbind(JHUData, CDCdata),scrapedData)
 
   if(!dir.exists( basename(outdir) )){
     dir.create( basename(outdir), recursive = T )
   }
   
-  n_code = length(unique(tmp2$code))
+  n_code = length(unique(tmp2$loc_label))
   
-  p = ggplot(tmp2, aes(x = date, y = cumulative_deaths, col = source)) + 
+  p1 = ggplot(tmp2, aes(x = date, y = cumulative_deaths, col = source)) + 
     geom_line() +
-    facet_wrap(~code, nrow = length(unique(tmp2$code)), scale = 'free') + 
+    facet_wrap(~loc_label, nrow = length(unique(tmp2$loc_label)), scale = 'free') + 
     theme_bw()  +
     labs(x = '', y = 'Cumulative COVID-19 deaths', col = '') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     theme(legend.position = 'bottom',
           axis.text.x = element_text(angle = 90)) 
-  ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+  ggsave(p1, file = paste0(outdir, '-comparison_JHU_DoH_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
   
-  if(!is.null(Code)){
-    tmp = subset(tmp2, code %in% Code)
-    
-    p = ggplot(tmp, aes(x = date, y = cumulative_deaths, col = source)) + 
-      geom_line() +
-      theme_bw() + 
-      facet_wrap(~code) +
-      scale_color_viridis_d(option = "B", direction = -1, end = 0.8) +
-      labs(x = '', y = 'Cumulative COVID-19 \ndeaths', col = '') + 
-      scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
-      theme(legend.position = 'bottom',
-            axis.text.x = element_text(angle = 90)) 
-    ggsave(p, file = paste0(outdir, '-comparison_JHU_DoH_CDC_Code.pdf'), w = 7, h = 6, limitsize = F)
-    
-  }
+  cols <- pal_npg("nrc")(10)
+  tmp = subset(tmp2, loc_label %in% deathByAge[code %in% c('CA', 'FL', 'TX', 'NY'), unique(loc_label)])
+  tmp <- tmp[source != 'DoH']
+  tmp <- tmp[date >= min(CDCdata$date)]
+  tmp[, source := factor(source, levels = c('Reported by the CDC', 'Reported by JHU'))]
+  p2 = ggplot(tmp, aes(x = date, y = cumulative_deaths, col = source)) + 
+    geom_line() +
+    theme_bw() + 
+    facet_wrap(~loc_label, scale = 'free_y', ncol = 1) +
+    scale_color_viridis_d(option = "B", direction = 1, end = 0.8) +
+    # scale_color_manual(values = cols[5:6]) +
+    labs( y = 'Cumulative all-ages COVID-19 deaths', col = '') + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 45, vjust =0.5), 
+          axis.title.x = element_blank(), 
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          panel.grid.minor = element_blank(), 
+          legend.title = element_text(size = rel(0.85)),
+          axis.title.y = element_text(size = rel(1.1)),
+          axis.text.y = element_text(size = rel(1)),
+          strip.text = element_text(size = rel(0.9)),) 
+  ggsave(p2, file = paste0(outdir, '-comparison_JHU_DoH_CDC_Code.pdf'), w = 7, h = 6, limitsize = F)
+  
+  p <- p  + facet_wrap(.~loc_label, nrow = 4) + theme(legend.box = 'vertical')
+  p <- ggarrange(p, labels = 'A')
+  p2 <- ggarrange(p2, labels = 'B')
+  pa <- grid.arrange(p, p2, ncol = 2, layout_matrix = rbind(c(1, 2), c(1, NA)), heights = c(0.91, 0.09))
+  ggsave(pa, file = paste0(outdir, '-deathByAge_CDCJHU_panel_selected_states.png'), w = 7.7, h = 8.5)
+  
 }
+
+compare_weekly_CDC_JHU_DoH_error_plot = function(deathByAge, JHUData, scrapedData, outdir)
+{
+  
+  # find initial cumulative deatha 
+  file = file.path(dirname(indir), paste0('misc/data/CDC_data_2020-05-06.csv'))
+  tmp <- as.data.table(read.csv(file))
+  tmp <- tmp[grepl("Total", State)]
+  tmp[, loc_label := gsub('(.+) Total', '\\1', State)]
+  tmp1 <- tmp[loc_label %in% deathByAge[!(loc_label %in% 'New York'), unique(loc_label)]]
+  tmp1 <- tmp1[, .(loc_label, COVID.19.Deaths)]
+  tmp <- tmp[loc_label %in% c('New York', 'New York City'), list(COVID.19.Deaths = sum(COVID.19.Deaths), loc_label = 'New York')]
+  tmp <- rbind(tmp,tmp1)
+  
+  # aggregate deaths by age across ages and add initial cumulative deaths
+  CDCdata = deathByAge[, list(weekly_deaths.CDC = sum(na.omit( weekly.deaths ))), by = c('loc_label', 'date')]
+  CDCdata = CDCdata[order(loc_label, date)]
+  CDCdata[, cumulative_deaths := cumsum(weekly_deaths.CDC), by = c('loc_label')]
+  CDCdata <- merge(tmp, CDCdata, by = 'loc_label')
+  CDCdata[, cumulative_deaths := cumulative_deaths + COVID.19.Deaths]
+  CDCdata <- CDCdata[, .(loc_label, date, cumulative_deaths)]
+  CDCdata[, source := 'Reported by the CDC']
+  
+  # aggregate JHU by weeks
+  JHUData = select(as.data.table(JHUData), code, date, cumulative_deaths)
+  JHUData[, date := as.Date(date)]
+  JHUData = subset(JHUData, date <= max(CDCdata$date))
+  JHUData <- merge(JHUData, unique(deathByAge[, .(code, loc_label)]), by = 'code')
+  JHUData <- JHUData[, .(loc_label, date, cumulative_deaths)]
+  JHUData[, source := 'Reported by JHU']
+  
+  # prepare scraped data
+  scrapedData = select(as.data.table(scrapedData), code, date, cum.deaths, age)
+  scrapedData = scrapedData[, list(cumulative_deaths = sum(cum.deaths)), by = c('code', 'date')]
+  scrapedData[, date := as.Date(date)]
+  scrapedData = subset(scrapedData, date <= max(CDCdata$date))
+  scrapedData <- merge(scrapedData, unique(deathByAge[, .(code, loc_label)]), by = 'code')
+  scrapedData <- scrapedData[, .(loc_label, date, cumulative_deaths)]
+  scrapedData[, source := 'DoH']
+  
+  # merge
+  tmp2 = rbind(rbind(JHUData, CDCdata),scrapedData)
+  
+  if(!dir.exists( basename(outdir) )){
+    dir.create( basename(outdir), recursive = T )
+  }
+  
+  n_code = length(unique(tmp2$loc_label))
+  
+  p1 = ggplot(tmp2, aes(x = date, y = cumulative_deaths, col = source)) + 
+    geom_line() +
+    facet_wrap(~loc_label, nrow = length(unique(tmp2$loc_label)), scale = 'free') + 
+    theme_bw()  +
+    labs(x = '', y = 'Cumulative COVID-19 deaths', col = '') + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 90)) 
+  ggsave(p1, file = paste0(outdir, '-comparison_JHU_DoH_CDC.pdf'), w = 9, h = 2.2 * n_code + 5, limitsize = F)
+  
+  cols <- pal_npg("nrc")(10)
+  tmp = subset(tmp2, loc_label %in% deathByAge[code %in% c('CA', 'FL', 'TX', 'NY'), unique(loc_label)])
+  tmp <- tmp[source != 'DoH']
+  tmp <- tmp[date >= min(CDCdata$date)]
+  tmp[, source := factor(source, levels = c('Reported by the CDC', 'Reported by JHU'))]
+  p2 = ggplot(tmp, aes(x = date, y = cumulative_deaths, col = source)) + 
+    geom_line() +
+    theme_bw() + 
+    facet_wrap(~loc_label, scale = 'free_y', ncol = 1) +
+    scale_color_viridis_d(option = "B", direction = 1, end = 0.8) +
+    # scale_color_manual(values = cols[5:6]) +
+    labs( y = 'Cumulative all-ages COVID-19 deaths', col = '') + 
+    scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
+    theme(legend.position = 'bottom',
+          axis.text.x = element_text(angle = 45, vjust =0.5), 
+          axis.title.x = element_blank(), 
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          panel.grid.minor = element_blank(), 
+          legend.title = element_text(size = rel(0.85)),
+          axis.title.y = element_text(size = rel(1.1)),
+          axis.text.y = element_text(size = rel(1)),
+          strip.text = element_text(size = rel(0.9)),) 
+  ggsave(p2, file = paste0(outdir, '-comparison_JHU_DoH_CDC_Code.pdf'), w = 7, h = 6, limitsize = F)
+  
+  p <- p  + facet_wrap(.~loc_label, nrow = 4) + theme(legend.box = 'vertical')
+  p <- ggarrange(p, labels = 'A')
+  p2 <- ggarrange(p2, labels = 'B')
+  pa <- grid.arrange(p, p2, ncol = 2, layout_matrix = rbind(c(1, 2), c(1, NA)), heights = c(0.91, 0.09))
+  ggsave(pa, file = paste0(outdir, '-deathByAge_CDCJHU_panel_selected_states.png'), w = 7.7, h = 8.5)
+  
+}
+
 
 plot_data = function(deathByAge, outdir, Code = NULL)
 {

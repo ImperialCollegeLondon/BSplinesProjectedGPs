@@ -27,15 +27,19 @@ deathByAge_AllSexes = find_weekly_deaths(deathByAge_AllSexes, rm.COVID.19.Deaths
 deathByAge_AllSexes = select(deathByAge_AllSexes, -c(date_idx, min_date_idx, max_date_idx))
 deathByAge_res = incorporate_AllSexes_information(deathByAge, deathByAge_AllSexes)
 
+# sum NY and NYC 
+deathByAge_final <- merge_deathByAge_over_NY_NYC(deathByAge_res)
+
 # rm boudaries is weekly deaths is not NA
-deathByAge_res[!is.na(weekly.deaths), min.sum.weekly.deaths := NA]
-deathByAge_res[!is.na(weekly.deaths), max.sum.weekly.deaths := NA]
-deathByAge_res[!is.na(weekly.deaths), sum.weekly.deaths := NA]
+deathByAge_final[!is.na(weekly.deaths), min.sum.weekly.deaths := NA]
+deathByAge_final[!is.na(weekly.deaths), max.sum.weekly.deaths := NA]
+deathByAge_final[!is.na(weekly.deaths), sum.weekly.deaths := NA]
 
 # all weekly deaths are 0 on 2020-06-27 --> repeated update
 # 2020-07-04 and 2020-06-27 are missing
 # deathByAge_res[, list(sum(na.omit(weekly.deaths))), by = 'date']
-all(na.omit(subset(deathByAge_res, date == "2020-06-27")$weekly.deaths == 0))
-deathByAge_res = subset(deathByAge_res, !date %in% c(as.Date("2020-07-04"), as.Date("2020-06-27")))
+all(na.omit(subset(deathByAge_final, date == "2020-06-27")$weekly.deaths == 0))
+deathByAge_final = subset(deathByAge_final, !date %in% c(as.Date("2020-07-04"), as.Date("2020-06-27")))
 
-saveRDS(deathByAge_res, file.path(outdir, paste0('CDC-data_', last.week, '.rds')))
+saveRDS(deathByAge_final, file.path(outdir, paste0('CDC-data_', last.week, '.rds')))
+

@@ -20,8 +20,9 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
             "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 states <- c("AK", "AL", "AR", "AZ")
+states <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA','TN','IN','MD','MO','WI','CO','MN','SC','AL','LA','KY','OR','UT','IA','NV')
 
-stan_model = "220701a"
+stan_model = "220616a"
 JOBID = 3541
 
 if(0)
@@ -53,7 +54,7 @@ rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06-bis.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds"))
@@ -128,12 +129,7 @@ cat("Location ", as.character(loc_name), "\n")
 if(1){
   p <- plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data[!date %in% max(date):(max(date) - 6)], pop_data = pop_data, Code, outdir = outdir.fig)
-  compare_CDC_JHU_DoH_error_plot(CDC_data = deathByAge,
-                                 JHUData = JHUData, 
-                                 scrapedData = scrapedData,
-                                 var.weekly.deaths.CDC = 'weekly.deaths', 
-                                 outdir = outdir.fig,
-                                 Code = Code)
+  compare_cumulative_CDC_JHU_DoH_error_plot(deathByAge = copy(deathByAge), JHUData = copy(JHUData), scrapedData = copy(scrapedData), outdir = outdir.fig)
 }
 
 
