@@ -130,6 +130,7 @@ if(1){
   p <- plot_data(deathByAge = deathByAge, Code = Code, outdir = outdir.fig)
   plot_vaccine_data(deathByAge = deathByAge, vaccine_data = vaccine_data[!date %in% max(date):(max(date) - 6)], pop_data = pop_data, Code, outdir = outdir.fig)
   compare_cumulative_CDC_JHU_DoH_error_plot(deathByAge = copy(deathByAge), JHUData = copy(JHUData), scrapedData = copy(scrapedData), outdir = outdir.fig)
+  compare_weekly_CDC_JHU_DoH_error_plot(deathByAge = copy(deathByAge), JHUData = copy(JHUData), outdir = outdir.fig)
 }
 
 

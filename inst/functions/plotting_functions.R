@@ -65,7 +65,7 @@ compare_cumulative_CDC_JHU_DoH_error_plot = function(deathByAge, JHUData, scrape
     theme_bw() + 
     facet_wrap(~loc_label, scale = 'free_y', ncol = 1) +
     scale_color_viridis_d(option = "B", direction = 1, end = 0.8) +
-    # scale_color_manual(values = cols[5:6]) +
+    # scale_color_manual(values = c("black", "#CC6677")) +
     labs( y = 'Cumulative all-ages COVID-19 deaths', col = '') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     theme(legend.position = 'bottom',
@@ -75,9 +75,10 @@ compare_cumulative_CDC_JHU_DoH_error_plot = function(deathByAge, JHUData, scrape
           panel.border = element_rect(colour = "black", fill = NA), 
           panel.grid.minor = element_blank(), 
           legend.title = element_text(size = rel(0.85)),
+          legend.text = element_text(size = rel(0.85)),
           axis.title.y = element_text(size = rel(1.1)),
           axis.text.y = element_text(size = rel(1)),
-          strip.text = element_text(size = rel(0.9)),) 
+          strip.text = element_text(size = rel(0.9))) 
   ggsave(p2, file = paste0(outdir, '-comparison_JHU_DoH_CDC_Code.pdf'), w = 7, h = 6, limitsize = F)
   
   p <- p  + facet_wrap(.~loc_label, nrow = 4) + theme(legend.box = 'vertical')
@@ -122,7 +123,7 @@ compare_weekly_CDC_JHU_DoH_error_plot = function(deathByAge, JHUData, outdir)
     facet_wrap(~loc_label, scale = 'free_y', ncol = 1) +
     scale_color_viridis_d(option = "B", direction = 1, end = 0.8) +
     # scale_color_manual(values = cols[5:6]) +
-    labs( y = 'Cumulative all-ages COVID-19 deaths', col = '') + 
+    labs( y = 'Weekly all-ages COVID-19 deaths', col = '') + 
     scale_x_date(expand = c(0,0), date_labels = c("%b-%y")) +
     theme(legend.position = 'bottom',
           axis.text.x = element_text(angle = 45, vjust =0.5), 
@@ -131,9 +132,10 @@ compare_weekly_CDC_JHU_DoH_error_plot = function(deathByAge, JHUData, outdir)
           panel.border = element_rect(colour = "black", fill = NA), 
           panel.grid.minor = element_blank(), 
           legend.title = element_text(size = rel(0.85)),
+          legend.text = element_text(size = rel(0.85)),
           axis.title.y = element_text(size = rel(1.1)),
           axis.text.y = element_text(size = rel(1)),
-          strip.text = element_text(size = rel(0.9)),) 
+          strip.text = element_text(size = rel(0.9))) 
   ggsave(p2, file = paste0(outdir, '-comparison_weekly_JHU_DoH_CDC_Code.pdf'), w = 7, h = 6, limitsize = F)
   
   p <- p  + facet_wrap(.~loc_label, nrow = 4) + theme(legend.box = 'vertical')
@@ -185,6 +187,7 @@ plot_data = function(deathByAge, outdir, Code = NULL)
           panel.grid.minor = element_blank(),
           legend.key = element_blank(),
           legend.title = element_text(size = rel(0.85)),
+          legend.text = element_text(size = rel(0.85)),
           # legend.text = element_text(size = rel(1)),
           strip.background = element_blank(),
           panel.background = element_rect(fill = '#FCB360', colour = 'red')) +
