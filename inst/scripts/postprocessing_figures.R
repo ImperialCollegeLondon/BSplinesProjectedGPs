@@ -234,7 +234,7 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   r_pdeaths_ratio <- r_pdeaths_ratio[week_index == max_week_index]
   print(r_pdeaths_ratio)
   
-  if(length(Code) > 6){
+  if(r_pdeaths_ratio[, length(unique(code))] > 6){
     plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
   }
   
