@@ -85,15 +85,30 @@ functions {
     return(r_pdeaths);
    }
    
-   matrix get_expected_resurgence_deaths(int C, int T, vector prop_vac_start, vector week_indices_resurgence,
+      matrix get_expected_resurgence_deaths(int C, int T, vector prop_vac_start, vector week_indices_resurgence,
           vector intercept_resurgence0, vector intercept_resurgence_re, vector vaccine_effect_intercept_diagonal,
-          vector slope_resurgence0, vector vaccine_effect_slope_diagonal){
+          vector slope_resurgence0, vector vaccine_effect_slope_diagonal, 
+          vector vaccine_effect_intercept_cross, vector vaccine_effect_slope_cross){
 
-    vector[C] intercept_resurgence = intercept_resurgence0 + intercept_resurgence_re + prop_vac_start .* vaccine_effect_intercept_diagonal;
-    vector[C] slope_resurgence = slope_resurgence0 + prop_vac_start .* vaccine_effect_slope_diagonal;
-    
-    matrix[C,T] log_xi = rep_matrix(intercept_resurgence, T) + (rep_matrix(to_row_vector(week_indices_resurgence),C) .* rep_matrix(slope_resurgence, T));
-    matrix[C,T] xi = exp(log_xi);
+    vector[C] intercept_resurgence = intercept_resurgence0 + intercept_resurgence_re ;
+    vector[C] slope_resurgence = slope_resurgence0;
+    matrix[C,T] log_xi;
+    matrix[C,T] xi;
+     
+    for(c in 1:C){
+        for(c_prime in 1:C){
+          if(c_prime == c){
+            intercept_resurgence[c] += prop_vac_start[c] .* vaccine_effect_intercept_diagonal[c];
+            slope_resurgence[c] += prop_vac_start[c] .* vaccine_effect_slope_diagonal[c];
+          } else{
+            intercept_resurgence[c] += prop_vac_start[c_prime] .* vaccine_effect_intercept_cross[c];
+            slope_resurgence[c] += prop_vac_start[c_prime] .* vaccine_effect_slope_cross[c];
+          }
+      }
+    }
+
+    log_xi = rep_matrix(intercept_resurgence, T) + (rep_matrix(to_row_vector(week_indices_resurgence),C) .* rep_matrix(slope_resurgence, T));
+    xi = exp(log_xi);
     
     return(xi);
   }
@@ -213,6 +228,8 @@ parameters {
   real vaccine_effect_intercept_diagonal[C];
   real vaccine_effect_slope_diagonal[C];
   real<lower=0> sigma_r_pdeaths[M];
+  real vaccine_effect_intercept_cross[C];
+  real vaccine_effect_slope_cross[C];
 }
 
 generated quantities{
@@ -270,7 +287,8 @@ generated quantities{
        
       xi = get_expected_resurgence_deaths(C, T, to_vector(prop_vac_start[:,m]), week_indices_resurgence,
              to_vector(intercept_resurgence0), to_vector(intercept_resurgence_re[:,m]), to_vector(vaccine_effect_intercept_diagonal),
-            to_vector(slope_resurgence0), to_vector(vaccine_effect_slope_diagonal));
+            to_vector(slope_resurgence0), to_vector(vaccine_effect_slope_diagonal),
+            to_vector(vaccine_effect_intercept_cross), to_vector(vaccine_effect_slope_cross));
 
 
         /////
@@ -312,7 +330,6 @@ generated quantities{
     int m = LOCATION_PROCESSING_IDX;
 
     for(c in 1:C){
-      
       log_r_pdeaths_predict[c,:] = to_row_vector( normal_rng(log(xi[c,1:T]),sigma_r_pdeaths[m]) );
       r_pdeaths_predict[c,:] = exp(log_r_pdeaths_predict[c,:]);
       E_pdeaths_predict[c,:] = rep_row_vector(max(E_pdeaths[c,1:(w_start_resurgence[m] - 1)]), T) .* r_pdeaths_predict[c,:] ;
@@ -325,23 +342,24 @@ generated quantities{
   // countefactual resurgence deaths using vaccination coverage
   for(n in 1:N_COUNTERFACTUAL){
     int m = LOCATION_PROCESSING_IDX;
-    matrix[C,T] log_r_pdeaths_counterfactual = rep_matrix(0.0, C, T);
     matrix[C,T] r_pdeaths_counterfactual = rep_matrix(1.0, C, T);
+    matrix[C,T] log_r_pdeaths_counterfactual = rep_matrix(0.0, C, T);
     matrix[C,T] xi_counterfactual;
   
     xi_counterfactual = get_expected_resurgence_deaths(C, T, to_vector(prop_vac_start_counterfactual[:,n,m]), week_indices_resurgence,
              to_vector(intercept_resurgence0), to_vector(intercept_resurgence_re[:,m]), to_vector(vaccine_effect_intercept_diagonal),
-            to_vector(slope_resurgence0), to_vector(vaccine_effect_slope_diagonal));
+            to_vector(slope_resurgence0), to_vector(vaccine_effect_slope_diagonal),
+            to_vector(vaccine_effect_intercept_cross), to_vector(vaccine_effect_slope_cross));
     
 
       for(c in 1:C){
-          log_r_pdeaths_counterfactual[c,1:T] = to_row_vector( normal_rng( log(xi_counterfactual[c,1:T]), sigma_r_pdeaths[m]));
-          r_pdeaths_counterfactual[c,1:T] = exp(log_r_pdeaths_counterfactual[c,1:T]);
-          E_pdeaths_counterfactual[n][c,:] = rep_row_vector(max(E_pdeaths[c,1:(w_start_resurgence[m] - 1)]), T) .* r_pdeaths_counterfactual[c,:] ;
-          E_pdeaths_counterfactual_resurgence_cumulative[n][c,:] = cumulative_sum(E_pdeaths_counterfactual[n][c,:]);
-          
-          diff_E_pdeaths_counterfactual[n][c,:] = E_pdeaths_predict_resurgence_cumulative[c,:] - E_pdeaths_counterfactual_resurgence_cumulative[n][c,:];
-          perc_E_pdeaths_counterfactual[n][c,:] = diff_E_pdeaths_counterfactual[n][c,:] ./ E_pdeaths_predict_resurgence_cumulative[c,:] ;
+        log_r_pdeaths_counterfactual[c,1:T] = to_row_vector( normal_rng( log(xi_counterfactual[c,1:T]), sigma_r_pdeaths[m]));
+        r_pdeaths_counterfactual[c,1:T] = exp(log_r_pdeaths_counterfactual[c,1:T]);
+        E_pdeaths_counterfactual[n][c,:] = rep_row_vector(max(E_pdeaths[c,1:(w_start_resurgence[m] - 1)]), T) .* r_pdeaths_counterfactual[c,:] ;
+        E_pdeaths_counterfactual_resurgence_cumulative[n][c,:] = cumulative_sum(E_pdeaths_counterfactual[n][c,:]);
+        
+        diff_E_pdeaths_counterfactual[n][c,:] = E_pdeaths_predict_resurgence_cumulative[c,:] - E_pdeaths_counterfactual_resurgence_cumulative[n][c,:];
+        perc_E_pdeaths_counterfactual[n][c,:] = diff_E_pdeaths_counterfactual[n][c,:] ./ E_pdeaths_predict_resurgence_cumulative[c,:] ;
           
       }
   }
