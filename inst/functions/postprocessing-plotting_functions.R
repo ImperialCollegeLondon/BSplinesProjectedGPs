@@ -1278,9 +1278,9 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, 
           axis.title.y = element_text(size = rel(1)),
           legend.spacing.x = unit(0.3, "cm"), 
           strip.text = element_text(size = rel(0.9))) +
-    scale_color_gradient(high = '#3B4371', low = '#ffaf7b', 
+    scale_color_gradient(high = '#33ccff', low = '#ff6600', 
                           labels = scales::percent_format(accuracy = 1), limits = lim1864) + 
-    scale_fill_gradient(high = '#3B4371', low = '#ffaf7b', 
+    scale_fill_gradient(high = '#33ccff', low = '#ff6600', 
                          labels = scales::percent_format(accuracy = 1), limits = lim1864) + 
     # scale_color_gradient2(high = 'darkred', low = 'cornflowerblue', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_1_init)), 
     #                       labels = scales::percent_format(accuracy = 1), limits = lim1864) + 
@@ -1306,9 +1306,9 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, 
           axis.title.y = element_blank(),
           strip.text = element_text(size = rel(0.9)),
           legend.spacing.x = unit(0.3, "cm")) +
-    scale_color_gradient(low = '#ffe000', high = '#334d50',
+    scale_color_gradient(low = '#006666', high = '#ffccff',
                           labels = scales::percent_format(accuracy = 1), limits = lim65p) + 
-    scale_fill_gradient(low = '#ffe000', high = '#334d50', 
+    scale_fill_gradient(low = '#006666', high = '#ffccff', 
                          labels = scales::percent_format(accuracy = 1), limits = lim65p) + 
     # scale_color_gradient2(low = 'lightpink', high = 'darkolivegreen', mid = 'moccasin', midpoint = mean(range(prop_vac_init$prop_2_init)), 
     #                       labels = scales::percent_format(accuracy = 1), limits = lim65p) + 
@@ -1353,6 +1353,8 @@ plot_relative_resurgence_vaccine2 <- function(data_res1, log_transform, outdir, 
 }
 
 plot_relative_resurgence_vaccine_panel <- function(p4, p_all, lab, outdir){
+  p4[[1]] <- ggarrange(p4[[1]], labels = 'A')
+  p_all[[1]] <-  ggarrange(p_all[[1]], labels = 'B', label.y = 1.07, label.x = 0.03)
   p <- grid.arrange(grobs = c(p4, p_all), layout_matrix = rbind(c(NA, 1, NA, 2), c(3, 3, 4, 4)), 
                     heights = c(0.46, 0.54), widths = c(0.0155034, 0.5121270, 0.01664, 0.4510599), 
                     bottom = text_grob('Week index of the summer 2021 resurgence period', vjust = -36.5, size =10))
@@ -1618,9 +1620,9 @@ plot_relative_resurgence_vaccine_end_3 <- function(data_res1,log_transform, outd
           strip.text = element_blank(),
           legend.spacing.x = unit(0.3, "cm"), 
           legend.position = 'bottom') +
-    scale_color_gradient(high = '#3B4371', low = '#F3904F', 
+    scale_color_gradient(high = '#33ccff', low = '#ff6600', 
                          labels = scales::percent_format(accuracy = 1)) + 
-    scale_fill_gradient(high = '#3B4371', low = '#F3904F', 
+    scale_fill_gradient(high = '#33ccff', low = '#ff6600', 
                         labels = scales::percent_format(accuracy = 1)) + 
     geom_text_repel(data = data_text[age == '18-64'], aes(x = prop_1_init, y = M, label = code), size = 2)
   
@@ -1644,9 +1646,9 @@ plot_relative_resurgence_vaccine_end_3 <- function(data_res1,log_transform, outd
           # legend.spacing.x = unit(0.3, "cm"), 
           legend.position = 'bottom') +
     geom_text_repel(data = data_text[age == '65+'], aes(x = prop_2_init, y = M, label = code), size = 2)+
-    scale_color_gradient(low = '#ffe000', high = '#334d50',
+    scale_color_gradient(low = '#006666', high = '#ffccff',
                          labels = scales::percent_format(accuracy = 1)) + 
-    scale_fill_gradient(low = '#ffe000', high = '#334d50', 
+    scale_fill_gradient(low = '#006666', high = '#ffccff', 
                         labels = scales::percent_format(accuracy = 1)) 
   
   if(log_transform){
