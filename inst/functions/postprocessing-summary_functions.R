@@ -90,6 +90,7 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
   
   if(length(Code) == 1){
     saveRDS(log_lik, file = paste0(outdir, "-log_lik_", Code, ".rds"))
+    saveRDS(time, file = paste0(outdir, "-time_elapsed_", Code, ".rds"))
   }
   
   return(summary)
