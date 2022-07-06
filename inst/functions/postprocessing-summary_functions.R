@@ -69,12 +69,12 @@ make_convergence_diagnostics_stats = function(fit, re, outdir)
       WAIC = .WAIC$pointwise
       LOO = .LOO$pointwise
       
-      saveRDS(.WAIC, file = paste0(outdir, "-WAIC_", i, ".rds"))
-      saveRDS(.LOO, file = paste0(outdir, "-LOO_", i, ".rds"))
-      
       if(length(Code) == 1){
         saveRDS(.WAIC, file = paste0(outdir, "-WAIC_", Code, ".rds"))
         saveRDS(.LOO, file = paste0(outdir, "-LOO_", Code, ".rds"))
+      }else{
+        saveRDS(.WAIC, file = paste0(outdir, "-WAIC.rds"))
+        saveRDS(.LOO, file = paste0(outdir, "-LOO.rds"))
       }
     }} , error = function(e) e)
   
@@ -1481,7 +1481,6 @@ make_lambda_table <- function(fit_samples, stan_data, df_week, df_state, outdir)
     tmp
   })
   tmp1 <- do.call('rbind', tmp1)
-  
   
   if(with_cmdstan){
     model_code = 'sensitivity analysis 1 on lambda'

@@ -128,6 +128,9 @@ names_samples <- names(fit_samples)
 names_fit <- names(fit_cum)
 
 ## base model
+if(!with_cmdstan){
+  model = rstan::stan_model(path.to.stan.model)
+}
 lambda_table <- make_lambda_table(fit_samples, stan_data, df_week, df_state, outdir.table)
 plot_lambda_table(lambda_table, outdir.fig)
 var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_state, outdir.table)
