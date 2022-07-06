@@ -72,6 +72,22 @@ selected_15_codes <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','V
 selected_20_codes <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA','TN','IN','MD','MO','WI')
 selected_30_codes <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA','TN','IN','MD','MO','WI','CO','MN','SC','AL','LA','KY','OR','UT','IA','NV')
 
+
+#
+# Comparison to DoH data
+tab_doh = list(); k = 1
+for(i in seq_along(locs)){
+  file <- paste0(outdir.table, '-CumDeathsComp_ScrapedData_', locs[i], '.rds')
+  if(file.exists(file)){
+    tab_doh[[k]]  = readRDS(file)[[2]]
+    k = k + 1
+  }
+}
+tab_doh = do.call('rbind', tab_doh)
+tab_doh[, method := 'BSGP']; model_name = 'BSGP'
+save_doh_comparison(tab_doh, region_name, outdir.table)
+
+
 #
 # Mortality rate
 
@@ -172,7 +188,7 @@ saveRDS(predictions, file = file.path(dir, 'predicted_weekly_deaths.rds'))
 
 
 # 
-# vaccination effect on contribution predict
+# Predicted contibution 
 contribution = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   contribution[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacTable_', locs[i], '.rds'))
@@ -184,7 +200,20 @@ contribution[, M_median := median(M), by = c('date', 'age')]
 plot_contribution_vaccine(contribution, vaccine_data_pop, 'predict_all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'predict_selected_codes',outdir.fig)
 
-## contribution 
+## shift over time
+locs_plus_US <- c(locs, 'US')
+contributiondiff = vector(mode = 'list', length = length(locs_plus_US))
+for(i in seq_along(locs_plus_US)){
+  contributiondiff[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacDiffTable_', locs_plus_US[i], '.rds'))
+}
+contributiondiff = do.call('rbind', contributiondiff)
+plot_contributiondiff_map(contributiondiff, 'diff1', outdir.fig, 'predict')
+plot_contributiondiff_map(contributiondiff, 'diff2', outdir.fig, 'predict')
+save_statistics_contributiondiff(contributiondiff, outdir.table, 'predict')
+
+
+# 
+# Estimated contibution 
 contribution = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   contribution[[i]] = readRDS(paste0(outdir.table, '-phi_reduced_vacTable_', locs[i], '.rds'))
@@ -196,18 +225,7 @@ plot_contribution_vaccine(contribution, vaccine_data_pop, 'all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'selected_codes',outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% c('TX', 'NH')), vaccine_data_pop,  'TXNH',outdir.fig)
 
-## contribution shift with observational noise
-locs_plus_US <- c(locs, 'US')
-contributiondiff = vector(mode = 'list', length = length(locs_plus_US))
-for(i in seq_along(locs_plus_US)){
-  contributiondiff[[i]] = readRDS(paste0(outdir.table, '-phi_predict_reduced_vacDiffTable_', locs_plus_US[i], '.rds'))
-}
-contributiondiff = do.call('rbind', contributiondiff)
-plot_contributiondiff_map(contributiondiff, 'diff1', outdir.fig, 'predict')
-plot_contributiondiff_map(contributiondiff, 'diff2', outdir.fig, 'predict')
-save_statistics_contributiondiff(contributiondiff, outdir.table, 'predict')
-
-## contribution shift
+## shift over time
 locs_plus_US <- c(locs, 'US')
 contributiondiff = vector(mode = 'list', length = length(locs_plus_US))
 for(i in seq_along(locs_plus_US)){
@@ -218,7 +236,9 @@ plot_contributiondiff_map(contributiondiff, 'diff1', outdir.fig)
 plot_contributiondiff_map(contributiondiff, 'diff2', outdir.fig)
 save_statistics_contributiondiff(contributiondiff, outdir.table)
 
-# Resurgence
+
+#
+# Resurgence during the summer 2021
 r_pdeaths  = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
   r_pdeaths[[i]] = readRDS(paste0(outdir.table, '-r_pdeathsTable_', locs[i], '.rds'))
