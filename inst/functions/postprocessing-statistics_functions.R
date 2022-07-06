@@ -230,3 +230,25 @@ save_statistics_contributiondiff <- function(contributiondiff, outdir.table, lab
 }
 
 
+save_doh_comparison <- function(tab_doh, region_name, outdir){
+  
+  tab = tab_doh[, list(prop_correct_predictions = mean(prop.death.inside.CI)), by = c('code', 'method')]
+  tab = merge(tab, region_name, by = 'code')
+  tab[, propT_n := paste0(format(round(prop_correct_predictions * 100, 2), nsmall = 2), '\\%')]
+  tab[, method := factor(method, levels = model_name)]
+  
+  tab2 = tab_doh[, list(avgpropT = mean(prop.death.inside.CI)),  by = c('method')]
+  tab2 = tab2[, avg_propT_n := paste0(format(round(avgpropT * 100, 2), nsmall = 2), '\\%')]
+  
+  tab = reshape2::dcast(tab, loc_label~ method, value.var = 'propT_n')
+  tab2 =  data.table(loc_label = 'Average', reshape2::dcast(tab2, .~ method, value.var = 'avg_propT_n')[,-1]) 
+  if('V2' %in% names(tab2)) setnames(tab2, 'V2', model_name)
+  tab = rbind(tab, tab2)
+  
+  no_record <- region_name[!loc_label %in% tab$loc_label, loc_label]
+  tmp <- paste0(paste0(no_record[-length(no_record)], collapse = ', '), ' and ', no_record[length(no_record)])
+  saveRDS(list(tab, tmp), paste0(outdir, '-compDoH.rds'))
+  
+}
+
+
