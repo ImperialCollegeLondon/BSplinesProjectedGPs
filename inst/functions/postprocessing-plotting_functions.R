@@ -1739,18 +1739,18 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, df_age
 
 plot_relative_resurgence_vaccine2_long <- function(data_res1, outdir, labfig, selected_codes){
   
+  data_res1 <- data_res1[code %in% selected_codes]
+  
   prop_vac_init = unique(data_res1[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code'])
   
   data_res = merge(data_res1, prop_vac_init, by = 'code')
-  
-  data_res <- data_res[code %in% selected_codes]
   
   data_res[, `Age group` := age]
 
   lab = function(Age) paste0('Proportion of individuals aged ', Age, ' fully vaccinated two weeks\nbefore the beginning of Summer 2021 resurgence period')
   
   ## 18-64
-  mid_code = round(length(Code) / 2)
+  mid_code = round(length(selected_codes) / 2)
   Code_ordered = prop_vac_init[order(prop_1_init)]$code
   tmp <- unique(select(data_res, code, loc_label))
   tmp[, code := factor(code, levels = Code_ordered)]
@@ -1810,7 +1810,7 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, outdir, labfig, se
   ggsave(p, file =file, w = 8, h = 6)
   
   ## 65+
-  mid_code = round(length(Code) / 2)
+  mid_code = round(length(selected_codes) / 2)
   Code_ordered = prop_vac_init[order(prop_2_init)]$code
   tmp <- unique(select(data_res, code, loc_label))
   tmp[, code := factor(code, levels = Code_ordered)]
@@ -1867,7 +1867,7 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, outdir, labfig, se
   
   p <- ggarrange(p1, p2, ncol = 1, common.legend = T, legend = 'bottom', heights = c(0.9, 1))
   p <- grid.arrange(p, left = 'Relative COVID-19 attributable weekly deaths')
-  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part2_', labfig, '.png')
+  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part2', labfig, '.png')
   ggsave(p, file =file, w = 8, h = 6)
   
 }
@@ -1875,17 +1875,17 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, outdir, labfig, se
 plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   
   data_res1[, type := 'Fit to observed data']
-  data_res2[, type := 'Predicted with vaccination rates']
+  data_res2[, type := 'Predicted with meta-regression model']
   data_res = rbind(data_res1, data_res2, fill = T)
   
-  data_res[, `Age group` := age]
+  ncol = data_res[, length(unique(code))]/5 - 1
   # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
-  p1 <- ggplot(data_res, aes(x = date)) + 
+  p1 <- ggplot(data_res[age == '18-64'], aes(x = date)) + 
     geom_line(aes(y = M, col = type)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
-    facet_grid(loc_label~`Age group`) +
-    labs(y = 'Relative COVID-19 attributable weekly deaths', 
+    facet_wrap(~loc_label, ncol = ncol) +
+    labs(y = 'Relative COVID-19 attributable weekly deaths in age group 18-64', 
          shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
     theme_bw() +
     scale_x_date(expand = c(0,0), breaks = '1 month', date_labels = "%b-%y") + 
@@ -1900,7 +1900,28 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
           axis.text.x = element_text(angle = 70, hjust = 1)) +
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
-  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC', lab, '.png'), w = 6, h = 20, limitsize = F)
+  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '.png'), w = 8, h = 9, limitsize = F)
+  
+  p2 <- ggplot(data_res[age == '65+'], aes(x = date)) + 
+    geom_line(aes(y = M, col = type)) + 
+    geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
+    facet_wrap(~loc_label, ncol = ncol) +
+    labs(y = 'Relative COVID-19 attributable weekly deaths in age group 65+', 
+         shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
+    theme_bw() +
+    scale_x_date(expand = c(0,0), breaks = '1 month', date_labels = "%b-%y") + 
+    theme(strip.background = element_blank(),
+          strip.text = element_text(size = rel(0.85)),
+          panel.border = element_rect(colour = "black", fill = NA), legend.box="vertical", 
+          legend.title = element_text(size = rel(0.85)),
+          axis.title.y = element_text(size = rel(0.9)),
+          axis.title.x = element_blank(),
+          legend.spacing.y = unit(-0, "cm"), 
+          legend.position = 'bottom',
+          axis.text.x = element_text(angle = 70, hjust = 1)) +
+    guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
+  
+  ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '.png'), w = 8, h = 9, limitsize = F)
   
 }
 
