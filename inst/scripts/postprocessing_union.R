@@ -25,7 +25,7 @@ states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "I
 #             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 paste0(states,collapse =  ',')
 stan_model = "220209a"
-JOBID = 8004
+JOBID = 8901
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -155,10 +155,10 @@ for(i in seq_along(locs)){
   death3[[i]] = readRDS(paste0(outdir.table, '-DeathByAgeTable_3agegroups_', locs[i], '.rds'))
 }
 death3 = do.call('rbind', death3)
-if(!'prop_vac_start_counterfactual' %in% names(stan_data)) resurgence_dates = NULL
-plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates,'selectedStates', outdir.fig)
+if(!'prop_vac_start_counterfactual' %in% names(stan_data)) resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, locations$code)
+plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates, 'selectedStates', outdir.fig)
 if(any(!locs %in% selected_codes))
-  plot_mortality_all_states(subset(death3, !code %in% selected_codes & code %in% selected_10_codes), resurgence_dates,'otherStates', outdir.fig)
+  plot_mortality_all_states(subset(death3, !code %in% selected_codes & code %in% selected_10_codes), resurgence_dates, 'otherStates', outdir.fig)
 
 # if(length(locs) > 6){
 #   mid_locs = floor(length(locs) / 2)
