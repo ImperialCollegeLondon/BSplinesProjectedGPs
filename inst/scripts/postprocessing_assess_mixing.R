@@ -150,6 +150,9 @@ if(any(names %in% names_samples)){
   p <- bayesplot::mcmc_trace(fit_cum, regex_pars = vars)
   ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_vaccination.png'), h = 20, w = 20, limitsize = F)
   
+  p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = vars)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_vaccination.png'), h = 50, w = 50, limitsize = F)
+  
   
   min_age_index_vac = 3
   df_age_vaccination2 = df_age_vaccination[age_index >= 3]
