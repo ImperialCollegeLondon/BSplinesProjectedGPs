@@ -158,7 +158,7 @@ death3 = do.call('rbind', death3)
 if(!'prop_vac_start_counterfactual' %in% names(stan_data)) resurgence_dates = NULL
 plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates,'selectedStates', outdir.fig)
 if(any(!locs %in% selected_codes))
-  plot_mortality_all_states(subset(death3, !code %in% selected_codes), resurgence_dates,'otherStates', outdir.fig)
+  plot_mortality_all_states(subset(death3, !code %in% selected_codes & code %in% selected_10_codes), resurgence_dates,'otherStates', outdir.fig)
 
 # if(length(locs) > 6){
 #   mid_locs = floor(length(locs) / 2)
@@ -246,6 +246,7 @@ for(i in seq_along(locs)){
 r_pdeaths = do.call('rbind', r_pdeaths)
 
 p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_codes)
+plot_relative_resurgence_vaccine2_long(r_pdeaths, outdir.fig, '_10_states', selected_10_codes)
 
 p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states')
 plot_relative_resurgence_vaccine_panel(p4, p_all, '50_log', outdir.fig)
@@ -259,6 +260,7 @@ p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_30_
 plot_relative_resurgence_vaccine_panel(p4, p_all2, '30_log', outdir.fig)
 p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, F, outdir.fig, '_30_states', selected_30_codes)
 plot_relative_resurgence_vaccine_panel(p4, p_all2, '30', outdir.fig)
+
 cat("\n End postprocessing_union.R \n")
 
 

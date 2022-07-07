@@ -1737,20 +1737,16 @@ plot_relative_resurgence_vaccine_no_time <- function(data_res1, prop_vac, df_age
   
 }
 
-plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir){
+plot_relative_resurgence_vaccine2_long <- function(data_res1, outdir, labfig, selected_codes){
   
-  prop_vac_init = prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code']
+  prop_vac_init = unique(data_res1[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code'])
+  
   data_res = merge(data_res1, prop_vac_init, by = 'code')
   
+  data_res <- data_res[code %in% selected_codes]
+  
   data_res[, `Age group` := age]
-  # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
-  
-  data_res = merge(data_res, resurgence_dates, by = 'code')
-  
-  data_text = subset(data_res, week_index == max(week_index))
-  data_text[code == 'CA' & age == '18-64', M := M + 0.1]
-  data_text[code == 'CA' & age == '65+', M := M + 0.05]
-  
+
   lab = function(Age) paste0('Proportion of individuals aged ', Age, ' fully vaccinated two weeks\nbefore the beginning of Summer 2021 resurgence period')
   
   ## 18-64
@@ -1810,7 +1806,7 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_v
   
   p <- ggarrange(p1, p2, ncol = 1, common.legend = T, legend = 'bottom', heights = c(0.9, 1))
   p <- grid.arrange(p, left = 'Relative COVID-19 attributable weekly deaths')
-  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part1', '.png')
+  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part1', labfig, '.png')
   ggsave(p, file =file, w = 8, h = 6)
   
   ## 65+
@@ -1871,7 +1867,7 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, prop_vac, df_age_v
   
   p <- ggarrange(p1, p2, ncol = 1, common.legend = T, legend = 'bottom', heights = c(0.9, 1))
   p <- grid.arrange(p, left = 'Relative COVID-19 attributable weekly deaths')
-  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part2', '.png')
+  file =  paste0(outdir, '-relative_deaths_vaccine_coverage2', '_extended_part2_', labfig, '.png')
   ggsave(p, file =file, w = 8, h = 6)
   
 }

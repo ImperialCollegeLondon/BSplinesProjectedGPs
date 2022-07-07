@@ -234,10 +234,6 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   r_pdeaths_ratio <- r_pdeaths_ratio[week_index == max_week_index]
   print(r_pdeaths_ratio)
   
-  if(r_pdeaths_ratio[, length(unique(code))] > 6){
-    plot_relative_resurgence_vaccine2_long(r_pdeaths, prop_vac, df_age_vaccination2, df_week2, resurgence_dates, outdir.fig)
-  }
-  
   # plot predicted relative deaths
   r_pdeaths_predict = make_var_by_age_by_state_by_time_table(fit_samples, df_week2, df_age_vaccination2, df_state, 'r_pdeaths_predict', outdir.table)
   plot_PPC_relative_resurgence(r_pdeaths, r_pdeaths_predict, '', outdir.fig)
