@@ -1817,7 +1817,7 @@ make_ratio_vars_by_age_by_counterfactual_table = function(fit_samples, df_state_
   tmp2 <- tmp2[, list(value_denominator = sum(value_denominator)), by = c('iterations', 'age_index','week_index')]
   
   tmp1 <- merge(tmp1, tmp2,  by = c('iterations', 'age_index','week_index'))
-  tmp1[, value := value / value_denominator]
+  tmp1[, value := (value - value_denominator) / value_denominator]
   
   tmp1 = tmp1[, list( 	q= quantile(value, prob=ps, na.rm = T),
                        q_label=p_labs), 
