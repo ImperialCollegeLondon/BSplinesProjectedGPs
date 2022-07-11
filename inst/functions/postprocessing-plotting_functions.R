@@ -2531,8 +2531,8 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
     geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.5) + 
-    geom_point(aes(y = -Inf, x = -Inf, col = label_counterfactual)) +
-    geom_label(aes(y = M, x = diff_value, col = label_counterfactual, label = code), 
+    geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 0.5) +
+    geom_label_repel(aes(y = M, x = diff_value, col = label_counterfactual, label = code), 
                      size = 2.5, label.size = NA, fill = NA, show.legend = FALSE) + 
     scale_colour_manual(values = c('black', colors),  drop = FALSE) + 
     theme_bw() +
