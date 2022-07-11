@@ -163,7 +163,7 @@ plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_d
 if(any(!locs %in% selected_codes))
   plot_mortality_all_states(subset(death3, !code %in% selected_codes & code %in% selected_10_codes), resurgence_dates, 'otherStates', outdir.fig)
 if(length(locs) > 10){
-  locs_not_selected = locs[!locs %in% selected_codes]
+  locs_not_selected = locs[!locs %in% selected_10_codes]
   mid_locs = floor(length(locs_not_selected) / 2)
   plot_mortality_all_states(subset(death3, code %in% locs_not_selected[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
   plot_mortality_all_states(subset(death3, code %in% locs_not_selected[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
