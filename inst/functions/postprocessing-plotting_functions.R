@@ -2431,7 +2431,7 @@ plot_vaccine_effects_counterfactual_FL <- function(data_res1, data_res2, resurge
     scale_fill_manual(values = c('black', colors)) +
     scale_linetype_manual(values = 'dashed') +
     scale_y_continuous(limits = lims) + 
-    labs(col = '', y = paste0('Predicted COVID-19\nattributable deaths among ', age_group),
+    labs(col = '', y = paste0('Predicted COVID-19\ncumulative deaths among ', age_group),
          fill = '', linetype = '')+ 
     facet_grid(.~loc_label)
 
@@ -2538,7 +2538,7 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
           # legend.box="vertical",
           # legend.spacing.y = unit(-0, "cm")
     ) + 
-    labs(col = '', y = paste0('Change in predicted COVID-19\nattributable deaths among ', age_group),
+    labs(col = '', y = paste0('Change in predicted COVID-19\ncumulative deaths among ', age_group),
          fill = '', linetype = '', 
          x = 'Difference between counterfactual vaccination rate\nand observed vaccination rate') +
     guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 3)) + 
