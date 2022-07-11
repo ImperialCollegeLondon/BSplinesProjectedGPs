@@ -2019,6 +2019,30 @@ find_p_value_vaccine_effect <- function(sample, name){
   return(tmp)
 }
 
+find_vaccine_effect <- function(sample, name){
+  
+  ps <- c(0.5, 0.025, 0.975)
+  p_labs <- c('M','CL','CU')
+  
+  tmp <- as.data.table( reshape2::melt(sample) )
+  
+  if(ncol(tmp) == 2){
+    tmp = tmp[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs)]	
+    tmp[, name := name]
+    tmp = dcast(tmp, name ~ q_label, value.var = "q")
+  } else if(ncol(tmp) == 3){
+    tmp = tmp[, list(q= quantile(value, prob=ps, na.rm = T), q_label=p_labs),
+              by=c('Var2')]	
+    tmp = dcast(tmp, Var2 ~ q_label, value.var = "q")
+    tmp[, name := paste0(name, '_', Var2)]
+  }
+  
+  
+  tmp <- tmp[, .(name, M, CL, CU)]
+  return(tmp)
+}
+
+
 find_crude_mortality_rate <- function(mortality_rate, df_age_continuous, df_age_reporting, pop_data){
   
   fouragegroups <- unique(mortality_rate$age)

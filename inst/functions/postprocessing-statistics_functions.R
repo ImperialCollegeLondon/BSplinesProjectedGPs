@@ -108,11 +108,16 @@ save_p_value_vaccine_effects <- function(samples, names, outdir){
   names_fit <- names(samples)
   names <- names_fit[ grepl(paste(paste0('^',names),collapse = '|'),names_fit) ]
   
+  l <- list()
+  
   tmp <- lapply(names, function(x) find_p_value_vaccine_effect(samples[[x]], x))
-  tmp <- do.call('rbind', tmp)
+  l[[1]] <- do.call('rbind', tmp)
   
-  saveRDS(tmp, paste0(outdir.table, '-p_value_vaccine_effects.rds'))
+  tmp <- lapply(names, function(x) find_vaccine_effect(samples[[x]], x))
+  l[[2]] <- do.call('rbind', tmp)
   
+  saveRDS(l, paste0(outdir.table, '-p_value_vaccine_effects.rds'))
+
 }
 
 save_mortality_rate_correlation_longtermdeaths <- function(mortality_rate_posterior_samples, mortality_rateJ21, nyt_data, region_name, outdir.table){
