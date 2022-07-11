@@ -83,7 +83,7 @@ for(i in seq_along(locs)){
     k = k + 1
   }
 }
-tab_doh = do.call('rbind', tab_doh)
+tab_doh = as.data.table(do.call('rbind', tab_doh))
 tab_doh[, method := 'BSGP']; model_name = 'BSGP'
 save_doh_comparison(tab_doh, region_name, outdir.table)
 
