@@ -1875,7 +1875,7 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, outdir, labfig, se
 plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   
   data_res1[, type := 'Fit to observed data']
-  data_res2[, type := 'Predicted with meta-regression model']
+  data_res2[, type := 'Fit with meta-regression model']
   data_res = rbind(data_res1, data_res2, fill = T)
   
   ncol = data_res[, length(unique(code))]/5 - 1
@@ -1884,7 +1884,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   p1 <- ggplot(data_res[age == '18-64'], aes(x = date)) + 
     geom_line(aes(y = M, col = type)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
-    facet_wrap(~loc_label, ncol = ncol) +
+    facet_wrap(~loc_label, ncol = ncol, scale = 'free_y') +
     labs(y = 'Relative COVID-19 attributable weekly deaths in age group 18-64', 
          shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
     theme_bw() +
@@ -1901,6 +1901,10 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
   ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '.png'), w = 8, h = 9, limitsize = F)
+  
+  p1 <- p1 + scale_y_continuous(trans = 'log') + labs(y = 'Relative COVID-19 attributable weekly deaths in age group 18-64 (log scale)')
+  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '_log.png'), w = 8, h = 9, limitsize = F)
+  
   
   p2 <- ggplot(data_res[age == '65+'], aes(x = date)) + 
     geom_line(aes(y = M, col = type)) + 
@@ -1922,6 +1926,9 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
   ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '.png'), w = 8, h = 9, limitsize = F)
+  
+  p2 <- p2 + scale_y_continuous(trans = 'log')+ labs(y = 'Relative COVID-19 attributable weekly deaths in age group 65+ (log scale)')
+  ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '_log.png'), w = 8, h = 9, limitsize = F)
   
 }
 
@@ -2404,7 +2411,7 @@ plot_vaccine_effects_counterfactual_FL <- function(data_res1, data_res2, resurge
 
   dummy.dt1 <- subset(dummy.dt, code == 'FL')
   
-  colors <-  ggsci::pal_npg(palette = c("nrc"), alpha = 1)(n = 9)[c(1, 2, 5, 3)]
+  colors <-  ggsci::pal_nejm(palette = c("default"), alpha = 1)(n = 8)[c(1, 2, 3, 4)]
   if(age_group == '65+'){
     colors <- colors[3:4]
   }
@@ -2512,7 +2519,7 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
   tmp1 <- tmp1[age == age_group & grepl(paste0(age_group, "|Fit"), label_counterfactual)]
   tmp1[, label_counterfactual := factor(label_counterfactual, levels = c(label_fit, levels_wo_and))]
   
-  colors <-  ggsci::pal_npg(palette = c("nrc"), alpha = 1)(n = 9)[c(1, 2, 5, 3)]
+  colors <-  ggsci::pal_nejm(palette = c("default"), alpha = 1)(n = 8)[c(1, 2, 3, 4)]
   if(age_group == '65+'){
     colors = colors[3:4]
   }
@@ -2540,7 +2547,7 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
          x = 'Difference between counterfactual vaccination rate\nand observed vaccination rate') +
     guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 3)) + 
     scale_y_continuous(labels = scales::percent, limits= lims) +
-    coord_cartesian(ylim = c(0, 5))
+    coord_cartesian(ylim = c(lims[1], 5))
 
   return(p)
 }
