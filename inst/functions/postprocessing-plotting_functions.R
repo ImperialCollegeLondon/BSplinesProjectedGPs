@@ -1884,13 +1884,17 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   data_res2[, type := 'Fit with meta-regression model']
   data_res = rbind(data_res1, data_res2, fill = T)
   
-  ncol = data_res[, length(unique(code))]/5 - 1
+  ncol = 4
+  if(data_res[, length(unique(code))] > 20){
+    ncol = 6
+  }
+
   # data_res[, loc_label := factor(loc_label, levels = c('Florida', 'Texas', 'California', 'New York', 'Washington'))]
   
   p1 <- ggplot(data_res[age == '18-64'], aes(x = date)) + 
     geom_line(aes(y = M, col = type)) + 
     geom_ribbon(aes(ymin = CL, ymax = CU, fill = type), alpha = 0.5) +
-    facet_wrap(~loc_label, ncol = ncol, scale = 'free_y') +
+    facet_wrap(~loc_label, ncol = ncol) +
     labs(y = 'Relative COVID-19 attributable weekly deaths in age group 18-64', 
          shape = 'Beginning of Summer 2021 resurgence period', col = '', fill = '') + 
     theme_bw() +
@@ -1906,10 +1910,10 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
           axis.text.x = element_text(angle = 70, hjust = 1)) +
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
-  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '.png'), w = 8, h = 9, limitsize = F)
+  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '.png'), w = 8, h = 12, limitsize = F)
   
   p1 <- p1 + scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'Relative COVID-19 attributable weekly deaths in age group 18-64 (log scale)')
-  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '_log.png'), w = 8, h = 9, limitsize = F)
+  ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '_log.png'), w = 8, h = 12, limitsize = F)
   
   
   p2 <- ggplot(data_res[age == '65+'], aes(x = date)) + 
@@ -1931,10 +1935,10 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
           axis.text.x = element_text(angle = 70, hjust = 1)) +
     guides(color = guide_legend(order=1), fill = guide_legend(order=1)) 
   
-  ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '.png'), w = 8, h = 9, limitsize = F)
+  ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '.png'), w = 8, h = 12, limitsize = F)
   
   p2 <- p2 +  scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'Relative COVID-19 attributable weekly deaths in age group 65+ (log scale)')
-  ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '_log.png'), w = 8, h = 9, limitsize = F)
+  ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '_log.png'), w = 8, h = 12, limitsize = F)
   
 }
 
@@ -2259,7 +2263,7 @@ plot_vaccine_effects_counterfactual_change_old <- function(data_res, prop_vac_co
   
 }
 
-plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence_dates, selected_code, outdir){
+plot_vaccine_effects_counterfactual2 <- function(data_res1, data_res2, resurgence_dates, selected_code, prop_vac, outdir){
   
   label_fit <- 'Fit to observed data'
   data_res2[, label_counterfactual := label_fit]
@@ -2271,8 +2275,10 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   data_res1 = data_res1[date >= start_resurgence ]
   data_res1 = select(data_res1, -start_resurgence, -counterfactual_index)
   
-  tmp = rbind(data_res1, data_res2)
+  prop_vac_init = unique(prop_vac[, list(prop_1_init = prop_1[date == min(date)], prop_2_init = prop_2[date == min(date)]), by = 'code'])
+  prop_vac_init <- merge(data_res1[, .(code, loc_label)], prop_vac_init, by = c('code'))
   
+  tmp <- rbind(data_res1, data_res2)
   tmp = subset(tmp, date >= as.Date('2021-01-01'))
   tmp = merge(tmp, select(resurgence_dates, code, stop_resurgence), by = 'code')
   tmp = tmp[date <= stop_resurgence]
@@ -2291,7 +2297,7 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
   
   tmp[, `Age group` := age]
   dummy.dt1 <- subset(dummy.dt, code %in% selected_code)
-  
+
   colors <-  ggsci::pal_nejm(palette = c("default"), alpha = 1)(n = 8)[c(1, 2, 3, 4)]
   
   age_groups <- tmp[, unique(age)]
@@ -2306,10 +2312,10 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
     
     p[[i]] <- ggplot(tmp1, aes(x = date)) + 
       geom_line(aes(y = M, col = label_counterfactual)) + 
-      geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha = 0.15) + 
+      geom_ribbon(aes(ymin = CL, ymax = CU, fill = label_counterfactual), alpha =0.25) + 
       scale_x_date(expand = expansion(mult = c(0.05,0)), date_labels = c("%b-%y"), breaks = '1 month') + 
       theme_bw() + 
-      geom_vline(data = dummy.dt1, aes(xintercept = start_resurgence), col = 'grey50', linetype = 'dashed') +
+      geom_vline(data = dummy.dt1, aes(xintercept = start_resurgence, linetype = text), col = 'grey50') +
       theme(strip.background = element_blank(),
             panel.border = element_rect(colour = "black", fill = NA), 
             legend.position = 'bottom', 
@@ -2322,11 +2328,12 @@ plot_vaccine_effects_counterfactual <- function(data_res1, data_res2, resurgence
       ) + 
       scale_colour_manual(values = c('black', colors))  + 
       scale_fill_manual(values = c('black', colors)) +
+      scale_linetype_manual(values = 'dashed') +
       # scale_y_continuous(limits = lims) + 
       labs(col = '', y = paste0('Predicted COVID-19 attributable cumulative deaths'),
            fill = '', linetype = '')+ 
-      facet_grid(loc_label~`Age group`, scale = 'free_y') + 
-      guides(col = guide_legend(byrow = T, nrow = 3, order = 1), fill = guide_legend(byrow = T, nrow = 3, order= 1))
+      facet_grid(loc_label~`Age group`) + 
+      guides(col = guide_legend(byrow = T, nrow = 3, order = 2), fill = guide_legend(byrow = T, nrow = 3, order= 2), linetype= guide_legend(order =1))
     
     if(i == 1){
       p[[i]] <- p[[i]]  + theme(strip.text.y = element_blank())
@@ -2624,7 +2631,7 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.5) + 
     geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 0.5) +
-    geom_label_repel(aes(y = M, x = diff_value, col = label_counterfactual, label = code), 
+    geom_label(aes(y = M, x = diff_value, col = label_counterfactual, label = code), 
                      size = 2.5, label.size = NA, fill = NA, show.legend = FALSE) + 
     scale_colour_manual(values = c('black', colors),  drop = FALSE) + 
     theme_bw() +
