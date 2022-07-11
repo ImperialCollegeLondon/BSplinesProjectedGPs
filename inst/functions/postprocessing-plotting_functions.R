@@ -2554,7 +2554,7 @@ plot_vaccine_effects_counterfactual_panel <- function(E_pdeaths_counterfactual_r
   for(i in seq_along(age_groups)){
     age_group = age_groups[i]
     p_FL[[i]] <- plot_vaccine_effects_counterfactual_FL(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, resurgence_dates, age_group) + 
-      ggtitle(paste0('Counterfactual scenarios with varying vaccination\nrate in ', age_group, '\n'))+
+      ggtitle(paste0('Counterfactual scenarios with varying\nvaccination rate in ', age_group, '\n'))+
       theme(plot.title = element_text(hjust = 0.5))
     p_all[[i]] <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group)
     
