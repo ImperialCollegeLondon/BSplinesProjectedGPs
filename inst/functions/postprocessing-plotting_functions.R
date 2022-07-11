@@ -2539,7 +2539,8 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
          fill = '', linetype = '', 
          x = 'Difference between counterfactual vaccination rate\nand observed vaccination rate') +
     guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 3)) + 
-    scale_y_continuous(labels = scales::percent, limits= lims)
+    scale_y_continuous(labels = scales::percent, limits= lims) +
+    coord_cartesian(ylim = c(0, 5))
 
   return(p)
 }
