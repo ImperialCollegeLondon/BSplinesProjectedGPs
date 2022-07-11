@@ -2546,10 +2546,9 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
          fill = '', linetype = '', 
          x = 'Difference between counterfactual vaccination rate\nand observed vaccination rate') +
     guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 3)) + 
-    scale_y_continuous(labels = scales::percent, limits= lims) +
-    coord_cartesian(ylim = c(lims[1], 5))
+    scale_y_continuous(labels = scales::percent, limits= lims) 
 
-  return(p)
+  return(list(p, lims))
 }
 
 plot_vaccine_effects_counterfactual_panel <- function(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, 
@@ -2561,10 +2560,10 @@ plot_vaccine_effects_counterfactual_panel <- function(E_pdeaths_counterfactual_r
     p_FL[[i]] <- plot_vaccine_effects_counterfactual_FL(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, resurgence_dates, age_group) + 
       ggtitle(paste0('Counterfactual scenarios with varying\nvaccination rate in ', age_group, '\n'))+
       theme(plot.title = element_text(hjust = 0.5))
-    p_all[[i]] <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group)
-    p_all_log[[i]] <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group) + 
-      scale_y_log10(labels = scales::percent) + 
-      labs(y =  paste0('Change in predicted COVID-19 cumulative\ndeaths among ', age_group, ' (log scale)'))
+    tmp <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group) 
+    lims <- tmp[[2]]
+    p_all[[i]] <- tmp[[1]] + coord_cartesian(ylim = c(lims[1], 5))
+    p_all_log[[i]] <-  tmp[[1]]  + scale_y_continuous(labels = scales::percent, limits = lims, trans = 'pseudo_log') 
     
     if(age_group == '18-64'){
       p_FL[[i]] <- ggarrange(p_FL[[i]], labels = c('A'), label.y = 0.85  )
