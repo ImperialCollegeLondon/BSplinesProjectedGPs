@@ -17,15 +17,16 @@ indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst', "results")
 # states = strsplit('FL',',')[[1]]
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-           "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-           "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA,KY,OR,UT,IA,NV,AR,MS,KS,NM,NE,ID,WV,HI,NH,ME',',')[[1]]
+# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+#            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+#            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 # states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", 
 #             "MI", "MN", "MO", "MS", "MT", "NC", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
 #             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 paste0(states,collapse =  ',')
-stan_model = "220209a"
-JOBID = 8901
+stan_model = "cmdstan_220701a"
+JOBID = 9424
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -75,17 +76,19 @@ selected_30_codes <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','V
 
 #
 # Comparison to DoH data
-tab_doh = list(); k = 1
-for(i in seq_along(locs)){
-  file <- paste0(outdir.table, '-CumDeathsComp_ScrapedData_', locs[i], '.rds')
-  if(file.exists(file)){
-    tab_doh[[k]]  = readRDS(file)[[2]]
-    k = k + 1
+if(length(locs) == 50){
+  tab_doh = list(); k = 1
+  for(i in seq_along(locs)){
+    file <- paste0(outdir.table, '-CumDeathsComp_ScrapedData_', locs[i], '.rds')
+    if(file.exists(file)){
+      tab_doh[[k]]  = readRDS(file)[[2]]
+      k = k + 1
+    }
   }
+  tab_doh = as.data.table(do.call('rbind', tab_doh))
+  tab_doh[, method := 'BSGP']; model_name = 'BSGP'
+  save_doh_comparison(tab_doh, region_name, outdir.table)
 }
-tab_doh = as.data.table(do.call('rbind', tab_doh))
-tab_doh[, method := 'BSGP']; model_name = 'BSGP'
-save_doh_comparison(tab_doh, region_name, outdir.table)
 
 
 #
