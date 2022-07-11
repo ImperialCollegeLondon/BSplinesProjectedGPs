@@ -2401,13 +2401,10 @@ plot_vaccine_effects_counterfactual_FL <- function(data_res1, data_res2, resurge
   tmp <- subset(tmp, code == "FL" & !grepl('and', label_counterfactual))
   lims <- tmp[, range(c(CL, CU))]
   tmp <- tmp[age == age_group & grepl(paste0(age_group, "|Fit"), label_counterfactual)]
-  
-  cols <- viridisLite::viridis(length(unique(tmp$label_counterfactual)), direction = -1, begin = 0.1)
-  
 
   dummy.dt1 <- subset(dummy.dt, code == 'FL')
   
-  colors <-  ggsci::pal_npg(palette = c("nrc"), alpha = 1)(n = 4)
+  colors <-  ggsci::pal_npg(palette = c("nrc"), alpha = 1)(n = 9)[c(1, 2, 5, 3)]
   if(age_group == '65+'){
     colors <- colors[3:4]
   }
@@ -2512,10 +2509,10 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
   levels_wo_and <- levels_wo_and[grepl(paste0(age_group), levels_wo_and)]
   
   lims <- tmp1[, range(CL, CU)]
-  colors <-  ggsci::pal_npg(palette = c("nrc"), alpha = 1)(n = 4)
   tmp1 <- tmp1[age == age_group & grepl(paste0(age_group, "|Fit"), label_counterfactual)]
   tmp1[, label_counterfactual := factor(label_counterfactual, levels = c(label_fit, levels_wo_and))]
   
+  colors <-  ggsci::pal_npg(palette = c("nrc"), alpha = 1)(n = 9)[c(1, 2, 5, 3)]
   if(age_group == '65+'){
     colors = colors[3:4]
   }
