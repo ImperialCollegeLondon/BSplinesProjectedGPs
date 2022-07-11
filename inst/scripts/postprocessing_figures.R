@@ -279,7 +279,7 @@ if('intercept_resurgence0' %in% names(fit_samples)){
   
   plot_vaccine_effects_counterfactual_panel(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, 
                                             perc_E_pdeaths_counterfactual, resurgence_dates, prop_vac_counterfactual, outdir.fig)
-    
+  plot_vaccine_effects_counterfactual(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, resurgence_dates, selected_code, outdir.fig)
   
   find_stats_vaccine_effects(diff_E_pdeaths_counterfactual, perc_E_pdeaths_counterfactual_2, 
                              diff_E_pdeaths_counterfactual_all_2, perc_E_pdeaths_counterfactual_all_2,
