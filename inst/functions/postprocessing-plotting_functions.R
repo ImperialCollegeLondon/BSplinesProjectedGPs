@@ -2555,21 +2555,28 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
 plot_vaccine_effects_counterfactual_panel <- function(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, 
                                                       perc_E_pdeaths_counterfactual, resurgence_dates, prop_vac_counterfactual, outdir){
   age_groups = c('18-64', '65+')
-  p_FL <- list(); p_all <- list()
+  p_FL <- list(); p_all <- list(); p_all_log = list()
   for(i in seq_along(age_groups)){
     age_group = age_groups[i]
     p_FL[[i]] <- plot_vaccine_effects_counterfactual_FL(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, resurgence_dates, age_group) + 
       ggtitle(paste0('Counterfactual scenarios with varying\nvaccination rate in ', age_group, '\n'))+
       theme(plot.title = element_text(hjust = 0.5))
     p_all[[i]] <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group)
+    p_all_log[[i]] <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group) + 
+      scale_y_log10(labels = scales::percent) + 
+      labs(y =  paste0('Change in predicted COVID-19 cumulative\ndeaths among ', age_group, ' (log scale)'))
     
     if(age_group == '18-64'){
       p_FL[[i]] <- ggarrange(p_FL[[i]], labels = c('A'), label.y = 0.85  )
       p_all[[i]] <- ggarrange(p_all[[i]], labels = c('B'))
+      p_all_log[[i]] <- ggarrange(p_all_log[[i]], labels = c('B'))
     }
   }
   pp <- grid.arrange(grobs = c(p_FL, p_all), layout_matrix= rbind(c(1, NA, 2, NA), c(3, 3, 4, 4)), heights = c(0.4, 0.6), widths = c(0.4, 0.1, 0.4, 0.1))
   ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot.png'), w = 10, h = 9)
+  
+  pp <- grid.arrange(grobs = c(p_FL, p_all_log), layout_matrix= rbind(c(1, NA, 2, NA), c(3, 3, 4, 4)), heights = c(0.4, 0.6), widths = c(0.4, 0.1, 0.4, 0.1))
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_log.png'), w = 10, h = 9)
   
 }
 
