@@ -24,7 +24,7 @@ states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,C
 # states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", 
 #             "MI", "MN", "MO", "MS", "MT", "NC", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
 #             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
-paste0(states,collapse =  ',')
+
 stan_model = "cmdstan_220701a"
 JOBID = 9424
 
@@ -162,16 +162,13 @@ if(!'prop_vac_start_counterfactual' %in% names(stan_data)) resurgence_dates <- f
 plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates, 'selectedStates', outdir.fig)
 if(any(!locs %in% selected_codes))
   plot_mortality_all_states(subset(death3, !code %in% selected_codes & code %in% selected_10_codes), resurgence_dates, 'otherStates', outdir.fig)
+if(length(locs) > 10){
+  locs_not_selected = locs[!locs %in% selected_codes]
+  mid_locs = floor(length(locs_not_selected) / 2)
+  plot_mortality_all_states(subset(death3, code %in% locs_not_selected[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
+  plot_mortality_all_states(subset(death3, code %in% locs_not_selected[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
 
-# if(length(locs) > 6){
-#   mid_locs = floor(length(locs) / 2)
-# 
-#   plot_mortality_all_states(subset(death3, code %in% locs[1:mid_locs]), resurgence_dates, 'allStates_part1', outdir.fig)
-#   plot_mortality_all_states(subset(death3, code %in% locs[(mid_locs+1):(mid_locs*2)]), resurgence_dates, 'allStates_part2', outdir.fig)
-# 
-# } else{
-#   plot_mortality_all_states(death3, resurgence_dates, 'allStates', outdir.fig)
-# }
+}
 
 
 #
