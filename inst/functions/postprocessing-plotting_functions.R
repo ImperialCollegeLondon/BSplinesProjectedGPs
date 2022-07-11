@@ -1872,6 +1872,12 @@ plot_relative_resurgence_vaccine2_long <- function(data_res1, outdir, labfig, se
   
 }
 
+base_breaks <- function(n = 10){
+  function(x) {
+    axisTicks(log(range(x, na.rm = TRUE)), log = TRUE, n = n)
+  }
+}
+
 plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   
   data_res1[, type := 'Fit to observed data']
@@ -1902,7 +1908,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   
   ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '.png'), w = 8, h = 9, limitsize = F)
   
-  p1 <- p1 + scale_y_log10() + labs(y = 'Relative COVID-19 attributable weekly deaths in age group 18-64 (log scale)')
+  p1 <- p1 + scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'Relative COVID-19 attributable weekly deaths in age group 18-64 (log scale)')
   ggsave(p1, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_1_', lab, '_log.png'), w = 8, h = 9, limitsize = F)
   
   
@@ -1927,7 +1933,7 @@ plot_PPC_relative_resurgence <- function(data_res1, data_res2, lab, outdir){
   
   ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '.png'), w = 8, h = 9, limitsize = F)
   
-  p2 <- p2 + scale_y_log10()+ labs(y = 'Relative COVID-19 attributable weekly deaths in age group 65+ (log scale)')
+  p2 <- p2 +  scale_y_continuous(trans = 'log', breaks = base_breaks()) + labs(y = 'Relative COVID-19 attributable weekly deaths in age group 65+ (log scale)')
   ggsave(p2, file = paste0(outdir, '-relative_deaths_vaccine_coverage_PPC_part_2_', lab, '_log.png'), w = 8, h = 9, limitsize = F)
   
 }
