@@ -2263,7 +2263,7 @@ plot_vaccine_effects_counterfactual_change_old <- function(data_res, prop_vac_co
   
 }
 
-plot_vaccine_effects_counterfactual2 <- function(data_res1, data_res2, resurgence_dates, selected_code, prop_vac, outdir){
+plot_vaccine_effects_counterfactual2 <- function(data_res1, data_res2, resurgence_dates, selected_code, prop_vac, lab, outdir){
   
   label_fit <- 'Fit to observed data'
   data_res2[, label_counterfactual := label_fit]
@@ -2346,7 +2346,7 @@ plot_vaccine_effects_counterfactual2 <- function(data_res1, data_res2, resurgenc
   
   pp <- grid.arrange(grobs = p, ncol = 2)
   
-  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_4_states.png'), w = 7.5, h = 9)
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_', lab, '.png'), w = 7.5, h = 9)
   
   
 }
