@@ -107,6 +107,7 @@ for(i in seq_len(nrow(args)))
     cmd <- paste0(cmd, 'cd $CWD\n')
     #	set up env variables
     cmd <- paste0( cmd, 'STAN_DATA_FILE=$(find ', tmpdir, ' -name "*cmdstanin.R")\n')
+    cmd <- paste0( cmd, 'STAN_INIT=$(find ', tmpdir, ' -name "*cmdstaninit.R")\n')
     cmd <- paste0( cmd, 'JOB_DIR=${STAN_DATA_FILE%/*}\n')
     cmd <- paste0( cmd, 'JOB_DIR_NAME=${JOB_DIR##*/}\n')
     cmd <- paste0( cmd, 'STAN_OUT_FILE=', file.path('$JOB_DIR', '${JOB_DIR##*/}_stanout.csv'),' \n')
@@ -115,6 +116,7 @@ for(i in seq_len(nrow(args)))
     cmd <- paste0( cmd, 'echo $JOB_DIR\n')
     cmd <- paste0( cmd, 'echo $JOB_DIR_NAME\n')
     cmd <- paste0( cmd, 'echo $STAN_DATA_FILE\n')
+    cmd <- paste0( cmd, 'echo $STAN_INIT\n')
     cmd <- paste0( cmd, 'echo $STAN_OUT_FILE\n')
     cmd <- paste0( cmd, 'echo "----------- Starting Stan sampling: ------------"\n')
     #	
@@ -123,6 +125,7 @@ for(i in seq_len(nrow(args)))
                    'adapt delta=0.99 ',
                    'algorithm=hmc engine=nuts max_depth=15 stepsize=',args$hmc_stepsize[i],' ',
                    'data file=$STAN_DATA_FILE ',
+                   'init=$STAN_INIT ',
                    'random seed=',args$seed[i],' ',
                    'output file=$STAN_OUT_FILE' )
     cmd <- paste0(cmd, tmp, '\n')

@@ -163,6 +163,8 @@ if(grepl('220208|220131|220615|220616|220617|220624|220701|220702|220712|220713'
   cat("\n With vaccine effects \n")
   stan_data = add_vaccine_prop(stan_data, df_week, Code, vaccine_data, resurgence_dates)
 }
+stan_init = add_init(stan_data)
+
 
 
 ## save image before running Stan
@@ -183,13 +185,17 @@ cat("\n Start sampling \n")
 if(0){
   fit_cum <- rstan::sampling(model,data=stan_data,iter=15,warmup=5,chains=1,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
-                             init = list(list(skewness_r_pdeaths = rep(0, stan_data$M))))
+                             init = list(stan_init))
 }
 
 if(with_cmdstan){
   file = file.path(job_dir, paste0(basename(job_dir),"_cmdstanin.R"))
   cat('Writing ', file, '\n')
-  rstan::stan_rdump( names(stan_data), file=file, envir=list2env(stan_data))  	
+  rstan::stan_rdump( names(stan_data), file=file, envir=list2env(stan_data))  
+  
+  file = file.path(job_dir, paste0(basename(job_dir),"_cmdstaninit.R"))
+  cat('Writing ', file, '\n')
+  rstan::stan_rdump( names(stan_init), file=file, envir=list2env(stan_init))
 }else{
   library(foreach)
   library(doParallel)
