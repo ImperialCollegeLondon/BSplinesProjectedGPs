@@ -2483,7 +2483,7 @@ plot_vaccine_effects_counterfactual_allages <- function(data_res1, data_res2, re
 
 }
 
-plot_vaccine_effects_counterfactual_FL <- function(data_res1, data_res2, resurgence_dates, age_group){
+plot_vaccine_effects_counterfactual_FL <- function(data_res1, data_res2, resurgence_dates, age_group, colors){
   
   label_fit <- 'Fit to observed data'
   data_res2[, label_counterfactual := label_fit]
@@ -2509,11 +2509,6 @@ plot_vaccine_effects_counterfactual_FL <- function(data_res1, data_res2, resurge
   tmp <- tmp[age == age_group & grepl(paste0(age_group, "|Fit"), label_counterfactual)]
 
   dummy.dt1 <- subset(dummy.dt, code == 'FL')
-  
-  colors <-  ggsci::pal_nejm(palette = c("default"), alpha = 1)(n = 8)[c(1, 2, 3, 4)]
-  if(age_group == '65+'){
-    colors <- colors[3:4]
-  }
 
   p_FL <- ggplot(tmp, aes(x = date)) + 
     geom_line(aes(y = M, col = label_counterfactual)) + 
@@ -2597,7 +2592,7 @@ plot_vaccine_effects_counterfactual_change_allages <- function(data_res, prop_va
   return(p)
 }
 
-plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counterfactual, age_group){
+plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counterfactual, age_group, colors){
 
   #last data
   tmp1 <- data_res[, list(date = max(date)), by = 'code']
@@ -2618,19 +2613,13 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
   tmp1 <- tmp1[age == age_group & grepl(paste0(age_group, "|Fit"), label_counterfactual)]
   tmp1[, label_counterfactual := factor(label_counterfactual, levels = c(label_fit, levels_wo_and))]
   
-  colors <-  ggsci::pal_nejm(palette = c("default"), alpha = 1)(n = 8)[c(1, 2, 3, 4)]
-  if(age_group == '65+'){
-    colors = colors[3:4]
-  }
-  
   # keep only state wiht diff 
   tmp1 <- tmp1[diff_value != 0]
 
   p <- ggplot(tmp1, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
-    geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.5) + 
-    geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 0.5) +
+    geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.3) + 
     geom_label(aes(y = M, x = diff_value, col = label_counterfactual, label = code), 
                      size = 2.5, label.size = NA, fill = NA, show.legend = FALSE) + 
     scale_colour_manual(values = c('black', colors),  drop = FALSE) + 
@@ -2650,24 +2639,106 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
   return(list(p, lims))
 }
 
+plot_vaccine_effects_counterfactual_change_repel <- function(data_res, prop_vac_counterfactual, age_group, colors){
+  
+  #last data
+  tmp1 <- data_res[, list(date = max(date)), by = 'code']
+  tmp1 <- merge(data_res, tmp1, by = c('code', 'date'))
+  
+  # merge to get propo vac diff
+  tmp1 <- merge(tmp1, prop_vac_counterfactual, by = c('state_index', 'counterfactual_index'))
+  
+  # dont keep double change
+  tmp1 <- tmp1[!grepl('and', label_counterfactual)]
+  
+  # add one label
+  label_fit <- 'Fit to observed data'
+  levels_wo_and <- levels(df_counterfactual$label_counterfactual)[!grepl('and', levels(df_counterfactual$label_counterfactual))]
+  levels_wo_and <- levels_wo_and[grepl(paste0(age_group), levels_wo_and)]
+  
+  lims <- tmp1[, range(CL, CU)]
+  tmp1 <- tmp1[age == age_group & grepl(paste0(age_group, "|Fit"), label_counterfactual)]
+  tmp1[, label_counterfactual := factor(label_counterfactual, levels = c(label_fit, levels_wo_and))]
+  
+  # keep only state wiht diff 
+  tmp1 <- tmp1[diff_value != 0]
+  
+  p <- ggplot(tmp1, aes(x = diff_value)) + 
+    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.3) + 
+    geom_label_repel(aes(y = M, x = diff_value, col = label_counterfactual, label = code), 
+                     size = 2.5, label.size = NA, fill = NA, show.legend = FALSE) + 
+    scale_colour_manual(values = c('black', colors),  drop = FALSE) + 
+    theme_bw() +
+    theme(strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          legend.position = 'bottom'
+          # legend.box="vertical",
+          # legend.spacing.y = unit(-0, "cm")
+    ) + 
+    labs(col = '', y = paste0('Change in predicted COVID-19\ncumulative deaths among ', age_group),
+         fill = '', linetype = '', 
+         x = 'Difference between counterfactual vaccination rate\nand observed vaccination rate') +
+    guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 3)) + 
+    scale_y_continuous(labels = scales::percent, limits= lims) 
+  
+  return(list(p, lims))
+}
+
 plot_vaccine_effects_counterfactual_panel <- function(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, 
                                                       perc_E_pdeaths_counterfactual, resurgence_dates, prop_vac_counterfactual, outdir){
   age_groups = c('18-64', '65+')
-  p_FL <- list(); p_all <- list(); p_all_log = list()
+  p_FL <- list(); p_all <- list(); p_all_log = list(); p_all2 <- list(); p_all_log2 = list(); p_all3 <- list(); p_all_log3 = list()
   for(i in seq_along(age_groups)){
     age_group = age_groups[i]
-    p_FL[[i]] <- plot_vaccine_effects_counterfactual_FL(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, resurgence_dates, age_group) + 
+    
+    colors <-  ggsci::pal_nejm(palette = c("default"), alpha = 1)(n = 8)[c(1, 2, 3, 4)]
+    if(age_group == '65+'){
+      colors = colors[3:4]
+    }
+    
+    p_FL[[i]] <- plot_vaccine_effects_counterfactual_FL(E_pdeaths_counterfactual_resurgence_cumulative, E_pdeaths_predict_resurgence_cumulative, 
+                                                        resurgence_dates, age_group, colors) + 
       ggtitle(paste0('Counterfactual scenarios with varying\nvaccination rate in ', age_group, '\n'))+
       theme(plot.title = element_text(hjust = 0.5))
-    tmp <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group) 
+    tmp <-  plot_vaccine_effects_counterfactual_change(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group, colors) 
     lims <- tmp[[2]]
-    p_all[[i]] <- tmp[[1]] + coord_cartesian(ylim = c(lims[1], 5))
-    p_all_log[[i]] <-  tmp[[1]]  + scale_y_continuous(labels = scales::percent, limits = lims, trans = 'pseudo_log') 
+    p_all[[i]] <- tmp[[1]] + coord_cartesian(ylim = c(lims[1], 5)) + geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 0.5) 
+    p_all_log[[i]] <-  tmp[[1]] + scale_y_continuous(labels = scales::percent, limits = lims, trans = 'pseudo_log') + geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 0.5)
+    
+    p_all2[[i]] <-  tmp[[1]] + coord_cartesian(ylim = c(lims[1], 5)) +  
+      geom_point(aes(y = -Inf, x = -Inf, col = label_counterfactual), size = 0.5) +
+      scale_colour_manual(values = colors,  drop = T)  + 
+      theme(legend.position = c(.75,.75))
+      guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 2))  
+    p_all_log2[[i]] <- tmp[[1]] + scale_y_continuous(labels = scales::percent, limits = lims, trans = 'pseudo_log') +
+      geom_point(aes(y = -Inf, x = -Inf, col = label_counterfactual), size = 0.5) +
+      scale_colour_manual(values = colors,  drop = T)  + 
+      guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 2))  + 
+      theme(legend.position = c(.75,.75))
+    
+    tmp <-  plot_vaccine_effects_counterfactual_change_repel(perc_E_pdeaths_counterfactual, prop_vac_counterfactual, age_group, colors) 
+    
+    p_all3[[i]] <-  tmp[[1]] + coord_cartesian(ylim = c(lims[1], 5)) +  
+      geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 0.5) +
+      scale_colour_manual(values = colors,  drop = T)  + 
+      guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 2)) + 
+      theme(legend.position = c(.75,.75)) 
+    p_all_log3[[i]] <- tmp[[1]] + scale_y_continuous(labels = scales::percent, limits = lims, trans = 'pseudo_log') +
+      geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 0.5) +
+      scale_colour_manual(values = colors,  drop = T)  + 
+      guides(col=guide_legend(order=1, override.aes = list(size = 3), byrow = T, nrow = 2))  + 
+      theme(legend.position = c(.75,.75))
     
     if(age_group == '18-64'){
       p_FL[[i]] <- ggarrange(p_FL[[i]], labels = c('A'), label.y = 0.85  )
       p_all[[i]] <- ggarrange(p_all[[i]], labels = c('B'))
       p_all_log[[i]] <- ggarrange(p_all_log[[i]], labels = c('B'))
+      p_all2[[i]] <- p_all2[[i]]  + theme(axis.title.x = element_blank())
+      p_all_log2[[i]] <- p_all_log2[[i]]  + theme(axis.title.x = element_blank())
+      p_all3[[i]] <- p_all2[[i]]  + theme(axis.title.x = element_blank())
+      p_all_log3[[i]] <- p_all_log2[[i]]  + theme(axis.title.x = element_blank())
     }
   }
   pp <- grid.arrange(grobs = c(p_FL, p_all), layout_matrix= rbind(c(1, NA, 2, NA), c(3, 3, 4, 4)), heights = c(0.4, 0.6), widths = c(0.4, 0.1, 0.4, 0.1))
@@ -2675,6 +2746,18 @@ plot_vaccine_effects_counterfactual_panel <- function(E_pdeaths_counterfactual_r
   
   pp <- grid.arrange(grobs = c(p_FL, p_all_log), layout_matrix= rbind(c(1, NA, 2, NA), c(3, 3, 4, 4)), heights = c(0.4, 0.6), widths = c(0.4, 0.1, 0.4, 0.1))
   ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_log.png'), w = 10, h = 9)
+  
+  pp <- grid.arrange(grobs = p_all2, nrow = 2)
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), w = 9, h = 9)
+  
+  pp <- grid.arrange(grobs = p_all_log2, nrow = 2)
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_log2.png'), w = 9, h = 9)
+  
+  pp <- grid.arrange(grobs = p_all3, nrow = 2)
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot3.png'), w = 9, h = 9)
+  
+  pp <- grid.arrange(grobs = p_all_log3, nrow = 2)
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_log3.png'), w = 9, h = 9)
   
 }
 
