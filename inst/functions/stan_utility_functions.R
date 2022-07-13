@@ -645,7 +645,10 @@ add_resurgence_period = function(stan_data, df_week, resurgence_dates){
 
 add_init <- function(stan_data){
   stan_init <- list()
-  stan_init$skewness_r_pdeaths = rep(0, stan_data$M)
+  stan_init$skewness_r_pdeaths = as.array(rep(0, stan_data$M))
+  stan_init$gamma_gp1 = as.array(rep(2, stan_data$M))
+  stan_init$gamma_gp2 = as.array(rep(2, stan_data$M))
+  stan_init$zeta_gp = as.array(rep(1, stan_data$M))
   
   return(stan_init)
 }
