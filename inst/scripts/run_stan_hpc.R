@@ -183,9 +183,10 @@ save(list=tmp, file= file)
 # fit 
 cat("\n Start sampling \n")
 if(0){
-  fit_cum <- rstan::sampling(model,data=stan_data,iter=15,warmup=5,chains=1,
+  nchain = 1
+  fit_cum <- rstan::sampling(model,data=stan_data,iter=15,warmup=5,chains=nchain,
                              seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
-                             init = list(stan_init))
+                             init = rep(list(stan_init), nchain))
 }
 
 if(with_cmdstan){
@@ -201,7 +202,8 @@ if(with_cmdstan){
   library(doParallel)
   
   fit_cum <- rstan::sampling(model,data=stan_data,iter=1500,warmup=500,chains=8,
-                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99))
+                             seed=JOBID,verbose=TRUE, control = list(max_treedepth = 15, adapt_delta = 0.99), 
+                             init = rep(list(stan_init), 8))
   
   # save
   file = file.path(outdir.fit, paste0("fit_cumulative_deaths_",run_tag,".rds"))
