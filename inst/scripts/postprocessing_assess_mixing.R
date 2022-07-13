@@ -11,6 +11,8 @@ library(extraDistr)
 library(bayesplot)
 library(scales)
 library(facetscales)
+library(truncnorm)
+library(invgamma)
 
 if(0){
   indir = "~/git/BSplinesProjectedGPs/inst/" # path to the repo
