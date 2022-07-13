@@ -2767,7 +2767,8 @@ plot_forest_plot <- function(tmp, outdir){
   tmp1 <- tmp[!grepl('vacc', variable) & group == 'baseline']
   tmp1[grepl('\\["18-64', variable) | (grepl('18-64"\\]', variable) & !grepl('\\["65', variable)), age_group := 'among 18-64']
   tmp1[grepl('\\["65', variable) | (grepl('65\\+"\\]', variable) & !grepl('\\["18-64', variable)), age_group := 'among 65+']
-  p1 <- ggplot(tmp1, aes(y = variable)) + 
+  tmp2 <- tmp1[age_group == 'among 18-64']
+  p1 <- ggplot(tmp2, aes(y = variable)) + 
     geom_point(aes(x = M)) + 
     geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
     theme_bw() + 
@@ -2779,7 +2780,22 @@ plot_forest_plot <- function(tmp, outdir){
           panel.border = element_rect(colour = "black", fill = NA), 
           title = element_text(size = rel(0.8)),
           plot.title = element_text(hjust = 0.5)) +
-    ggtitle("Non-vaccine parameters on baseline")
+    ggtitle("Non-vaccine parameters\non baseline in 18-64")
+  
+  tmp2 <- tmp1[age_group == 'among 65+']
+  p12 <- ggplot(tmp2, aes(y = variable)) + 
+    geom_point(aes(x = M)) + 
+    geom_errorbarh(aes(xmin = CL, xmax = CU), height = 0.2) + 
+    theme_bw() + 
+    geom_vline(xintercept = 0, linetype = 'dashed') + 
+    scale_y_discrete(labels = label_parse(), limits=rev) + 
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA), 
+          title = element_text(size = rel(0.8)),
+          plot.title = element_text(hjust = 0.5)) +
+    ggtitle("Non-vaccine parameters\non baseline in 65+")
   
   tmp1 <- tmp[!grepl('vacc', variable) & group == 'slope']
   p2 <- ggplot(tmp1, aes(y = variable)) + 
@@ -2838,8 +2854,8 @@ plot_forest_plot <- function(tmp, outdir){
     p4 <- p4 + facet_grid(type~., scales= "free", space="free") 
   }
   
-  p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 2), c(1, 3), c(1, 4), c(1, NA)), heights = c(0.15, 0.15, 0.15, 0.55), widths = c(0.5, 0.5))
-  ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 14)
+  p <- grid.arrange(p1, p12, p2, p3, p4, layout_matrix = rbind(c(1, 2, 3), c(1, 2, 4), c(1,2, 5), c(1, 2, NA)), heights = c(0.2, 0.2, 0.2, 0.4))
+  ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 10, h = 10)
   
   return(p)
 }
