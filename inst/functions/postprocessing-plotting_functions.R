@@ -2838,7 +2838,7 @@ plot_forest_plot <- function(tmp, outdir){
     p4 <- p4 + facet_grid(type~., scales= "free", space="free") 
   }
   
-  p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 1, 3), c(1, 1, 4), c(1, 1, NA), c(NA, 2, NA)), heights = c(0.25, 0.25, 0.35, 0.15), widths = c(0.07, 0.43, 0.5))
+  p <- grid.arrange(p1, p2, p3, p4, layout_matrix = rbind(c(1, 2), c(1, 3), c(1, 4), c(1, NA)), heights = c(0.15, 0.15, 0.15, 0.55), widths = c(0.5, 0.5))
   ggsave(p, file = paste0(outdir, '-forest_plot.png'), w = 8, h = 14)
   
   return(p)
