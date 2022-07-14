@@ -2655,7 +2655,7 @@ plot_vaccine_effects_counterfactual_change_repel <- function(data_res, lims, col
     geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.3) + 
     geom_point(aes(y = M, x = diff_value, col = label_counterfactual)) +
     geom_label_repel(aes(y = M, x = diff_value, label = code), col = 'black',
-                     size = 2.5, label.size = NA, fill = NA, show.legend = FALSE) + 
+                     size = 2.5, label.size = NA, fill = NA, show.legend = FALSE, min.segment.length = 0.25, segment.size = 0.25) + 
     scale_colour_manual(values = colors) + 
     theme_bw() +
     theme(strip.background = element_blank(),
