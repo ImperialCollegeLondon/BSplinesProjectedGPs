@@ -2665,7 +2665,7 @@ plot_vaccine_effects_counterfactual_change_repel <- function(data_res, lims, col
           # legend.box="vertical",
           # legend.spacing.y = unit(-0, "cm")
     ) + 
-    labs(col = '', y = paste0('Change in predicted COVID-19 cumulative deaths\namong ', age_group),
+    labs(col = '', y = paste0('Change in predicted COVID-19 cumulative\ndeaths among ', age_group),
          fill = '', linetype = '', 
          x = 'Difference between counterfactual vaccination rate\nand observed vaccination rate') +
     scale_y_continuous(labels = scales::percent, limits= lims)  
@@ -2755,10 +2755,10 @@ plot_vaccine_effects_counterfactual_panel_repel <- function(perc_E_pdeaths_count
   }
 
   pp <- grid.arrange(grobs = p_all, layout_matrix = rbind(c(1, 3), c(2, 4)), widths = c(0.51, 0.49))
-  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), w = 11, h = 9)
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), w = 10, h = 8)
   
   pp <- grid.arrange(grobs = p_all_log, layout_matrix = rbind(c(1, 3), c(2, 4)), widths = c(0.51, 0.49))
-  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_log2.png'), w = 11, h = 9)
+  ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_log2.png'), w = 10, h = 8)
   
 }
 
