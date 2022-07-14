@@ -314,7 +314,7 @@ generated quantities{
       
       log_r_pdeaths_predict[c,:] = to_row_vector( normal_rng(log(xi[c,1:T]),sigma_r_pdeaths[m]) );
       r_pdeaths_predict[c,:] = exp(log_r_pdeaths_predict[c,:]);
-      E_pdeaths_predict[c,:] = rep_row_vector(max(E_pdeaths[c,1:(w_start_resurgence[m] - 1)]), T) .* exp(log(xi[c,1:T]) + sigma_r_pdeaths[m] / 2) ;
+      E_pdeaths_predict[c,:] = rep_row_vector(max(E_pdeaths[c,1:(w_start_resurgence[m] - 1)]), T) .* exp(log(xi[c,1:T]) + sigma_r_pdeaths[m]^2 / 2) ;
       E_pdeaths_predict_resurgence_cumulative[c,:] = cumulative_sum(E_pdeaths_predict[c,:]);
 
     }
@@ -336,7 +336,7 @@ generated quantities{
       for(c in 1:C){
           log_r_pdeaths_counterfactual[c,1:T] = to_row_vector( normal_rng( log(xi_counterfactual[c,1:T]), sigma_r_pdeaths[m]));
           r_pdeaths_counterfactual[c,1:T] = exp(log_r_pdeaths_counterfactual[c,1:T]);
-          E_pdeaths_counterfactual[n][c,:] = rep_row_vector(max(E_pdeaths[c,1:(w_start_resurgence[m] - 1)]), T) .* exp(log(xi_counterfactual[c,1:T]) + sigma_r_pdeaths[m] / 2) ;
+          E_pdeaths_counterfactual[n][c,:] = rep_row_vector(max(E_pdeaths[c,1:(w_start_resurgence[m] - 1)]), T) .* exp(log(xi_counterfactual[c,1:T]) + sigma_r_pdeaths[m]^2 / 2) ;
           E_pdeaths_counterfactual_resurgence_cumulative[n][c,:] = cumulative_sum(E_pdeaths_counterfactual[n][c,:]);
           
           diff_E_pdeaths_counterfactual[n][c,:] = E_pdeaths_predict_resurgence_cumulative[c,:] - E_pdeaths_counterfactual_resurgence_cumulative[n][c,:];
