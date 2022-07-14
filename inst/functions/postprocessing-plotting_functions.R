@@ -2650,8 +2650,8 @@ plot_vaccine_effects_counterfactual_change_repel <- function(data_res, lims, col
 
   # plot
   p <- ggplot(data_res, aes(x = diff_value)) + 
-    geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
-    geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
+    geom_hline(aes(yintercept=0),col = 'black') +
+    # geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.3) + 
     geom_point(aes(y = M, x = diff_value, col = label_counterfactual)) +
     geom_label_repel(aes(y = M, x = diff_value, label = code), col = 'black',
@@ -2722,6 +2722,9 @@ plot_vaccine_effects_counterfactual_panel_repel <- function(perc_E_pdeaths_count
   lim_4_5 <- tmp[counterfactual_index %in% 4:5, range(CL, CU)]
   lims <- list(lim_4_5, lim_4_5, lim_1_2, lim_1_2)
   
+  # labels
+  labs <- c('A', 'B', 'C', 'D')
+  
   counterfactual_indices <- c(4, 5, 1, 2)
   p_all <- list(); p_all_log = list(); 
   for(i in seq_along(counterfactual_indices)){
@@ -2741,13 +2744,20 @@ plot_vaccine_effects_counterfactual_panel_repel <- function(perc_E_pdeaths_count
     if(.counterfactual_index %in% 1:2){
       p_all[[i]] <- p_all[[i]]  + theme(axis.title.y = element_blank())
       p_all_log[[i]] <- p_all_log[[i]]  + theme(axis.title.y = element_blank())
+      p_all[[i]] <- ggarrange(p_all[[i]], labels = labs[i])
+      p_all_log[[i]] <- ggarrange(p_all_log[[i]], labels = labs[i])
+    } else{
+      p_all[[i]] <- ggarrange(p_all[[i]], labels = labs[i], label.x = 0.07)
+      p_all_log[[i]] <- ggarrange(p_all_log[[i]], labels = labs[i], label.x = 0.07)
     }
+    
+
   }
 
-  pp <- grid.arrange(grobs = p_all, layout_matrix = rbind(c(1, 3), c(2, 4)))
+  pp <- grid.arrange(grobs = p_all, layout_matrix = rbind(c(1, 3), c(2, 4)), widths = c(0.51, 0.49))
   ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot2.png'), w = 11, h = 9)
   
-  pp <- grid.arrange(grobs = p_all_log, layout_matrix = rbind(c(1, 3), c(2, 4)))
+  pp <- grid.arrange(grobs = p_all_log, layout_matrix = rbind(c(1, 3), c(2, 4)), widths = c(0.51, 0.49))
   ggsave(pp, file = paste0(outdir, '-predicted_weekly_deaths_vaccine_coverage_counterfactual_panel_plot_log2.png'), w = 11, h = 9)
   
 }
