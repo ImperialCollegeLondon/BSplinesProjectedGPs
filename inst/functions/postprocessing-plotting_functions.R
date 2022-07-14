@@ -2639,27 +2639,17 @@ plot_vaccine_effects_counterfactual_change <- function(data_res, prop_vac_counte
   return(list(p, lims))
 }
 
-plot_vaccine_effects_counterfactual_change_repel <- function(data_res, prop_vac_counterfactual, lims, colors){
-  
-  # last datd
-  tmp1 <- data_res[, list(date = max(date)), by = 'code']
-  tmp1 <- merge(data_res, tmp1, by = c('code', 'date'))
-  
-  # merge to get prop vac diff
-  tmp1 <- merge(tmp1, prop_vac_counterfactual, by = c('state_index', 'counterfactual_index'))
+plot_vaccine_effects_counterfactual_change_repel <- function(data_res, lims, colors){
   
   # countefactual index and age group
   .counterfactual_index <- data_res[, unique(counterfactual_index)]
   age_group <- data_res[, unique(age)]
-
-  # keep only state wiht diff 
-  tmp1 <- tmp1[diff_value != 0]
   
   # legend 
-  tmp1[, label_counterfactual := paste0(gsub('(.+) rate.*', '\\1', label_counterfactual), '\nrate', gsub('.*rate(.+)', '\\1', label_counterfactual))]
+  data_res[, label_counterfactual := paste0(gsub('(.+) rate.*', '\\1', label_counterfactual), '\nrate', gsub('.*rate(.+)', '\\1', label_counterfactual))]
 
   # plot
-  p <- ggplot(tmp1, aes(x = diff_value)) + 
+  p <- ggplot(data_res, aes(x = diff_value)) + 
     geom_hline(aes(yintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.3) + 
@@ -2717,9 +2707,20 @@ plot_vaccine_effects_counterfactual_panel_repel <- function(perc_E_pdeaths_count
 
   colors <-  ggsci::pal_nejm(palette = c("default"), alpha = 1)(n = 8)[c(1, 3, 2, 4)]
   
-  lim_1_2 <- perc_E_pdeaths_counterfactual[counterfactual_index %in% 1:2, range(CL, CU)]
-  lim_4_5 <- perc_E_pdeaths_counterfactual[counterfactual_index %in% 4:5, range(CL, CU)]
-  lims <- list(lim_1_2, lim_1_2, lim_4_5, lim_4_5)
+  # last dat2
+  tmp <- perc_E_pdeaths_counterfactual[, list(date = max(date)), by = 'code']
+  tmp <- merge(perc_E_pdeaths_counterfactual, tmp, by = c('code', 'date'))
+
+  # merge to get prop vac diff
+  tmp <- merge(tmp, prop_vac_counterfactual, by = c('state_index', 'counterfactual_index', 'age_index'))
+  
+  # keep only state wiht diff 
+  tmp <- tmp[diff_value != 0]
+  
+  # find limits across age
+  lim_1_2 <- tmp[counterfactual_index %in% 1:2, range(CL, CU)]
+  lim_4_5 <- tmp[counterfactual_index %in% 4:5, range(CL, CU)]
+  lims <- list(lim_4_5, lim_4_5, lim_1_2, lim_1_2)
   
   counterfactual_indices <- c(4, 5, 1, 2)
   p_all <- list(); p_all_log = list(); 
@@ -2732,7 +2733,7 @@ plot_vaccine_effects_counterfactual_panel_repel <- function(perc_E_pdeaths_count
     
     age_group <- df_counterfactual[counterfactual_index == .counterfactual_index, gsub('.*in (.+)', '\\1', label_counterfactual)]
     
-    p_all[[i]]  <- plot_vaccine_effects_counterfactual_change_repel(perc_E_pdeaths_counterfactual[counterfactual_index == .counterfactual_index & age == age_group], prop_vac_counterfactual, lim, col) 
+    p_all[[i]]  <- plot_vaccine_effects_counterfactual_change_repel(tmp[counterfactual_index == .counterfactual_index & age == age_group], lim, col) 
     
     p_all_log[[i]] <- p_all[[i]]  + 
       scale_y_continuous(labels = scales::percent, limits = lim, trans = 'pseudo_log') 
