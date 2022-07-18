@@ -2648,14 +2648,30 @@ plot_vaccine_effects_counterfactual_change_repel <- function(data_res, lims, col
   # legend 
   data_res[, label_counterfactual := paste0(gsub('(.+) rate.*', '\\1', label_counterfactual), '\nrate', gsub('.*rate(.+)', '\\1', label_counterfactual))]
 
+  # limits x
+  if(all(data_res[, diff_value < 0 ])){
+    lims_x = c(NA, 0)
+    lims[1] = -0.5 
+    max.overlaps =100
+    # nudge_y = 1
+  }else{
+    lims_x = c(0, NA)
+    lims[2] = 0.3
+    max.overlaps = 100
+    # nudge_y = -0.5
+  }
+
+  
   # plot
   p <- ggplot(data_res, aes(x = diff_value)) + 
-    geom_hline(aes(yintercept=0),col = 'black') +
     # geom_vline(aes(xintercept=0), linetype = 'dashed', col = 'grey70') +
     geom_errorbar(aes(ymin = CL, ymax = CU),width = 0, col = 'grey50', alpha= 0.3) + 
-    geom_point(aes(y = M, x = diff_value, col = label_counterfactual)) +
+    geom_point(aes(y = M, x = diff_value, col = label_counterfactual), size = 1) +
     geom_label_repel(aes(y = M, x = diff_value, label = code), col = 'black',
-                     size = 2.5, label.size = NA, fill = NA, show.legend = FALSE, min.segment.length = 0.25, segment.size = 0.25) + 
+                     size = 2.5, label.size = NA, fill = NA, show.legend = FALSE, segment.size = 0.25, 
+                     max.overlaps = max.overlaps, min.segment.length = unit(0, 'lines')) + 
+                     # nudge_y= nudge_y) + 
+    geom_hline(yintercept=0,col = 'black') +
     scale_colour_manual(values = colors) + 
     theme_bw() +
     theme(strip.background = element_blank(),
@@ -2668,7 +2684,8 @@ plot_vaccine_effects_counterfactual_change_repel <- function(data_res, lims, col
     labs(col = '', y = paste0('Change in predicted COVID-19 cumulative\ndeaths among ', age_group),
          fill = '', linetype = '', 
          x = 'Difference between counterfactual vaccination rate\nand observed vaccination rate') +
-    scale_y_continuous(labels = scales::percent, limits= lims)  
+    scale_y_continuous(labels = scales::percent, limits= lims)  +
+    scale_x_continuous(limits = lims_x)
   
   return(p)
 }
