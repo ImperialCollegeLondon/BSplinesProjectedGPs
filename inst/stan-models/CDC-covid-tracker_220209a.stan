@@ -69,6 +69,20 @@ data{
   // GP
   real IDX_BASIS_ROWS[num_basis_rows];
   real IDX_BASIS_COLUMNS[num_basis_columns];
+  
+  // vaccine age strata
+  int<lower=1> C; // number of age groups in vaccination data
+  int age_from_vac_age_strata[C]; // age from of age band c
+  int age_to_vac_age_strata[C];// age to of age band c
+  
+    // resurgene period 
+  int<lower=1,upper=W> w_stop_resurgence[M]; // index of the week when Summer 2021 resurgences stop
+  int<lower=1,upper=W> w_start_resurgence[M]; // index of the week when Summer 2021 resurgences starts
+  int<lower=1> T; // number of weeks during the Summer 2021 resurgences (w_stop_resurgence-w_start_resurgence+1)
+  vector[T] week_indices_resurgence; // 0:(T-1)
+  
+  // JHU data
+  matrix[M,W] deaths_JHU; // deaths reported by JHU
 }
 
 transformed data
@@ -112,9 +126,14 @@ transformed parameters {
   matrix[A,W] phi[M];
   matrix[A,W] alpha[M];
   matrix[B,W] phi_reduced[M];
+  matrix[C,W] phi_reduced_vac[M];
   matrix[B,W] alpha_reduced[M];
+  matrix[C,W] alpha_reduced_vac[M];
   matrix[num_basis_rows,num_basis_columns] beta[M]; 
   matrix[A, W] f[M];
+  matrix[C,W] E_pdeaths[M];
+  matrix[C,T] r_pdeaths[M] = rep_array(rep_matrix(1.0, C, T), M);
+  matrix[C,T] log_r_pdeaths[M] = rep_array(rep_matrix(1.0, C, T), M);
 
   for(m in 1:M){
     lambda[m] = lambda_raw[m][IDX_WEEKS_OBSERVED_REPEATED];
@@ -132,6 +151,18 @@ transformed parameters {
       for(b in 1:B){
         alpha_reduced[m][b,w] = sum(alpha[m][age_from_state_age_strata[b]:age_to_state_age_strata[b], w]);
         phi_reduced[m][b,w] = sum(phi[m][age_from_state_age_strata[b]:age_to_state_age_strata[b], w]);
+      }
+      
+      for(c in 1:C){
+        alpha_reduced_vac[m][c,w] = sum(alpha[m][age_from_vac_age_strata[c]:age_to_vac_age_strata[c], w]);
+        phi_reduced_vac[m][c,w] = sum(phi[m][age_from_vac_age_strata[c]:age_to_vac_age_strata[c], w]);
+        
+        E_pdeaths[m][c,w] = phi_reduced_vac[m][c,w] * deaths_JHU[m,w];
+        
+        if(w >= w_start_resurgence[m] && w <= w_stop_resurgence[m]){
+            r_pdeaths[m][c,w - w_start_resurgence[m] + 1] = E_pdeaths[m][c,w] / max(E_pdeaths[m][c,1:(w_start_resurgence[m] - 1)]) ;
+            log_r_pdeaths[m][c,w - w_start_resurgence[m] + 1] = log( r_pdeaths[m][c,w - w_start_resurgence[m] + 1] );
+        }
       }
     }
   }
@@ -192,7 +223,9 @@ generated quantities {
   real log_lik[N_log_lik];
   int deaths_predict[M,A,W];
   int deaths_predict_state_age_strata[M,B,W];
-  
+  int deaths_predict_vac_age_strata[M,C,W];
+  matrix[C,W] phi_predict_reduced_vac[M];
+
     // predction and log likelihood for the weekly age model
   {
     int idx_log_lik = 0;
@@ -204,8 +237,10 @@ generated quantities {
             // predict deaths
             deaths_predict[m,:,w] = neg_binomial_rng(alpha[m,:,w], nu_inverse[m] );
             deaths_predict_state_age_strata[m,:,w] = neg_binomial_rng(alpha_reduced[m,:,w], nu_inverse[m] );
+            deaths_predict_vac_age_strata[m,:,w] = neg_binomial_rng(alpha_reduced_vac[m,:,w], nu_inverse[m] );
+            phi_predict_reduced_vac[m][:,w] = to_vector(deaths_predict_vac_age_strata[m,:,w]) ./ rep_vector(sum(deaths_predict_vac_age_strata[m,:,w]), C);       
         }
-
+        
         for(w in 1:W_OBSERVED){
             for(i in idx_non_missing[m][1:N_idx_non_missing[m][w],w]){
                 idx_log_lik += 1;

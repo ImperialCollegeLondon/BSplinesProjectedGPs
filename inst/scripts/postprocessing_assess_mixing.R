@@ -11,13 +11,20 @@ library(extraDistr)
 library(bayesplot)
 library(scales)
 library(facetscales)
+library(truncnorm)
+library(invgamma)
 
+if(0){
+  indir = "~/git/BSplinesProjectedGPs/inst/" # path to the repo
+  outdir = '~/Downloads/results/'
+}
 indir = "/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/" # path to the repo
 outdir = '/rds/general/user/mm3218/home/git/BSplinesProjectedGPs/inst/results/'
 # states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
 states = strsplit('CA,FL,NY,TX',',')[[1]]
-stan_model = "220209a"
-JOBID = 21193
+states = strsplit('FL',',')[[1]]
+stan_model = "cmdstan_220616a"
+JOBID = 9228
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -66,7 +73,12 @@ outdir.fit = outdir.fit.post
 cat("Load fits \n")
 file = file.path(outdir.fit.post, paste0("fit_cumulative_deaths_", run_tag,".rds"))
 fit_cum <- readRDS(file=file)
-fit_samples <- rstan::extract(fit_cum)
+file = file.path(outdir.fit.post, paste0("posterior_samples_", run_tag,".rds"))
+if(file.exists(file)){
+  fit_samples <- readRDS(file=file)
+}else{
+  fit_samples <- rstan::extract(fit_cum)
+}
 
 # Convergence diagnostics
 cat("\nMake convergence diagnostics \n")
@@ -93,22 +105,72 @@ plot_sum_bounded_missing_deaths(tmp1, outdir.fig)
 
 # trace and paris plots
 cat("\n Trace plot weekly deaths params \n")
-p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 20, w = 20, limitsize = F)
-
-cat("\n Pairs plot weekly deaths params \n")
-p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
-ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 20, w = 20, limitsize = F)
+tryCatch(
+  # This is what I want to do...
+  {
+    p <- bayesplot::mcmc_trace(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
+    ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters.png'), h = 50, w = 50, limitsize = F)
+    
+    cat("\n Pairs plot weekly deaths params \n")
+    p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = c('nu', 'zeta_gp', 'gamma_gp'))
+    ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters.png'), h = 50, w = 50, limitsize = F)
+    
+  },
+  # ... but if an error occurs, tell me what happened: 
+  error=function(error_message) {
+    message("This is my custom message.")
+    message("And below is the error message from R:")
+    message(error_message)
+    return(NA)
+  }
+)
 
 # forest plots
 names_samples <- names(fit_samples)
 names_fit <- names(fit_cum)
 
 ## base model
+if(!with_cmdstan){
+  model = rstan::stan_model(path.to.stan.model)
+}
 lambda_table <- make_lambda_table(fit_samples, stan_data, df_week, df_state, outdir.table)
 plot_lambda_table(lambda_table, outdir.fig)
 var_base_model_table <- make_var_base_model_table(fit_samples, stan_data, df_state, outdir.table)
 plot_var_base_model_table(var_base_model_table, outdir.fig)
+
+## vaccination model parameters
+names = c('slope_resurgence0', 'slope_resurgence_re', 'intercept_resurgence0', 'intercept_resurgence_re', 
+          'vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_intercept0',
+          'vaccine_effect_slope_cross', 'vaccine_effect_slope_diagonal', 'vaccine_effect_slope0'
+          )
+if(any(names %in% names_samples)){
+  
+  # summary <- summary(fit_cum)$summary
+  vars <- c('vaccine_effect_intercept_cross', 'vaccine_effect_intercept_diagonal', 'vaccine_effect_intercept0',
+            'vaccine_effect_slope_cross', 'vaccine_effect_slope_diagonal', 'vaccine_effect_slope0')
+  vars <- vars[vars %in% names_samples]
+  p <- bayesplot::mcmc_trace(fit_cum, regex_pars = vars)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_trace_parameters_vaccination.png'), h = 20, w = 20, limitsize = F)
+  
+  p <- bayesplot::mcmc_pairs(fit_cum, regex_pars = vars)
+  ggsave(p, file = paste0(outdir.fig, '-mcmc_pair_parameters_vaccination.png'), h = 50, w = 50, limitsize = F)
+  
+  
+  min_age_index_vac = 3
+  df_age_vaccination2 = df_age_vaccination[age_index >= 3]
+  df_age_vaccination2[, age_index := age_index - min_age_index_vac + 1]
+  
+  math_name = c('psi^"base"*""', 'psi^"state"*""', 'chi^"base"*""', 'chi^"state"*""', 
+                'chi^"vacc-cross"*""', 'chi^"vacc"*""',  'chi^"vacc0"*""',
+                'psi^"vacc-cross"*""', 'psi^"vacc"*""', 'psi^"vacc0"*""')
+  groups = c('slope', 'slope', 'baseline', 'baseline', 'baseline', 'baseline', 'baseline','slope', 'slope', 'slope')
+  groups_levels = c('baseline', 'slope')
+  
+  tmp <- make_forest_plot_table(summary, df_age_vaccination2, df_state, names, math_name, groups, groups_levels)
+  
+  forest_plot <- plot_forest_plot(tmp, outdir.fig)
+  
+}
 
 
 cat("\n End postprocessing_assess_mixing.R \n")

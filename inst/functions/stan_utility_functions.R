@@ -63,13 +63,15 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
       cat('\n Missing weeks: ', as.character(WEEKS[which(!WEEKS %in% unique(tmp$date))]), '\n')
     
     # smooth weekly deaths on the spike
-    date.spike = as.Date("2021-01-23")
-    ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
-    tmp[, smooth.weekly.deaths := ma(weekly.deaths, 5), by = c('age')]
-    tmp[is.na(smooth.weekly.deaths), smooth.weekly.deaths := weekly.deaths, by = c('age')]
-    tmp[date == date.spike, weekly.deaths := as.integer(smooth.weekly.deaths)]
-    tmp = select(tmp, - smooth.weekly.deaths)
-    
+    if(0){
+      date.spike = as.Date("2021-01-23")
+      ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 2)}
+      tmp[, smooth.weekly.deaths := ma(weekly.deaths, 5), by = c('age')]
+      tmp[is.na(smooth.weekly.deaths), smooth.weekly.deaths := weekly.deaths, by = c('age')]
+      tmp[date == date.spike, weekly.deaths := as.integer(smooth.weekly.deaths)]
+      tmp = select(tmp, - smooth.weekly.deaths)
+    }
+
     # create map of original age groups without NA 
     N_idx_non_missing_m = vector(mode = 'integer', length = W_OBSERVED)
     idx_non_missing_m = matrix(nrow = B, ncol = W_OBSERVED, 0)
@@ -224,8 +226,8 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
                      min_count_censored = min_count_censored,
                      max_count_censored = max_count_censored,
                      deaths = deaths,
-                     inv_sum_deaths = inv_sum_deaths,
-                     M = length(loc_name)
+                     M = length(loc_name),
+                     inv_sum_deaths = inv_sum_deaths
                 ))
 
   stan_data$N_missing = unlist(stan_data$N_missing)
@@ -239,6 +241,28 @@ prepare_stan_data = function(deathByAge, loc_name, ref_date, last_date_previous_
 
   }
   
+  return(stan_data)
+}
+
+add_JHU_data <- function(stan_data, df_week, Code){
+  
+  JHUData = as.data.table(JHUData)
+  JHUData = subset(JHUData, code %in% Code)
+  JHUData[, date := as.Date(date)]
+  tmp2 = JHUData[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
+  tmp2 = tmp2[order(code, date)]
+  tmp2[, cum.death := cumsum(daily_deaths)]
+  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
+  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
+  tmp2 = merge(tmp2, df_week, by = 'date')
+  tmp2 = select(tmp2, code, week_index, weekly.deaths)
+  tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths<0, weekly.deaths := 0]
+  tmp2 = tmp2[order(code)]
+  
+  stan_data[['deaths_JHU']] = as.matrix(reshape2::dcast(tmp2, code ~ week_index, value.var = 'weekly.deaths')[,-1])
+  stan_data[['deaths_JHU']][which(stan_data[['deaths_JHU']] == 0)] = 0.1
   return(stan_data)
 }
 
@@ -458,4 +482,173 @@ insert.at <- function(a, pos, ...){
   result[c(TRUE,FALSE)] <- split(a, cumsum(seq_along(a) %in% (pos+1)))
   result[c(FALSE,TRUE)] <- dots
   unlist(result)
+}
+
+add_vaccine_age_strata <- function(stan_data, df_age_vaccination){
+  age_index_min = df_age_vaccination[age == '18-64']$age_index
+  
+  stan_data[['age_from_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_from
+  stan_data[['age_to_vac_age_strata']] = df_age_vaccination[age_index >= age_index_min]$age_to
+  stan_data[['C']] = nrow(df_age_vaccination[age_index >= age_index_min])
+  
+  return(stan_data)
+}
+
+add_vaccine_prop = function(stan_data, df_week, Code, vaccine_data, resurgence_dates){
+  
+  delay = 2*7
+  
+  age_index_min = df_age_vaccination[age == '18-64']$age_index
+  
+  vaccine_data[, age_index := which(df_age_vaccination$age_from <= age & df_age_vaccination$age_to >= age), by = 'age']
+  tmp = vaccine_data[age_index >= age_index_min, list(prop = unique(prop)), by = c('code', 'date', 'loc_label', 'age_index')]
+  tmp[, date := date + delay]
+  tmp = merge(tmp, resurgence_dates, by = 'code')
+  tmp = tmp[code %in% Code]
+  tmp = tmp[date %in% df_week$date]
+  
+  # resurgence period
+  tmp = tmp[date >= start_resurgence & date <= stop_resurgence]
+  tmp[, idx.resurgence.date := 1:length(date), by = c('age_index', 'loc_label')]
+  
+  # set proportion
+  tmp1 = tmp[, list(pre_prop = prop[date == start_resurgence]), by = c('loc_label', 'age_index')]
+  tmp = merge(tmp, tmp1,  by = c('loc_label', 'age_index'))
+  tmp[, prop := prop - pre_prop]
+  tmp = tmp[order(code)]
+  
+  prop_vac = list(); prop_vac_start = list(); 
+  N_COUNTERFACTUAL = 6; prop_vac_start_counterfactual = list()
+  for(i in 1:length(unique(tmp$age_index))){
+    
+    tmp1 = subset(tmp, age_index == unique(tmp$age_index)[i])
+    
+    prop_vac[[i]] = as.matrix( reshape2::dcast(tmp1, idx.resurgence.date ~ code, value.var = 'prop')[,-1] )
+    prop_vac_start[[i]] = unique(select(tmp1, code, pre_prop))$pre_prop
+    prop_vac_start_counterfactual[[i]] = prop_vac_start[[i]]
+    
+    if(i == 1){
+      values_max = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      values_min = rep(min(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values_max), 
+                                                  c(values_max, prop_vac_start[[i]], values_max,
+                                                    values_min, prop_vac_start[[i]], values_min), byrow = T)
+      
+    }
+    
+    if(i == 2){
+      values_max = rep(max(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      values_min = rep(min(prop_vac_start_counterfactual[[i]]), length(prop_vac_start_counterfactual[[i]]))
+      prop_vac_start_counterfactual[[i]] = matrix(nrow = N_COUNTERFACTUAL, ncol = length(values_max), 
+                                                  c(prop_vac_start[[i]], values_max, values_max,
+                                                    prop_vac_start[[i]], values_min, values_min), byrow = T)
+      
+    }
+  }
+  
+  stan_data[['prop_vac']] = prop_vac
+  stan_data[['prop_vac_start']] = prop_vac_start
+  
+  stan_data[['N_COUNTERFACTUAL']] = N_COUNTERFACTUAL
+  stan_data[['prop_vac_start_counterfactual']] = prop_vac_start_counterfactual
+  
+  cat('Minimum vaccine coverage among 18-54', min(stan_data[['prop_vac_start']][[1]]), ' in ', Code[which.min(stan_data[['prop_vac_start']][[1]])], '\n')
+  cat('Maximum vaccine coverage among 18-54', max(stan_data[['prop_vac_start']][[1]]), ' in ', Code[which.max(stan_data[['prop_vac_start']][[1]])], '\n\n')
+  cat('Minimum vaccine coverage among 65+', min(stan_data[['prop_vac_start']][[2]]), ' in ', Code[which.min(stan_data[['prop_vac_start']][[2]])], '\n')
+  cat('Maximum vaccine coverage among 65+', max(stan_data[['prop_vac_start']][[2]]), ' in ', Code[which.max(stan_data[['prop_vac_start']][[2]])], '\n\n')
+  
+  # substract mean to remove correlations between intercept and vaccine effects parameters
+  means <- sapply(stan_data[['prop_vac_start']], mean)
+  stan_data[['prop_vac_start']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start']][[x]] - means[x])
+  stan_data[['prop_vac_start_counterfactual']] <- lapply(1:stan_data[['C']], function(x) stan_data[['prop_vac_start_counterfactual']][[x]] - means[x])
+  
+  return(stan_data)
+}
+
+find_resurgence_dates <- function(JHUData, deathByAge, Code){
+  
+  ma <- function(x, n = 5){as.numeric(stats::filter(x, rep(1 / n, n), sides = 2))}
+  
+  JHUData = as.data.table(JHUData)
+  JHUData = subset(JHUData, code %in% Code)
+  JHUData[, date := as.Date(date)]
+  tmp2 = JHUData[, list(daily_deaths = sum(daily_deaths)), by = c('date', 'code')]
+  tmp2 = tmp2[order(code, date)]
+  tmp2[, cum.death := cumsum(daily_deaths)]
+  tmp2 = unique(subset(tmp2, date %in% c(df_week$date, max(df_week$date)+7)))
+  tmp2[, weekly.deaths := c(diff(cum.death),NA), by = 'code']
+  tmp2 = unique(subset(tmp2, date %in% df_week$date))
+  tmp2 = merge(tmp2, df_week, by = 'date')
+  tmp2 = select(tmp2, code, week_index, weekly.deaths)
+  tmp2 = subset(tmp2, !is.na(weekly.deaths))
+  tmp2[weekly.deaths<0, weekly.deaths := 0]
+  tmp2[, dummy := 1:nrow(tmp2)]
+  tmp2[, smooth.weekly.deaths := ma(weekly.deaths, 4), by = c('code')]
+  tmp2[, diff.smooth.weekly.deaths := c(NA, diff(smooth.weekly.deaths)), by = c('code')]
+  tmp2[, lag.smooth.weekly.deaths := (shift(smooth.weekly.deaths)), by = c('code')]
+  tmp2[, change.smooth.weekly.deaths := diff.smooth.weekly.deaths / lag.smooth.weekly.deaths]
+  
+  # find start resurgence
+  tmp2 = merge(tmp2, df_week, by = 'week_index')
+  tmp3 <- tmp2[change.smooth.weekly.deaths > 0.05 & date >= as.Date('2021-07-01'), list(start_resurgence = min(date) ), by = c('code')]
+  # tmp2[is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := NA_real_, by = c('code')]
+  # tmp2[!is.na(diff.smooth.weekly.deaths), number.positive.days.ahead := c(lag_neg(diff.smooth.weekly.deaths), NA_real_), by = c('code')]
+  # tmp3 <- tmp2[date >= as.Date('2021-07-01'), list(start_resurgence = date[which.max(number.positive.days.ahead)] ), by = c('code')]
+  
+  # subset(tmp2, code == 'CA')
+  # find stop resurgence
+  # tmp4 = merge(tmp3, tmp4, by = 'code')
+  # max_resurgence_period = tmp4[, min(stop_resurgence - start_resurgence)] / 7
+  max_resurgence_period = (as.Date("2021-09-25") - tmp3[, max(start_resurgence)] )/ 7
+  # max_resurgence_period = min(tmp2[date >= as.Date('2021-07-01'), list(resurgence_period = max(na.omit(number.positive.days.ahead))), by = c('code')]$resurgence_period)
+  tmp3[, stop_resurgence := start_resurgence + 7*max_resurgence_period]
+  
+  stopifnot(max(tmp3$stop_resurgence) <= max(deathByAge$date))
+  
+  
+  if(0){ #plot
+    ggplot(subset(tmp2, date >= as.Date('2021-04-01')), aes(x = date)) + 
+      geom_line(aes(y = weekly.deaths), col = 'red')+ 
+      geom_line(aes(y = smooth.weekly.deaths), col = 'blue') + 
+      facet_wrap(~code, nrow = length(Code), scale = 'free') + 
+      geom_vline(data = tmp3, aes(xintercept = start_resurgence), linetype = 'dashed') + 
+      geom_vline(data = tmp3, aes(xintercept = stop_resurgence), linetype = 'dashed') + 
+      theme_bw()
+    ggsave('~/Downloads/file.png', h= 70, w =5, limitsize = F) 
+  }
+  
+  tmp3 <- tmp3[order(code)]
+  
+  return(tmp3)
+}
+
+add_resurgence_period = function(stan_data, df_week, resurgence_dates){
+  
+  resurgence_dates = resurgence_dates[order(code)]
+  
+  stan_data[['w_start_resurgence']] = sapply(resurgence_dates$start_resurgence, function(x) df_week[date == x]$week_index)
+  stan_data[['w_stop_resurgence']] = sapply(resurgence_dates$stop_resurgence, function(x) df_week[date == x]$week_index)
+  
+  if(stan_data[["M"]] == 1){
+    stan_data[['w_start_resurgence']] <- as.array(stan_data[['w_start_resurgence']])
+    stan_data[['w_stop_resurgence']] <- as.array(stan_data[['w_stop_resurgence']])
+  }
+  
+  T = sapply(1:length( stan_data[['w_start_resurgence']]), function(x)  stan_data[['w_stop_resurgence']][[x]] - stan_data[['w_start_resurgence']][[x]] + 1)
+  stan_data[['T']] = unique(unlist(T))
+  stopifnot(length(stan_data[['T']]) == 1)
+  
+  stan_data[['week_indices_resurgence']] = 0:(stan_data[['T']]-1)
+  
+  return(stan_data)
+}
+
+add_init <- function(stan_data){
+  stan_init <- list()
+  stan_init$skewness_r_pdeaths = as.array(rep(0, stan_data$M))
+  stan_init$gamma_gp1 = as.array(rep(2, stan_data$M))
+  stan_init$gamma_gp2 = as.array(rep(2, stan_data$M))
+  stan_init$zeta_gp = as.array(rep(1, stan_data$M))
+  
+  return(stan_init)
 }
