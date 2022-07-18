@@ -25,8 +25,8 @@ states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,C
 #             "MI", "MN", "MO", "MS", "MT", "NC", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
 #             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 
-stan_model = "cmdstan_220701a"
-JOBID = 9424
+stan_model = "220209a"
+JOBID = 3821818
 
 args_line <-  as.list(commandArgs(trailingOnly=TRUE))
 print(args_line)
@@ -223,7 +223,7 @@ contribution[, M_median := median(M), by = c('date', 'age')]
 mid_code = round(length(locs) / 2)
 plot_contribution_vaccine(contribution, vaccine_data_pop, 'all', outdir.fig)
 plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'selected_codes',outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% c('TX', 'NH')), vaccine_data_pop,  'TXNH',outdir.fig)
+if(all(c('TX', 'NH') %in% locs)) plot_contribution_vaccine(subset(contribution, code %in% c('TX', 'NH')), vaccine_data_pop,  'TXNH',outdir.fig)
 
 ## shift over time
 locs_plus_US <- c(locs, 'US')
@@ -246,21 +246,25 @@ for(i in seq_along(locs)){
 r_pdeaths = do.call('rbind', r_pdeaths)
 
 p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_codes)
-plot_relative_resurgence_vaccine2_long(r_pdeaths, outdir.fig, '_10_states', selected_10_codes)
-plot_relative_resurgence_vaccine2_long(r_pdeaths, outdir.fig, '_other_states', locs[!locs %in% selected_10_codes])
 
-p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states')
-plot_relative_resurgence_vaccine_panel(p4, p_all, '50_log', outdir.fig)
-p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_10_states', selected_10_codes)
-plot_relative_resurgence_vaccine_panel(p4, p_all2, '10_log', outdir.fig)
-p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_15_states', selected_15_codes)
-plot_relative_resurgence_vaccine_panel(p4, p_all2, '15_log', outdir.fig)
-p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_20_states', selected_20_codes)
-plot_relative_resurgence_vaccine_panel(p4, p_all2, '20_log', outdir.fig)
-p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_30_states', selected_30_codes)
-plot_relative_resurgence_vaccine_panel(p4, p_all2, '30_log', outdir.fig)
-p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, F, outdir.fig, '_30_states', selected_30_codes)
-plot_relative_resurgence_vaccine_panel(p4, p_all2, '30', outdir.fig)
+if(all(selected_10_codes %in% locs)){
+  plot_relative_resurgence_vaccine2_long(r_pdeaths, outdir.fig, '_10_states', selected_10_codes)
+  plot_relative_resurgence_vaccine2_long(r_pdeaths, outdir.fig, '_other_states', locs[!locs %in% selected_10_codes])
+  
+  p_all <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_all_states')
+  plot_relative_resurgence_vaccine_panel(p4, p_all, '50_log', outdir.fig)
+  p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_10_states', selected_10_codes)
+  plot_relative_resurgence_vaccine_panel(p4, p_all2, '10_log', outdir.fig)
+  p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_15_states', selected_15_codes)
+  plot_relative_resurgence_vaccine_panel(p4, p_all2, '15_log', outdir.fig)
+  p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_20_states', selected_20_codes)
+  plot_relative_resurgence_vaccine_panel(p4, p_all2, '20_log', outdir.fig)
+  p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, T, outdir.fig, '_30_states', selected_30_codes)
+  plot_relative_resurgence_vaccine_panel(p4, p_all2, '30_log', outdir.fig)
+  p_all2 <- plot_relative_resurgence_vaccine_end_3(r_pdeaths, F, outdir.fig, '_30_states', selected_30_codes)
+  plot_relative_resurgence_vaccine_panel(p4, p_all2, '30', outdir.fig)
+  
+}
 
 cat("\n End postprocessing_union.R \n")
 
