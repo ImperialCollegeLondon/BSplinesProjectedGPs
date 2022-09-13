@@ -1,21 +1,22 @@
 # Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths
 
-Mélodie Monod, Alexandra Blenkinsop, Andrea Brizzi, Yu Chen, Vidoushee Jogarah, Yuanrong Wang, Samir Bhatt and Oliver Ratmann (2021). Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths, http://arxiv.org/abs/2106.12360.
+Mélodie Monod, Alexandra Blenkinsop, Andrea Brizzi, Yu Chen, Vidoushee Jogarah, Yuanrong Wang, Samir Bhatt and Oliver Ratmann (2022). Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths, **Bayesian analysis**, LINK.
 
 ## Abstract
 The COVID-19 pandemic has caused severe public health consequences in the United States.
-In this study, we use a hierarchical Bayesian model to estimate the age-specific COVID-19 attributable deaths over time in the United States. The model is specified by a novel non-parametric spatial approach over time and age, a low-rank Gaussian Process (GP) projected by regularised B-splines. We show that this projection defines a new GP with attractive smoothness and computational efficiency properties, derive its kernel function, and discuss the penalty terms induced by the projected GP. Simulation analyses and benchmark results show that the B-splines projected GP may perform better than standard B-splines and Bayesian P-splines, and equivalently well as a standard GP, at considerably lower runtimes. 
-We apply the model to weekly, age-stratified COVID-19 attributable deaths reported by the US Centers for Disease Control, which are subject to censoring and reporting biases. Using the B-splines projected GP, we can estimate longitudinal trends in COVID-19 associated deaths across the US by 1-year age bands. These estimates are instrumental to calculate age-specific mortality rates, describe variation in age-specific deaths across the US, and for fitting epidemic models. The B-splines projected GP priors that we develop are likely an appealing addition to the arsenal of Bayesian regularising priors.
+In this study, we use a hierarchical Bayesian model to estimate the age-specific COVID-19 attributable deaths over time in the United States. The model is specified by a novel non-parametric spatial approach over time and age, a low-rank Gaussian Process (GP) projected by regularised B-splines. We show that this projection defines a new GP with attractive smoothness and computational efficiency properties, derive its kernel function, and discuss the penalty terms induced by the projected GP. Simulation analyses and benchmark results show that the B-splines projected GP may perform better than standard B-splines and Bayesian P-splines, and equivalently well as a standard GP at considerably lower runtimes. 
+We apply the model to weekly, age-stratified COVID-19 attributable deaths reported by the US Centers for Disease Control, which are subject to censoring and reporting biases. Using the B-splines projected GP, we can estimate longitudinal trends in COVID-19 associated deaths across the US by 1-year age bands. These estimates are instrumental to calculate age-specific mortality rates, describe variation in age-specific deaths across the US, and for fitting epidemic models. Here, we couple the model with age-specific vaccination rates to show that vaccination rates were significantly associated with the magnitude of resurgences in COVID-19 deaths during the summer 2021. With counterfactual analyses, we quantify the avoided COVID-19 deaths under lower vaccination rates and avoidable COVID-19 deaths under higher vaccination rates. The B-splines projected GP priors that we develop are likely an appealing addition to the arsenal of Bayesian regularising priors. 
 
 ## About this repository
 | Folder    | Description |
 |-----------|------------------------------------------------------|
-| misc   | Obtain weekly incomplete age and state-specific COVID-19 deaths from the cumulative incomplete age and state-specific COVID-19 deaths reported by the CDC |
-| inst | Reproduce the result of the "COVID-19 deaths in the US" section  |
-| simulations      | Reproduce the result of the "Simulations" section |
-| predictions | Reproduce the results of the "Real world benchmarks" |
-| inst/results | Median and 95\% credible interval of the predicted age-specific COVID-19 attributable deaths|
+| misc   | Obtain data to run the COVID-19 case study (age-specific weekly COVID-19 deaths reported by the CDC, all-ages weekly COVID-19 deaths reported by the JHU, vaccination data) |
+| inst | Reproduce the result of the COVID-19 case study |
+| simulations      | Reproduce the simulation analysis |
+| predictions | Reproduce the benchmark results |
 
+## Median and 95\% credible interval of the predicted age-specific COVID-19 attributable deaths adjusted for under-reporting and reporting-delays
+In ```inst/results/predictions/predicted_weekly_deaths.rds```
 
 
 ## Installation 
@@ -38,4 +39,4 @@ Imperial makes no representation or warranty about the accuracy or completeness 
 ## Cite
 
 Please cite 
-* M Monod et al. Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths. (2021)
+* M Monod et al. (2022) Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths. Bayesian Analysis.

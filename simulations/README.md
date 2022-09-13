@@ -2,9 +2,8 @@
 | Folder    | Description |
 |-----------|------------------------------------------------------|
 | stan-models   | Stan models |
-| functions      | Functions needed to run the scripts   |
+| functions      | Functions needed to run the script   |
 | data      | Simulated data   |
-
 
 
 ## Instruction 

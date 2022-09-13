@@ -7,32 +7,44 @@
 | stan-models | Stan models of the weekly COVID-19 attributable deaths by age model |
 
 
+## Additional dependencies
+Please install the following dependencies:
+```bash
+source activate BSplinesProjectedGPs
+R -e 'options(unzip = "internal");devtools::install_github("zeehio/facetscales");install.packages("usmap")'
+```
+
 ## Data
 Datasets in ```data/``` generated in ```misc/``` include:
-* All-ages daily deaths reported by JHU, ```JHU_data-$DATE.rds```
-* Age-specific weekly deaths reported by the CDC, ```CDC-data-$DATE.rds```
+* All-ages daily deaths reported by JHU, ```JHU_data_$DATE.rds```
+* Age-specific weekly deaths reported by the CDC, ```CDC-data_$DATE.rds```
+* Vaccination data by age reported by the CDC, ```vaccination-prop-$DATE.rds```
+* Vaccination data regardless of age reported by the CDC, ```vaccination-prop-pop-$DATE.rds```
 
 Datasets extracted from other source include:
 * Age-specific daily deaths reported by the DoH and extracted by the [Imperial College COVID-19 Response Team](https://github.com/ImperialCollegeLondon/US-covid19-agespecific-mortality-data), ```DeathsByAge_US_$DATE.csv```
 * Population counts in the United States from the 2018 Census, ```us_population.csv```
+* Share of COVID-19 deaths linked to nursing homes and other long term care facilities published by the [New York Time](https://www.nytimes.com/interactive/2020/us/coronavirus-nursing-homes.html), ```NYT_sharedeaths_carehomes.csv```
 
-## instructions 
-The entry point to run the model on a laptop is ```run-model.sh``` and on a high performance computing environment ```run-model-HPC.sh```. 
+## Instructions 
+The entry point to run the model is ```run-model.sh```.
 
 ### Header
-In both files, you will need to specify 
+You need to specify 
 * the repository directory, ```INDIR```
-* the output directory (to store the results), ```CWD``` and, 
+* the output directory (to store the results), ```CWD```  
 * the stan model ID under ```STAN_MODEL```
-* the US state(s) under ```STATES```
+* the US state(s) you which to consider under ```STATES```
 with,
 ```bash
 INDIR="repositorydirectory"
 CWD="resultsdirectory"
 STAN_MODEL="stanmodelid"
-STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI'
+STATES='CA,FL,NY,TX'
 ```
+Please see below for the correspondence between the stan model ID and the analysis.
 
+#### Stan model to obtain predicted age-specific deaths (without reproducing vaccination analysis)
 Note the correspondence between the stan model ID and the model, 
 | stan model id    | Model |
 |-----------|------------------------------------------------------|
@@ -46,7 +58,14 @@ For example, if you wish to use a standard Gaussian Process, specify
 STAN_MODEL="220209b"
 ```
 
-### Usage on a laptop
+#### Stan model to reproduce vaccination analysis
+For example, if you wish reproduce the vaccination analysis, specify
+```bash
+STAN_MODEL="220701a"
+```
+
+
+### Usage
 From the repository directory, on the terminal console execute, 
 ```bash
 $ source activate BSplinesProjectedGPs
@@ -63,13 +82,3 @@ when finished,
 $ ./$STAN_MODEL-JOBID-postprocessing.sh 
 ```
 
-### Usage in high-throughput computing
-You need to modify the PBS header of ```run-model-HPC.sh``` (i.e., ```#PBS [...]```), l.14-18 and l.50-53. 
-
-From the repository directory, on the terminal console execute, 
-```bash
-$ source activate BSplinesProjectedGPs
-$ cd inst/
-$ ./run-model-HPC.sh
-```
-This attaches to your run a unique JOBID and generates in the output directory two PBS scripts. One for running the model and one for processing the results. The scripts are submitted automatically as PBS jobs. 
