@@ -42,7 +42,6 @@ CWD="resultsdirectory"
 STAN_MODEL="stanmodelid"
 STATES='CA,FL,NY,TX'
 ```
-Please see below for the correspondence between the stan model ID and the analysis.
 
 #### Stan model to obtain predicted age-specific deaths (without reproducing vaccination analysis)
 Note the correspondence between the stan model ID and the model, 
@@ -59,7 +58,7 @@ STAN_MODEL="220209b"
 ```
 
 #### Stan model to reproduce vaccination analysis
-For example, if you wish reproduce the vaccination analysis, specify
+If you wish reproduce the vaccination analysis, specify
 ```bash
 STAN_MODEL="220701a"
 ```
