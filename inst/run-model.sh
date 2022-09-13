@@ -1,12 +1,12 @@
 #!/bin/sh
 
 JOBID=$$
-STAN_MODEL="211125a"
+STAN_MODEL="220209a"
 CWD="/Users/melodiemonod/git/BSplinesProjectedGPs/inst/results-try/"
 INDIR="/Users/melodiemonod/git/BSplinesProjectedGPs/"
 
 # reproduce complete analysis
-STATES='CA,FL,NY,TX,PA,IL,OH,GA,NC,MI'
+STATES='AK,AL,AR,AZ,CA,CO,CT,DE,FL,GA,HI,IA,ID,IL,IN,KS,KY,LA,MA,MD,ME,MI,MN,MO,MS,MT,NC,ND,NE,NH,NJ,NM,NV,NY,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VA,VT,WA,WI,WV,WY'
 # or use only four states
 #STATES='CA,FL,NY,TX'
 
@@ -21,6 +21,8 @@ INDIR=$INDIR/inst
 STAN_MODEL=$STAN_MODEL
 JOBID=$JOBID
   
+source activate BSplinesProjectedGPs
+
 # main directory
 mkdir \$CWD/\$STAN_MODEL-\$JOBID
   
@@ -45,6 +47,8 @@ INDIR=$INDIR/inst
 STAN_MODEL=$STAN_MODEL
 JOBID=$JOBID
   
+source activate BSplinesProjectedGPs
+
 # main directory
 mkdir \$CWD/\$STAN_MODEL-\$JOBID
   
