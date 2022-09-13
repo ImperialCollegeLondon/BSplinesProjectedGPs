@@ -7,22 +7,12 @@ library(ggpubr)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('FL',',')[[1]]
 states = strsplit('CA,FL,NY,TX',',')[[1]]
-# states = strsplit('CA,FL,NY,TX,PA',',')[[1]]
-# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI',',')[[1]]
-# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA',',')[[1]]
-# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI',',')[[1]]
-# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA',',')[[1]]
-# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA,KY,OR,OK,CT,UT',',')[[1]]
-# states = strsplit('CA,FL,NY,TX,PA,IL,OH,GA,NC,MI,NJ,VA,WA,AZ,MA,TN,IN,MD,MO,WI,CO,MN,SC,AL,LA,KY,OR,OK,CT,UT',',')[[1]]
-states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-            "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-            "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
-states <- c("AK", "AL", "AR", "AZ")
-states <- c('CA','FL','NY','TX','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA','TN','IN','MD','MO','WI','CO','MN','SC','AL','LA','KY','OR','UT','IA','NV')
+# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
+#             "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
+#             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
 
-stan_model = "220713a"
+stan_model = "220209a"
 JOBID = 3541
 
 if(0)
@@ -54,7 +44,7 @@ rstan_options(auto_write = TRUE)
 path.to.stan.model = file.path(indir, "stan-models", paste0("CDC-covid-tracker_", stan_model, ".stan"))
 
 # path to data
-path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06-bis.rds"))
+path.to.CDC.data = file.path(indir, "data", paste0("CDC-data_2022-02-06.rds"))
 path.to.JHU.data = file.path(indir, "data", paste0("jhu_data_2022-02-06.rds"))
 path_to_scraped_data = file.path(indir, "data", paste0("DeathsByAge_US_2021-03-21.csv"))
 path_to_vaccine_data = file.path(indir, "data", paste0("vaccination-prop-2022-02-06.rds"))
