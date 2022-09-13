@@ -155,7 +155,7 @@ mortality_rate_table_continuous = make_mortality_rate_table_continuous(fit_sampl
 plot_mortality_rate(mortality_rate_table, mortality_rate_table_continuous, outdir.fig)
 
 # predicted weekly deaths by various age groups
-deatht = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table)
+deatht = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table, lab = 'prediction')
 tmp = make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha_reduced', df_age_reporting, outdir.table, withempirical = T)
 make_weekly_death_rate_other_source(fit_samples, df_week, JHUData,  'alpha', df_age_continuous, outdir.table,
                                     age_groups = c('0-54', '55-74', '75+'), lab = '3agegroups', withempirical = T)
