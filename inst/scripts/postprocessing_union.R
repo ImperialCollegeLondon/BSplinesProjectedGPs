@@ -95,7 +95,9 @@ for(i in seq_along(locs)){
 }
 mortality_rate = do.call('rbind', mortality_rate)
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
-plot_mortality_rate_continuous_all_states(mortality_rate, selected_codes, outdir.fig)
+if(all(selected_codes %in% mortality_rate[, unique(code)])){
+  plot_mortality_rate_continuous_all_states(mortality_rate, selected_codes, outdir.fig)
+}
 
 # mortality rate over time discrete
 mortality_rate = vector(mode = 'list', length = length(locs))
@@ -104,7 +106,6 @@ for(i in seq_along(locs)){
 }
 mortality_rate = do.call('rbindlist', list(l = mortality_rate, fill=TRUE))
 mortality_rate = subset(mortality_rate, date == max(mortality_rate$date)-7)
-# mortality_rate[is.na(M), M := c(2.056321e-03, 1.684421e-02)]
 crude_mortality_rate = find_crude_mortality_rate(mortality_rate, df_age_continuous, df_age_reporting, pop_data)
 plot_mortality_rate_all_states(mortality_rate, crude_mortality_rate, outdir.fig)
 plot_mortality_rate_all_states2(mortality_rate, outdir.fig)
@@ -153,7 +154,11 @@ for(i in seq_along(locs)){
 }
 death3 = do.call('rbind', death3)
 if(!'prop_vac_start_counterfactual' %in% names(stan_data)) resurgence_dates <- find_resurgence_dates(JHUData, deathByAge, locations$code)
-plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates, 'selectedStates', outdir.fig)
+if(all(selected_codes %in% death3[, unique(code)])){
+  plot_mortality_all_states(subset(death3, code %in% selected_codes), resurgence_dates, 'selectedStates', outdir.fig)
+}else{
+  plot_mortality_all_states(death3, resurgence_dates, 'selectedStates', outdir.fig)
+}
 if(any(!locs %in% selected_codes))
   plot_mortality_all_states(subset(death3, !code %in% selected_codes & code %in% selected_10_codes), resurgence_dates, 'otherStates', outdir.fig)
 if(length(locs) > 10){
@@ -193,7 +198,9 @@ contribution = do.call('rbind', contribution)
 mid_code = round(length(locs) / 2)
 contribution[, M_median := median(M), by = c('date', 'age')]
 plot_contribution_vaccine(contribution, vaccine_data_pop, 'predict_all', outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'predict_selected_codes',outdir.fig)
+if(all(selected_codes %in% contribution[, unique(code)])){
+  plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'predict_selected_codes',outdir.fig)
+}
 
 ## shift over time
 locs_plus_US <- c(locs, 'US')
@@ -217,7 +224,11 @@ contribution = do.call('rbind', contribution)
 contribution[, M_median := median(M), by = c('date', 'age')]
 mid_code = round(length(locs) / 2)
 plot_contribution_vaccine(contribution, vaccine_data_pop, 'all', outdir.fig)
-plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'selected_codes',outdir.fig)
+if(all(selected_codes %in% contribution[, unique(code)])){
+  plot_contribution_vaccine(subset(contribution, code %in% selected_codes), vaccine_data_pop,  'selected_codes',outdir.fig)
+}else{
+  plot_contribution_vaccine(contribution, vaccine_data_pop,  'selected_codes',outdir.fig)
+}
 if(all(c('TX', 'NH') %in% locs)) plot_contribution_vaccine(subset(contribution, code %in% c('TX', 'NH')), vaccine_data_pop,  'TXNH',outdir.fig)
 
 ## shift over time
@@ -240,7 +251,11 @@ for(i in seq_along(locs)){
 }
 r_pdeaths = do.call('rbind', r_pdeaths)
 
-p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_codes)
+if(all(selected_codes %in% r_pdeaths[, unique(code)])){
+  p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', selected_codes)
+}else{
+  p4 <- plot_relative_resurgence_vaccine2(r_pdeaths, F, outdir.fig, '_selected_states', r_pdeaths[, unique(code)])
+}
 
 if(all(selected_10_codes %in% locs)){
   plot_relative_resurgence_vaccine2_long(r_pdeaths, outdir.fig, '_10_states', selected_10_codes)
