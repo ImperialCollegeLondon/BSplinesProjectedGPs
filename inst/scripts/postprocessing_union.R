@@ -169,12 +169,12 @@ if(length(locs) > 10){
 # predictions
 predictions = vector(mode = 'list', length = length(locs))
 for(i in seq_along(locs)){
-  predictions[[i]] = readRDS(paste0(outdir.table, '-DeathByAge', 'Table_', 'prediction', '_', locs[i], '.rds'))
+  predictions[[i]] = readRDS(paste0(outdir.table, '-DeathByAge', 'Table_', 'prediction_agg', '_', locs[i], '.rds'))
 }
 
 predictions = do.call('rbind', predictions)
-predictions <- select(predictions, - min.sum.weekly.deaths, - max.sum.weekly.deaths, - sum.weekly.deaths, - weekly.deaths, - inside.CI, 
-                      -state_index, - week_index, - age_index)
+predictions <- select(predictions, - week_index, - state_index, - mean, - emp_JHU, -age_index, -emp, 
+                      -emp_adj)
 predictions <- predictions[order(loc_label, date, age)]
 
 dir = file.path(gsub('(.+)\\/results.*', '\\1', outdir.table), 'results', 'predictions')
