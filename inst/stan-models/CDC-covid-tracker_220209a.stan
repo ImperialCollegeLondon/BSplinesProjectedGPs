@@ -238,7 +238,7 @@ generated quantities {
             deaths_predict[m,:,w] = neg_binomial_rng(alpha[m,:,w], nu_inverse[m] );
             deaths_predict_state_age_strata[m,:,w] = neg_binomial_rng(alpha_reduced[m,:,w], nu_inverse[m] );
             deaths_predict_vac_age_strata[m,:,w] = neg_binomial_rng(alpha_reduced_vac[m,:,w], nu_inverse[m] );
-            phi_predict_reduced_vac[m][:,w] = to_vector(deaths_predict_vac_age_strata[m,:,w]) ./ rep_vector(sum(deaths_predict_vac_age_strata[m,:,w]), C);       
+            phi_predict_reduced_vac[m][:,w] = to_vector(deaths_predict_vac_age_strata[m,:,w]) ./ rep_vector(sum(deaths_predict_vac_age_strata[m,:,w]), C); //can be NaN if the sum of deaths are 0       
         }
         
         for(w in 1:W_OBSERVED){
