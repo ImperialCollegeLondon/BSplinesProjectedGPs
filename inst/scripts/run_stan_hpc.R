@@ -7,10 +7,7 @@ library(ggpubr)
 
 indir ="~/git/BSplinesProjectedGPs/inst" # path to the repo
 outdir = file.path('~/Downloads/', "results")
-states = strsplit('CA,FL,NY,TX',',')[[1]]
-# states <- c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME",
-#             "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-#             "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY")
+states = 'CA'
 
 stan_model = "220209a"
 JOBID = 3541
