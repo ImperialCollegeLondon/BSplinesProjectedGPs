@@ -40,10 +40,9 @@ with,
 INDIR="repositorydirectory"
 CWD="resultsdirectory"
 STAN_MODEL="stanmodelid"
-STATES='CA,FL,NY,TX'
+STATES='CA'
 ```
 
-#### Stan model to obtain predicted age-specific deaths (without reproducing vaccination analysis)
 Note the correspondence between the stan model ID and the model, 
 | stan model id    | Model |
 |-----------|------------------------------------------------------|
@@ -56,13 +55,6 @@ For example, if you wish to use a standard Gaussian Process, specify
 ```bash
 STAN_MODEL="220209b"
 ```
-
-#### Stan model to reproduce vaccination analysis
-If you wish reproduce the vaccination analysis, specify
-```bash
-STAN_MODEL="220701a"
-```
-
 
 ### Usage
 From the repository directory, on the terminal console execute, 
