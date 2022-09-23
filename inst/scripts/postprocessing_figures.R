@@ -113,9 +113,12 @@ age_contribution_continuous_table = make_var_by_age_by_state_by_time_table(fit_s
 plot_probability_deaths_age_contribution(age_contribution_continuous_table, 'phi', outdir = outdir.fig)
 age_contribution_discrete_table = make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_reporting, df_state, 'phi_reduced', outdir.table)
 plot_probability_deaths_age_contribution(age_contribution_discrete_table, 'phi_reduced', outdir = outdir.fig, discrete = T)
-make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
-make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', vaccine_data_pop, outdir.table)
-make_var_by_age_by_state_by_time_diff_over_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
+
+if('phi_reduced_vac' %in% names(fit_samples)){
+  make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
+  make_var_by_age_by_state_by_time_diff_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', vaccine_data_pop, outdir.table)
+  make_var_by_age_by_state_by_time_diff_over_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_reduced_vac', outdir.table)
+}
 
 if('phi_predict_reduced_vac' %in% names(fit_samples)){
   make_var_by_age_by_state_by_time_table(fit_samples, df_week, df_age_vaccination2, df_state, 'phi_predict_reduced_vac', outdir.table)
