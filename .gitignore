@@ -1,0 +1,15 @@
+Rplots.pdf
+inst/.DS_Store
+simulations/.DS_Store
+melodie/
+predictions/compare_methods.R
+predictions/results/
+simulations/results/
+deprecated/
+inst/.DS_Store
+Rplots.pdf
+inst/scripts/compare_knots.R
+plot_resurgence_50_states.R
+inst/scripts/postprocessing_compare_method.R
+simulations/.DS_Store
+inst/.DS_Store
