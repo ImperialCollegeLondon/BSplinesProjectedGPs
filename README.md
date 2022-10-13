@@ -1,6 +1,6 @@
 # Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths
 
-Mélodie Monod, Alexandra Blenkinsop, Andrea Brizzi, Yu Chen, Vidoushee Jogarah, Yuanrong Wang, Samir Bhatt and Oliver Ratmann (2022). Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths, **Bayesian analysis**, LINK.
+Mélodie Monod, Alexandra Blenkinsop, Andrea Brizzi, Yu Chen, Vidoushee Jogarah, Yuanrong Wang, Samir Bhatt and Oliver Ratmann (2022). Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths, **Bayesian analysis**, https://dx.doi.org/10.1214/22-BA1334.
 
 ## Abstract
 The COVID-19 pandemic has caused severe public health consequences in the United States.
@@ -39,4 +39,4 @@ Imperial makes no representation or warranty about the accuracy or completeness 
 ## Cite
 
 Please cite 
-* M Monod et al. (2022) Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths. Bayesian Analysis.
+* M Monod et al. (2022) Regularised B-splines projected Gaussian Process priors to estimate time-trends in age-specific COVID-19 deaths. Bayesian Analysis. https://doi.org/10.1214/22-ba1334
